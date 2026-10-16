@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seven Card Table</title>
+<style>
+  :root { --felt:#0f5132; --felt2:#0b3d26; --ink:#14201a; --card:#fdfdf8; --red:#c0261f; --gold:#f0c24b; --slot:rgba(255,255,255,.12); }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background: radial-gradient(circle at top, var(--felt), var(--felt2)); color:#fff; min-height:100vh; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 0; background: var(--gold); color: #2a2000; font-weight: 600; cursor: pointer; }
+  button.ghost { background: rgba(255,255,255,.15); color:#fff; }
+  button:disabled { opacity:.5; cursor: default; }
+  input { font: inherit; padding: 8px 10px; border-radius: 8px; border: 0; width: 100%; }
+  .panel { background: rgba(0,0,0,.25); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .lobby { max-width: 380px; margin: 40px auto; display: grid; gap: 10px; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+  .grow { flex:1; }
+  .err { color:#ffb4ab; min-height: 1.2em; }
+  .code { font-size: 28px; letter-spacing: 6px; font-weight: 800; color: var(--gold); }
+  .card { width: 56px; height: 80px; border-radius: 7px; background: var(--card); color: var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:700; font-size:20px; line-height:1.1; box-shadow: 0 2px 4px rgba(0,0,0,.4); user-select:none; cursor:pointer; border:2px solid transparent; }
+  .card.red { color: var(--red); }
+  .card.back { background: repeating-linear-gradient(45deg,#234a9c,#234a9c 5px,#1b3a7d 5px,#1b3a7d 10px); color: transparent; cursor: default; }
+  .card.sel { border-color: var(--gold); transform: translateY(-6px); }
+  .card .s { font-size: 24px; }
+  .slot { width: 56px; height: 80px; border-radius: 7px; background: var(--slot); border: 2px dashed rgba(255,255,255,.3); display:flex; }
+  .slot.target { border-color: var(--gold); cursor: pointer; }
+  .slot .card { width:100%; height:100%; margin:0; }
+  .board { display:flex; flex-direction:column; gap:8px; align-items:center; }
+  .board .r { display:flex; gap:8px; }
+  .hand { display:flex; gap:8px; flex-wrap: wrap; min-height: 84px; }
+  .others { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+  .others .card, .others .slot { width: 34px; height: 48px; font-size: 12px; } .others .card .s { font-size: 14px; }
+  .others .board, .others .board .r { gap: 4px; }
+  .tag { font-size: 12px; background: var(--gold); color:#2a2000; border-radius: 99px; padding: 1px 8px; margin-left: 6px; }
+  .tag.lock { background:#7bd88f; }
+  .name { font-weight: 700; margin-bottom: 6px; }
+  .hide { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🂡 Seven Card Table</h1>
+  <div id="app"></div>
+</main>
+<script>
+const SUIT = { S:'♠', H:'♥', D:'♦', C:'♣' };
+const ROWS = [1, 1, 2, 3];
+const POLL_MS = 1500;
+const app = document.getElementById('app');
+let session = load();   // {code, pid}
+let st = null;          // latest server view
+let selected = null;    // selected card id in my hand
+let err = '';
+let timer = null;
+let lastKey = '';
+
+function load() { try { return JSON.parse(localStorage.getItem('sct') || 'null'); } catch { return null; } }
+function save() { try { session ? localStorage.setItem('sct', JSON.stringify(session)) : localStorage.removeItem('sct'); } catch {} }
+
+async function api(action, extra = {}) {
+  const r = await fetch('/api/game', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...(session || {}), ...extra }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw Object.assign(new Error(j.error || 'Error'), { status: r.status });
+  return j;
+}
+
+function el(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e[k] = v;
+  }
+  for (const k of kids) e.append(k);
+  return e;
+}
+
+function cardEl(id, onclick, extra = '') {
+  if (id === '?') return el('div', { class: 'card back' });
+  const suit = id.slice(-1), rank = id.slice(0, -1);
+  const red = suit === 'H' || suit === 'D';
+  return el('div', { class: `card ${red ? 'red' : ''} ${extra}`, onclick },
+    el('div', {}, rank), el('div', { class: 's' }, SUIT[suit]));
+}
+
+function boardEl(board, mine) {
+  const wrap = el('div', { class: 'board' });
+  let i = 0;
+  for (const n of ROWS) {
+    const row = el('div', { class: 'r' });
+    for (let k = 0; k < n; k++, i++) {
+      const slot = i, c = board[slot];
+      const locked = st.players.find(p => p.id === st.meId).locked;
+      const canEdit = mine && st.phase === 'dealt' && !locked;
+      let inner = null, cls = 'slot';
+      if (c) inner = cardEl(c, canEdit ? () => act('unplace', { slot }) : null);
+      else if (canEdit && selected) cls += ' target';
+      const s = el('div', { class: cls }, inner || '');
+      if (!c && canEdit && selected) s.onclick = () => { const card = selected; selected = null; act('place', { card, slot }); };
+      row.append(s);
+    }
+    wrap.append(row);
+  }
+  return wrap;
+}
+
+function render() {
+  app.replaceChildren();
+  if (!session || !st) return renderLobby();
+  const me = st.players.find(p => p.id === st.meId);
+
+  const head = el('div', { class: 'panel row' },
+    el('div', {}, 'Room ', el('span', { class: 'code' }, st.code)),
+    el('div', { class: 'grow' }, `${st.players.length}/5 players` + (st.round ? ` · round ${st.round}` : '')),
+    el('button', { class: 'ghost', onclick: leave }, 'Leave'));
+  if (st.isHost) {
+    const dealBtn = el('button', { onclick: () => act('deal') },
+      st.phase === 'lobby' ? 'Shuffle & deal' : 'Reset, shuffle & deal');
+    head.insertBefore(dealBtn, head.lastChild);
+  }
+  app.append(head);
+  if (err) app.append(el('div', { class: 'err' }, err));
+
+  if (st.phase === 'lobby') {
+    app.append(el('div', { class: 'panel' },
+      el('div', { class: 'name' }, 'Waiting for players…'),
+      el('div', {}, st.players.map(p => p.name + (p.isHost ? ' (host)' : '')).join(', ')),
+      el('p', {}, st.isHost ? 'Share the room code, then press “Shuffle & deal” when everyone has joined.' : 'Waiting for the host to deal.')));
+    return;
+  }
+
+  const mine = el('div', { class: 'panel' },
+    el('div', { class: 'row' },
+      el('div', { class: 'name grow' }, `${me.name} (you)`, me.isHost ? el('span', { class: 'tag' }, 'host') : '', me.locked ? el('span', { class: 'tag lock' }, 'locked in') : ''),
+      el('button', { onclick: () => act('lock', { locked: !me.locked }) }, me.locked ? 'Unlock' : 'Lock in (reveal)')),
+    boardEl(me.board, true));
+  app.append(mine);
+
+  const hand = el('div', { class: 'hand' });
+  st.hand.forEach(c => hand.append(cardEl(c, () => { selected = selected === c ? null : c; render(); }, c === selected ? 'sel' : '')));
+  app.append(el('div', { class: 'panel' },
+    el('div', { class: 'name' }, 'Your hand' + (me.locked ? '' : ' — tap a card, then tap an empty slot')), hand));
+
+  const others = el('div', { class: 'others' });
+  st.players.filter(p => p.id !== st.meId).forEach(p => others.append(el('div', { class: 'panel' },
+    el('div', { class: 'name' }, p.name, p.isHost ? el('span', { class: 'tag' }, 'host') : '', p.locked ? el('span', { class: 'tag lock' }, 'locked in') : '', ` · ${p.handCount} in hand`),
+    boardEl(p.board, false))));
+  if (others.children.length) app.append(others);
+}
+
+function renderLobby() {
+  const name = el('input', { placeholder: 'Your name', maxLength: 16, value: localStorage.getItem('sct-name') || '' });
+  const code = el('input', { placeholder: 'Room code', maxLength: 4, style: 'text-transform:uppercase' });
+  const remember = () => { try { localStorage.setItem('sct-name', name.value); } catch {} };
+  app.append(el('div', { class: 'panel lobby' },
+    name,
+    el('button', { onclick: () => { remember(); enter('create', { name: name.value }); } }, 'Create room (you are host)'),
+    el('div', { class: 'row' }, el('div', { class: 'grow' }, code),
+      el('button', { onclick: () => { remember(); enter('join', { name: name.value, code: code.value }); } }, 'Join')),
+    el('div', { class: 'err' }, err)));
+}
+
+async function enter(action, body) {
+  err = '';
+  try {
+    session = null;
+    st = await api(action, body);
+    session = { code: st.code, pid: st.meId };
+    save(); startPolling();
+  } catch (e) { err = e.message; }
+  render();
+}
+
+async function act(action, extra = {}) {
+  err = '';
+  try { st = await api(action, extra); lastKey = JSON.stringify(st); }
+  catch (e) { err = e.message; }
+  render();
+}
+
+async function leave() {
+  try { await api('leave'); } catch {}
+  session = null; st = null; selected = null; save(); clearInterval(timer); render();
+}
+
+async function poll() {
+  if (!session) return;
+  try {
+    const r = await fetch(`/api/game?code=${session.code}&pid=${session.pid}`);
+    const j = await r.json();
+    if (r.status === 404) { session = null; st = null; save(); clearInterval(timer); err = 'Room no longer available'; return render(); }
+    if (!r.ok) return;
+    const key = JSON.stringify(j);
+    if (key === lastKey) return;
+    lastKey = key; st = j;
+    if (selected && !st.hand.includes(selected)) selected = null;
+    err = '';
+    render();
+  } catch {}
+}
+
+function startPolling() { clearInterval(timer); timer = setInterval(poll, POLL_MS); }
+
+if (session) { poll().then(() => { if (session) startPolling(); }); } 
+render();
+</script>
+</body>
+</html>

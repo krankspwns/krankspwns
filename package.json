@@ -1,0 +1,8 @@
+{
+  "name": "seven-card-table",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multiplayer (up to 5) card table: 7 cards each, arranged in rows of 1-1-2-3.",
+  "engines": { "node": ">=18" },
+  "scripts": { "dev": "vercel dev", "test": "node test.js" }
+}
