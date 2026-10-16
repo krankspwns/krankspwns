@@ -102,6 +102,7 @@ function view(room, pid) {
         id: p.id,
         name: p.name,
         isHost: p.id === room.hostId,
+        ready: p.ready,
         handCount: p.hand.length,
         // Board slots are null or {c, up}. Others only see cards flipped face up.
         board: p.board.map((s) => (s && (mine || s.up) ? s : s ? { c: '?', up: false } : null)),
@@ -127,7 +128,7 @@ async function handle(action, b, query) {
     let code;
     do code = makeCode();
     while (await loadRoom(code));
-    const host = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null) };
+    const host = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
     const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0 };
     await saveRoom(room);
     return view(room, host.id);
@@ -143,7 +144,7 @@ async function handle(action, b, query) {
     need(room.phase === 'lobby', 409, 'Game already started — ask the host to reset to a lobby');
     need(room.players.length < MAX_PLAYERS, 409, `Room is full (${MAX_PLAYERS} players)`);
     need(!room.players.some((p) => p.name.toLowerCase() === name.toLowerCase()), 409, 'Name already taken');
-    const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null) };
+    const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
     room.players.push(p);
     await saveRoom(room);
     return view(room, p.id);
@@ -163,6 +164,7 @@ async function handle(action, b, query) {
       for (const p of room.players) {
         p.hand = deck.splice(0, HAND_SIZE);
         p.board = Array(SLOTS).fill(null);
+        p.ready = false;
       }
       room.phase = 'dealt';
       room.round += 1;
@@ -172,6 +174,7 @@ async function handle(action, b, query) {
     case 'place': {
       // hand -> slot; if the slot is occupied the occupant returns to the hand
       need(room.phase === 'dealt', 409, 'No cards dealt');
+      need(!me.ready, 409, 'Unready to move cards');
       const slot = slotOf(b.slot);
       const i = me.hand.indexOf(b.card);
       need(i >= 0, 400, 'Card not in your hand');
@@ -184,6 +187,7 @@ async function handle(action, b, query) {
     case 'move': {
       // slot -> slot (swap if occupied) keeping each card's flip state
       need(room.phase === 'dealt', 409, 'No cards dealt');
+      need(!me.ready, 409, 'Unready to move cards');
       const from = slotOf(b.from), to = slotOf(b.to);
       need(me.board[from], 400, 'Nothing there');
       [me.board[from], me.board[to]] = [me.board[to], me.board[from]];
@@ -192,6 +196,7 @@ async function handle(action, b, query) {
 
     case 'unplace': {
       need(room.phase === 'dealt', 409, 'No cards dealt');
+      need(!me.ready, 409, 'Unready to move cards');
       const slot = slotOf(b.slot);
       need(me.board[slot], 400, 'Nothing there');
       me.hand.push(me.board[slot].c);
@@ -216,9 +221,11 @@ async function handle(action, b, query) {
       break;
     }
 
-    case 'flipAllDown':
+    case 'ready':
+      // Ready hides every face (for you too) and freezes your cards until you unready.
       need(room.phase === 'dealt', 409, 'No cards dealt');
-      for (const s of me.board) if (s) s.up = false;
+      me.ready = !!b.ready;
+      if (me.ready) for (const c of me.board) if (c) c.up = false;
       break;
 
     case 'leave': {
