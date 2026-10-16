@@ -31,6 +31,8 @@ const post = (b) => call('POST', b, {});
   assert.equal(v.players[0].board[0].c, card, 'swap'); assert.equal(v.players[0].board[6].c, card2);
   v = (await post({ action: 'place', code: c.code, pid: me, card: v.hand[0], slot: 0 })).j;
   assert.equal(v.hand.length, 5, 'occupant returned to hand'); assert.equal(v.players[0].board.filter(Boolean).length, 2);
+  v = (await post({ action: 'flipRowUp', code: c.code, pid: me, row: 3 })).j;
+  assert.equal(v.players[0].board[6].up, true, 'row 3 flipped up'); assert.equal(v.players[0].board[0].up, false, 'row 0 untouched');
   v = (await post({ action: 'flipAllDown', code: c.code, pid: me })).j;
   assert.ok(v.players[0].board.every(x => !x || !x.up), 'all face down');
   assert.equal((await post({ action: 'move', code: c.code, pid: me, from: 5, to: 1 })).s, 400, 'empty source');

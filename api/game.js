@@ -9,6 +9,7 @@ const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_
 const TTL_SECONDS = 60 * 60 * 12;
 const MAX_PLAYERS = 5;
 const HAND_SIZE = 7;
+const ROW_SIZES = [1, 1, 2, 3];
 const SLOTS = 7; // rows of 1, 1, 2, 3
 
 const mem = (globalThis.__rooms = globalThis.__rooms || new Map());
@@ -25,15 +26,30 @@ async function redis(cmd) {
 }
 
 async function loadRoom(code) {
-  if (!REDIS_URL) return mem.get(code) || null;
+  if (!REDIS_URL) return mem.has(code) ? JSON.parse(JSON.stringify(mem.get(code))) : null;
   const raw = await redis(['GET', `room:${code}`]);
   return raw ? JSON.parse(raw) : null;
 }
 
+class Conflict extends Error {}
+
+// Compare-and-set on room.version so two players acting at the same moment
+// can't overwrite each other's change. On conflict the request is retried.
+const CAS_LUA = `
+local cur = redis.call('GET', KEYS[1])
+if cur then
+  local o = cjson.decode(cur)
+  if tonumber(o.version) ~= tonumber(ARGV[2]) then return 0 end
+end
+redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[3])
+return 1`;
+
 async function saveRoom(room) {
-  room.version = (room.version || 0) + 1;
+  const expected = room.version || 0;
+  room.version = expected + 1;
   if (!REDIS_URL) return void mem.set(room.code, room);
-  await redis(['SET', `room:${room.code}`, JSON.stringify(room), 'EX', TTL_SECONDS]);
+  const ok = await redis(['EVAL', CAS_LUA, '1', `room:${room.code}`, JSON.stringify(room), String(expected), String(TTL_SECONDS)]);
+  if (ok !== 1) throw new Conflict();
 }
 
 function newDeck() {
@@ -191,6 +207,15 @@ async function handle(action, b, query) {
       break;
     }
 
+    case 'flipRowUp': {
+      need(room.phase === 'dealt', 409, 'No cards dealt');
+      const row = Number(b.row);
+      need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
+      const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
+      for (let i = start; i < start + ROW_SIZES[row]; i++) if (me.board[i]) me.board[i].up = true;
+      break;
+    }
+
     case 'flipAllDown':
       need(room.phase === 'dealt', 409, 'No cards dealt');
       for (const s of me.board) if (s) s.up = false;
@@ -223,10 +248,19 @@ module.exports = async (req, res) => {
     if (typeof body === 'string') body = body ? JSON.parse(body) : {};
     body = body || {};
     const action = req.method === 'GET' ? 'state' : body.action;
-    res.status(200).json(await handle(action, body, query));
+    let result;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        result = await handle(action, body, query);
+        break;
+      } catch (e) {
+        if (!(e instanceof Conflict) || attempt >= 8) throw e;
+      }
+    }
+    res.status(200).json(result);
   } catch (e) {
-    const status = e.status || 500;
+    const status = e instanceof Conflict ? 503 : e.status || 500;
     if (status === 500) console.error(e);
-    res.status(status).json({ error: status === 500 ? 'Server error' : e.message });
+    res.status(status).json({ error: status === 500 ? 'Server error' : status === 503 ? 'Busy, try again' : e.message });
   }
 };

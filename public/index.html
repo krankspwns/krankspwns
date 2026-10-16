@@ -40,11 +40,15 @@
   .hide { display:none; }
   .card.mine { touch-action: none; cursor: grab; }
   .card.down { background: repeating-linear-gradient(45deg,#234a9c,#234a9c 5px,#1b3a7d 5px,#1b3a7d 10px); }
+  .card.down { color: transparent; }
   .card.down.peek { color: #fff; }
-  .card.down.peek > div { opacity: .55; }
+  .card.down.peek > div { opacity: .6; }
   .card.down.peek.red { color: #ff9b94; }
+  .rw { position: relative; width: 100%; display: flex; justify-content: center; }
+  .rowbtn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 4px 8px; font-size: 12px; }
+  label.peek { font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
   .slot.over { border-color: #7bd88f; background: rgba(123,216,143,.25); }
-  .hand.over { outline: 2px dashed #7bd88f; outline-offset: 4px; border-radius: 8px; }
+  .panel.over { outline: 2px dashed #7bd88f; outline-offset: 4px; border-radius: 8px; }
   .ghost-card { position: fixed; pointer-events: none; z-index: 99; opacity: .9; transform: translate(-50%,-50%) scale(1.08); }
   .dragging-src { opacity: .3; }
   .hint { font-size: 13px; opacity: .8; margin-top: 8px; }
@@ -66,6 +70,7 @@ let selected = null;    // selected card id in my hand
 let err = '';
 let timer = null;
 let lastKey = '';
+let peek = false;
 
 function load() { try { return JSON.parse(localStorage.getItem('sct') || 'null'); } catch { return null; } }
 function save() { try { session ? localStorage.setItem('sct', JSON.stringify(session)) : localStorage.removeItem('sct'); } catch {} }
@@ -98,7 +103,8 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '' } = {}) 
   const suit = id.slice(-1), rank = id.slice(0, -1);
   const red = suit === 'H' || suit === 'D';
   const cls = ['card', red ? 'red' : '', extra];
-  if (!up) cls.push('down', 'peek');   // own face-down card: dimmed so you can still read it
+  if (!up) cls.push('down');
+  if (!up && peek) cls.push('peek');   // optional: owner can peek at own face-down cards
   if (src !== null) cls.push('mine');
   const e = el('div', { class: cls.join(' ') }, el('div', {}, rank), el('div', { class: 's' }, SUIT[suit]));
   if (src !== null) enableDrag(e, src, id, onclick);
@@ -114,7 +120,16 @@ function enableDrag(node, src, cardId, onTap) {
     let ghost = null, over = null;
     const target = (x, y) => {
       const t = document.elementFromPoint(x, y);
-      return t && (t.closest('[data-slot]') || t.closest('[data-hand]'));
+      const hit = t && (t.closest('[data-slot]') || t.closest('[data-hand]'));
+      if (hit) return hit;
+      // dropped in a gap: snap to the nearest slot within 50px
+      let best = null, bd = 50;
+      document.querySelectorAll('[data-slot]').forEach((n) => {
+        const r = n.getBoundingClientRect();
+        const d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+        if (d < bd) { bd = d; best = n; }
+      });
+      return best;
     };
     const move = (e) => {
       if (!ghost) {
@@ -162,8 +177,9 @@ function drop(src, cardId, t) {
 function boardEl(board, mine) {
   const wrap = el('div', { class: 'board' });
   let i = 0;
-  for (const n of ROWS) {
+  for (const [rowIdx, n] of ROWS.entries()) {
     const row = el('div', { class: 'r' });
+    const rw = el('div', { class: 'rw' }, row);
     for (let k = 0; k < n; k++, i++) {
       const slot = i, s = board[slot];
       const editable = mine && st.phase === 'dealt';
@@ -178,7 +194,10 @@ function boardEl(board, mine) {
       if (editable && selected) node.onclick = () => { const card = selected; selected = null; act('place', { card, slot }); };
       row.append(node);
     }
-    wrap.append(row);
+    if (mine && st.phase === 'dealt') {
+      rw.append(el('button', { class: 'ghost rowbtn', title: 'Flip this row face up', onclick: () => act('flipRowUp', { row: rowIdx }) }, 'Flip up'));
+    }
+    wrap.append(rw);
   }
   return wrap;
 }
@@ -211,19 +230,21 @@ function render() {
   app.append(el('div', { class: 'panel' },
     el('div', { class: 'row' },
       el('div', { class: 'name grow' }, `${me.name} (you)`, me.isHost ? el('span', { class: 'tag' }, 'host') : ''),
+      el('label', { class: 'peek' }, el('input', { type: 'checkbox', checked: peek, style: 'width:auto', onchange: (e) => { peek = e.target.checked; render(); } }), 'Peek at my face-down cards'),
       el('button', { onclick: () => act('flipAllDown') }, 'Flip all face down')),
     boardEl(me.board, true),
-    el('div', { class: 'hint' }, 'Drag cards between slots or back to your hand. Click a card on the board to flip it face up/down — others only see face-up cards. A dimmed card is face down (only you can see it).')));
+    el('div', { class: 'hint' }, 'Drag cards between slots or back to your hand. Click a card on the board to flip it face up/down — others only see face-up cards. Each row has a “Flip up” button.')));
 
   const hand = el('div', { class: 'hand' });
-  hand.dataset.hand = '';
   st.hand.forEach(c => hand.append(cardEl(c, {
     src: 'hand',
     extra: c === selected ? 'sel' : '',
     onclick: () => { selected = selected === c ? null : c; render(); },
   })));
-  app.append(el('div', { class: 'panel' },
-    el('div', { class: 'name' }, 'Your hand — drag a card onto a slot (or tap it, then tap a slot)'), hand));
+  const handPanel = el('div', { class: 'panel' },
+    el('div', { class: 'name' }, 'Your hand — drag a card onto a slot (or tap it, then tap a slot)'), hand);
+  handPanel.dataset.hand = '';
+  app.append(handPanel);
 
   const others = el('div', { class: 'others' });
   st.players.filter(p => p.id !== st.meId).forEach(p => others.append(el('div', { class: 'panel' },
@@ -248,16 +269,25 @@ async function enter(action, body) {
   err = '';
   try {
     session = null;
-    st = await api(action, body);
+    adopt(await api(action, body));
     session = { code: st.code, pid: st.meId };
     save(); startPolling();
   } catch (e) { err = e.message; }
   render();
 }
 
+// Only accept state that is at least as new as what we already show, so a slow
+// poll response can't roll the board back after a move.
+function adopt(j) {
+  if (st && st.code === j.code && j.version < st.version) return false;
+  st = j; lastKey = JSON.stringify(j);
+  if (selected && !st.hand.includes(selected)) selected = null;
+  return true;
+}
+
 async function act(action, extra = {}) {
   err = '';
-  try { st = await api(action, extra); lastKey = JSON.stringify(st); }
+  try { adopt(await api(action, extra)); }
   catch (e) { err = e.message; }
   render();
 }
@@ -274,10 +304,8 @@ async function poll() {
     const j = await r.json();
     if (r.status === 404) { session = null; st = null; save(); clearInterval(timer); err = 'Room no longer available'; return render(); }
     if (!r.ok || dragging) return;
-    const key = JSON.stringify(j);
-    if (key === lastKey) return;
-    lastKey = key; st = j;
-    if (selected && !st.hand.includes(selected)) selected = null;
+    if (j.version < (st?.version ?? 0) || JSON.stringify(j) === lastKey) return;
+    adopt(j);
     err = '';
     render();
   } catch {}
