@@ -81,18 +81,23 @@ function view(room, pid) {
     isHost: room.hostId === me.id,
     hand: me.hand,
     players: room.players.map((p) => {
-      const visible = p.id === me.id || p.locked;
+      const mine = p.id === me.id;
       return {
         id: p.id,
         name: p.name,
         isHost: p.id === room.hostId,
-        locked: p.locked,
         handCount: p.hand.length,
-        // Others' boards are face-down until that player locks in.
-        board: visible ? p.board : p.board.map((c) => (c ? '?' : null)),
+        // Board slots are null or {c, up}. Others only see cards flipped face up.
+        board: p.board.map((s) => (s && (mine || s.up) ? s : s ? { c: '?', up: false } : null)),
       };
     }),
   };
+}
+
+function slotOf(v) {
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 0 || n >= SLOTS) throw new HttpError(400, 'Bad slot');
+  return n;
 }
 
 function need(cond, status, msg) {
@@ -106,7 +111,7 @@ async function handle(action, b, query) {
     let code;
     do code = makeCode();
     while (await loadRoom(code));
-    const host = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), locked: false };
+    const host = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null) };
     const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0 };
     await saveRoom(room);
     return view(room, host.id);
@@ -122,7 +127,7 @@ async function handle(action, b, query) {
     need(room.phase === 'lobby', 409, 'Game already started — ask the host to reset to a lobby');
     need(room.players.length < MAX_PLAYERS, 409, `Room is full (${MAX_PLAYERS} players)`);
     need(!room.players.some((p) => p.name.toLowerCase() === name.toLowerCase()), 409, 'Name already taken');
-    const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), locked: false };
+    const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null) };
     room.players.push(p);
     await saveRoom(room);
     return view(room, p.id);
@@ -142,7 +147,6 @@ async function handle(action, b, query) {
       for (const p of room.players) {
         p.hand = deck.splice(0, HAND_SIZE);
         p.board = Array(SLOTS).fill(null);
-        p.locked = false;
       }
       room.phase = 'dealt';
       room.round += 1;
@@ -150,29 +154,46 @@ async function handle(action, b, query) {
     }
 
     case 'place': {
-      need(room.phase === 'dealt' && !me.locked, 409, 'Cannot move cards now');
-      const slot = Number(b.slot);
-      need(Number.isInteger(slot) && slot >= 0 && slot < SLOTS, 400, 'Bad slot');
-      need(me.board[slot] === null, 409, 'Slot occupied');
+      // hand -> slot; if the slot is occupied the occupant returns to the hand
+      need(room.phase === 'dealt', 409, 'No cards dealt');
+      const slot = slotOf(b.slot);
       const i = me.hand.indexOf(b.card);
       need(i >= 0, 400, 'Card not in your hand');
       me.hand.splice(i, 1);
-      me.board[slot] = b.card;
+      if (me.board[slot]) me.hand.push(me.board[slot].c);
+      me.board[slot] = { c: b.card, up: false };
+      break;
+    }
+
+    case 'move': {
+      // slot -> slot (swap if occupied) keeping each card's flip state
+      need(room.phase === 'dealt', 409, 'No cards dealt');
+      const from = slotOf(b.from), to = slotOf(b.to);
+      need(me.board[from], 400, 'Nothing there');
+      [me.board[from], me.board[to]] = [me.board[to], me.board[from]];
       break;
     }
 
     case 'unplace': {
-      need(room.phase === 'dealt' && !me.locked, 409, 'Cannot move cards now');
-      const slot = Number(b.slot);
-      need(Number.isInteger(slot) && slot >= 0 && slot < SLOTS && me.board[slot], 400, 'Nothing there');
-      me.hand.push(me.board[slot]);
+      need(room.phase === 'dealt', 409, 'No cards dealt');
+      const slot = slotOf(b.slot);
+      need(me.board[slot], 400, 'Nothing there');
+      me.hand.push(me.board[slot].c);
       me.board[slot] = null;
       break;
     }
 
-    case 'lock':
+    case 'flip': {
       need(room.phase === 'dealt', 409, 'No cards dealt');
-      me.locked = !!b.locked;
+      const slot = slotOf(b.slot);
+      need(me.board[slot], 400, 'Nothing there');
+      me.board[slot].up = !me.board[slot].up;
+      break;
+    }
+
+    case 'flipAllDown':
+      need(room.phase === 'dealt', 409, 'No cards dealt');
+      for (const s of me.board) if (s) s.up = false;
       break;
 
     case 'leave': {
