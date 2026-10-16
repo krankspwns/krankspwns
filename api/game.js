@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const TTL_SECONDS = 60 * 60 * 12;
-const MAX_PLAYERS = 5;
+const MAX_PLAYERS = 10;
 const HAND_SIZE = 7;
 const ROW_SIZES = [1, 1, 2, 3];
 const SLOTS = 7; // rows of 1, 1, 2, 3
@@ -93,6 +93,7 @@ function view(room, pid) {
     version: room.version,
     phase: room.phase,
     round: room.round,
+    maxPlayers: MAX_PLAYERS,
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -160,7 +161,9 @@ async function handle(action, b, query) {
 
     case 'deal': {
       need(room.hostId === pid, 403, 'Only the host can deal');
-      const deck = shuffle(newDeck());
+      // One deck covers up to 7 players (49 cards); more players add extra decks.
+      const decks = Math.ceil((room.players.length * HAND_SIZE) / 52);
+      const deck = shuffle(Array.from({ length: decks }, newDeck).flat());
       for (const p of room.players) {
         p.hand = deck.splice(0, HAND_SIZE);
         p.board = Array(SLOTS).fill(null);
