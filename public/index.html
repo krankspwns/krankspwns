@@ -5,74 +5,72 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seven Card Table</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg1:#3a0f1e; --bg2:#1a0710; --bg3:#0d0408;
-    --gold:#d4af37; --gold-hi:#f6e27a; --gold-lo:#8a6d1c;
-    --ivory:#fbf6e9; --ink:#1b1410; --red:#b3202a;
-    --glass:rgba(20,6,12,.55); --line:rgba(212,175,55,.35); --green:#7ac98f;
-    --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
-    --display:'Cinzel',Georgia,'Times New Roman',serif;
+    --bg1:#18213b; --bg2:#0e1426; --bg3:#080c18;
+    --gold:#c9a96a; --gold-hi:#e8d3a2; --gold-lo:#8d7442;
+    --ivory:#fafaf7; --ink:#14161f; --red:#c23b4a;
+    --glass:rgba(255,255,255,.045); --line:rgba(255,255,255,.1); --green:#6fcf97;
+    --serif:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   }
   html { background: var(--bg3); }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: var(--serif); font-size:17px; color:#f4ead2; min-height:100vh;
+  body { margin:0; font-family: var(--serif); font-size:15px; color:#f4ead2; min-height:100vh;
     background:
-      radial-gradient(ellipse at 50% -10%, rgba(212,175,55,.18), transparent 55%),
+      radial-gradient(ellipse at 50% -10%, rgba(201,169,106,.14), transparent 55%),
       radial-gradient(circle at 50% 40%, var(--bg1), var(--bg2) 60%, var(--bg3)); background-attachment: fixed; }
   main { max-width: 980px; margin: 0 auto; padding: 20px 16px 40px; }
-  h1 { font-family: var(--display); font-weight:600; font-size: 26px; letter-spacing: 6px; text-transform: uppercase; text-align:center; margin: 6px 0 22px; color: var(--gold-hi);
-    text-shadow: 0 2px 12px rgba(212,175,55,.35); }
-  h1::before, h1::after { content:'♔'; margin: 0 14px; color: var(--gold); font-size: 22px; }
+  h1 { font-weight:600; font-size: 22px; letter-spacing: 6px; text-transform: uppercase; text-align:center; margin: 6px 0 22px; color: var(--gold-hi); }
+  h1::before, h1::after { content:''; display:inline-block; width: 36px; height:1px; background: var(--gold-lo); vertical-align: middle; margin: 0 16px; }
 
-  button { font-family: var(--display); font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight:700;
-    color:#2a1d02; border: 1px solid var(--gold-lo);
-    background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
-    box-shadow: 0 2px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.5); transition: filter .15s, transform .15s; }
-  button:hover { filter: brightness(1.08); transform: translateY(-1px); }
-  button.ghost { background: transparent; color: var(--gold-hi); border: 1px solid var(--gold); box-shadow: none; }
-  button.ghost:hover { background: rgba(212,175,55,.15); }
+  button { font-family: var(--display); font-size: 13px; letter-spacing: .4px; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight:600;
+    color:#1a1407; border: 0; background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+    box-shadow: 0 2px 10px rgba(0,0,0,.35); transition: filter .15s, transform .15s; }
+  button:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  button.ghost { background: rgba(255,255,255,.06); color: #e9ecf5; border: 1px solid var(--line); box-shadow: none; }
+  button.ghost:hover { background: rgba(255,255,255,.12); }
   button:disabled { opacity:.5; cursor: default; }
-  input { font-family: var(--serif); font-size: 18px; padding: 10px 12px; border-radius: 4px; border: 1px solid var(--gold-lo); width: 100%;
-    background: rgba(255,248,225,.95); color: var(--ink); outline: none; }
-  input:focus { box-shadow: 0 0 0 2px var(--gold); }
+  input { font-family: var(--serif); font-size: 16px; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--line); width: 100%;
+    background: rgba(255,255,255,.07); color: #fff; outline: none; }
+  input::placeholder { color: rgba(255,255,255,.45); }
+  input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,169,106,.25); }
   input[type=checkbox] { accent-color: var(--gold); }
 
-  .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px;
-    box-shadow: 0 8px 28px rgba(0,0,0,.45), inset 0 0 0 3px rgba(0,0,0,.25), inset 0 0 0 4px rgba(212,175,55,.12); backdrop-filter: blur(3px); }
+  .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35); backdrop-filter: blur(6px); }
   .lobby { max-width: 400px; margin: 30px auto; display: grid; gap: 12px; padding: 26px; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
   .grow { flex:1; }
-  .err { color:#ff9c8f; min-height: 1.2em; font-style: italic; }
-  .code { font-family: var(--display); font-size: 30px; letter-spacing: 8px; font-weight: 700; color: var(--gold-hi); margin-left: 8px; text-shadow: 0 0 14px rgba(212,175,55,.4); }
-  .name { font-family: var(--display); font-weight: 600; letter-spacing: 1.5px; font-size: 15px; color: var(--gold-hi); margin-bottom: 10px; }
-  .hint { font-size: 15px; font-style: italic; opacity: .75; margin-top: 12px; text-align:center; }
-  .tag { font-family: var(--display); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; background: linear-gradient(180deg,var(--gold-hi),var(--gold)); color:#2a1d02; border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: middle; }
-  label.peek { font-size: 15px; display: inline-flex; gap: 6px; align-items: center; }
+  .err { color:#ff9c8f; min-height: 1.2em; }
+  .code { font-family: var(--display); font-size: 28px; letter-spacing: 6px; font-weight: 700; color: var(--gold-hi); margin-left: 8px; }
+  .name { font-weight: 600; font-size: 15px; color: #fff; margin-bottom: 10px; }
+  .hint { font-size: 13px; opacity: .6; margin-top: 12px; text-align:center; }
+  .tag { font-size: 10px; font-weight:600; letter-spacing: .8px; text-transform: uppercase; background: rgba(201,169,106,.18); color: var(--gold-hi); border: 1px solid var(--gold-lo); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: middle; }
+  label.peek { font-size: 13px; opacity:.85; display: inline-flex; gap: 6px; align-items: center; }
 
   /* ---- cards ---- */
   .card { position: relative; width: 58px; height: 84px; border-radius: 7px; user-select:none; cursor:pointer; overflow: hidden;
-    background: linear-gradient(160deg, #fffdf6, var(--ivory) 60%, #efe5c8); color: var(--ink); border: 1px solid #b9a86a;
-    box-shadow: 0 3px 8px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.7), inset 0 0 0 3px rgba(212,175,55,.35);
-    font-family: var(--display); transition: transform .12s, box-shadow .12s; }
-  .card:hover { box-shadow: 0 6px 14px rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,255,255,.7), inset 0 0 0 3px rgba(212,175,55,.5); }
+    background: var(--ivory); color: var(--ink); border: 1px solid #dcdcd2; border-radius: 9px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.45);
+    font-family: var(--display); transition: transform .12s, box-shadow .12s; border-radius: 9px; }
+  .card:hover { box-shadow: 0 8px 18px rgba(0,0,0,.55); }
   .card.red { color: var(--red); }
   .card .ix { position:absolute; top:5px; left:6px; display:flex; flex-direction:column; align-items:center; font-weight:700; font-size:16px; line-height:1; }
   .card .ix i { font-style: normal; font-size: 15px; margin-top:2px; }
   .card .pip { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size: 34px; padding-top: 14px; padding-left: 8px; opacity:.9; }
-  .card.sel { transform: translateY(-8px); box-shadow: 0 0 0 2px var(--gold), 0 10px 18px rgba(0,0,0,.6); }
+  .card.sel { transform: translateY(-8px); box-shadow: 0 0 0 2px var(--gold), 0 12px 20px rgba(0,0,0,.55); }
   .card.mine { touch-action: none; cursor: grab; }
 
-  /* royal card back: navy/burgundy lattice with a gold frame */
+  /* card back: midnight navy with a fine gold diamond lattice */
   .card.back, .card.down {
     color: transparent; cursor: default; border: 1px solid var(--gold-lo);
     background:
-      radial-gradient(circle at 50% 50%, var(--gold) 0 3px, transparent 4px),
-      repeating-linear-gradient(45deg, rgba(212,175,55,.35) 0 1px, transparent 1px 7px),
-      repeating-linear-gradient(-45deg, rgba(212,175,55,.35) 0 1px, transparent 1px 7px),
-      linear-gradient(160deg, #6d1630, #3b0b1a);
-    box-shadow: 0 3px 8px rgba(0,0,0,.55), inset 0 0 0 3px #3b0b1a, inset 0 0 0 4px var(--gold);
+      repeating-linear-gradient(45deg, rgba(201,169,106,.28) 0 1px, transparent 1px 8px),
+      repeating-linear-gradient(-45deg, rgba(201,169,106,.28) 0 1px, transparent 1px 8px),
+      linear-gradient(160deg, #26345c, #121a33);
+    box-shadow: 0 4px 12px rgba(0,0,0,.45), inset 0 0 0 4px #121a33, inset 0 0 0 5px rgba(201,169,106,.7);
   }
   .card.mine.down { cursor: grab; }
   .card.down .ix, .card.down .pip { opacity: 0; }
@@ -80,10 +78,10 @@
   .card.down.peek { color: #fff; }
   .card.down.peek.red { color: #ff9b94; }
 
-  .slot { width: 58px; height: 84px; border-radius: 7px; display:flex;
-    background: rgba(0,0,0,.28); border: 1px dashed var(--gold); box-shadow: inset 0 2px 8px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.4); }
-  .slot.target { border-style: solid; box-shadow: 0 0 12px rgba(212,175,55,.6), inset 0 0 8px rgba(212,175,55,.25); cursor: pointer; }
-  .slot.over { border-style: solid; border-color: var(--green); background: rgba(122,201,143,.22); box-shadow: 0 0 14px rgba(122,201,143,.5); }
+  .slot { width: 58px; height: 84px; border-radius: 9px; display:flex;
+    background: rgba(255,255,255,.04); border: 1px dashed rgba(201,169,106,.55); }
+  .slot.target { border-style: solid; border-color: var(--gold); background: rgba(201,169,106,.12); box-shadow: 0 0 14px rgba(201,169,106,.35); cursor: pointer; }
+  .slot.over { border-style: solid; border-color: var(--green); background: rgba(111,207,151,.18); box-shadow: 0 0 14px rgba(111,207,151,.4); }
   .slot .card { width:100%; height:100%; margin:0; }
   .panel.over { outline: 2px dashed var(--green); outline-offset: 4px; }
 
@@ -95,7 +93,7 @@
 
   .others { display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:16px; }
   .others .panel { margin-bottom: 0; padding: 12px; }
-  .others .card, .others .slot { width: 36px; height: 52px; border-radius: 4px; }
+  .others .card, .others .slot { width: 36px; height: 52px; border-radius: 6px; }
   .others .card .ix { top:3px; left:3px; font-size: 11px; } .others .card .ix i { font-size: 10px; margin-top: 1px; }
   .others .card .pip { font-size: 20px; padding-top: 10px; padding-left: 4px; }
   .others .board, .others .board .r { gap: 5px; }
@@ -107,7 +105,7 @@
 </head>
 <body>
 <main>
-  <h1>Royal Seven</h1>
+  <h1>Seven Card Table</h1>
   <div id="app"></div>
 </main>
 <script>
