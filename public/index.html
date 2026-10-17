@@ -218,7 +218,7 @@
   .step b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; margin-bottom: 10px; }
   .step div { font-size: 14px; line-height: 1.45; opacity: .85; }
   .step strong { display: block; font-size: 15px; margin-bottom: 2px; opacity: 1; }
-  @media (max-width: 800px) { .hero { display: contents; } .landing > .joincard { order: 2; } .hero .chips { order: 3; margin: 0; } .hero .fan { order: 4; } .landing { grid-template-columns: minmax(0,1fr); gap: 22px; } .fan { margin: -6px auto 22px; height: 118px; } .chips { margin-bottom: 14px; } .fan .card { width: 76px; height: 108px; margin-left: -38px; } .fan .card .pip { line-height: 1; font-size: 30px; } .hero { text-align: center; } .hero p { margin-left: auto; margin-right: auto; } .chips { justify-content: center; } .steps { margin-top: 26px; } }
+  @media (max-width: 800px) { .hero { display: contents; } .landing > .joincard { order: 2; } .hero .chips { order: 3; margin: 0; } .hero .fan { order: 1; } .landing { grid-template-columns: minmax(0,1fr); gap: 22px; } .fan { margin: -6px auto 22px; height: 118px; } .chips { margin-bottom: 14px; } .fan .card { width: 76px; height: 108px; margin-left: -38px; } .fan .card .pip { line-height: 1; font-size: 30px; } .hero { text-align: center; } .hero p { margin-left: auto; margin-right: auto; } .chips { justify-content: center; } .steps { margin-top: 26px; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
   button.unreadybtn { background: linear-gradient(180deg, #ffb25e, #f0801f); color: #2b1300; box-shadow: 0 2px 10px rgba(240,128,31,.35); }
