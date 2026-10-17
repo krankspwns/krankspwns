@@ -20,7 +20,7 @@ assert.deepEqual(ev(1, [['2S'], ['2H'], ['5D']]), { losers: 'p2', penalty: 4 }, 
 assert.deepEqual(ev(1, [['3S'], ['AH'], ['AD']]), { losers: 'p1,p2', penalty: 1 }, 'Ace is the biggest; ties both lose');
 
 // Row 3: closest to 10.5 (J/Q/K = 0.5, A = 1); over 10.5 loses, else the lowest total loses
-assert.deepEqual(ev(2, [['10S', 'QH'], ['AD', 'JC'], ['KS', 'KD']]), { losers: 'p2', penalty: 1 }, 'nobody over: lowest (1.0) loses');
+assert.deepEqual(ev(2, [['10S', 'QH'], ['AD', 'JC'], ['KS', 'KD']]), { losers: 'p2', penalty: 2 }, 'nobody over: lowest (1.0) loses; one exact 10.5 makes it x2');
 assert.deepEqual(ev(2, [['10S', '3H'], ['9D', 'QC'], ['8S', '8D']]), { losers: 'p0,p2', penalty: 1 }, '13 and 16 are over 10.5: both lose');
 assert.deepEqual(ev(2, [['5S', '5H'], ['6D', '4C'], ['AS', 'KD']]), { losers: 'p2', penalty: 1 }, '10, 10 and 1.5');
 assert.deepEqual(ev(2, [['2S', '3H'], ['3D', '2C']]), TIE, 'equal totals: everyone ties, no penalty');
@@ -67,4 +67,13 @@ assert.deepEqual(ev(3, [['2S', '4H', '6D'], ['3S', '8H', 'JD']]), TIE, 'row 4: b
 assert.deepEqual(ev(3, [['7S', '7H', '7D'], ['9S', '9H', '9D']]), TIE, 'row 4: both triples');
 assert.equal(evaluateRow(0, mk([['KS'], ['KH']])).tie, true);
 assert.equal(evaluateRow(0, mk([['KS'], ['3H']])).tie, false);
+// row 3: every exact 10.5 doubles up the penalty (1 -> 2, 2 players -> 4, 3 players -> 6)
+assert.deepEqual(ev(2, [['10S', 'QH'], ['9D', 'AC'], ['5S', '3H']]), { losers: 'p2', penalty: 2 }, 'one 10.5: x2');
+assert.deepEqual(ev(2, [['10S', 'QH'], ['10D', 'KC'], ['5S', '3H']]), { losers: 'p2', penalty: 4 }, 'two 10.5s: x4');
+assert.deepEqual(ev(2, [['10S', 'QH'], ['10D', 'KC'], ['9H', 'KS'], ['3S', '3H']]), { losers: 'p3', penalty: 4 }, 'two 10.5s, others lower: x4');
+assert.deepEqual(ev(2, [['10S', 'KH'], ['10D', 'QC'], ['AS', 'JC'], ['JD', 'AH']]), { losers: 'p2,p3', penalty: 4 }, 'two 10.5s; the two equal lowest lose together');
+assert.deepEqual(ev(2, [['10S', 'QH'], ['10D', '9C'], ['5S', '3H']]), { losers: 'p1', penalty: 2 }, 'a 10.5 still doubles the penalty when the loser is a bust (19)');
+assert.deepEqual(ev(2, [['10S', 'QH'], ['9D', '3C']]), { losers: 'p1', penalty: 2 }, 'bust 12 loses to a 10.5: x2');
+assert.deepEqual(ev(2, [['5S', '5H'], ['6D', '4C'], ['AS', 'KD']]), { losers: 'p2', penalty: 1 }, 'no exact 10.5 anywhere: penalty stays 1');
+assert.deepEqual(ev(2, [['10S', 'QH'], ['10D', 'KC']]), TIE, 'everyone on 10.5: still a tie, no penalty');
 console.log('rules ok');

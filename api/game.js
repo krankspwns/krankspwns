@@ -130,6 +130,8 @@ function evaluateRow(row, players) {
     entries.forEach((e, i) => { e.total = v[i] / 2; e.bust = v[i] > 21; });
     const bust = entries.filter((e) => e.bust);
     losers = bust.length ? bust : pick(v, Math.min);
+    const perfect = entries.filter((e) => e.total === 10.5).length;   // every exact 10.5 doubles up the penalty, like Aces in row 1
+    if (perfect) penalty = perfect * 2;
   } else {                    // pattern: only the weakest hand loses; strong hands raise the penalty
     const h = entries.map((e) => handOf(e.cards));
     entries.forEach((e, i) => (e.hand = h[i]));
