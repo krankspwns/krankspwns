@@ -144,10 +144,15 @@ async function handle(action, b, query) {
   if (action === 'join') {
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
-    need(room.phase === 'lobby', 409, 'Game already started — ask the host to reset to a lobby');
     need(room.players.length < MAX_PLAYERS, 409, `Room is full (${MAX_PLAYERS} players)`);
     need(!room.players.some((p) => p.name.toLowerCase() === name.toLowerCase()), 409, 'Name already taken');
     const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
+    if (room.phase === 'dealt') {
+      // Joining mid-round: deal 7 cards from what's left (top up with a fresh deck if short).
+      if (!room.deck || room.deck.length < HAND_SIZE) room.deck = shuffle((room.deck || []).concat(newDeck()));
+      p.hand = room.deck.splice(0, HAND_SIZE);
+      room.allReady = null;
+    }
     room.players.push(p);
     await saveRoom(room);
     return view(room, p.id);
@@ -171,6 +176,7 @@ async function handle(action, b, query) {
         p.board = Array(SLOTS).fill(null);
         p.ready = false;
       }
+      room.deck = deck; // leftovers, for players who join mid-round
       room.phase = 'dealt';
       room.allReady = null;
       room.round += 1;

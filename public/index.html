@@ -145,7 +145,7 @@
   .tag.ok { animation: glow 2s infinite; }
   @keyframes readypulse { 0%,100% { box-shadow: 0 2px 10px rgba(0,0,0,.35), 0 0 0 0 rgba(111,207,151,.6); } 50% { box-shadow: 0 2px 10px rgba(0,0,0,.35), 0 0 0 10px rgba(111,207,151,0); } }
   button.readybtn:not(:disabled) { animation: readypulse 1.6s infinite; }
-  button.readybtn:disabled { background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); box-shadow: none; }
+  button.readybtn:disabled { box-shadow: none; animation: none; opacity: 1; cursor: default; }
   @keyframes shimmer { to { background-position: 200% center; } }
   .bigcode, .code { background: linear-gradient(90deg, var(--gold-lo), var(--gold-hi), var(--gold-lo), var(--gold-hi)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 5s linear infinite; text-shadow: none; }
   @keyframes bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -10px; } }
@@ -206,6 +206,13 @@
   .readystrip { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; margin: 4px 0 10px; border-radius: 12px; background: rgba(111,207,151,.18); border: 1px solid rgba(111,207,151,.55); color: #b9f0cd; font-weight: 700; text-align: center; animation: rise .4s ease-out backwards; }
   .readystrip .tick { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #52b97c; color: #06210f; font-size: 15px; flex: none; }
   .readystrip small { display: block; font-weight: 500; opacity: .8; font-size: 12px; }
+
+  button.readybtn:disabled { --p: 0%; color: #bfe3ff; border: 1px solid rgba(124,196,255,.6);
+    background: linear-gradient(90deg, rgba(124,196,255,.45) var(--p), rgba(124,196,255,.1) var(--p)); transition: background .4s; }
+  .pill.wait { background: rgba(124,196,255,.14); color: #a9d8ff; border: 1px solid rgba(124,196,255,.45); }
+  .toast { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 70; padding: 10px 18px; border-radius: 99px; font-weight: 600; font-size: 14px;
+    background: rgba(20,26,46,.95); border: 1px solid var(--gold); color: var(--gold-hi); box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: toast 3.2s ease forwards; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+  @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -20px); } 10%, 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
   @media (max-width: 600px) {
     main { padding: 14px 12px 32px; }
     .waitroom { padding: 22px 14px 20px; gap: 14px; }
@@ -520,6 +527,8 @@ function renderGame() {
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, 'Room'), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'grow' }, `${st.players.length}/${st.maxPlayers} players · `, el('b', { style: 'color:#8fe0ae' }, `${readyCount}/${st.players.length} ready`), ` · round ${st.round}`),
     el('button', { class: 'ghost', onclick: leave }, 'Leave'));
+  const invite = el('button', { class: 'ghost', title: 'Copy a link so friends can join mid-game', onclick: () => copyText(`${location.origin}/?room=${st.code}`, invite) }, 'Invite');
+  head.insertBefore(invite, head.lastChild);
   if (st.isHost) head.insertBefore(el('button', { onclick: () => act('deal') }, 'Reset, shuffle & deal'), head.lastChild);
   app.append(head);
 
@@ -527,7 +536,7 @@ function renderGame() {
   const total = me.board.length;
   const readyBtn = me.ready
     ? el('button', { class: 'unreadybtn', onclick: () => act('ready', { ready: false }) }, 'Unready (move cards)')
-    : el('button', { class: 'readybtn', disabled: placed < total, onclick: () => act('ready', { ready: true }) },
+    : el('button', { class: 'readybtn', disabled: placed < total, style: `--p:${(placed / total) * 100}%`, onclick: () => act('ready', { ready: true }) },
         placed < total ? `Place all cards (${placed}/${total})` : "I'm ready");
 
   app.append(el('div', panel(1, me.ready ? 'is-ready' : ''),
@@ -638,7 +647,17 @@ function face(view, p, s) {
   return visible ? s.c : '#';
 }
 
+function toast(msg) {
+  const t = el('div', { class: 'toast' }, msg);
+  document.body.append(t);
+  setTimeout(() => t.remove(), 3300);
+}
+
 function diffFx(prev, next) {
+  if (prev.phase === 'dealt' && next.phase === 'dealt') {
+    next.players.filter((p) => !prev.players.some((x) => x.id === p.id)).forEach((p) => toast(`${p.name} joined the table`));
+    prev.players.filter((p) => !next.players.some((x) => x.id === p.id)).forEach((p) => toast(`${p.name} left the table`));
+  }
   for (const p of next.players) {
     const pp = prev.players.find((x) => x.id === p.id);
     if (!pp) { newSeats.add(p.id); continue; }

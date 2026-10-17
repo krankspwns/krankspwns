@@ -68,5 +68,13 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'join', code: big.code, name: 'Q10' })).s, 409, '11th player rejected');
   const bv = (await post({ action: 'deal', code: big.code, pid: big.meId })).j;
   assert.equal(bv.players.length, 10); assert.equal(bv.maxPlayers, 10); assert.equal(bv.hand.length, 7);
+  // late joiners: dealt 7 cards mid-round, even when the deck is nearly used up
+  const late = (await post({ action: 'create', name: 'L0' })).j;
+  for (let i = 1; i < 7; i++) await post({ action: 'join', code: late.code, name: 'L' + i });
+  await post({ action: 'deal', code: late.code, pid: late.meId });
+  const lj = (await post({ action: 'join', code: late.code, name: 'Late8' })).j;
+  assert.equal(lj.phase, 'dealt'); assert.equal(lj.hand.length, 7); assert.equal(lj.players.length, 8);
+  const lj2 = (await post({ action: 'join', code: late.code, name: 'Late9' })).j;
+  assert.equal(lj2.hand.length, 7);
   console.log('all ok');
 })().catch(e => { console.error(e); process.exit(1); });
