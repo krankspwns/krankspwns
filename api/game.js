@@ -135,7 +135,8 @@ function evaluateRow(row, players) {
     entries.forEach((e, i) => (e.hand = h[i]));
     const weakest = Math.min(...h.map((x) => HAND_ORDER.indexOf(x)));
     losers = entries.filter((e, i) => HAND_ORDER.indexOf(h[i]) === weakest);
-    const bonus = h.reduce((a, x) => a + (HAND_PENALTY[x] || 0), 0);
+    // strong hands held by the players who did NOT lose raise the penalty (the loser's own hand never counts)
+    const bonus = entries.reduce((a, e, i) => a + (losers.includes(e) ? 0 : HAND_PENALTY[h[i]] || 0), 0);
     if (bonus) penalty = bonus;
   }
   // If everybody would lose, nobody is behind anybody else: a tie, no penalty for anyone.
