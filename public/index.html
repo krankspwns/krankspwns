@@ -424,6 +424,19 @@
   .resfx.lose { background: rgba(28,4,6,.92); }
   .resbox.hasboard { width: min(92vw, 580px); padding: 16px 18px 18px; } .resboard { gap: 8px; margin-top: 12px; } .resboard .tile { animation: none; padding: 8px 6px; } .resboard .tcard { margin: 0 7px; } .resbox.hasboard { background: rgb(16,20,38); } .resbox.hasboard.youlose { background: rgb(38,6,9); }
   .resbox.hasboard .resnames { font-size: clamp(26px, 8vw, 44px); } .resbox.hasboard .respen.big { transform: scale(.82); margin: 2px auto 0; }
+  /* animal avatars */
+  .av { display: inline-block; flex: none; border-radius: 50%; overflow: hidden; line-height: 0; background: none !important; box-shadow: 0 0 0 2px rgba(255,255,255,.14); } .av svg { display: block; }
+  .avedit { position: relative; padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 50%; cursor: pointer; line-height: 0; flex: none; } .avedit:hover { transform: none; filter: brightness(1.1); }
+  .avedit i { position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: #1a1407; border: 2px solid #1b2038; font-style: normal; } .avedit i .ic { stroke-width: 2.6; color: #1a1407; }
+  .namerow { display: flex; align-items: center; gap: 10px; } .namerow input { flex: 1; min-width: 0; }
+  .avbox { width: min(92vw, 380px); padding: 18px; border-radius: 20px; background: rgb(24,30,54); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: boxpop .3s ease backwards; } .avtitle { font-weight: 700; margin-bottom: 12px; text-align: center; }
+  .avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center; } .avpick { padding: 4px; border-radius: 50%; border: 2px solid transparent; background: none; box-shadow: none; line-height: 0; } .avpick:hover { transform: scale(1.06); filter: none; } .avpick.on { border-color: var(--gold-hi); background: rgba(201,169,106,.25); }
+  .avatar.av-empty { position: relative; display: grid; place-items: center; background: none; border: 0; color: var(--gold-lo); }
+  .av-empty .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px dashed var(--gold-lo); animation: avspin 8s linear infinite; } .av-empty .ic { stroke-width: 2.4; animation: avpulse 1.8s ease-in-out infinite; }
+  .wdots { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; } .wdots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: wdot 1.2s ease-in-out infinite; } .wdots i:nth-child(2) { animation-delay: .2s; } .wdots i:nth-child(3) { animation-delay: .4s; }
+  .seat.empty { animation: seatglow 2.4s ease-in-out infinite; } .seat.empty:nth-child(odd) { animation-delay: .6s; }
+  .tname .av, .hav .av { box-shadow: none; } .hav { display: grid; }
+  @keyframes avspin { to { transform: rotate(360deg); } } @keyframes avpulse { 50% { transform: scale(1.25); opacity: .6; } } @keyframes wdot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } } @keyframes seatglow { 50% { opacity: .85; } }
   /* final board */
   .final { --cw: 36px; }
   .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
@@ -596,7 +609,7 @@
     .bigcode { font-size: clamp(52px, 20vw, 96px); }
     .seats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .seat { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'av name' 'av tag'; column-gap: 10px; row-gap: 2px; align-items: center; justify-items: start; padding: 8px 10px; text-align: left; border-radius: 12px; }
-    .seat .avatar { grid-area: av; width: 36px; height: 36px; font-size: 16px; }
+    .seat .avatar, .seat .avedit { grid-area: av; width: 36px !important; height: 36px !important; font-size: 16px; } .seat .avedit .avatar { width: 36px !important; height: 36px !important; }
     .seat .sname { grid-area: name; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .seat .tag { grid-area: tag; margin-left: 0; font-size: 9px; padding: 1px 7px; }
     .others { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -651,7 +664,7 @@
     .bigcode { font-size: clamp(40px, 22vh, 76px); padding-left: 0; letter-spacing: .1em; } .waitroom .kicker { font-size: 11px; } .waitroom .count { font-size: 13px; }
     button.big { padding: 12px 22px; font-size: 15px; } .waiting { padding: 6px 0; font-size: 15px; }
     .seat { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'av name' 'av tag'; column-gap: 10px; row-gap: 2px; align-items: center; justify-items: start; padding: 6px 10px; text-align: left; border-radius: 12px; }
-    .seat .avatar { grid-area: av; width: 34px; height: 34px; font-size: 15px; } .seat .sname { grid-area: name; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seat .avatar, .seat .avedit { grid-area: av; width: 34px !important; height: 34px !important; font-size: 15px; } .seat .avedit .avatar { width: 34px !important; height: 34px !important; } .seat .sname { grid-area: name; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .seat .tag { grid-area: tag; margin-left: 0; font-size: 9px; padding: 1px 7px; }
     /* stage: row info on the left, tiles on the right */
     #app[data-screen=stage] .stage { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 8px 14px; align-items: start; padding: 10px 14px; }
@@ -730,6 +743,7 @@ const ICONS = {
   music: '<path d="M9 17.5V6.2l10-2v11.3"/><circle cx="6.5" cy="17.6" r="2.5" fill="currentColor" fill-opacity=".35"/><circle cx="16.5" cy="15.6" r="2.5" fill="currentColor" fill-opacity=".35"/>',
   trophy: '<path d="M7.5 4h9v5.2a4.5 4.5 0 01-9 0z" fill="currentColor" fill-opacity=".32"/><path d="M7.5 5.5H4.2c0 3 1.3 4.6 3.5 4.9M16.5 5.5h3.3c0 3-1.3 4.6-3.5 4.9M12 13.7V17M8.5 20h7M9.5 17h5v3h-5z"/>',
   book: '<path d="M12 6.6C10.2 5.1 7.5 4.6 3.8 4.9v13.3c3.7-.3 6.4.2 8.2 1.7 1.8-1.5 4.5-2 8.2-1.7V4.9c-3.7-.3-6.4.2-8.2 1.7z" fill="currentColor" fill-opacity=".25"/><path d="M12 6.6v13.3M6.4 8.7c1.2 0 2.3.1 3.2.4M6.4 12c1.2 0 2.3.1 3.2.4M17.6 8.7c-1.2 0-2.3.1-3.2.4M17.6 12c-1.2 0-2.3.1-3.2.4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
   swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
 };
 function icon(name, size = 18, cls = '') {
@@ -936,6 +950,49 @@ function updateSndBtn() {
   });
 }
 
+// 48x48 animal faces: flat shapes on a coloured disc
+const eyes = (y = 26, dx = 6, r = 1.9, c = '#2a2118') => `<circle cx="${24 - dx}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${24 + dx}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${24 - dx + .7}" cy="${y - .7}" r=".6" fill="#fff"/><circle cx="${24 + dx + .7}" cy="${y - .7}" r=".6" fill="#fff"/>`;
+const AVATARS = {
+  cat: ['#ffcf8a', `<path d="M10.5 22L11 7.5l10 6.5zM37.5 22L37 7.5 27 14z" fill="#e8923c"/><path d="M13 19l.4-7 5 3.4zM35 19l-.4-7-5 3.4z" fill="#ffb6bf"/><ellipse cx="24" cy="27.5" rx="14.5" ry="12.5" fill="#f2a65a"/><path d="M24 15.5v4M19.5 16.4l1.2 3.4M28.5 16.4l-1.2 3.4" stroke="#c9722a" stroke-width="1.6" stroke-linecap="round"/>${eyes(26.5, 6.2)}<path d="M22.2 30.6h3.6L24 32.6z" fill="#e0687c"/><path d="M24 32.6v1.2M21.4 34.6q2.6 1.7 5.2 0" fill="none" stroke="#7a4a1d" stroke-width="1.1" stroke-linecap="round"/><path d="M8 29.5l7-1.2M8.5 33l6.5-2M40 29.5l-7-1.2M39.5 33l-6.5-2" stroke="#fff6e6" stroke-width="1" stroke-linecap="round"/>`],
+  dog: ['#cfe3ff', `<ellipse cx="10.5" cy="25" rx="5.2" ry="10" fill="#7a4a24" transform="rotate(12 10.5 25)"/><ellipse cx="37.5" cy="25" rx="5.2" ry="10" fill="#7a4a24" transform="rotate(-12 37.5 25)"/><ellipse cx="24" cy="26.5" rx="13.5" ry="13" fill="#e2b078"/><ellipse cx="24" cy="31.5" rx="8" ry="6.2" fill="#fbe9cf"/>${eyes(24.5, 6.4)}<ellipse cx="24" cy="29" rx="3.4" ry="2.4" fill="#2a2118"/><path d="M24 31.2v2.2M20.6 33.4q3.4 2.6 6.8 0" fill="none" stroke="#2a2118" stroke-width="1.2" stroke-linecap="round"/><path d="M22.2 35.2q1.8 3 3.6 0z" fill="#f06b85"/>`],
+  fox: ['#ffe0c2', `<path d="M8.5 25L8 6.5l12 8.5zM39.5 25L40 6.5 28 15z" fill="#e8631c"/><path d="M11.5 20l.2-7 5 3.6zM36.5 20l-.2-7-5 3.6z" fill="#2a2118"/><path d="M9.5 24.5C9.5 16.5 16 13.5 24 13.5s14.5 3 14.5 11c0 8-6.5 14-14.5 14S9.5 32.5 9.5 24.5z" fill="#ef7a2e"/><path d="M9.8 28C14 28 19 31 24 38.5 29 31 34 28 38.2 28 36 34.5 30.5 38.5 24 38.5S12 34.5 9.8 28z" fill="#fff4e6"/>${eyes(25, 6.2)}<ellipse cx="24" cy="33.2" rx="2.6" ry="1.9" fill="#2a2118"/>`],
+  bear: ['#e8d3bd', `<circle cx="11.5" cy="14" r="5.8" fill="#7b4f2e"/><circle cx="36.5" cy="14" r="5.8" fill="#7b4f2e"/><circle cx="11.5" cy="14" r="2.8" fill="#d9a17a"/><circle cx="36.5" cy="14" r="2.8" fill="#d9a17a"/><ellipse cx="24" cy="27" rx="14.5" ry="13.5" fill="#94643c"/><ellipse cx="24" cy="31.5" rx="7.2" ry="5.6" fill="#ddb892"/>${eyes(24.5, 6.6)}<ellipse cx="24" cy="29.5" rx="2.9" ry="2.1" fill="#2a2118"/><path d="M24 31.6v1.6M21.4 33.6q2.6 2 5.2 0" fill="none" stroke="#2a2118" stroke-width="1.1" stroke-linecap="round"/>`],
+  panda: ['#d6f0e0', `<circle cx="11.5" cy="14" r="5.8" fill="#2b2b33"/><circle cx="36.5" cy="14" r="5.8" fill="#2b2b33"/><ellipse cx="24" cy="27" rx="14.5" ry="13.5" fill="#fbfbfb"/><ellipse cx="17.2" cy="25" rx="4.4" ry="5.6" fill="#2b2b33" transform="rotate(25 17.2 25)"/><ellipse cx="30.8" cy="25" rx="4.4" ry="5.6" fill="#2b2b33" transform="rotate(-25 30.8 25)"/><circle cx="17.6" cy="25" r="1.7" fill="#fff"/><circle cx="30.4" cy="25" r="1.7" fill="#fff"/><circle cx="17.8" cy="25.2" r=".8" fill="#2b2b33"/><circle cx="30.2" cy="25.2" r=".8" fill="#2b2b33"/><ellipse cx="24" cy="31" rx="2.8" ry="2" fill="#2b2b33"/><path d="M24 33v1.4M21.6 35q2.4 1.8 4.8 0" fill="none" stroke="#2b2b33" stroke-width="1.1" stroke-linecap="round"/>`],
+  rabbit: ['#ffe3ee', `<ellipse cx="17.5" cy="11" rx="4" ry="10" fill="#f4ece6" transform="rotate(-8 17.5 11)"/><ellipse cx="30.5" cy="11" rx="4" ry="10" fill="#f4ece6" transform="rotate(8 30.5 11)"/><ellipse cx="17.5" cy="11.5" rx="2" ry="7" fill="#ffb3c6" transform="rotate(-8 17.5 11.5)"/><ellipse cx="30.5" cy="11.5" rx="2" ry="7" fill="#ffb3c6" transform="rotate(8 30.5 11.5)"/><ellipse cx="24" cy="29" rx="13.5" ry="12" fill="#f9f3ee"/>${eyes(27.5, 6)}<ellipse cx="14.5" cy="31" rx="2.6" ry="1.8" fill="#ffc2cf" opacity=".8"/><ellipse cx="33.5" cy="31" rx="2.6" ry="1.8" fill="#ffc2cf" opacity=".8"/><path d="M22.4 30.6h3.2L24 32.4z" fill="#f0708a"/><path d="M24 32.4v1.4M21.6 34.4q2.4 1.6 4.8 0" fill="none" stroke="#9a6b73" stroke-width="1.1" stroke-linecap="round"/>`],
+  frog: ['#d5f3c8', `<ellipse cx="24" cy="29" rx="16" ry="12.5" fill="#5fbf63"/><circle cx="15" cy="17" r="6.6" fill="#5fbf63"/><circle cx="33" cy="17" r="6.6" fill="#5fbf63"/><circle cx="15" cy="17" r="4.6" fill="#fff"/><circle cx="33" cy="17" r="4.6" fill="#fff"/><circle cx="15.6" cy="17.4" r="2.4" fill="#2a2118"/><circle cx="32.4" cy="17.4" r="2.4" fill="#2a2118"/><circle cx="16.3" cy="16.6" r=".8" fill="#fff"/><circle cx="33.1" cy="16.6" r=".8" fill="#fff"/><path d="M13 31.5q11 8 22 0" fill="none" stroke="#2e7a3a" stroke-width="1.8" stroke-linecap="round"/><circle cx="21.5" cy="26.5" r=".9" fill="#2e7a3a"/><circle cx="26.5" cy="26.5" r=".9" fill="#2e7a3a"/><ellipse cx="13" cy="30" rx="2.4" ry="1.6" fill="#ff9aa8" opacity=".6"/><ellipse cx="35" cy="30" rx="2.4" ry="1.6" fill="#ff9aa8" opacity=".6"/>`],
+  lion: ['#ffe9a8', `<circle cx="24" cy="26" r="19" fill="#c9761e"/><circle cx="24" cy="26" r="15" fill="#e19a36" opacity=".6"/><circle cx="12.5" cy="15" r="4.2" fill="#f2c46d"/><circle cx="35.5" cy="15" r="4.2" fill="#f2c46d"/><ellipse cx="24" cy="27" rx="11.6" ry="11.4" fill="#f6cf7a"/><ellipse cx="24" cy="31.6" rx="6" ry="4.6" fill="#fff0cf"/>${eyes(25, 5.4)}<path d="M22 29h4l-2 2.4z" fill="#8a4a1d"/><path d="M24 31.4v1.4M21.6 33.4q2.4 1.8 4.8 0" fill="none" stroke="#8a4a1d" stroke-width="1.1" stroke-linecap="round"/>`],
+  pig: ['#ffd9e2', `<path d="M10.5 20.5l-1-11 10 5zM37.5 20.5l1-11-10 5z" fill="#f08aa4"/><ellipse cx="24" cy="27" rx="14.5" ry="13" fill="#f9aabd"/>${eyes(23.5, 6.8)}<ellipse cx="24" cy="31" rx="6.6" ry="4.8" fill="#f27f9f"/><ellipse cx="21.7" cy="31" rx="1.3" ry="1.8" fill="#a9455f"/><ellipse cx="26.3" cy="31" rx="1.3" ry="1.8" fill="#a9455f"/><ellipse cx="13" cy="29" rx="2.4" ry="1.7" fill="#ff7f9d" opacity=".5"/><ellipse cx="35" cy="29" rx="2.4" ry="1.7" fill="#ff7f9d" opacity=".5"/>`],
+  koala: ['#dde7f3', `<circle cx="9.5" cy="17" r="7.4" fill="#9aa4b0"/><circle cx="38.5" cy="17" r="7.4" fill="#9aa4b0"/><circle cx="9.5" cy="17" r="4" fill="#f1f3f6"/><circle cx="38.5" cy="17" r="4" fill="#f1f3f6"/><ellipse cx="24" cy="27.5" rx="13.5" ry="13" fill="#aab3be"/>${eyes(25, 6.4)}<ellipse cx="24" cy="29.6" rx="4.2" ry="5.4" fill="#3b3f48"/><ellipse cx="22.8" cy="27.6" rx="1.1" ry="1.5" fill="#6a707c"/><path d="M21.5 36q2.5 1.6 5 0" fill="none" stroke="#3b3f48" stroke-width="1.1" stroke-linecap="round"/>`],
+  owl: ['#e3d6f7', `<path d="M11 19L9 8l10 5zM37 19l2-11-10 5z" fill="#6b4a33"/><ellipse cx="24" cy="27.5" rx="14.5" ry="14" fill="#8d6648"/><ellipse cx="24" cy="32" rx="8.4" ry="7" fill="#d9bf9b"/><circle cx="17" cy="22.5" r="6.7" fill="#f6ead0"/><circle cx="31" cy="22.5" r="6.7" fill="#f6ead0"/><circle cx="17" cy="22.5" r="4.2" fill="#f0b73a"/><circle cx="31" cy="22.5" r="4.2" fill="#f0b73a"/><circle cx="17" cy="22.5" r="2.4" fill="#2a2118"/><circle cx="31" cy="22.5" r="2.4" fill="#2a2118"/><circle cx="17.8" cy="21.7" r=".8" fill="#fff"/><circle cx="31.8" cy="21.7" r=".8" fill="#fff"/><path d="M21.8 27h4.4L24 31.4z" fill="#ee8a2b"/>`],
+  tiger: ['#ffe3b8', `<circle cx="11.5" cy="14.5" r="5.4" fill="#ee9a2a"/><circle cx="36.5" cy="14.5" r="5.4" fill="#ee9a2a"/><circle cx="11.5" cy="14.5" r="2.4" fill="#fff1d6"/><circle cx="36.5" cy="14.5" r="2.4" fill="#fff1d6"/><ellipse cx="24" cy="27" rx="14.5" ry="13.2" fill="#f3a437"/><path d="M24 14.5v5.2M18.6 15.6l1.4 4.4M29.4 15.6L28 20M10.4 24l4.4 1M37.6 24l-4.4 1M11 30l4.2-.6M37 30l-4.2-.6" stroke="#3a2610" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="24" cy="32" rx="7.4" ry="5.4" fill="#fff4e0"/>${eyes(25, 6)}<path d="M22 29.4h4l-2 2.2z" fill="#3a2610"/><path d="M24 31.6v1.4M21.6 33.6q2.4 1.8 4.8 0" fill="none" stroke="#3a2610" stroke-width="1.1" stroke-linecap="round"/>`],
+};
+
+const AVATAR_KEYS = Object.keys(AVATARS);
+const avBg = (k) => (AVATARS[k] || AVATARS.cat)[0];
+function avatarEl(key, size = 40, cls = '') {
+  const [bg, body] = AVATARS[key] || AVATARS.cat;
+  const w = el('span', { class: 'av avatar ' + cls });
+  w.style.width = w.style.height = size + 'px';
+  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/>${body}</svg>`;
+  return w;
+}
+const avOf = (id) => (st && st.players.find((q) => q.id === id) || {}).avatar;
+let formAvatar = (() => { try { const a = localStorage.getItem('sct-av'); if (AVATARS[a]) return a; } catch {} return AVATAR_KEYS[Math.floor(Math.random() * AVATAR_KEYS.length)]; })();
+
+// a small picker: tap an animal to choose it
+function openAvatarPicker(current, onPick) {
+  document.querySelector('.av-ov')?.remove();
+  const close = () => { ov.remove(); if (!document.querySelector('.guide-ov')) document.body.classList.remove('noscroll'); };
+  const grid = el('div', { class: 'avgrid' }, ...AVATAR_KEYS.map((k) => {
+    const b = el('button', { type: 'button', class: 'avpick' + (k === current ? ' on' : ''), 'aria-label': k, onclick: () => { close(); onPick(k); } }, avatarEl(k, 64));
+    return b;
+  }));
+  const ov = el('div', { class: 'guide-ov av-ov', onclick: (e) => { if (e.target === ov) close(); } },
+    el('div', { class: 'avbox', role: 'dialog', 'aria-modal': 'true' }, el('div', { class: 'avtitle' }, t('pickAnimal')), grid));
+  document.body.append(ov);
+  document.body.classList.add('noscroll');
+}
+
 // ---- translations (English / 简体中文) ----
 const I18N = {
   en: {
@@ -950,7 +1007,7 @@ const I18N = {
     s4t: 'Reveal', s4d: 'Flip cards face up when you’re ready to show the table.',
     copyCode: 'Copy code', copyLink: 'Copy invite link', copied: 'Copied ✓',
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
-    host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting for player…',
+    host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
     waitingHost: 'Waiting for the host to deal…', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
@@ -1021,7 +1078,7 @@ const I18N = {
     s4t: '揭晓', s4d: '准备好后翻开牌，向大家展示。',
     copyCode: '复制代码', copyLink: '复制邀请链接', copied: '已复制 ✓',
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
-    host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待加入…',
+    host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
     waitingHost: '等待房主发牌…', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
@@ -1092,7 +1149,7 @@ const I18N = {
     s4t: '揭曉', s4d: '準備好後翻開牌，向大家展示。',
     copyCode: '複製代碼', copyLink: '複製邀請連結', copied: '已複製 ✓',
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
-    host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待加入…',
+    host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
     waitingHost: '等待房主發牌…', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
@@ -1432,12 +1489,14 @@ function renderWaitingRoom() {
     const pop = p && newSeats.has(p.id) ? ' fx-pop' : '';
     seats.append(p
       ? el('div', { class: 'seat' + (p.id === st.meId ? ' me' : '') + pop },
-          el('div', { class: 'avatar' }, p.name.slice(0, 1).toUpperCase()),
+          p.id === st.meId
+            ? el('button', { type: 'button', class: 'avedit', title: t('changeAvatar'), onclick: () => openAvatarPicker(p.avatar, (k) => { formAvatar = k; try { localStorage.setItem('sct-av', k); } catch {} act('avatar', { avatar: k }); }) }, avatarEl(p.avatar, 54), el('i', {}, icon('swap', 11)))
+            : avatarEl(p.avatar, 54),
           el('div', { class: 'sname' }, p.name + (p.id === st.meId ? t('you') : '')),
           p.isHost ? el('span', { class: 'tag' }, t('host')) : p.online === false ? el('span', { class: 'tag offl' }, t('offlineTag')) : el('span', { class: 'tag joined' }, t('joined')))
       : el('div', { class: 'seat empty' },
-          el('div', { class: 'avatar' }, '+'),
-          el('div', { class: 'sname' }, t('waitingPlayer'))));
+          el('div', { class: 'avatar av-empty' }, el('i', { class: 'ring' }), icon('plus', 18)),
+          el('div', { class: 'sname' }, t('waitingPlayer'), el('span', { class: 'wdots' }, el('i'), el('i'), el('i')))));
   }
 
   const action = st.isHost
@@ -1646,7 +1705,7 @@ function stagePanel(active) {
       ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : '')
       : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, ...(allUp ? [icon('tick', 12), t('openedState')] : [t('hiddenState')]));
     grid.append(el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 70}ms` : '' },
-      el('div', { class: 'tname' }, el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+      el('div', { class: 'tname' }, avatarEl(p.avatar, 20), el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
       cards,
       el('div', { class: 'tfoot' }, status,
         mine && isCurrent && !res ? el('button', { class: 'ghost tflip', onclick: flipMine }, allUp ? t('flipDown') : t('flipUp')) : '')));
@@ -1678,7 +1737,7 @@ function finalPanel(active) {
         el('span', { class: 'fmark' }, lose ? el('b', { class: 'iconlabel' }, icon('x', 12), '×' + res.penalty) : res && !res.tie ? icon('tick', 14) : '')));
     }
     grid.append(el('div', { class: 'ftile' + (p.id === st.meId ? ' me' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 80}ms` : '' },
-      el('div', { class: 'tname' }, el('span', { class: 'tn' }, p.name + (p.id === st.meId ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+      el('div', { class: 'tname' }, avatarEl(p.avatar, 20), el('span', { class: 'tn' }, p.name + (p.id === st.meId ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
       rows,
       el('div', { class: 'fsum' + (lostCount ? ' bad' : '') }, t('lostRows', { n: lostCount }))));
   });
@@ -1709,7 +1768,7 @@ function hallPanel() {
     const me = h.id === st.meId;
     rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
       el('span', { class: 'hrank', style: rank <= 3 ? `background:${medals[rank - 1]};color:#1a1407` : '' }, rank === 1 ? icon('trophy', 16) : String(rank)),
-      el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
+      el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30)), el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
       el('span', { class: 'hpts' }, el('b', {}, t('hallPts', { n: h.penalty })))));
   });
   return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: st.round })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))), rows);
@@ -1819,10 +1878,12 @@ function renderGame() {
 }
 
 function renderLobby() {
-  const name = el('input', { placeholder: t('namePh'), maxLength: 16, value: formName, oninput: (e) => { formName = e.target.value; } });
+  const nameIn = el('input', { placeholder: t('namePh'), maxLength: 16, value: formName, oninput: (e) => { formName = e.target.value; } });
+  const avBtn = el('button', { type: 'button', class: 'avedit lg', title: t('changeAvatar'), onclick: () => openAvatarPicker(formAvatar, (k) => { formAvatar = k; try { localStorage.setItem('sct-av', k); } catch {} avBtn.replaceChildren(avatarEl(k, 46), el('i', {}, icon('swap', 11))); }) }, avatarEl(formAvatar, 46), el('i', {}, icon('swap', 11)));
+  const name = el('div', { class: 'namerow' }, avBtn, nameIn);
   const code = el('input', { class: 'codein', placeholder: 'ABCD', maxLength: 4, value: formCode, oninput: (e) => { formCode = e.target.value; } });
   const remember = () => { try { localStorage.setItem('sct-name', formName); } catch {} };
-  const go = (action) => { remember(); enter(action, { name: formName, code: formCode }); };
+  const go = (action) => { remember(); enter(action, { name: formName, code: formCode, avatar: formAvatar }); };
 
   const fan = el('div', { class: 'fan' });
   ['AS', 'KH', 'QD', 'JC', '10S'].forEach((id, i) => {
@@ -1848,7 +1909,7 @@ function renderLobby() {
     ? el('div', { class: 'panel joincard fx-in invited' },
         el('div', { class: 'invitebanner' }, el('span', { class: 'inv-i' }, icon('ticket', 30)), el('div', {}, el('b', {}, t('invitedTo', { code: inviteCode })), leftOld ? el('small', {}, t('leftOld')) : '')),
         el('label', {}, t('yourName')), name,
-        el('button', { class: 'big', onclick: () => { remember(); enter('join', { name: formName, code: inviteCode }); } }, t('joinRoomN', { code: inviteCode })),
+        el('button', { class: 'big', onclick: () => { remember(); enter('join', { name: formName, code: inviteCode, avatar: formAvatar }); } }, t('joinRoomN', { code: inviteCode })),
         el('div', { class: 'or' }, t('createOwn')),
         el('div', { class: 'row' },
           el('button', { class: 'ghost', onclick: () => go('create') }, t('create')),
@@ -2012,7 +2073,7 @@ function showResult(r, view) {
     ...[...r.entries].sort((a, b) => (b.id === meId) - (a.id === meId)).map((e) => {
       const lose = !r.tie && r.losers.includes(e.id), safe = !r.tie && !lose, mine = e.id === meId;
       return el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') },
-        el('div', { class: 'tname' }, el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
+        el('div', { class: 'tname' }, avatarEl(avOf(e.id), 18), el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
         el('div', { class: 'tcards' }, ...e.cards.map((c, ci) => lose ? tornCard(c, true, e.as ? e.as[ci] : null) : cardEl(c, { up: true, as: e.as ? e.as[ci] : null, morph: !!e.as }))),
         el('div', { class: 'tfoot' }, lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : ''));
     }));
@@ -2186,7 +2247,7 @@ function renderPlayers() {
     const presence = st.isHost && p.online !== undefined && !me
       ? el('span', { class: 'pdot ' + (p.online ? 'on' : 'off') }, p.online ? t('online') : t('offlineAgo', { n: p.seenAgo ?? '?' })) : '';
     return el('div', { class: 'prow' + (p.online === false ? ' offline' : '') },
-      el('div', { class: 'avatar' }, p.name.slice(0, 1).toUpperCase()),
+      avatarEl(p.avatar, 40),
       el('div', { class: 'pinfo' },
         el('div', { class: 'pname' }, p.name + (me ? t('you') : ''), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
         el('div', { class: 'ptags' }, status, presence)),

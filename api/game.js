@@ -7,6 +7,14 @@ const crypto = require('crypto');
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const TTL_SECONDS = 60 * 60 * 12;
+const AVATARS = ['cat', 'dog', 'fox', 'bear', 'panda', 'rabbit', 'frog', 'lion', 'pig', 'koala', 'owl', 'tiger'];
+// a chosen animal is kept (friends may pick the same one); with no choice the player gets a random animal nobody has yet
+function pickAvatar(want, taken = []) {
+  if (AVATARS.includes(want)) return want;
+  const free = AVATARS.filter((a) => !taken.includes(a));
+  const pool = free.length ? free : AVATARS;
+  return pool[crypto.randomInt(pool.length)];
+}
 const MAX_PLAYERS = 10;
 const HAND_SIZE = 7;
 const ROW_SIZES = [1, 1, 2, 3];
@@ -253,6 +261,7 @@ function view(room, pid, seen) {
       return {
         id: p.id,
         name: p.name,
+        avatar: p.avatar || AVATARS[0],
         isHost: p.id === room.hostId,
         ready: p.ready,
         spectator: !!p.spectator,
@@ -282,7 +291,7 @@ async function handle(action, b, query) {
     let code;
     do code = makeCode();
     while (await loadRoom(code));
-    const host = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
+    const host = { id: crypto.randomUUID(), name, avatar: pickAvatar(b.avatar), hand: [], board: Array(SLOTS).fill(null), ready: false };
     const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0 };
     await saveRoom(room);
     await touchPresence(code, host.id);
@@ -306,7 +315,7 @@ async function handle(action, b, query) {
       await touchPresence(code, same.id);
       return viewFor(room, same.id);
     }
-    const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
+    const p = { id: crypto.randomUUID(), name, avatar: pickAvatar(b.avatar, room.players.map((q) => q.avatar)), hand: [], board: Array(SLOTS).fill(null), ready: false };
     if (room.phase === 'dealt') {
       if (activeOf(room).every((q) => q.ready)) {
         // Game in progress (everyone is ready): watch this round, get dealt in at the next one.
@@ -439,6 +448,11 @@ async function handle(action, b, query) {
       room.allReady = me.ready && active.length > 1 && active.every((p) => p.ready)
         ? { id: me.id, name: me.name, at: Date.now() }
         : null;
+      break;
+
+    case 'avatar':
+      need(AVATARS.includes(b.avatar), 400, 'Pick an animal from the list');
+      me.avatar = b.avatar;
       break;
 
     case 'kick': {
