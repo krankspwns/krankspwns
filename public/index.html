@@ -215,11 +215,11 @@
   @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -20px); } 10%, 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
 
   .roundfx { position: fixed; inset: 0; z-index: 80; display: grid; place-content: center; text-align: center; pointer-events: none;
-    background: radial-gradient(circle at center, rgba(6,9,20,.72), rgba(6,9,20,0) 70%); animation: roundfx 7s ease forwards; }
+    background: radial-gradient(circle at center, rgba(6,9,20,.72), rgba(6,9,20,0) 70%); animation: roundfx 4s ease forwards; }
   .roundfx .rf-k { font-size: clamp(18px, 5vw, 30px); letter-spacing: .5em; padding-left: .5em; text-transform: uppercase; color: var(--gold-hi); font-weight: 600; }
   .roundfx .rf-n { font-size: clamp(110px, 34vw, 260px); line-height: 1; font-weight: 800; color: var(--gold-hi); text-shadow: 0 0 50px rgba(201,169,106,.65), 0 6px 30px rgba(0,0,0,.6); }
-  /* ~0.5s in, hold until 5s, fade away over the last 2s */
-  @keyframes roundfx { 0% { opacity: 0; transform: scale(.6); } 7% { opacity: 1; transform: scale(1.08); } 10% { transform: scale(1); } 71.4% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
+  /* pops in within ~0.3s, stays until 2s, then fades away over the last 2s */
+  @keyframes roundfx { 0% { opacity: 0; transform: scale(.6); } 8% { opacity: 1; transform: scale(1.08); } 12% { transform: scale(1); } 50% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
 
   .switch { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; margin-bottom: 10px; }
   .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
@@ -682,7 +682,7 @@ function showRound(n) {
   document.querySelector('.roundfx')?.remove();
   const o = el('div', { class: 'roundfx' }, el('div', { class: 'rf-k' }, 'Round'), el('div', { class: 'rf-n' }, String(n)));
   document.body.append(o);
-  setTimeout(() => o.remove(), 7200);
+  setTimeout(() => o.remove(), 4200);
 }
 
 function toast(msg) {
