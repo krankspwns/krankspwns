@@ -417,7 +417,7 @@ function boardEl(board, mine, pid) {
       if (canMove && selected) node.onclick = () => { const card = selected; selected = null; act('place', { card, slot }); };
       row.append(node);
     }
-    if (mine && dealt) {
+    if (mine && dealt && st.players.every((p) => p.ready)) {
       rw.append(el('button', { class: 'ghost rowbtn', title: 'Flip this row face up for everyone', onclick: () => act('flipRowUp', { row: rowIdx }) }, 'Flip up'));
     }
     wrap.append(rw);

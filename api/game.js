@@ -226,6 +226,7 @@ async function handle(action, b, query) {
 
     case 'flipRowUp': {
       need(room.phase === 'dealt', 409, 'No cards dealt');
+      need(room.players.every((p) => p.ready), 409, 'Wait until everyone is ready');
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);

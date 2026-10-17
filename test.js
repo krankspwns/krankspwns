@@ -30,8 +30,7 @@ const post = (b) => call('POST', b, {});
   assert.equal(v.players[0].board[0].c, card, 'swap'); assert.equal(v.players[0].board[6].c, card2);
   v = (await post({ action: 'place', code: c.code, pid: me, card: v.hand[0], slot: 0 })).j;
   assert.equal(v.hand.length, 5, 'occupant returned to hand'); assert.equal(v.players[0].board.filter(Boolean).length, 2);
-  v = (await post({ action: 'flipRowUp', code: c.code, pid: me, row: 3 })).j;
-  assert.equal(v.players[0].board[6].up, true, 'row 3 flipped up'); assert.equal(v.players[0].board[0].up, false, 'row 0 untouched');
+  assert.equal((await post({ action: 'flipRowUp', code: c.code, pid: me, row: 3 })).s, 409, 'row flip needs everyone ready');
   assert.equal((await post({ action: 'ready', code: c.code, pid: me, ready: true })).s, 409, 'cannot ready with empty slots');
   for (const slot of [1, 2, 3, 4, 5]) v = (await post({ action: 'place', code: c.code, pid: me, card: v.hand[0], slot })).j;
   assert.equal(v.hand.length, 0); assert.ok(v.players[0].board.every(Boolean));
@@ -61,6 +60,8 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'ready', code: room.code, pid: rp[2], ready: true })).j.allReady, null, 'not all ready yet');
   const done = (await post({ action: 'ready', code: room.code, pid: rp[1], ready: true })).j;
   assert.equal(done.allReady.name, 'B', 'last to ready is shown'); assert.ok(done.now >= done.allReady.at);
+  v = (await post({ action: 'flipRowUp', code: room.code, pid: rp[0], row: 3 })).j;
+  assert.ok(v.players[0].board.slice(4).every(x => x.up) && !v.players[0].board[0].up, 'row 3 flipped up once all ready');
   assert.equal((await post({ action: 'ready', code: room.code, pid: rp[1], ready: false })).j.allReady, null, 'cleared on unready');
   // 10 players: allowed, 11th rejected, 70 cards dealt from two decks
   const big = (await post({ action: 'create', name: 'H' })).j;
