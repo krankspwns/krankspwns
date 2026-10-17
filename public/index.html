@@ -975,7 +975,9 @@ function adopt(j) {
     const sig = (r) => (r ? r.losers.join(',') + '|' + r.penalty : '');
     const byRow = (x) => Object.fromEntries((x.rowResults || []).map((r) => [r.row, r]));
     const a = byRow(prev), b = byRow(j);
-    const fresh = Object.keys(b).filter((k) => sig(a[k]) !== sig(b[k]));
+    // announce a row only the first time it is scored this round, not when cards are closed and reopened
+    const seen = new Set(prev.scoredRows || []);
+    const fresh = Object.keys(b).filter((k) => !a[k] && !seen.has(Number(k)) && sig(a[k]) !== sig(b[k]));
     if (fresh.length) showResult(b[fresh[fresh.length - 1]]);
   }
   const key = (x) => x.phase + ':' + x.round;

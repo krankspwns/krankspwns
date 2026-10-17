@@ -163,6 +163,12 @@ function rowResults(room) {
   return out;
 }
 
+// Rows that have been scored at any point this round; lets clients announce a row only the first time.
+function markScored(room) {
+  const rows = rowResults(room).map((r) => r.row);
+  room.scored = [...new Set([...(room.scored || []), ...rows])].sort();
+}
+
 function view(room, pid) {
   const me = room.players.find((p) => p.id === pid);
   if (!me) throw new HttpError(404, 'You are not in this room');
@@ -175,6 +181,7 @@ function view(room, pid) {
     now: Date.now(),
     allReady: room.allReady || null,
     rowResults: rowResults(room),
+    scoredRows: room.scored || [],
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -266,6 +273,7 @@ async function handle(action, b, query) {
         p.ready = false;
       }
       room.deck = deck; // leftovers, for players who join mid-round
+      room.scored = [];
       room.phase = 'dealt';
       room.allReady = null;
       room.round += 1;
@@ -364,6 +372,7 @@ async function handle(action, b, query) {
       }
       if (room.hostId === pid) room.hostId = (room.players.find((p) => !p.spectator) || room.players[0]).id;
       room.allReady = null;
+      markScored(room);
       await saveRoom(room);
       return { left: true };
     }
@@ -371,6 +380,7 @@ async function handle(action, b, query) {
     default:
       throw new HttpError(400, 'Unknown action');
   }
+  markScored(room);
   await saveRoom(room);
   return view(room, pid);
 }
