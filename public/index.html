@@ -261,22 +261,35 @@
   .lastready { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px; margin: 2px 0 10px; border-radius: 10px; background: rgba(201,169,106,.14); border: 1px solid rgba(201,169,106,.5); }
   .lrk { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .lrn { font-size: 17px; font-weight: 800; }
-  .res { padding: 12px 0; border-top: 1px solid var(--line); }
-  .res:first-of-type { border-top: 0; padding-top: 4px; }
-  .lastready + .res { border-top: 0; padding-top: 2px; }
-  .reshead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
-  .reshead b { font-size: 15px; color: var(--gold-hi); }
-  .resrule { font-size: 12px; opacity: .65; }
-  .resmain { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; }
-  .resl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+  /* row results scoreboard */
+  .rlist { display: grid; gap: 8px; }
+  .ritem { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.06); border-left: 4px solid var(--line); cursor: pointer; transition: background .15s; }
+  .ritem:hover { background: rgba(255,255,255,.1); }
+  .ritem.lose { border-left-color: #ff9b94; background: rgba(255,120,110,.1); }
+  .ritem.tie { border-left-color: rgba(255,255,255,.4); }
+  .ritem.pending { cursor: default; opacity: .55; border-left-style: dashed; background: rgba(255,255,255,.03); }
+  .ritem.pending:hover { background: rgba(255,255,255,.03); }
+  .rnum { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #1a1407; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+  .ritem.pending .rnum { background: rgba(255,255,255,.14); color: rgba(255,255,255,.7); }
+  .rbody { min-width: 0; }
+  .rrule { font-size: 11px; opacity: .6; }
+  .rwait { font-size: 13px; opacity: .8; margin-top: 2px; }
+  .rchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .rside { display: flex; align-items: center; gap: 8px; }
+  .rpen { padding: 4px 12px; border-radius: 10px; font-size: 20px; font-weight: 800; color: #2b1300; background: linear-gradient(180deg, #ffb25e, #f0801f); box-shadow: 0 2px 8px rgba(240,128,31,.3); white-space: nowrap; }
+  .rpen.none { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); box-shadow: none; font-size: 12px; font-weight: 700; padding: 6px 10px; }
+  .rcaret { font-size: 11px; opacity: .55; width: 10px; }
+  .rdet { grid-column: 1 / -1; display: grid; gap: 3px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); cursor: default; }
+  .rtip { font-size: 11px; opacity: .5; text-align: center; margin-top: 8px; }
+  .rd { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
+  .rd.lose { background: rgba(255,120,110,.16); }
+  .rdn { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rdv { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+  .rdv em { font-style: normal; opacity: .75; } .rdv .bad { color: #ff9b94; }
   .resk { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #ff9b94; font-weight: 700; margin-right: 2px; }
-  .loserchip { padding: 4px 12px; border-radius: 99px; background: rgba(255,120,110,.2); border: 1px solid rgba(255,120,110,.65); color: #ffd2cd; font-weight: 700; font-size: 14px; }
+  .loserchip { padding: 3px 11px; border-radius: 99px; background: rgba(255,120,110,.2); border: 1px solid rgba(255,120,110,.65); color: #ffd2cd; font-weight: 700; font-size: 13px; }
   .respen { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 14px; border-radius: 12px; font-size: 24px; font-weight: 800; color: #2b1300; background: linear-gradient(180deg, #ffb25e, #f0801f); box-shadow: 0 2px 10px rgba(240,128,31,.35); }
   .respen small { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; }
-  .resdet { display: grid; gap: 3px; }
-  .rd { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
-  .rd.lose { background: rgba(255,120,110,.14); }
-  .rdn { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tiechip { padding: 4px 14px; border-radius: 99px; background: rgba(255,255,255,.1); border: 1px solid var(--line); font-weight: 700; font-size: 14px; }
   .respen.none { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); box-shadow: none; font-size: 15px; font-weight: 700; padding: 8px 14px; }
   .respen.big.none { font-size: clamp(22px, 6vw, 34px); padding: 8px 22px; }
@@ -376,8 +389,9 @@ const I18N = {
     observing: 'Observing', watching: 'Watching', obsTitle: 'You’re watching this round',
     obsText: 'You joined while a game was in progress. You can follow along below — the host will deal you in when the next round starts.',
     obsWait: 'Waiting for the next round…', e_spec: 'Wait for the next round',
+    notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
-    rule3: 'Closest to 10.5 — over 10.5 loses, otherwise the lowest loses', rule4: 'Weakest pattern loses',
+    rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
     h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush (same suit)', h_triple: 'Triple', h_sflush: 'Straight flush', h_royal: 'Royal flush', lastReady: 'Last to be ready',
     openAll: 'Open all', closeAll: 'Close all', openAllTip: 'Open this row for every player', closeAllTip: 'Close this row for every player',
@@ -418,8 +432,9 @@ const I18N = {
     observing: '观战中', watching: '观战', obsTitle: '你正在观战本轮',
     obsText: '你是在游戏进行中加入的。可以先在下方观看，房主开始下一轮时你会被一起发牌。',
     obsWait: '等待下一轮…', e_spec: '请等待下一轮',
+    notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
-    rule3: '最接近 10.5，超过 10.5 即输；否则点数最小者输', rule4: '牌型最弱者输',
+    rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
     h_none: '散牌', h_pair: '对子', h_straight: '顺子', h_flush: '同花', h_triple: '三条', h_sflush: '同花顺', h_royal: '皇家同花顺', lastReady: '最后一位准备的是',
     openAll: '全部翻开', closeAll: '全部盖上', openAllTip: '为所有玩家翻开这一行', closeAllTip: '为所有玩家盖上这一行',
@@ -460,8 +475,9 @@ const I18N = {
     observing: '觀戰中', watching: '觀戰', obsTitle: '你正在觀戰本輪',
     obsText: '你是在遊戲進行中加入的。可以先在下方觀看，房主開始下一輪時你會被一起發牌。',
     obsWait: '等待下一輪…', e_spec: '請等待下一輪',
+    notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
-    rule3: '最接近 10.5，超過 10.5 即輸；否則點數最小者輸', rule4: '牌型最弱者輸',
+    rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
     h_none: '散牌', h_pair: '對子', h_straight: '順子', h_flush: '同花', h_triple: '三條', h_sflush: '同花順', h_royal: '皇家同花順', lastReady: '最後一位準備的是',
     openAll: '全部翻開', closeAll: '全部蓋上', openAllTip: '為所有玩家翻開這一行', closeAllTip: '為所有玩家蓋上這一行',
@@ -978,34 +994,50 @@ function cardChip(id) {
 }
 function loserNames(r) { return r.losers.map((id) => r.entries.find((e) => e.id === id).name); }
 
+// Scoreboard: four fixed rows, always in the same place. Tap a row to see everyone's cards.
+const openRows = new Set();
+
 function resultsPanel() {
   const list = st.rowResults || [];
   if (!list.length && !st.allReady) return null;
+  const byRow = Object.fromEntries(list.map((r) => [r.row, r]));
   const box = el('div', { class: 'panel results' }, el('div', { class: 'name' }, t('resTitle')));
   if (st.allReady) {   // stays visible after the banner is gone
     box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, st.allReady.name)));
   }
-  list.forEach((r) => {
+  const board = el('div', { class: 'rlist' });
+  for (let row = 0; row < 4; row++) {
+    const r = byRow[row];
+    const num = el('div', { class: 'rnum' }, String(row + 1));
+    const rule = el('div', { class: 'rrule' }, t('rule' + (row + 1)));
+    if (!r) {   // not opened yet: a quiet placeholder so the layout never jumps around
+      board.append(el('div', { class: 'ritem pending' }, num, el('div', { class: 'rbody' }, rule, el('div', { class: 'rwait' }, t('notOpened'))), el('div')));
+      continue;
+    }
     const names = loserNames(r);
-    const detail = el('div', { class: 'resdet' });
-    r.entries.forEach((e) => {
-      const lose = r.losers.includes(e.id);
-      const value = el('span', { class: 'rdv' }, ...e.cards.map(cardChip));
-      if (r.row === 2) value.append(el('b', { class: e.bust ? 'bad' : '' }, ` ${e.total}`), e.bust ? el('em', {}, ` ${t('bust')}`) : '');
-      if (r.row === 3) value.append(el('em', {}, ` ${t('h_' + e.hand)}`));
-      detail.append(el('div', { class: 'rd' + (lose ? ' lose' : '') }, el('span', { class: 'rdn' }, e.name), value));
-    });
-    box.append(el('div', { class: 'res' },
-      el('div', { class: 'reshead' }, el('b', {}, t('rowN', { n: r.row + 1 })), el('span', { class: 'resrule' }, t('rule' + (r.row + 1)))),
-      el('div', { class: 'resmain' },
-        r.tie
-          ? el('div', { class: 'resl' }, el('span', { class: 'tiechip' }, t('tie')))
-          : el('div', { class: 'resl' }, el('span', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')), ...names.map((n) => el('span', { class: 'loserchip' }, n))),
-        r.tie
-          ? el('div', { class: 'respen none' }, t('noPenalty'))
-          : el('div', { class: 'respen' }, el('small', {}, t('penalty')), '×' + r.penalty)),
-      detail));
-  });
+    const open = openRows.has(row);
+    const item = el('div', { class: 'ritem ' + (r.tie ? 'tie' : 'lose') + (open ? ' open' : ''), role: 'button', tabindex: 0,
+      onclick: () => { open ? openRows.delete(row) : openRows.add(row); render(); } },
+      num,
+      el('div', { class: 'rbody' }, rule,
+        el('div', { class: 'rchips' }, ...(r.tie ? [el('span', { class: 'tiechip' }, t('tie'))] : names.map((n) => el('span', { class: 'loserchip' }, n))))),
+      el('div', { class: 'rside' },
+        r.tie ? el('div', { class: 'rpen none' }, t('noPenalty')) : el('div', { class: 'rpen' }, '×' + r.penalty),
+        el('span', { class: 'rcaret' }, open ? '▴' : '▾')));
+    if (open) {
+      const detail = el('div', { class: 'rdet' });
+      r.entries.forEach((e) => {
+        const lose = r.losers.includes(e.id);
+        const value = el('span', { class: 'rdv' }, ...e.cards.map(cardChip));
+        if (r.row === 2) value.append(el('b', { class: e.bust ? 'bad' : '' }, ` ${e.total}`), e.bust ? el('em', {}, ` ${t('bust')}`) : '');
+        if (r.row === 3) value.append(el('em', {}, ` ${t('h_' + e.hand)}`));
+        detail.append(el('div', { class: 'rd' + (lose ? ' lose' : '') }, el('span', { class: 'rdn' }, e.name), value));
+      });
+      item.append(detail);
+    }
+    board.append(item);
+  }
+  box.append(board, el('div', { class: 'rtip' }, t('tapDetails')));
   return box;
 }
 
