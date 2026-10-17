@@ -375,8 +375,8 @@
   @keyframes boxshake { 0%,100% { transform: none; } 20% { transform: translate(-9px, 3px) rotate(-1.5deg); } 40% { transform: translate(8px, -3px) rotate(1.5deg); } 60% { transform: translate(-6px, 2px); } 80% { transform: translate(5px, -2px); } }
   .resnames.youlose { color: #ff6b5e; font-size: clamp(34px, min(12vw, 20vh), 84px); letter-spacing: .02em; text-shadow: 0 0 30px rgba(255,70,60,.85), 0 4px 0 rgba(0,0,0,.4); animation: namepulse .8s ease-in-out infinite; }
   /* transition to the next row */
-  .nextfx { position: fixed; inset: 0; z-index: 84; display: grid; place-items: center; pointer-events: none; overflow: hidden; animation: nextfade 1.9s ease forwards; background: linear-gradient(90deg, transparent, rgba(8,12,24,.88) 28%, rgba(8,12,24,.88) 72%, transparent); }
-  .nx-box { text-align: center; padding: 0 20px; animation: nxslide 1.9s cubic-bezier(.2,.9,.3,1) forwards; }
+  .nextfx { position: fixed; inset: 0; z-index: 84; display: grid; place-items: center; pointer-events: none; overflow: hidden; animation: nextfade 1.9s ease forwards; }
+  .nx-box { text-align: center; padding: 22px 34px 24px; border-radius: 26px; background: linear-gradient(180deg, rgba(26,32,56,.96), rgba(12,16,32,.96)); border: 1px solid rgba(201,169,106,.45); box-shadow: 0 18px 60px rgba(0,0,0,.55), 0 0 40px rgba(201,169,106,.18); max-width: 86vw; animation: nxslide 1.9s cubic-bezier(.2,.9,.3,1) forwards; }
   .nx-k { font-size: 14px; letter-spacing: .4em; padding-left: .4em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .nx-n { font-size: clamp(48px, min(16vw, 24vh), 120px); font-weight: 800; line-height: 1.05; color: #fff; text-shadow: 0 0 40px rgba(201,169,106,.6); }
   .nx-r { font-size: 15px; opacity: .8; margin-top: 4px; }
@@ -1170,8 +1170,8 @@ let confettiAt = 0;
   }
 })();
 
-function load() { try { return JSON.parse(localStorage.getItem('sct') || 'null'); } catch { return null; } }
-function save() { try { session ? localStorage.setItem('sct', JSON.stringify(session)) : localStorage.removeItem('sct'); } catch {} }
+function load() { for (const store of [() => localStorage, () => sessionStorage]) { try { const v = JSON.parse(store().getItem('sct') || 'null'); if (v) return v; } catch {} } return null; }
+function save() { for (const store of [() => localStorage, () => sessionStorage]) { try { session ? store().setItem('sct', JSON.stringify(session)) : store().removeItem('sct'); } catch {} } }
 
 async function api(action, extra = {}) {
   const r = await fetch('/api/game', {

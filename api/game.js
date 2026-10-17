@@ -269,7 +269,15 @@ async function handle(action, b, query) {
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
     need(room.players.length < MAX_PLAYERS, 409, `Room is full (${MAX_PLAYERS} players)`);
-    need(!room.players.some((p) => p.name.toLowerCase() === name.toLowerCase()), 409, 'Name already taken');
+    // same name as someone who has gone quiet = that player coming back (lost phone data, new browser): hand their seat back
+    const same = room.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
+    if (same) {
+      const ts = (await readPresence(code))[same.id];
+      need(!ts || Date.now() - ts > 20000, 409, 'Name already taken');
+      seenThrottle.delete(code + ':' + same.id);
+      await touchPresence(code, same.id);
+      return viewFor(room, same.id);
+    }
     const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
     if (room.phase === 'dealt') {
       if (activeOf(room).every((q) => q.ready)) {
