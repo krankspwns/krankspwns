@@ -492,6 +492,7 @@
     .gbody h3 { font-size: 20px; } .gl-row { gap: 8px; } .gl-t { font-size: 12px; }
     .gfoot > button { padding: 9px 10px; font-size: 12px; } .gdots { gap: 4px; } .gdot { width: 6px; height: 6px; } .gdot.on { width: 15px; }
     .gtapdemo { gap: 8px; }
+    .gflow { flex-wrap: nowrap; gap: 2px; } .gf { flex: 1; min-width: 0; padding: 8px 2px; font-size: 11px; } .gf-i { width: 38px; height: 38px; border-radius: 12px; } .gf-i .ic { width: 22px; height: 22px; } .gf-a { font-size: 16px; }
   }
 
 
@@ -512,6 +513,26 @@
   .invitebanner .inv-i { font-size: 28px; } .invitebanner b { display: block; font-size: 17px; } .invitebanner small { opacity: .75; font-size: 12px; }
   @media (max-width: 800px) { .landing.invited .joincard { order: -1; } .landing.invited .fan, .landing.invited .chips { display: none; } .landing.invited .hero h2 { margin-top: 0; } }
   .joincard.invited .row { gap: 8px; flex-wrap: wrap; } .joincard.invited .row button { flex: 1; padding: 11px 12px; font-size: 12px; }
+
+  /* icons */
+  .ic { display: inline-block; flex: none; vertical-align: middle; }
+  .iconlabel { display: inline-flex; align-items: center; gap: 7px; }
+  button .iconlabel { justify-content: center; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; } .chip .ic { color: var(--gold-hi); }
+  .gf-i { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(160deg, rgba(201,169,106,.28), rgba(201,169,106,.08)); border: 1px solid rgba(201,169,106,.55); color: var(--gold-hi); }
+  .gf-i .ic { stroke-width: 1.7; }
+  .guidebtn b, .gtitle b { color: #1a1407; } .guidebtn b .ic, .gtitle b .ic { stroke-width: 2.2; }
+  .pill .ic, .tstat .ic, .tag .ic { stroke-width: 2.6; margin-right: 3px; vertical-align: -2px; } .tstat { display: inline-flex; align-items: center; }
+  .readystrip .tick .ic { stroke-width: 3; } .fmark .iconlabel { gap: 3px; } .fmark .ic { stroke-width: 2.6; }
+  .obs-eye, .invitebanner .inv-i { color: var(--gold-hi); } .obs-eye.sm { display: grid; place-items: center; } .obs-eye { display: grid; place-items: center; }
+  .gtapmark { color: var(--gold-hi); } .kickbtn .iconlabel { gap: 6px; }
+  .guide .gx, .pl .gx { display: grid; place-items: center; padding: 8px 10px; }
+
+  .topright { display: flex; align-items: center; gap: 8px; }
+  .sndbtn { display: grid; place-items: center; width: 38px; height: 34px; padding: 0; border-radius: 99px; background: rgba(255,255,255,.06); color: rgba(255,255,255,.55); border: 1px solid var(--line); box-shadow: none; }
+  .sndbtn.on { color: var(--gold-hi); border-color: var(--gold-lo); background: rgba(201,169,106,.14); }
+  .sndbtn.music { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-color: var(--gold); }
+  .sndbtn:hover { transform: none; filter: none; background: rgba(255,255,255,.12); } .sndbtn.music:hover { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -624,12 +645,222 @@
 <body>
 <div class="bg" id="bg"></div>
 <main>
-  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div>
+  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><div class="topright"><button type="button" class="sndbtn" id="sndBtn"></button><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div></div>
   <h1 id="h1">Row of Reckoning</h1>
   <div id="app"></div>
 </main>
 <script>
 const SUIT = { S:'♠', H:'♥', D:'♦', C:'♣' };
+
+
+// ---- icons: one consistent set of line icons (drawn here, no emoji) ----
+const ICONS = {
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M2.8 19.5c.4-3.4 3-5.5 6.2-5.5s5.8 2.1 6.2 5.5"/><circle cx="17.2" cy="9" r="2.5"/><path d="M16.5 14.3c2.6.1 4.5 1.9 4.9 4.7"/>',
+  cards: '<rect x="3.5" y="5.5" width="10.5" height="14.5" rx="2" transform="rotate(-10 8.75 12.75)"/><rect x="9.8" y="4" width="10.5" height="14.5" rx="2" transform="rotate(9 15 11.25)" fill="currentColor" fill-opacity=".16"/><path d="M15 9.2c.9-1.2 2.8-.6 2.8.9 0 1.4-2.8 3-2.8 3s-2.8-1.6-2.8-3c0-1.5 1.9-2.1 2.8-.9z" fill="currentColor" stroke="none" transform="rotate(9 15 11.25)"/>',
+  rows: '<rect x="9.5" y="2.8" width="5" height="4.6" rx="1"/><rect x="6" y="9.2" width="5" height="4.6" rx="1"/><rect x="13" y="9.2" width="5" height="4.6" rx="1"/><rect x="2.5" y="15.6" width="5" height="4.6" rx="1"/><rect x="9.5" y="15.6" width="5" height="4.6" rx="1"/><rect x="16.5" y="15.6" width="5" height="4.6" rx="1"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="M7.8 12.4l2.9 2.9 5.6-5.8"/>',
+  tick: '<path d="M5 12.8l4.4 4.4L19 7.6"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  'eye-off': '<path d="M2 12s3.6-6.5 10-6.5c2 0 3.7.6 5.1 1.4M22 12s-3.6 6.5-10 6.5c-2 0-3.7-.6-5.1-1.4"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/><path d="M4 4l16 16"/>',
+  zap: '<path d="M13.2 2.5L4.8 13.4h6.2l-1 8.1 8.4-11h-6.2z" fill="currentColor" fill-opacity=".18"/>',
+  hand: '<path d="M9 11V5.2a1.6 1.6 0 013.2 0V10.5M12.2 9.6a1.6 1.6 0 013.2 0v1.4M15.4 10.7a1.6 1.6 0 013.2 0V15a6.2 6.2 0 01-6.2 6.2h-.6A6.3 6.3 0 016.8 18L4.2 14a1.4 1.4 0 012.3-1.6L9 15"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.8 18.4h2.4"/>',
+  ticket: '<path d="M3.5 7.5h17v3a2 2 0 000 4v3h-17v-3a2 2 0 000-4z"/><path d="M14.5 7.5v1.8M14.5 11.1v1.8M14.5 14.7v1.8"/>',
+  crown: '<path d="M3.5 8.5l4.6 4 3.9-7 3.9 7 4.6-4-1.9 10.5H5.4z" fill="currentColor" fill-opacity=".16"/>',
+  hourglass: '<path d="M7 3h10M7 21h10M8 3v3.8l4 4.7-4 4.7V21M16 3v3.8l-4 4.7 4 4.7V21"/>',
+  wifi: '<path d="M2.5 9.2a14.5 14.5 0 0119 0M5.6 12.6a10 10 0 0112.8 0M8.8 16a5.4 5.4 0 016.4 0"/><circle cx="12" cy="19.4" r=".9" fill="currentColor"/>',
+  'wifi-off': '<path d="M5.6 12.6a10 10 0 015-2.5M8.8 16a5.4 5.4 0 016.4 0M2.5 9.2a14.5 14.5 0 016-3.2"/><circle cx="12" cy="19.4" r=".9" fill="currentColor"/><path d="M4 4l16 16"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 014.9.7c0 1.7-2.5 2.1-2.5 3.7"/><circle cx="12" cy="17.2" r=".9" fill="currentColor"/>',
+  'user-x': '<circle cx="9.5" cy="8" r="3.4"/><path d="M3 19.5c.4-3.5 3-5.6 6.5-5.6 1.2 0 2.3.2 3.2.7"/><path d="M16.5 14.5l5 5M21.5 14.5l-5 5"/>',
+  link: '<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>',
+  copy: '<rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.2"/><path d="M15.5 8.5V6.2A2.2 2.2 0 0013.3 4H6.2A2.2 2.2 0 004 6.2v7.1a2.2 2.2 0 002.2 2.2h2.3"/>',
+  logout: '<path d="M9.5 4H6A2 2 0 004 6v12a2 2 0 002 2h3.5"/><path d="M15 8l4 4-4 4M19 12H9.5"/>',
+  shuffle: '<path d="M3 7h3.5c3 0 4.5 2 6 5s3 5 6 5H21M3 17h3.5c1.5 0 2.7-.6 3.7-1.7M21 7h-2.5c-1.5 0-2.7.6-3.7 1.7M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/>',
+  'volume-x': '<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" fill="currentColor" fill-opacity=".16"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
+  'volume-2': '<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" fill="currentColor" fill-opacity=".16"/><path d="M15.5 9.2a4 4 0 010 5.6M18.2 6.6a8 8 0 010 10.8"/>',
+  music: '<path d="M9 17.5V6.2l10-2v11.3"/><circle cx="6.5" cy="17.6" r="2.5" fill="currentColor" fill-opacity=".2"/><circle cx="16.5" cy="15.6" r="2.5" fill="currentColor" fill-opacity=".2"/>',
+  swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
+};
+function icon(name, size = 18, cls = '') {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  e.setAttribute('viewBox', '0 0 24 24'); e.setAttribute('width', size); e.setAttribute('height', size);
+  e.setAttribute('fill', 'none'); e.setAttribute('stroke', 'currentColor'); e.setAttribute('stroke-width', '1.8');
+  e.setAttribute('stroke-linecap', 'round'); e.setAttribute('stroke-linejoin', 'round'); e.setAttribute('aria-hidden', 'true');
+  e.setAttribute('class', 'ic ' + cls);
+  e.innerHTML = ICONS[name] || '';
+  return e;
+}
+const withIcon = (name, text, size = 16) => el('span', { class: 'iconlabel' }, icon(name, size), text);
+
+
+// ---- sound: everything is synthesised live with the Web Audio API, so there are no audio files to download ----
+const SND = (() => {
+  let ctx = null, master = null, sfxBus = null, musBus = null, noiseBuf = null;
+  let mode = 1;   // 0 = off, 1 = sound effects, 2 = effects + background music
+  try { const m = localStorage.getItem('sct-snd'); if (m === '0' || m === '1' || m === '2') mode = +m; } catch {}
+  const lastPlayed = {};
+  let musicTimer = null, nextT = 0, stepI = 0;
+
+  function build(c) {
+    master = c.createGain(); master.gain.value = 0.9;
+    const comp = c.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.18;
+    master.connect(comp); comp.connect(c.destination);
+    sfxBus = c.createGain(); sfxBus.connect(master);
+    musBus = c.createGain(); musBus.gain.value = 0; musBus.connect(master);
+    noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ctx = new AC(); build(ctx); } catch { ctx = null; return null; }
+    }
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    return ctx;
+  }
+
+  // building blocks
+  function tone({ f = 440, f2 = null, type = 'sine', at = 0, dur = 0.15, vol = 0.2, attack = 0.005, bus = sfxBus, lp = 0 }) {
+    const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    let node = o;
+    if (lp) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; o.connect(fl); node = fl; }
+    node.connect(g); g.connect(bus); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function noise({ at = 0, dur = 0.1, vol = 0.2, type = 'bandpass', f = 2000, f2 = null, q = 1, attack = 0.003, bus = sfxBus }) {
+    const t = ctx.currentTime + at, src = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = noiseBuf; src.loop = true;
+    fl.type = type; fl.frequency.setValueAtTime(f, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur); fl.Q.value = q;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(fl); fl.connect(g); g.connect(bus); src.start(t, Math.random() * 1.5); src.stop(t + dur + 0.05);
+  }
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  // sound effects
+  const R = {
+    tap: () => tone({ f: 1500, f2: 1100, dur: 0.035, vol: 0.045, type: 'triangle' }),
+    place: () => { noise({ dur: 0.07, vol: 0.24, type: 'lowpass', f: 1400, q: 0.7 }); tone({ f: 190, f2: 80, dur: 0.1, vol: 0.32 }); },
+    lift: () => { noise({ dur: 0.06, vol: 0.1, type: 'highpass', f: 3000, f2: 5000 }); tone({ f: 520, f2: 900, dur: 0.07, vol: 0.06, type: 'triangle' }); },
+    return: () => { noise({ dur: 0.08, vol: 0.13, type: 'bandpass', f: 2600, f2: 1200, q: 1.2 }); tone({ f: 700, f2: 380, dur: 0.09, vol: 0.08, type: 'triangle' }); },
+    flip: () => { noise({ dur: 0.14, vol: 0.22, type: 'bandpass', f: 1000, f2: 4200, q: 1.1 }); tone({ f: 2400, f2: 1800, at: 0.12, dur: 0.03, vol: 0.06, type: 'square', lp: 4000 }); },
+    shuffle: () => {
+      for (let i = 0; i < 16; i++) noise({ at: i * 0.038 + rnd(0, 0.01), dur: 0.05, vol: rnd(0.09, 0.16), type: 'bandpass', f: rnd(2200, 4700), q: 1.5 });
+      tone({ f: 170, f2: 90, at: 0.66, dur: 0.1, vol: 0.22 }); noise({ at: 0.66, dur: 0.06, vol: 0.18, type: 'lowpass', f: 1300 });
+    },
+    ready: () => { tone({ f: 659, dur: 0.12, vol: 0.16, type: 'triangle' }); tone({ f: 988, at: 0.09, dur: 0.22, vol: 0.16, type: 'triangle' }); tone({ f: 1976, at: 0.09, dur: 0.3, vol: 0.04 }); },
+    unready: () => tone({ f: 620, f2: 380, dur: 0.16, vol: 0.14, type: 'triangle' }),
+    allready: () => {
+      [523, 659, 784, 1046, 1318].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.5, vol: 0.13, type: 'triangle' }));
+      tone({ f: 130.8, dur: 0.9, vol: 0.18 }); tone({ f: 196, dur: 0.9, vol: 0.1 }); noise({ at: 0.3, dur: 0.5, vol: 0.05, type: 'highpass', f: 6000 });
+    },
+    join: () => { tone({ f: 520, f2: 820, dur: 0.1, vol: 0.13 }); tone({ f: 1040, f2: 1640, at: 0.04, dur: 0.08, vol: 0.04 }); },
+    leave: () => tone({ f: 520, f2: 300, dur: 0.14, vol: 0.12 }),
+    kick: () => { tone({ f: 200, f2: 70, dur: 0.25, vol: 0.3, type: 'sawtooth', lp: 700 }); noise({ dur: 0.15, vol: 0.15, type: 'lowpass', f: 900 }); },
+    error: () => { tone({ f: 190, dur: 0.11, vol: 0.14, type: 'square', lp: 900 }); tone({ f: 150, at: 0.13, dur: 0.16, vol: 0.14, type: 'square', lp: 800 }); },
+    tear: () => {
+      noise({ dur: 0.55, vol: 0.34, type: 'highpass', f: 4200, f2: 900, q: 0.6 });
+      for (let i = 0; i < 9; i++) noise({ at: 0.03 + i * 0.055 + rnd(0, 0.02), dur: 0.03, vol: 0.14, type: 'bandpass', f: rnd(1500, 5000), q: 3 });
+      tone({ f: 90, f2: 55, at: 0.05, dur: 0.35, vol: 0.18, type: 'sawtooth', lp: 400 });
+    },
+    safe: () => { tone({ f: 880, dur: 0.18, vol: 0.1 }); tone({ f: 1320, at: 0.06, dur: 0.22, vol: 0.08 }); },
+    tie: () => { tone({ f: 392, dur: 0.18, vol: 0.11, type: 'triangle' }); tone({ f: 392, at: 0.2, dur: 0.25, vol: 0.11, type: 'triangle' }); },
+    names: () => { tone({ f: 330, f2: 300, dur: 0.5, vol: 0.16 }); tone({ f: 660, dur: 0.4, vol: 0.05 }); noise({ dur: 0.08, vol: 0.1, type: 'lowpass', f: 800 }); },
+    youlose: () => {
+      tone({ f: 220, f2: 38, dur: 1.1, vol: 0.5 }); tone({ f: 164, f2: 82, dur: 1, vol: 0.16, type: 'sawtooth', lp: 500 });
+      tone({ f: 233, f2: 116, at: 0.05, dur: 0.9, vol: 0.1, type: 'sawtooth', lp: 600 }); noise({ dur: 0.6, vol: 0.22, type: 'lowpass', f: 1800, f2: 200 });
+    },
+    whoosh: () => { noise({ dur: 0.35, vol: 0.15, type: 'bandpass', f: 300, f2: 2600, q: 0.9 }); noise({ at: 0.3, dur: 0.4, vol: 0.12, type: 'bandpass', f: 2600, f2: 400, q: 0.9 }); },
+    round: () => {
+      [[392, 0.16], [784.8, 0.065], [1184, 0.03]].forEach(([f, v], i) => tone({ f, dur: 1.6 - i * 0.4, vol: v }));
+      tone({ f: 98, dur: 1.4, vol: 0.18 });
+    },
+    final: () => {
+      [392, 523, 659, 784].forEach((f, i) => { tone({ f, at: i * 0.13, dur: 0.7, vol: 0.12, type: 'triangle' }); tone({ f: f / 2, at: i * 0.13, dur: 0.7, vol: 0.07 }); });
+      tone({ f: 1046, at: 0.55, dur: 1.2, vol: 0.1 }); tone({ f: 1318, at: 0.62, dur: 1.1, vol: 0.08 }); noise({ at: 0.5, dur: 0.9, vol: 0.06, type: 'highpass', f: 7000 });
+    },
+  };
+
+  // background music: a slow, jazzy lounge loop (Am7 Dm7 G7 Cmaj7 Fmaj7 Bm7b5 E7 Am7), 8 bars
+  const EIGHTH = 60 / 88 / 2;
+  const PROG = [[45, [60, 64, 67]], [50, [60, 65, 69]], [43, [59, 65, 67]], [48, [59, 64, 67]], [41, [57, 60, 64]], [47, [57, 62, 65]], [40, [56, 59, 62]], [45, [60, 64, 67]]];
+  const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  function musicStep(i, t) {
+    const rel = Math.max(0, t - ctx.currentTime), bar = Math.floor(i / 8) % 8, s = i % 8, [bass, chord] = PROG[bar], bus = musBus;
+    if (s === 0 || s === 4) tone({ f: 120, f2: 46, at: rel, dur: 0.22, vol: 0.34, bus });                                  // soft kick
+    if (s === 0) tone({ f: mtof(bass), at: rel, dur: EIGHTH * 3.4, vol: 0.34, bus, lp: 500, attack: 0.012 });              // bass
+    if (s === 4) tone({ f: mtof(bass + 7), at: rel, dur: EIGHTH * 2.6, vol: 0.26, bus, lp: 500, attack: 0.012 });
+    if (s === 0) chord.forEach((n) => tone({ f: mtof(n), at: rel, dur: EIGHTH * 7.5, vol: 0.05, bus, attack: 0.25 }));      // slow pad
+    if (s === 2 || s === 5) chord.forEach((n) => tone({ f: mtof(n + 12), type: 'triangle', at: rel, dur: 0.5, vol: 0.06, bus, lp: 1800 }));   // comping stabs
+    noise({ at: rel, dur: 0.035, vol: s % 2 ? 0.035 : 0.055, type: 'highpass', f: 7000, bus });                          // shaker
+    if ((s === 3 || s === 6) && Math.random() < 0.5) tone({ f: mtof(chord[Math.floor(Math.random() * 3)] + 24), at: rel, dur: 0.9, vol: 0.05, bus });   // little bell
+  }
+  function schedule() { if (!ctx) return; while (nextT < ctx.currentTime + 0.4) { musicStep(stepI, nextT); nextT += EIGHTH; stepI = (stepI + 1) % 64; } }
+  function startMusic() {
+    if (musicTimer || !ensure()) return;
+    nextT = ctx.currentTime + 0.15; stepI = 0;
+    const g = musBus.gain, now = ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0.4, now + 1.2);
+    musicTimer = setInterval(schedule, 120);
+  }
+  function stopMusic() {
+    if (!musicTimer) return;
+    clearInterval(musicTimer); musicTimer = null;
+    if (ctx) { const g = musBus.gain, now = ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + 0.5); }
+  }
+  function applyMode() { if (mode >= 2) startMusic(); else stopMusic(); }
+  document.addEventListener('visibilitychange', () => {   // silence in the background
+    if (!ctx) return;
+    if (document.hidden) ctx.suspend().catch(() => {}); else if (mode > 0) ctx.resume().catch(() => {});
+  });
+
+  return {
+    play(name) {
+      if (mode === 0 || !R[name]) return;
+      const now = performance.now();
+      if (now - (lastPlayed[name] || 0) < (name === 'tap' ? 40 : 60)) return;
+      lastPlayed[name] = now;
+      if (!ensure()) return;
+      try { R[name](); } catch {}
+    },
+    unlock() { ensure(); applyMode(); },
+    get mode() { return mode; },
+    setMode(m) { mode = m; try { localStorage.setItem('sct-snd', String(m)); } catch {} if (ensure()) applyMode(); },
+    cycle() { this.setMode((mode + 1) % 3); return mode; },
+    state() { return ctx ? ctx.state : 'none'; },
+    names: Object.keys(R),
+    async render(name, sec = 2.5) {   // for testing: renders a sound offline and reports its loudness
+      const saved = { ctx, master, sfxBus, musBus, noiseBuf };
+      const off = new OfflineAudioContext(1, Math.ceil(44100 * sec), 44100);
+      ctx = off; build(off);
+      try {
+        if (name === 'music') { musBus.gain.value = 0.4; for (let i = 0; i < Math.ceil(sec / EIGHTH); i++) musicStep(i, i * EIGHTH); }
+        else R[name]();
+        const d = (await off.startRendering()).getChannelData(0);
+        let peak = 0, sum = 0;
+        for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; sum += d[i] * d[i]; }
+        return { peak: +peak.toFixed(3), rms: +Math.sqrt(sum / d.length).toFixed(4) };
+      } finally { ({ ctx, master, sfxBus, musBus, noiseBuf } = saved); }
+    },
+  };
+})();
+window.SND = SND;
+// browsers only allow audio after a tap: wake the sound engine on the first one
+['pointerdown', 'keydown', 'touchend'].forEach((ev) => window.addEventListener(ev, () => SND.unlock(), { once: true, capture: true }));
+// a soft tick on every button
+document.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest('button:not(.gdot):not(.sndbtn)')) SND.play('tap'); }, true);
+
+function updateSndBtn() {
+  const b = document.getElementById('sndBtn'); if (!b) return;
+  const m = SND.mode;
+  b.replaceChildren(icon(m === 0 ? 'volume-x' : m === 1 ? 'volume-2' : 'music', 18));
+  b.className = 'sndbtn' + (m > 0 ? ' on' : '') + (m === 2 ? ' music' : '');
+  b.title = b.ariaLabel = t('sndMode' + m);
+}
 
 // ---- translations (English / 简体中文) ----
 const I18N = {
@@ -637,7 +868,7 @@ const I18N = {
     title: 'Row of Reckoning', langLabel: 'Language',
     kicker: 'Every row has a loser', h2a: 'Deal. Arrange. ', h2b: 'Reveal.',
     heroP: 'Gather up to ten friends, get dealt seven cards each, and arrange them in secret on your own table before the big reveal.',
-    chip1: '👥 Up to 10 players', chip2: '🖐 Drag & drop', chip3: '🙈 Hidden until you’re ready', chip4: '📱 Works on phones',
+    chip1: 'Up to 10 players', chip2: 'Drag & drop', chip3: 'Hidden until you’re ready', chip4: 'Works on phones',
     takeSeat: 'Take a seat', yourName: 'Your name', namePh: 'e.g. Alex', create: 'Create a new room', orJoin: 'or join a friend', roomCode: 'Room code', join: 'Join',
     s1t: 'Create or join', s1d: 'One person makes a room and shares the 4-letter code.',
     s2t: 'Get dealt 7 cards', s2d: 'The host shuffles and deals. Only you can see your hand.',
@@ -655,7 +886,7 @@ const I18N = {
     hintProgress: 'Everyone is ready. Use the Flip up / Flip down buttons on each row, or click a card, to reveal or hide it. The host can deal a new round.',
     hintReady: 'You are ready: all your cards are hidden and locked. Waiting for the other players. Press Unready to move cards again.',
     hintArrange: 'Fill all 7 slots to get ready. Tap a card in your hand to place it in the next free slot (top row first), tap a placed card to send it back, or drag cards anywhere. “I’m ready” hides and locks them.',
-    pillReady: '✓ READY', pillArranging: (v) => `Arranging ${v.n}/${v.t}`,
+    pillReady: 'READY', pillArranging: (v) => `Arranging ${v.n}/${v.t}`,
     handHidden: 'Your hand (hidden)', handDone: 'Your hand — all cards are placed',
     handTap: 'Your hand — tap a card to place it in the next free slot, or drag it to a slot',
     observing: 'Observing', watching: 'Watching', obsTitle: 'You’re watching this round',
@@ -684,6 +915,7 @@ const I18N = {
     gh_none: 'No pattern', gh_pair: 'Pair', gh_straight: 'Straight', gh_flush: 'Three of one suit', gh_triple: 'Three of a kind', gh_sflush: 'Straight flush', gh_royal: 'Royal flush',
     g8t: 'Good to know', g8a: 'If every player would lose a row (everyone has the same), it’s a tie — no penalty for anyone.', g8b: 'Penalties start fresh on every row; they don’t add up across rows.',
     g8c: 'After row 4 a final board shows all rows, coloured by who lost what.', g8d: 'Joined while a game is in progress? You watch until the next round, then you’re dealt in.', g8e: 'Pop-ups, torn cards and the “You lose!” screen are just for fun — the rules above decide who loses.',
+    sndMode0: 'Sound off', sndMode1: 'Sound effects on', sndMode2: 'Effects + music on',
     playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
     kickHint: 'Players who lost their connection show as offline. Kicked players can rejoin with the room code.', hostOnlyHint: 'Only the host can remove players.',
     e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
@@ -707,7 +939,7 @@ const I18N = {
     title: '审判之行', langLabel: '语言',
     kicker: '每一行，都有一个输家', h2a: '发牌，排列，', h2b: '揭晓！',
     heroP: '最多邀请十位朋友，每人发七张牌，在自己的牌桌上悄悄排好，再一起揭晓。',
-    chip1: '👥 最多 10 位玩家', chip2: '🖐 拖放操作', chip3: '🙈 准备前保持隐藏', chip4: '📱 手机也能玩',
+    chip1: '最多 10 位玩家', chip2: '拖放操作', chip3: '准备前保持隐藏', chip4: '手机也能玩',
     takeSeat: '入座', yourName: '你的名字', namePh: '例如：小明', create: '创建新房间', orJoin: '或加入朋友的房间', roomCode: '房间代码', join: '加入',
     s1t: '创建或加入', s1d: '一人创建房间，并分享 4 位字母代码。',
     s2t: '获发 7 张牌', s2d: '房主洗牌并发牌，只有你能看到自己的手牌。',
@@ -725,7 +957,7 @@ const I18N = {
     hintProgress: '全员已准备。使用每一行的“翻开 / 盖上”按钮，或点击单张牌来翻开或盖上。房主可以开始新的一轮。',
     hintReady: '你已准备：所有牌都已盖上并锁定。正在等待其他玩家。点击“取消准备”可重新移动牌。',
     hintArrange: '摆满 7 个位置才能准备。点击手牌会放入下一个空位（从最上面一行开始），点击已摆的牌会放回手牌，也可以随意拖动。点击“我准备好了”会盖上并锁定。',
-    pillReady: '✓ 已准备', pillArranging: (v) => `摆牌中 ${v.n}/${v.t}`,
+    pillReady: '已准备', pillArranging: (v) => `摆牌中 ${v.n}/${v.t}`,
     handHidden: '你的手牌（已隐藏）', handDone: '你的手牌 — 所有牌都已摆好',
     handTap: '你的手牌 — 点击一张牌放入下一个空位，或拖到指定位置',
     observing: '观战中', watching: '观战', obsTitle: '你正在观战本轮',
@@ -756,6 +988,7 @@ const I18N = {
     g8c: '第 4 行结束后会显示最终结果，用颜色标出每个人输了哪几行。', g8d: '在游戏进行中加入的玩家先观战，下一轮会一起发牌。', g8e: '弹出提示、撕牌和“你输了！”画面只是为了好玩——谁输由上面的规则决定。',
     playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
     kickHint: '断线的玩家会显示为离线。被移出的玩家可以用房间代码重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
+    sndMode0: '声音已关闭', sndMode1: '音效已开启', sndMode2: '音效 + 音乐已开启',
     e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
     invitedTo: (v) => `你被邀请加入房间 ${v.code}`, leftOld: '你已离开之前的房间。', joinRoomN: (v) => `加入房间 ${v.code}`, otherCode: '使用其他代码', createOwn: '或创建自己的房间',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
@@ -777,7 +1010,7 @@ const I18N = {
     title: '審判之行', langLabel: '語言',
     kicker: '每一行，都有一個輸家', h2a: '發牌，排列，', h2b: '揭曉！',
     heroP: '最多邀請十位朋友，每人發七張牌，在自己的牌桌上悄悄排好，再一起揭曉。',
-    chip1: '👥 最多 10 位玩家', chip2: '🖐 拖放操作', chip3: '🙈 準備前保持隱藏', chip4: '📱 手機也能玩',
+    chip1: '最多 10 位玩家', chip2: '拖放操作', chip3: '準備前保持隱藏', chip4: '手機也能玩',
     takeSeat: '入座', yourName: '你的名字', namePh: '例如：小明', create: '建立新房間', orJoin: '或加入朋友的房間', roomCode: '房間代碼', join: '加入',
     s1t: '建立或加入', s1d: '一人建立房間，並分享 4 位字母代碼。',
     s2t: '獲發 7 張牌', s2d: '房主洗牌並發牌，只有你能看到自己的手牌。',
@@ -795,7 +1028,7 @@ const I18N = {
     hintProgress: '全員已準備。使用每一行的「翻開 / 蓋上」按鈕，或點擊單張牌來翻開或蓋上。房主可以開始新的一輪。',
     hintReady: '你已準備：所有牌都已蓋上並鎖定。正在等待其他玩家。點擊「取消準備」可重新移動牌。',
     hintArrange: '擺滿 7 個位置才能準備。點擊手牌會放入下一個空位（從最上面一行開始），點擊已擺的牌會放回手牌，也可以隨意拖動。點擊「我準備好了」會蓋上並鎖定。',
-    pillReady: '✓ 已準備', pillArranging: (v) => `擺牌中 ${v.n}/${v.t}`,
+    pillReady: '已準備', pillArranging: (v) => `擺牌中 ${v.n}/${v.t}`,
     handHidden: '你的手牌（已隱藏）', handDone: '你的手牌 — 所有牌都已擺好',
     handTap: '你的手牌 — 點擊一張牌放入下一個空位，或拖到指定位置',
     observing: '觀戰中', watching: '觀戰', obsTitle: '你正在觀戰本輪',
@@ -826,6 +1059,7 @@ const I18N = {
     g8c: '第 4 行結束後會顯示最終結果，用顏色標出每個人輸了哪幾行。', g8d: '在遊戲進行中加入的玩家先觀戰，下一輪會一起發牌。', g8e: '彈出提示、撕牌和「你輸了！」畫面只是為了好玩——誰輸由上面的規則決定。',
     playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
     kickHint: '斷線的玩家會顯示為離線。被移出的玩家可以用房間代碼重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
+    sndMode0: '聲音已關閉', sndMode1: '音效已開啟', sndMode2: '音效 + 音樂已開啟',
     e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
     invitedTo: (v) => `你被邀請加入房間 ${v.code}`, leftOld: '你已離開之前的房間。', joinRoomN: (v) => `加入房間 ${v.code}`, otherCode: '使用其他代碼', createOwn: '或建立自己的房間',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
@@ -878,8 +1112,9 @@ function setLang(l) {
 }
 function applyStatic() {
   document.title = t('title');
+  updateSndBtn();
   document.getElementById('h1').textContent = t('title');
-  document.getElementById('guideBtn').innerHTML = '<b>?</b>' + t('guideBtn');
+  { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', {}, icon('help', 15)), t('guideBtn')); }
   if (document.querySelector('.guide-ov.g-guide')) renderGuide();
   document.querySelectorAll('.langsw button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
   document.querySelector('.langsw').setAttribute('aria-label', t('langLabel'));
@@ -1011,7 +1246,7 @@ function enableDrag(node, src, cardId, onTap) {
       }
       if (!ghost) {
         if (Math.hypot(e.clientX - sx, e.clientY - sy) < 6) return;
-        dragging = true;
+        dragging = true; SND.play('lift');
         node.classList.remove('lifted');
         ghost = node.cloneNode(true);
         ghost.className = ghost.className.replace(/fx-\S+/g, '').trim() + ' ghost-card';
@@ -1098,15 +1333,15 @@ function boardEl(board, mine, pid) {
 }
 
 function copyText(text, btn) {
-  const done = () => { const o = btn.textContent; btn.textContent = t('copied'); setTimeout(() => (btn.textContent = o), 1400); };
+  const done = () => { const keep = [...btn.childNodes]; btn.replaceChildren(withIcon('tick', t('copied'))); setTimeout(() => btn.replaceChildren(...keep), 1400); };
   if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => {});
   else done();
 }
 
 function renderWaitingRoom() {
   const link = `${location.origin}/?room=${st.code}`;
-  const copyCode = el('button', { class: 'ghost', onclick: () => copyText(st.code, copyCode) }, t('copyCode'));
-  const copyLink = el('button', { class: 'ghost', onclick: () => copyText(link, copyLink) }, t('copyLink'));
+  const copyCode = el('button', { class: 'ghost', onclick: () => copyText(st.code, copyCode) }, withIcon('copy', t('copyCode')));
+  const copyLink = el('button', { class: 'ghost', onclick: () => copyText(link, copyLink) }, withIcon('link', t('copyLink')));
 
   const seats = el('div', { class: 'seats' });
   for (let i = 0; i < st.maxPlayers; i++) {
@@ -1129,7 +1364,7 @@ function renderWaitingRoom() {
   app.append(el('div', { class: 'panel waitroom' + (screenAnim ? ' fx-in' : '') },
     el('div', { class: 'kicker' }, t('roomCode')),
     el('div', { class: 'bigcode' }, st.code),
-    el('div', { class: 'row center' }, copyCode, copyLink, el('button', { class: 'ghost', onclick: openPlayers }, '👥 ' + t('playersBtn'))),
+    el('div', { class: 'row center' }, copyCode, copyLink, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn')))),
     el('div', { class: 'count' }, t('joinedCount', { n: st.players.length, max: st.maxPlayers })),
     seats,
     action,
@@ -1145,7 +1380,7 @@ function who(p, label) {
 
 function pill(p) {
   if (p.spectator) return el('span', { class: 'pill wait' }, t('observing'));
-  if (p.ready) return el('span', { class: 'pill go' }, t('pillReady'));
+  if (p.ready) return el('span', { class: 'pill go' }, icon('tick', 13), t('pillReady'));
   const n = p.board.filter(Boolean).length;
   return el('span', { class: 'pill wait' }, t('pillArranging', { n, t: p.board.length }));
 }
@@ -1324,8 +1559,8 @@ function stagePanel(active) {
       else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
     });
     const status = res
-      ? (lose ? el('span', { class: 'tstat lost' }, '✗ ' + t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, '✓ ' + t('safeTag')) : '')
-      : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, allUp ? '✓ ' + t('openedState') : t('hiddenState'));
+      ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : '')
+      : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, ...(allUp ? [icon('tick', 12), t('openedState')] : [t('hiddenState')]));
     grid.append(el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 70}ms` : '' },
       el('div', { class: 'tname' }, el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
       cards,
@@ -1356,7 +1591,7 @@ function finalPanel(active) {
       rows.append(el('div', { class: 'frow ' + cls },
         el('span', { class: 'fnum' }, String(r + 1)),
         el('span', { class: 'fcards' }, ...(entry ? entry.cards.map((c) => cardEl(c, { up: true })) : [])),
-        el('span', { class: 'fmark' }, lose ? el('b', {}, '✗ ×' + res.penalty) : res && !res.tie ? '✓' : '')));
+        el('span', { class: 'fmark' }, lose ? el('b', { class: 'iconlabel' }, icon('x', 12), '×' + res.penalty) : res && !res.tie ? icon('tick', 14) : '')));
     }
     grid.append(el('div', { class: 'ftile' + (p.id === st.meId ? ' me' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 80}ms` : '' },
       el('div', { class: 'tname' }, el('span', { class: 'tn' }, p.name + (p.id === st.meId ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
@@ -1377,13 +1612,13 @@ function renderGame() {
   const readyCount = active.filter(p => p.ready).length;
   const panel = (i, extraCls = '') => ({ class: ('panel ' + extraCls + ' ' + (screenAnim ? 'fx-in' : '')).trim(), style: screenAnim ? `animation-delay:${i * 80}ms` : '' });
 
-  const invite = el('button', { class: 'ghost', title: t('inviteTip'), onclick: () => copyText(`${location.origin}/?room=${st.code}`, invite) }, t('invite'));
+  const invite = el('button', { class: 'ghost', title: t('inviteTip'), onclick: () => copyText(`${location.origin}/?room=${st.code}`, invite) }, withIcon('link', t('invite')));
   const head = el('div', panel(0, 'gamehead'),
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, t('room')), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'hstats' }, t('playersN', { n: st.players.length, max: st.maxPlayers }), el('span', { class: 'sep' }, '·'),
       el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: active.length })), el('span', { class: 'sep' }, '·'), t('roundN', { n: st.round })),
-    el('div', { class: 'hactions' }, el('button', { class: 'ghost', onclick: openPlayers }, '👥 ' + t('playersBtn')), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
-    el('button', { class: 'ghost leavebtn', onclick: leave }, t('leave')));
+    el('div', { class: 'hactions' }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
+    el('button', { class: 'ghost leavebtn', onclick: leave }, withIcon('logout', t('leave'))));
   app.append(head);
   const banner = lastBanner();
   if (banner) app.append(banner);
@@ -1391,7 +1626,7 @@ function renderGame() {
   // Everyone playing is ready: the game moves to the stage, one row at a time
   if (active.length && active.every((p) => p.ready)) {
     if (me.spectator) {
-      app.append(el('div', { class: 'panel observer slim' }, el('span', { class: 'obs-eye sm' }, '👀'),
+      app.append(el('div', { class: 'panel observer slim' }, el('span', { class: 'obs-eye sm' }, icon('eye', 26)),
         el('div', {}, el('div', { class: 'obs-title' }, t('obsTitle')), el('div', { class: 'obs-text' }, t('obsWait')))));
     }
     app.append(stagePanel(active));
@@ -1403,7 +1638,7 @@ function renderGame() {
 
   if (me.spectator) {   // joined while the round was under way: watch, and get dealt in next round
     app.append(el('div', panel(1, 'observer'),
-      el('div', { class: 'obs-eye' }, '👀'),
+      el('div', { class: 'obs-eye' }, icon('eye', 46)),
       el('div', { class: 'obs-title' }, t('obsTitle')),
       el('div', { class: 'obs-text' }, t('obsText')),
       el('div', { class: 'waiting' }, el('span', { class: 'dot' }), t('obsWait'))));
@@ -1428,7 +1663,7 @@ function renderGame() {
     el('div', { class: 'row' },
       who(me, me.name + t('you')),
       readyBtn),
-    inProgress ? '' : me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, '✓'),
+    inProgress ? '' : me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, icon('tick', 15)),
       el('div', {}, t('youReady'), el('small', {}, t('waitMore', { n: active.length - readyCount })))) : '',
     boardEl(me.board, true, me.id),
     el('div', { class: 'hint' }, inProgress
@@ -1458,7 +1693,7 @@ function renderGame() {
   const handPanel = el('div', panel(2, 'handpanel'),
     el('div', { class: 'name' }, handTitle), hand);
   if (!me.ready) handPanel.dataset.hand = '';
-  if (!inProgress) app.append(handPanel);   // nothing left to do with the hand once the round is under way
+  if (!me.ready && !inProgress) app.append(handPanel);   // ready = all cards placed and locked, so the hand goes away; Unready brings it back
 
   const others = el('div', { class: 'others' });
   active.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5, p.ready ? 'is-ready' : ''),
@@ -1490,16 +1725,16 @@ function renderLobby() {
     el('h2', {}, t('h2a'), el('em', {}, t('h2b'))),
     el('p', {}, t('heroP')),
     el('div', { class: 'chips' },
-      el('span', { class: 'chip' }, t('chip1')),
-      el('span', { class: 'chip' }, t('chip2')),
-      el('span', { class: 'chip' }, t('chip3')),
-      el('span', { class: 'chip' }, t('chip4'))),
+      el('span', { class: 'chip' }, icon('users', 16), t('chip1')),
+      el('span', { class: 'chip' }, icon('hand', 16), t('chip2')),
+      el('span', { class: 'chip' }, icon('eye-off', 16), t('chip3')),
+      el('span', { class: 'chip' }, icon('phone', 16), t('chip4'))),
     fan);
 
   const invited = !!inviteCode;
   const form = invited
     ? el('div', { class: 'panel joincard fx-in invited' },
-        el('div', { class: 'invitebanner' }, el('span', { class: 'inv-i' }, '🎟'), el('div', {}, el('b', {}, t('invitedTo', { code: inviteCode })), leftOld ? el('small', {}, t('leftOld')) : '')),
+        el('div', { class: 'invitebanner' }, el('span', { class: 'inv-i' }, icon('ticket', 30)), el('div', {}, el('b', {}, t('invitedTo', { code: inviteCode })), leftOld ? el('small', {}, t('leftOld')) : '')),
         el('label', {}, t('yourName')), name,
         el('button', { class: 'big', onclick: () => { remember(); enter('join', { name: formName, code: inviteCode }); } }, t('joinRoomN', { code: inviteCode })),
         el('div', { class: 'or' }, t('createOwn')),
@@ -1564,7 +1799,8 @@ function adopt(j) {
   const prev = st && st.code === j.code ? st : null;
   j.recvAt = Date.now();
   if (prev) diffFx(prev, j);
-  if (prev && j.round > prev.round) showRound(j.round);
+  if (prev && j.round > prev.round) { showRound(j.round); SND.play('round'); setTimeout(() => SND.play('shuffle'), 450); }
+  if (prev && !prev.allReady && j.allReady) setTimeout(() => SND.play('allready'), 150);
   const target = j.currentRow ?? 0;
   if (!prev || prev.round !== j.round) { stageRow = Math.min(target, 4); clearTimeout(holdTimer); holdTimer = null; }
   if (prev) {   // announce a row the moment it is scored; results persist, so reopening a row is never re-announced
@@ -1667,6 +1903,14 @@ function showResult(r, view) {
         penalty);
   const o = el('div', { class: 'resfx' + (iLose ? ' lose' : '') }, iLose ? el('div', { class: 'spikes' }) : '', box);
   document.body.append(o);
+  // the row turns over, the loser's cards tear, then the verdict
+  SND.play('flip');
+  if (r.tie) setTimeout(() => SND.play('tie'), 380);
+  else {
+    setTimeout(() => SND.play('tear'), 520);
+    if (iLose) setTimeout(() => SND.play('youlose'), 650);
+    else { setTimeout(() => SND.play('names'), 700); setTimeout(() => SND.play('safe'), 1150); }
+  }
   if (iLose) { try { navigator.vibrate && navigator.vibrate([220, 90, 220, 90, 360]); } catch {} }
   setTimeout(() => o.remove(), 5100);
 }
@@ -1674,6 +1918,7 @@ function showResult(r, view) {
 function showNext(row) {
   document.querySelector('.nextfx')?.remove();
   const done = row >= 4;
+  SND.play('whoosh'); if (done) setTimeout(() => SND.play('final'), 450);
   const o = el('div', { class: 'nextfx' }, el('div', { class: 'nx-box' },
     el('div', { class: 'nx-k' }, done ? t('allDone') : t('nextUp')),
     el('div', { class: 'nx-n' }, done ? t('finalTitle') : t('rowN', { n: row + 1 })),
@@ -1711,13 +1956,13 @@ function guideBody(i) {
       el('div', { class: 'gl-t' }, el('b', {}, t('g_r' + (r + 1))), el('small', {}, t('gCards', { n }))))));
     wrap.append(h('g1t'), p('g1p'), lay);
   } else if (i === 1) {   // flow
-    const steps = [['🃏', 'g2a'], ['🧩', 'g2b'], ['✅', 'g2c'], ['👀', 'g2d'], ['😵', 'g2e']];
+    const steps = [['cards', 'g2a'], ['rows', 'g2b'], ['check', 'g2c'], ['eye', 'g2d'], ['zap', 'g2e']];
     const flow = el('div', { class: 'gflow' });
-    steps.forEach(([ic, k], n) => { flow.append(el('div', { class: 'gf' }, el('span', { class: 'gf-i' }, ic), el('span', {}, t(k)))); if (n < steps.length - 1) flow.append(el('span', { class: 'gf-a' }, '›')); });
+    steps.forEach(([ic, k], n) => { flow.append(el('div', { class: 'gf' }, el('span', { class: 'gf-i' }, icon(ic, 26)), el('span', {}, t(k)))); if (n < steps.length - 1) flow.append(el('span', { class: 'gf-a' }, '›')); });
     wrap.append(h('g2t'), flow, el('ol', { class: 'glist' }, ...[1, 2, 3, 4, 5].map((n) => el('li', {}, t('g2l' + n)))));
   } else if (i === 2) {   // placing cards
     const slots = el('div', { class: 'gmini' }, el('div', { class: 'gslots r1' }, gslot('7H')), el('div', { class: 'gslots r1' }, gslot()), el('div', { class: 'gslots r2' }, gslot(), gslot()), el('div', { class: 'gslots r3' }, gslot(), gslot(), gslot()));
-    const hand = el('div', { class: 'ghand' }, el('div', { class: 'ghand-l' }, t('gHand')), gcards(['KS', '3D', '9C']), el('div', { class: 'gtapmark' }, '👆 ' + t('gTap')));
+    const hand = el('div', { class: 'ghand' }, el('div', { class: 'ghand-l' }, t('gHand')), gcards(['KS', '3D', '9C']), el('div', { class: 'gtapmark iconlabel' }, icon('hand', 16), t('gTap')));
     wrap.append(h('g3t'), el('div', { class: 'gtapdemo' }, hand, el('span', { class: 'gbigarrow' }, '→'), slots),
       el('ul', { class: 'glist bullets' }, ...['g3a', 'g3b', 'g3c', 'g3d'].map((k) => el('li', {}, t(k)))));
   } else if (i === 3) {   // row 1
@@ -1759,9 +2004,9 @@ function renderGuide() {
   const prev = ov.querySelector('.gscroll');
   const keepTop = prev ? prev.scrollTop : 0;
   ov.replaceChildren(el('div', { class: 'guide', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('guideTitle') },
-    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, '?'), t('guideTitle')),
+    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('help', 15)), t('guideTitle')),
       el('div', { class: 'langsw gl' }, ...[['en', 'EN'], ['zh', '简体'], ['zht', '繁體']].map(([l, label]) => el('button', { type: 'button', class: l === lang ? 'on' : '', onclick: () => setLang(l) }, label))),
-      el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closeGuide }, '✕')),
+      el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closeGuide }, icon('x', 16))),
     el('div', { class: 'gscroll' }, guideBody(guideIdx)),
     el('div', { class: 'gfoot' },
       el('button', { class: 'ghost', disabled: guideIdx === 0, onclick: () => { guideIdx--; renderGuide(); ov.querySelector('.gscroll').scrollTop = 0; } }, '‹ ' + t('gBack')),
@@ -1805,7 +2050,7 @@ function renderPlayers() {
     const me = p.id === st.meId;
     const status = p.spectator ? el('span', { class: 'pill wait' }, t('observing'))
       : st.phase === 'lobby' ? el('span', { class: 'tag joined' }, t('joined'))
-      : p.ready ? el('span', { class: 'pill go' }, '✓ ' + t('plReady')) : pill(p);
+      : p.ready ? el('span', { class: 'pill go' }, icon('tick', 13), t('plReady')) : pill(p);
     const canKick = st.isHost && !me;
     const armed = kickArm === p.id;
     const presence = st.isHost && p.online !== undefined && !me
@@ -1818,12 +2063,12 @@ function renderPlayers() {
       canKick ? el('button', { class: 'kickbtn' + (armed ? ' armed' : ''), onclick: () => {
         if (armed) { kickArm = null; clearTimeout(kickTimer); act('kick', { target: p.id }); }
         else { kickArm = p.id; clearTimeout(kickTimer); kickTimer = setTimeout(() => { kickArm = null; renderPlayers(); }, 4000); renderPlayers(); }
-      } }, armed ? t('kickSure') : t('kick')) : '');
+      } }, withIcon('user-x', armed ? t('kickSure') : t('kick'), 15)) : '');
   });
   const keep = ov.querySelector('.gscroll')?.scrollTop || 0;
   ov.replaceChildren(el('div', { class: 'guide pl', role: 'dialog', 'aria-modal': 'true' },
-    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, '👥'), t('playersTitle', { n: st.players.length })),
-      el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closePlayers }, '✕')),
+    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('users', 15)), t('playersTitle', { n: st.players.length })),
+      el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closePlayers }, icon('x', 16))),
     el('div', { class: 'gscroll' }, el('div', { class: 'plist' }, ...rows), el('p', { class: 'plhint' }, st.isHost ? t('kickHint') : t('hostOnlyHint'))),
     el('div', { class: 'gfoot' }, el('span'), el('button', { onclick: closePlayers }, t('gClose')))));
   const sc = ov.querySelector('.gscroll'); if (sc) sc.scrollTop = keep;
@@ -1845,6 +2090,8 @@ function toast(msg) {
 }
 
 function diffFx(prev, next) {
+  if (next.players.some((p) => p.id !== next.meId && !prev.players.some((x) => x.id === p.id))) SND.play('join');
+  if (prev.players.some((p) => p.id !== next.meId && !next.players.some((x) => x.id === p.id))) SND.play('leave');
   if (prev.phase === 'dealt' && next.phase === 'dealt') {
     next.players.filter((p) => !prev.players.some((x) => x.id === p.id)).forEach((p) => toast(t('toastJoin', { name: p.name })));
     prev.players.filter((p) => !next.players.some((x) => x.id === p.id)).forEach((p) => toast(t('toastLeft', { name: p.name })));
@@ -1915,8 +2162,10 @@ function predict(action, x) {
   return null;
 }
 
+const ACT_SOUND = { place: 'place', move: 'place', unplace: 'return', flip: 'flip', flipRow: 'flip', flipRowAll: 'flip', kick: 'kick' };
 function act(action, extra = {}) {
   err = '';
+  if (action === 'ready') SND.play(extra.ready ? 'ready' : 'unready'); else if (ACT_SOUND[action]) SND.play(ACT_SOUND[action]);
   const next = st && predict(action, extra);
   if (next) { diffFx(st, next); st = next; render(); }
   pending++;
@@ -1924,7 +2173,7 @@ function act(action, extra = {}) {
   queue = queue
     .then(async () => {
       try { const j = await api(action, extra); if (!best || j.version > best.version) best = j; }
-      catch (e) { err = e.message; failed = true; }
+      catch (e) { err = e.message; failed = true; SND.play('error'); }
     })
     .then(async () => {
       if (--pending > 0) return;
@@ -1943,6 +2192,7 @@ function act(action, extra = {}) {
 }
 
 function dropSession(message) {
+  if (/removed/i.test(message)) SND.play('kick');
   session = null; st = null; save(); clearInterval(timer); closePlayers(); err = message; render();
 }
 
@@ -1974,6 +2224,7 @@ let resizeT, lastW = window.innerWidth;
 window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(resizeT); resizeT = setTimeout(() => { if (st && !dragging) safeRender(); }, 150); });
 document.querySelectorAll('.langsw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.l)));
 document.getElementById('guideBtn').addEventListener('click', () => openGuide(0));
+document.getElementById('sndBtn').addEventListener('click', () => { const m = SND.cycle(); updateSndBtn(); toast(t('sndMode' + m)); if (m > 0) SND.play('ready'); });
 applyStatic();
 if (session) { poll().then(() => { if (session) startPolling(); }); } 
 render();
