@@ -293,7 +293,7 @@
   .mc { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--ivory); color: var(--ink); font-weight: 700; font-size: 12px; }
   .mc.red { color: var(--red); }
   /* announcement pop-up */
-  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 4s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; }
+  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 5s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; }
   .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(18,22,40,.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
   .resbox .rf-k { font-size: clamp(16px, 4.5vw, 24px); letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .resbox .resk { margin-top: 10px; font-size: 13px; }
@@ -1040,7 +1040,7 @@ function showResult(r) {
     el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
     r.tie ? el('div', { class: 'respen big none' }, t('noPenalty')) : el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty)));
   document.body.append(o);
-  setTimeout(() => o.remove(), 4100);
+  setTimeout(() => o.remove(), 5100);
 }
 
 function showRound(n) {
