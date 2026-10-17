@@ -2224,7 +2224,7 @@ function renderGuide() {
   const keepTop = prev ? prev.scrollTop : 0;
   ov.replaceChildren(el('div', { class: 'guide', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('guideTitle') },
     el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('book', 16)), t('guideTitle')),
-      el('div', { class: 'langsw gl' }, ...[['en', 'EN'], ['zh', '简体'], ['zht', '繁體']].map(([l, label]) => el('button', { type: 'button', class: l === lang ? 'on' : '', onclick: () => setLang(l) }, label))),
+      el('div', { class: 'langsw gl' }, ...[['en', 'EN'], ['zh', '简体'], ['zht', '繁體']].map(([l, label]) => { const b = el('button', { type: 'button', class: l === lang ? 'on' : '', onclick: () => setLang(l) }, label); b.dataset.l = l; return b; })),
       el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closeGuide }, icon('x', 16))),
     el('div', { class: 'gscroll' }, guideBody(guideIdx)),
     el('div', { class: 'gfoot' },
