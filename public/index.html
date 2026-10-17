@@ -493,7 +493,8 @@
   .gvals { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .gchip { padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,.08); border: 1px solid var(--line); font-size: 13px; font-weight: 700; }
   /* ladder */
-  .gladder-wrap { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; margin-bottom: 8px; }
+  .gladder-wrap { display: grid; gap: 6px; margin-bottom: 8px; }
+  .gl-end { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; display: flex; align-items: center; gap: 4px; } .gl-end.weak { color: #ff9c8f; } .gl-end.strong { color: var(--gold-hi); justify-content: flex-end; }
   .gl-side { display: flex; flex-direction: column; align-items: center; justify-content: space-between; font-size: 10px; opacity: .65; writing-mode: vertical-rl; }
   .gl-side i { flex: 1; width: 2px; margin: 6px 0; background: linear-gradient(180deg, rgba(255,255,255,.2), var(--gold)); }
   .gladder { display: grid; gap: 6px; --cw: 32px; }
@@ -2075,7 +2076,7 @@ function guideBody(i) {
     const ladder = el('div', { class: 'gladder' });
     rungs.forEach(([k, ids, bonus], n) => ladder.append(el('div', { class: 'grung' }, el('span', { class: 'grung-n' }, String(n + 1)), el('div', { class: 'grung-l' }, t('gh_' + k)), gcards(ids), bonus ? el('span', { class: 'gbonus' }, bonus) : el('span', { class: 'gbonus none' }, '—'))));
     wrap.append(h('g7t'), p('g7p'),
-      el('div', { class: 'gladder-wrap' }, el('div', { class: 'gl-side' }, el('span', {}, '↑ ' + t('h7a')), el('i', {}), el('span', {}, '↓ ' + t('h7b'))), ladder),
+      el('div', { class: 'gladder-wrap' }, el('div', { class: 'gl-end weak' }, el('b', {}, t('h7a')), ' ▼'), ladder, el('div', { class: 'gl-end strong' }, el('b', {}, t('h7b')), ' ▲')),
       el('p', { class: 'gnote' }, t('g7pen')), el('p', { class: 'gnote dim' }, t('g7note')));
   } else {   // good to know
     wrap.append(h('g8t'),
