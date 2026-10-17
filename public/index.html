@@ -400,6 +400,94 @@
   .observer.slim { display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 14px; border-style: dashed; border-color: rgba(124,196,255,.55); }
   .obs-eye.sm { font-size: 26px; animation: none; }
   .observer.slim .obs-title { font-size: 15px; } .observer.slim .obs-text { font-size: 12px; margin: 0; }
+
+  /* ===== how to play ===== */
+  .topbar { justify-content: space-between; align-items: center; }
+  .guidebtn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 99px; font-size: 12px; letter-spacing: .3px; text-transform: none; background: rgba(255,255,255,.06); color: #fff; border: 1px solid var(--line); box-shadow: none; }
+  .guidebtn b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; font-size: 13px; }
+  .guidebtn:hover { background: rgba(255,255,255,.12); transform: none; filter: none; }
+  body.noscroll { overflow: hidden; }
+  .guide-ov { position: fixed; inset: 0; z-index: 95; background: rgba(5,8,18,.78); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 12px; animation: gfade .25s ease; }
+  @keyframes gfade { from { opacity: 0; } }
+  .guide { --cw: 46px; width: min(760px, 100%); max-height: min(92vh, 900px); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; border-radius: 20px; background: linear-gradient(180deg, #19223d, #0e1426); border: 1px solid var(--gold-lo); box-shadow: 0 30px 80px rgba(0,0,0,.7); overflow: hidden; animation: guidein .3s cubic-bezier(.2,1.2,.4,1) backwards; }
+  @keyframes guidein { from { opacity: 0; transform: translateY(24px) scale(.97); } }
+  .ghead { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .gtitle { flex: 1; display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; }
+  .gtitle b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; font-size: 15px; }
+  .gcount { font-size: 12px; opacity: .6; }
+  .gx { padding: 6px 11px; font-size: 14px; }
+  .gscroll { overflow-y: auto; padding: 16px 18px 8px; -webkit-overflow-scrolling: touch; }
+  .gbody h3 { margin: 0 0 8px; font-size: 22px; color: var(--gold-hi); }
+  .gbody p { margin: 0 0 14px; font-size: 15px; line-height: 1.55; opacity: .9; }
+  .gbody .gnote { margin: 12px 0 8px; font-weight: 600; }
+  .gbody .gnote.dim { font-weight: 400; font-size: 13px; opacity: .65; }
+  .gfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  .gfoot > button { padding: 9px 16px; }
+  .gdots { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: center; }
+  .gfoot > button { white-space: nowrap; }
+  .gdot { width: 9px; height: 9px; padding: 0; border-radius: 50%; background: rgba(255,255,255,.22); box-shadow: none; border: 0; }
+  .gdot:hover { transform: none; filter: none; background: rgba(255,255,255,.4); }
+  .gdot.on { background: var(--gold-hi); width: 22px; border-radius: 99px; }
+  .guide .card { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); cursor: default; }
+  .guide .card .ix { font-size: calc(var(--cw) * .27); top: calc(var(--cw) * .06); left: calc(var(--cw) * .09); }
+  .guide .card .ix i { font-size: calc(var(--cw) * .25); }
+  .guide .card .pip { font-size: calc(var(--cw) * .62); padding-top: calc(var(--cw) * .24); padding-left: calc(var(--cw) * .12); }
+  .gcards { display: flex; gap: 4px; justify-content: center; }
+  /* layout diagram */
+  .glayout { --cw: 40px; display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+  .gl-row { display: grid; grid-template-columns: 26px calc(var(--cw) * 3 + 12px) minmax(0, 1fr); align-items: center; gap: 10px; }
+  .gl-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
+  .gl-slots { display: flex; gap: 6px; justify-content: center; }
+  .gl-t { display: grid; font-size: 13px; line-height: 1.3; } .gl-t small { opacity: .6; font-size: 11px; }
+  .gslot { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); background: rgba(255,255,255,.05); border: 1px dashed rgba(201,169,106,.65); display: flex; }
+  .gslot.full { border-style: solid; background: none; } .gslot .card { width: 100%; height: 100%; }
+  /* flow */
+  .gflow { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .gf { display: grid; justify-items: center; gap: 4px; padding: 10px 8px; min-width: 62px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 12px; font-weight: 700; }
+  .gf-i { font-size: 22px; } .gf-a { font-size: 22px; opacity: .5; }
+  .glist { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: 14.5px; line-height: 1.5; }
+  .glist.bullets { list-style: none; padding-left: 0; } .glist.bullets li { position: relative; padding-left: 20px; }
+  .glist.bullets li::before { content: ''; position: absolute; left: 3px; top: .55em; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+  /* tap demo */
+  .gtapdemo { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 6px 0 16px; padding: 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+  .ghand { display: grid; justify-items: center; gap: 6px; } .ghand-l { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .65; }
+  .gtapmark { font-size: 12px; font-weight: 700; color: var(--gold-hi); } .gbigarrow { font-size: 30px; color: var(--gold-hi); }
+  .gmini { display: grid; gap: 4px; justify-items: center; --cw: 30px; } .gslots { display: flex; gap: 4px; }
+  .gmini .gslot { width: 30px; height: 43px; }
+  /* examples */
+  .gexs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0 14px; }
+  .gex { display: grid; justify-items: center; gap: 6px; padding: 10px 6px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+  .gex.lose { background: rgba(255,90,80,.14); border-color: #ff6b5e; } .gex.safe { background: rgba(111,207,151,.08); border-color: rgba(111,207,151,.5); } .gex.perfect { background: rgba(201,169,106,.14); border-color: var(--gold); }
+  .gex-n { font-weight: 700; font-size: 13px; } .gex-v { font-size: 12px; opacity: .8; text-align: center; }
+  .gex-t { font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; padding: 2px 9px; border-radius: 99px; }
+  .gex-t.lose { background: rgba(255,90,80,.3); color: #ffd2cd; } .gex-t.safe { background: rgba(111,207,151,.2); color: #b9f0cd; } .gex-t.perfect { background: rgba(201,169,106,.3); color: var(--gold-hi); }
+  .gscale { margin: 0 0 6px; } .gscale-r { display: flex; gap: 3px; } .gr { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 5px 0; border-radius: 6px; background: rgba(255,255,255,.08); }
+  .gr.hl { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
+  .gscale-a { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 11px; opacity: .65; } .gscale-a i { flex: 1; height: 2px; background: linear-gradient(90deg, rgba(255,255,255,.2), var(--gold)); }
+  .gpens { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .gpen { display: grid; justify-items: center; gap: 3px; padding: 8px 4px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid var(--line); font-size: 11.5px; text-align: center; }
+  .gpen b { font-size: 18px; color: #ffb25e; }
+  .gvals { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .gchip { padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,.08); border: 1px solid var(--line); font-size: 13px; font-weight: 700; }
+  /* ladder */
+  .gladder-wrap { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; margin-bottom: 8px; }
+  .gl-side { display: flex; flex-direction: column; align-items: center; justify-content: space-between; font-size: 10px; opacity: .65; writing-mode: vertical-rl; }
+  .gl-side i { flex: 1; width: 2px; margin: 6px 0; background: linear-gradient(180deg, rgba(255,255,255,.2), var(--gold)); }
+  .gladder { display: grid; gap: 6px; --cw: 32px; }
+  .grung { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+  .grung:nth-child(n+4) { background: rgba(201,169,106,.07); } .grung:last-child { background: rgba(201,169,106,.16); border-color: var(--gold); }
+  .grung-n { font-size: 12px; font-weight: 800; opacity: .6; } .grung-l { font-size: 12.5px; font-weight: 700; min-width: 0; }
+  .gbonus { font-size: 13px; font-weight: 800; padding: 3px 9px; border-radius: 8px; background: linear-gradient(180deg, #ffb25e, #f0801f); color: #2b1300; min-width: 40px; text-align: center; } .gbonus.none { background: rgba(255,255,255,.08); color: rgba(255,255,255,.4); }
+  .gtie { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .gtie .gex { min-width: 80px; } .gtie-r { display: flex; flex-direction: column; gap: 6px; }
+  .nop { background: rgba(255,255,255,.1); }
+  .gleg { margin-top: 14px; }
+  @media (max-width: 520px) {
+    .guide-ov { padding: 0; align-items: end; } .guide { width: 100%; max-height: 94vh; border-radius: 20px 20px 0 0; }
+    .gbody h3 { font-size: 20px; } .gl-row { gap: 8px; } .gl-t { font-size: 12px; }
+    .gfoot > button { padding: 9px 10px; font-size: 12px; } .gdots { gap: 4px; } .gdot { width: 6px; height: 6px; } .gdot.on { width: 15px; }
+    .gtapdemo { gap: 8px; }
+  }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -440,7 +528,7 @@
 <body>
 <div class="bg" id="bg"></div>
 <main>
-  <div class="topbar"><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div>
+  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div>
   <h1 id="h1">Seven Card Table</h1>
   <div id="app"></div>
 </main>
@@ -481,6 +569,25 @@ const I18N = {
     openedN: (v) => `${v.n}/${v.total} opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
     youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
     finalTitle: 'Final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
+    guideBtn: 'How to play', guideTitle: 'How to play', gClose: 'Close', gBack: 'Back', gNext: 'Next', gDone: 'Got it!', gStep: (v) => `${v.i} / ${v.n}`,
+    g_r1: 'Lowest card loses', g_r2: 'Highest card loses', g_r3: 'Closest to 10.5', g_r4: 'Best pattern', gCards: (v) => `${v.n} card${v.n > 1 ? 's' : ''}`,
+    gLoses: 'LOSES', gSafe: 'safe', gBust: 'BUST', gPerfect: 'PERFECT', gPenaltyIs: 'Penalty',
+    g1t: 'The game in one minute', g1p: 'Up to 10 players. Everyone gets 7 cards and arranges them in 4 rows of 1, 1, 2 and 3 cards. The rows are then revealed one at a time from the top. Every row is its own contest — the loser of a row takes a penalty.',
+    g2t: 'How a round goes', g2a: 'Deal', g2b: 'Arrange', g2c: 'Ready', g2d: 'Reveal', g2e: 'Penalty',
+    g2l1: 'The host presses “Shuffle & deal”.', g2l2: 'Place all 7 cards in the rows.', g2l3: 'Press “I’m ready” — your cards turn face down and lock.',
+    g2l4: 'Once everyone is ready, the host opens row 1, then row 2, 3 and 4.', g2l5: 'After each row the loser(s) and the penalty are shown to everyone. The host can deal a new round at any time.',
+    g3t: 'Placing your cards', g3a: 'Tap a card in your hand — it goes into the next free slot, top row first.', g3b: 'Tap a placed card to send it back to your hand.', g3c: 'Or drag any card to any slot you like.', g3d: 'Fill all 7 slots, then press “I’m ready”.', gTap: 'tap', gHand: 'Your hand', gDrag: 'drag',
+    g4t: 'Row 1 — lowest card loses', g4p: 'Ace is the highest card and 2 is the lowest. The lowest card in the row loses. If several players share the lowest rank (any suit), they all lose.',
+    g4n: 'Penalty is ×1 — but every Ace anyone has in this row doubles up:', gLow: 'low', gHigh: 'high',
+    g5t: 'Row 2 — highest card loses', g5p: 'Here the smallest card wins, so the highest card loses (Ace is the highest). Players sharing the highest rank lose together.',
+    g5n: 'Penalty is ×1 — but every 2 anyone has in this row doubles up:',
+    g6t: 'Row 3 — closest to 10.5', g6p: 'Add your two cards. Over 10.5 is a bust and always loses. If nobody busts, the lowest total loses. Same lowest total? They lose together.',
+    g6v1: 'Ace = 1', g6v2: '2 to 10 = face value', g6v3: 'J Q K = 0.5', g6n: 'Penalty is ×1 — but every exact 10.5 doubles up:', gNone: (v) => `no ${v.what}`,
+    g7t: 'Row 4 — best pattern', g7p: 'Three cards form a hand. Only the weakest hand loses (players sharing the weakest hand lose together). The stronger hands held by the other players make the penalty bigger.',
+    h7a: 'weakest', h7b: 'strongest', g7note: 'A-2-3 and Q-K-A both count as straights. Royal flush = 10-J-Q, J-Q-K or Q-K-A in one suit.', g7pen: 'Penalty = the bonuses of everyone else’s hands added up (×1 if none).',
+    gh_none: 'No pattern', gh_pair: 'Pair', gh_straight: 'Straight', gh_flush: 'Three of one suit', gh_triple: 'Three of a kind', gh_sflush: 'Straight flush', gh_royal: 'Royal flush',
+    g8t: 'Good to know', g8a: 'If every player would lose a row (everyone has the same), it’s a tie — no penalty for anyone.', g8b: 'Penalties start fresh on every row; they don’t add up across rows.',
+    g8c: 'After row 4 a final board shows all rows, coloured by who lost what.', g8d: 'Joined while a game is in progress? You watch until the next round, then you’re dealt in.', g8e: 'Pop-ups, torn cards and the “You lose!” screen are just for fun — the rules above decide who loses.',
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
@@ -528,6 +635,25 @@ const I18N = {
     openedN: (v) => `${v.n}/${v.total} 已翻开`, hiddenState: '未翻开', openedState: '已翻开', lostTag: '输了', safeTag: '安全',
     youLose: '你输了！', alongWith: (v) => `还有 ${v.names}`, nextUp: '下一行', allDone: '四行全部结束',
     finalTitle: '最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
+    guideBtn: '玩法说明', guideTitle: '玩法说明', gClose: '关闭', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
+    g_r1: '最小的牌输', g_r2: '最大的牌输', g_r3: '最接近 10.5', g_r4: '牌型最强', gCards: (v) => `${v.n} 张牌`,
+    gLoses: '输', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '惩罚',
+    g1t: '一分钟看懂玩法', g1p: '最多 10 位玩家。每人发 7 张牌，按 1、1、2、3 张摆成 4 行。然后从上到下一行一行揭晓。每一行都是一场独立的比拼——输的人要受惩罚。',
+    g2t: '一轮怎么玩', g2a: '发牌', g2b: '摆牌', g2c: '准备', g2d: '揭晓', g2e: '惩罚',
+    g2l1: '房主点击“洗牌并发牌”。', g2l2: '把 7 张牌都摆进各行。', g2l3: '点击“我准备好了”——你的牌会盖上并锁定。',
+    g2l4: '所有人准备好后，房主依次翻开第 1、2、3、4 行。', g2l5: '每翻完一行，所有人都会看到输家和惩罚。房主随时可以开始新的一轮。',
+    g3t: '怎么摆牌', g3a: '点击手牌，它会放入下一个空位（从最上面一行开始）。', g3b: '点击已摆的牌，可以放回手牌。', g3c: '也可以把任意一张牌拖到任意位置。', g3d: '摆满 7 个位置后，点击“我准备好了”。', gTap: '点击', gHand: '你的手牌', gDrag: '拖动',
+    g4t: '第 1 行 — 最小的牌输', g4p: 'A 最大，2 最小。这一行里最小的牌输。如果有几位玩家的牌点数相同且最小（花色不限），他们一起输。',
+    g4n: '惩罚是 ×1——但这一行里每出现一张 A，惩罚就翻倍：', gLow: '小', gHigh: '大',
+    g5t: '第 2 行 — 最大的牌输', g5p: '这一行最小的牌赢，所以最大的牌输（A 最大）。点数相同且最大的玩家一起输。',
+    g5n: '惩罚是 ×1——但这一行里每出现一张 2，惩罚就翻倍：',
+    g6t: '第 3 行 — 最接近 10.5', g6p: '把两张牌的点数相加。超过 10.5 就是爆了，一定会输。如果没有人爆，总点数最小的输。总点数相同且最小，一起输。',
+    g6v1: 'A = 1', g6v2: '2 到 10 = 牌面点数', g6v3: 'J Q K = 0.5', g6n: '惩罚是 ×1——但每出现一个刚好 10.5，惩罚就翻倍：', gNone: (v) => `没有${v.what}`,
+    g7t: '第 4 行 — 牌型最强', g7p: '三张牌组成一手牌。只有最弱的牌型会输（牌型同样最弱的玩家一起输）。其他玩家手里越强的牌型，惩罚越大。',
+    h7a: '最弱', h7b: '最强', g7note: 'A-2-3 和 Q-K-A 都算顺子。皇家同花顺 = 同一花色的 10-J-Q、J-Q-K 或 Q-K-A。', g7pen: '惩罚 = 其他人牌型的加成相加（没有则为 ×1）。',
+    gh_none: '散牌', gh_pair: '对子', gh_straight: '顺子', gh_flush: '同花', gh_triple: '三条', gh_sflush: '同花顺', gh_royal: '皇家同花顺',
+    g8t: '小提示', g8a: '如果这一行所有人都会输（所有人都一样），就是平局——没有人受惩罚。', g8b: '每一行的惩罚单独计算，不会跨行累加。',
+    g8c: '第 4 行结束后会显示最终结果，用颜色标出每个人输了哪几行。', g8d: '在游戏进行中加入的玩家先观战，下一轮会一起发牌。', g8e: '弹出提示、撕牌和“你输了！”画面只是为了好玩——谁输由上面的规则决定。',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
@@ -575,6 +701,25 @@ const I18N = {
     openedN: (v) => `${v.n}/${v.total} 已翻開`, hiddenState: '未翻開', openedState: '已翻開', lostTag: '輸了', safeTag: '安全',
     youLose: '你輸了！', alongWith: (v) => `還有 ${v.names}`, nextUp: '下一行', allDone: '四行全部結束',
     finalTitle: '最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
+    guideBtn: '玩法說明', guideTitle: '玩法說明', gClose: '關閉', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
+    g_r1: '最小的牌輸', g_r2: '最大的牌輸', g_r3: '最接近 10.5', g_r4: '牌型最強', gCards: (v) => `${v.n} 張牌`,
+    gLoses: '輸', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '懲罰',
+    g1t: '一分鐘看懂玩法', g1p: '最多 10 位玩家。每人發 7 張牌，依 1、1、2、3 張擺成 4 行。然後由上到下一行一行揭曉。每一行都是一場獨立的比拼——輸的人要受懲罰。',
+    g2t: '一輪怎麼玩', g2a: '發牌', g2b: '擺牌', g2c: '準備', g2d: '揭曉', g2e: '懲罰',
+    g2l1: '房主點擊「洗牌並發牌」。', g2l2: '把 7 張牌都擺進各行。', g2l3: '點擊「我準備好了」——你的牌會蓋上並鎖定。',
+    g2l4: '所有人準備好後，房主依序翻開第 1、2、3、4 行。', g2l5: '每翻完一行，所有人都會看到輸家和懲罰。房主隨時可以開始新的一輪。',
+    g3t: '怎麼擺牌', g3a: '點擊手牌，它會放入下一個空位（從最上面一行開始）。', g3b: '點擊已擺的牌，可以放回手牌。', g3c: '也可以把任意一張牌拖到任意位置。', g3d: '擺滿 7 個位置後，點擊「我準備好了」。', gTap: '點擊', gHand: '你的手牌', gDrag: '拖動',
+    g4t: '第 1 行 — 最小的牌輸', g4p: 'A 最大，2 最小。這一行裡最小的牌輸。如果有幾位玩家的牌點數相同且最小（花色不限），他們一起輸。',
+    g4n: '懲罰是 ×1——但這一行裡每出現一張 A，懲罰就翻倍：', gLow: '小', gHigh: '大',
+    g5t: '第 2 行 — 最大的牌輸', g5p: '這一行最小的牌贏，所以最大的牌輸（A 最大）。點數相同且最大的玩家一起輸。',
+    g5n: '懲罰是 ×1——但這一行裡每出現一張 2，懲罰就翻倍：',
+    g6t: '第 3 行 — 最接近 10.5', g6p: '把兩張牌的點數相加。超過 10.5 就是爆了，一定會輸。如果沒有人爆，總點數最小的輸。總點數相同且最小，一起輸。',
+    g6v1: 'A = 1', g6v2: '2 到 10 = 牌面點數', g6v3: 'J Q K = 0.5', g6n: '懲罰是 ×1——但每出現一個剛好 10.5，懲罰就翻倍：', gNone: (v) => `沒有${v.what}`,
+    g7t: '第 4 行 — 牌型最強', g7p: '三張牌組成一手牌。只有最弱的牌型會輸（牌型同樣最弱的玩家一起輸）。其他玩家手裡越強的牌型，懲罰越大。',
+    h7a: '最弱', h7b: '最強', g7note: 'A-2-3 和 Q-K-A 都算順子。皇家同花順 = 同一花色的 10-J-Q、J-Q-K 或 Q-K-A。', g7pen: '懲罰 = 其他人牌型的加成相加（沒有則為 ×1）。',
+    gh_none: '散牌', gh_pair: '對子', gh_straight: '順子', gh_flush: '同花', gh_triple: '三條', gh_sflush: '同花順', gh_royal: '皇家同花順',
+    g8t: '小提示', g8a: '如果這一行所有人都會輸（所有人都一樣），就是平局——沒有人受懲罰。', g8b: '每一行的懲罰單獨計算，不會跨行累加。',
+    g8c: '第 4 行結束後會顯示最終結果，用顏色標出每個人輸了哪幾行。', g8d: '在遊戲進行中加入的玩家先觀戰，下一輪會一起發牌。', g8e: '彈出提示、撕牌和「你輸了！」畫面只是為了好玩——誰輸由上面的規則決定。',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
@@ -626,6 +771,8 @@ function setLang(l) {
 function applyStatic() {
   document.title = t('title');
   document.getElementById('h1').textContent = t('title');
+  document.getElementById('guideBtn').innerHTML = '<b>?</b>' + t('guideBtn');
+  if (document.querySelector('.guide-ov')) renderGuide();
   document.querySelectorAll('.langsw button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
   document.querySelector('.langsw').setAttribute('aria-label', t('langLabel'));
 }
@@ -1333,6 +1480,109 @@ function showNext(row) {
   setTimeout(() => o.remove(), 1900);
 }
 
+
+// ---- "How to play": a paged guide with diagrams made from the game's own cards ----
+const GUIDE_STEPS = 8;
+let guideIdx = 0;
+
+const gcards = (ids, extra = '') => el('div', { class: 'gcards ' + extra }, ...ids.map((c) => cardEl(c, { up: true })));
+const gchip = (txt, cls = '') => el('span', { class: 'gchip ' + cls }, txt);
+const gexample = (name, ids, tag, tagCls, note) => el('div', { class: 'gex ' + (tagCls || '') },
+  el('div', { class: 'gex-n' }, name), gcards(ids), note ? el('div', { class: 'gex-v' }, note) : '', tag ? el('div', { class: 'gex-t ' + tagCls }, tag) : '');
+const gscale = (hl, reverse) => {
+  const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+  return el('div', { class: 'gscale' },
+    el('div', { class: 'gscale-r' }, ...ranks.map((r) => el('span', { class: 'gr' + (r === hl ? ' hl' : '') }, r))),
+    el('div', { class: 'gscale-a' }, el('span', {}, t('gLow')), el('i', {}), el('span', {}, t('gHigh'))));
+};
+const gpens = (items) => el('div', { class: 'gpens' }, ...items.map(([a, b]) => el('div', { class: 'gpen' }, el('span', {}, a), el('b', {}, b))));
+const gslot = (ids) => el('div', { class: 'gslot' + (ids ? ' full' : '') }, ids ? cardEl(ids, { up: true }) : '');
+
+function guideBody(i) {
+  const wrap = el('div', { class: 'gbody' });
+  const h = (k) => el('h3', {}, t(k)), p = (k) => el('p', {}, t(k));
+  if (i === 0) {   // overview: the 1-1-2-3 layout
+    const lay = el('div', { class: 'glayout' });
+    [1, 1, 2, 3].forEach((n, r) => lay.append(el('div', { class: 'gl-row' },
+      el('span', { class: 'gl-n' }, String(r + 1)),
+      el('div', { class: 'gl-slots' }, ...Array.from({ length: n }, () => gslot())),
+      el('div', { class: 'gl-t' }, el('b', {}, t('g_r' + (r + 1))), el('small', {}, t('gCards', { n }))))));
+    wrap.append(h('g1t'), p('g1p'), lay);
+  } else if (i === 1) {   // flow
+    const steps = [['🃏', 'g2a'], ['🧩', 'g2b'], ['✅', 'g2c'], ['👀', 'g2d'], ['😵', 'g2e']];
+    const flow = el('div', { class: 'gflow' });
+    steps.forEach(([ic, k], n) => { flow.append(el('div', { class: 'gf' }, el('span', { class: 'gf-i' }, ic), el('span', {}, t(k)))); if (n < steps.length - 1) flow.append(el('span', { class: 'gf-a' }, '›')); });
+    wrap.append(h('g2t'), flow, el('ol', { class: 'glist' }, ...[1, 2, 3, 4, 5].map((n) => el('li', {}, t('g2l' + n)))));
+  } else if (i === 2) {   // placing cards
+    const slots = el('div', { class: 'gmini' }, el('div', { class: 'gslots r1' }, gslot('7H')), el('div', { class: 'gslots r1' }, gslot()), el('div', { class: 'gslots r2' }, gslot(), gslot()), el('div', { class: 'gslots r3' }, gslot(), gslot(), gslot()));
+    const hand = el('div', { class: 'ghand' }, el('div', { class: 'ghand-l' }, t('gHand')), gcards(['KS', '3D', '9C']), el('div', { class: 'gtapmark' }, '👆 ' + t('gTap')));
+    wrap.append(h('g3t'), el('div', { class: 'gtapdemo' }, hand, el('span', { class: 'gbigarrow' }, '→'), slots),
+      el('ul', { class: 'glist bullets' }, ...['g3a', 'g3b', 'g3c', 'g3d'].map((k) => el('li', {}, t(k)))));
+  } else if (i === 3) {   // row 1
+    wrap.append(h('g4t'), p('g4p'),
+      el('div', { class: 'gexs' }, gexample('Ann', ['9D'], t('gSafe'), 'safe'), gexample('Bob', ['3C'], t('gLoses'), 'lose'), gexample('Cy', ['AS'], t('gSafe'), 'safe')),
+      gscale('A'), el('p', { class: 'gnote' }, t('g4n')),
+      gpens([[t('gNone', { what: 'Ace' }), '×1'], ['1 Ace', '×2'], ['2 Aces', '×4'], ['3 Aces', '×6']]));
+  } else if (i === 4) {   // row 2
+    wrap.append(h('g5t'), p('g5p'),
+      el('div', { class: 'gexs' }, gexample('Ann', ['KH'], t('gLoses'), 'lose'), gexample('Bob', ['5C'], t('gSafe'), 'safe'), gexample('Cy', ['2D'], t('gSafe'), 'safe')),
+      gscale('2'), el('p', { class: 'gnote' }, t('g5n')),
+      gpens([[t('gNone', { what: '2' }), '×1'], ['1 × 2', '×2'], ['2 × 2', '×4'], ['3 × 2', '×6']]));
+  } else if (i === 5) {   // row 3
+    wrap.append(h('g6t'), p('g6p'),
+      el('div', { class: 'gvals' }, gchip(t('g6v1')), gchip(t('g6v2')), gchip(t('g6v3'))),
+      el('div', { class: 'gexs' }, gexample('Ann', ['10S', 'QH'], t('gPerfect'), 'perfect', '10 + 0.5 = 10.5'), gexample('Bob', ['9D', '5C'], t('gBust'), 'lose', '9 + 5 = 14'), gexample('Cy', ['AD', 'JC'], t('gSafe'), 'safe', '1 + 0.5 = 1.5')),
+      el('p', { class: 'gnote' }, t('g6n')),
+      gpens([[t('gNone', { what: '10.5' }), '×1'], ['1 × 10.5', '×2'], ['2 × 10.5', '×4'], ['3 × 10.5', '×6']]));
+  } else if (i === 6) {   // row 4 ladder
+    const rungs = [['none', ['2C', '5D', '9S'], ''], ['pair', ['7H', '7C', 'KD'], ''], ['straight', ['4S', '5H', '6D'], ''], ['flush', ['3H', '8H', 'KH'], '+2'],
+      ['triple', ['9S', '9H', '9D'], '+3'], ['sflush', ['4S', '5S', '6S'], '+4'], ['royal', ['QD', 'KD', 'AD'], '+5']];
+    const ladder = el('div', { class: 'gladder' });
+    rungs.forEach(([k, ids, bonus], n) => ladder.append(el('div', { class: 'grung' }, el('span', { class: 'grung-n' }, String(n + 1)), el('div', { class: 'grung-l' }, t('gh_' + k)), gcards(ids), bonus ? el('span', { class: 'gbonus' }, bonus) : el('span', { class: 'gbonus none' }, '—'))));
+    wrap.append(h('g7t'), p('g7p'),
+      el('div', { class: 'gladder-wrap' }, el('div', { class: 'gl-side' }, el('span', {}, '↑ ' + t('h7a')), el('i', {}), el('span', {}, '↓ ' + t('h7b'))), ladder),
+      el('p', { class: 'gnote' }, t('g7pen')), el('p', { class: 'gnote dim' }, t('g7note')));
+  } else {   // good to know
+    wrap.append(h('g8t'),
+      el('div', { class: 'gtie' }, gexample('Ann', ['KS'], '', 'tie'), gexample('Bob', ['KH'], '', 'tie'), el('div', { class: 'gtie-r' }, gchip(t('tie'), 'tiechip'), gchip(t('noPenalty'), 'nop'))),
+      el('ul', { class: 'glist bullets' }, ...['g8a', 'g8b', 'g8c', 'g8d', 'g8e'].map((k) => el('li', {}, t(k)))),
+      el('div', { class: 'flegend gleg' }, el('span', { class: 'lg lost' }, t('legLost')), el('span', { class: 'lg safe' }, t('legSafe')), el('span', { class: 'lg tie' }, t('legTie'))));
+  }
+  return wrap;
+}
+
+function renderGuide() {
+  let ov = document.querySelector('.guide-ov');
+  if (!ov) return;
+  const prev = ov.querySelector('.gscroll');
+  const keepTop = prev ? prev.scrollTop : 0;
+  ov.replaceChildren(el('div', { class: 'guide', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('guideTitle') },
+    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, '?'), t('guideTitle')),
+      el('div', { class: 'langsw gl' }, ...[['en', 'EN'], ['zh', '简体'], ['zht', '繁體']].map(([l, label]) => el('button', { type: 'button', class: l === lang ? 'on' : '', onclick: () => setLang(l) }, label))),
+      el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closeGuide }, '✕')),
+    el('div', { class: 'gscroll' }, guideBody(guideIdx)),
+    el('div', { class: 'gfoot' },
+      el('button', { class: 'ghost', disabled: guideIdx === 0, onclick: () => { guideIdx--; renderGuide(); ov.querySelector('.gscroll').scrollTop = 0; } }, '‹ ' + t('gBack')),
+      el('div', { class: 'gdots' }, ...Array.from({ length: GUIDE_STEPS }, (_, n) => el('button', { class: 'gdot' + (n === guideIdx ? ' on' : ''), 'aria-label': String(n + 1), onclick: () => { guideIdx = n; renderGuide(); ov.querySelector('.gscroll').scrollTop = 0; } }))),
+      guideIdx === GUIDE_STEPS - 1
+        ? el('button', { onclick: closeGuide }, t('gDone'))
+        : el('button', { onclick: () => { guideIdx++; renderGuide(); ov.querySelector('.gscroll').scrollTop = 0; } }, t('gNext') + ' ›'))));
+  const sc = ov.querySelector('.gscroll'); if (sc && prev) sc.scrollTop = keepTop;
+}
+
+function openGuide(i = 0) {
+  guideIdx = i;
+  if (!document.querySelector('.guide-ov')) {
+    const ov = el('div', { class: 'guide-ov', onclick: (e) => { if (e.target === ov) closeGuide(); } });
+    document.body.append(ov);
+    document.body.classList.add('noscroll');
+  }
+  renderGuide();
+}
+function closeGuide() { document.querySelector('.guide-ov')?.remove(); document.body.classList.remove('noscroll'); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGuide(); });
+
+
 function showRound(n) {
   document.querySelector('.roundfx')?.remove();
   const o = el('div', { class: 'roundfx' }, el('div', { class: 'rf-k' }, t('roundK')), el('div', { class: 'rf-n' }, String(n)));
@@ -1463,6 +1713,7 @@ function startPolling() { clearInterval(timer); timer = setInterval(poll, POLL_M
 
 let resizeT; window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (st && !dragging) render(); }, 150); });
 document.querySelectorAll('.langsw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.l)));
+document.getElementById('guideBtn').addEventListener('click', () => openGuide(0));
 applyStatic();
 if (session) { poll().then(() => { if (session) startPolling(); }); } 
 render();
