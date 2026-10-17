@@ -309,7 +309,7 @@
   .resbox .resk { margin-top: 10px; font-size: 13px; }
   .resnames { font-size: clamp(26px, min(9vw, 13vh), 60px); font-weight: 800; line-height: 1.15; margin: 4px 0 14px; word-break: break-word; animation: namepulse 1.2s ease-in-out infinite; }
   .respen.big { font-size: clamp(30px, min(10vw, 14vh), 64px); padding: 6px 24px; }
-  @keyframes resfx { 0% { opacity: 0; } 6% { opacity: 1; } 77% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes resfx { 0% { opacity: 0; } 6% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
   @keyframes boxpop { 0% { transform: scale(.7) rotate(-2deg); } 6%, 100% { transform: none; } 3% { transform: scale(1.06); } }
   .resbox:not(.youlose) { animation: boxpop .5s cubic-bezier(.2,1.4,.4,1) backwards; }
 
@@ -398,7 +398,9 @@
   .fdrop summary::-webkit-details-marker { display: none; } .fd-h { margin-left: auto; font-size: 12px; font-weight: 600; opacity: .7; } .fd-c { transition: transform .2s; opacity: .7; } .fdrop[open] .fd-c { transform: rotate(180deg); }
   .fdrop .sthead { margin: 10px 0; }
   /* the verdict pop-up also lists everyone's cards for the row (you first), so nothing is hidden behind it */
-  .resbox.hasboard { width: min(92vw, 580px); padding: 16px 18px 18px; } .resboard { gap: 8px; margin-top: 12px; } .resboard .tile { animation: none; padding: 8px 6px; } .resboard .tcard { margin: 0 3px; }
+  .resfx { background: rgba(6,9,20,.9); }
+  .resfx.lose { background: rgba(28,4,6,.92); }
+  .resbox.hasboard { width: min(92vw, 580px); padding: 16px 18px 18px; } .resboard { gap: 8px; margin-top: 12px; } .resboard .tile { animation: none; padding: 8px 6px; } .resboard .tcard { margin: 0 7px; } .resbox.hasboard { background: rgb(16,20,38); } .resbox.hasboard.youlose { background: rgb(38,6,9); }
   .resbox.hasboard .resnames { font-size: clamp(26px, 8vw, 44px); } .resbox.hasboard .respen.big { transform: scale(.82); margin: 2px auto 0; }
   /* final board */
   .final { --cw: 36px; }
@@ -1965,7 +1967,7 @@ function showResult(r, view) {
   let best = null;
   for (let c = 1; c <= Math.min(n, 6); c++) {
     const rows = Math.ceil(n / c), tw = (availW - (c - 1) * 8) / c;
-    const cw = Math.floor(Math.min(70, (tw - 16 - (k - 1) * 14) / k, ((availH - (rows - 1) * 8) / rows - 62) / 1.45));
+    const cw = Math.floor(Math.min(70, (tw - 16 - k * 14 - (k - 1) * 6) / k, ((availH - (rows - 1) * 8) / rows - 62) / 1.45));
     if (!best || cw > best.cw) best = { c, cw };
   }
   const board = el('div', { class: 'tiles resboard', style: `--cw:${Math.max(best.cw, 14)}px; grid-template-columns: repeat(${best.c}, minmax(0, 1fr))` },
