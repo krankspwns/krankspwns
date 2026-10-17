@@ -84,7 +84,6 @@
   .card .ix { position:absolute; top:5px; left:6px; display:flex; flex-direction:column; align-items:center; font-weight:700; font-size:16px; line-height:1; }
   .card .ix i { font-style: normal; font-size: 15px; margin-top:2px; }
   .card .pip { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size: 34px; padding-top: 14px; padding-left: 8px; opacity:.9; }
-  .card.sel { transform: translateY(-8px); box-shadow: 0 0 0 2px var(--gold), 0 12px 20px rgba(0,0,0,.55); }
   .card.mine { touch-action: none; cursor: grab; }
 
   /* card back: midnight navy with a fine gold diamond lattice */
@@ -142,7 +141,7 @@
 
   /* ---- continuous touches ---- */
   button:active { transform: scale(.96); }
-  .hand .card.mine:not(.sel):hover, .board .card.mine:hover { transform: translateY(-5px) rotate(-1.5deg); }
+  .hand .card.mine:hover, .board .card.mine:hover { transform: translateY(-5px) rotate(-1.5deg); }
   @keyframes glow { 0%,100% { box-shadow: 0 0 0 rgba(111,207,151,0); } 50% { box-shadow: 0 0 14px rgba(111,207,151,.7); } }
   .tag.ok { animation: glow 2s infinite; }
   @keyframes readypulse { 0%,100% { box-shadow: 0 2px 10px rgba(0,0,0,.35), 0 0 0 0 rgba(111,207,151,.6); } 50% { box-shadow: 0 2px 10px rgba(0,0,0,.35), 0 0 0 10px rgba(111,207,151,0); } }
@@ -223,13 +222,6 @@
   /* pops in within ~0.3s, stays until 2s, then fades away over the last 2s */
   @keyframes roundfx { 0% { opacity: 0; transform: scale(.6); } 8% { opacity: 1; transform: scale(1.08); } 12% { transform: scale(1); } 50% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
 
-  .switch { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; margin-bottom: 10px; }
-  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
-  .switch .track { position: relative; width: 38px; height: 22px; border-radius: 99px; background: rgba(255,255,255,.14); border: 1px solid var(--line); transition: background .2s; flex: none; }
-  .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
-  .switch input:checked + .track { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--gold); }
-  .switch input:checked + .track::after { transform: translateX(16px); background: #1a1407; }
-  .switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(201,169,106,.35); }
 
   .pill.live { margin-left: 0; padding: 9px 16px; font-size: 13px; background: rgba(201,169,106,.16); color: var(--gold-hi); border: 1px solid var(--gold); }
   .livedot { width: 9px; height: 9px; border-radius: 50%; background: #6fcf97; box-shadow: 0 0 0 0 rgba(111,207,151,.7); animation: livepulse 1.5s infinite; }
@@ -377,11 +369,10 @@ const I18N = {
     youReady: "You're ready", waitMore: (v) => `Waiting for ${v.n} more player${v.n > 1 ? 's' : ''}`,
     hintProgress: 'Everyone is ready. Use the Flip up / Flip down buttons on each row, or click a card, to reveal or hide it. The host can deal a new round.',
     hintReady: 'You are ready: all your cards are hidden and locked. Waiting for the other players. Press Unready to move cards again.',
-    hintArrange: 'Fill all 7 slots to get ready. You can see your own cards — drag them between slots or back to your hand. “I’m ready” hides and locks them. A gold dot marks a card you’ve flipped face up for others.',
+    hintArrange: 'Fill all 7 slots to get ready. Tap a card in your hand to place it in the next free slot (top row first), tap a placed card to send it back, or drag cards anywhere. “I’m ready” hides and locks them.',
     pillReady: '✓ READY', pillArranging: (v) => `Arranging ${v.n}/${v.t}`,
     handHidden: 'Your hand (hidden)', handDone: 'Your hand — all cards are placed',
-    handExpert: 'Your hand — tap a card to place it in the next free slot', handNormal: 'Your hand — drag a card onto a slot (or tap it, then tap a slot)',
-    expert: 'Expert mode', expertTip: 'Tap a hand card to drop it into the next free slot (top row first); tap a placed card to send it back.',
+    handTap: 'Your hand — tap a card to place it in the next free slot, or drag it to a slot',
     observing: 'Observing', watching: 'Watching', obsTitle: 'You’re watching this round',
     obsText: 'You joined while a game was in progress. You can follow along below — the host will deal you in when the next round starts.',
     obsWait: 'Waiting for the next round…', e_spec: 'Wait for the next round',
@@ -420,11 +411,10 @@ const I18N = {
     youReady: '你已准备', waitMore: (v) => `还在等待 ${v.n} 位玩家`,
     hintProgress: '全员已准备。使用每一行的“翻开 / 盖上”按钮，或点击单张牌来翻开或盖上。房主可以开始新的一轮。',
     hintReady: '你已准备：所有牌都已盖上并锁定。正在等待其他玩家。点击“取消准备”可重新移动牌。',
-    hintArrange: '摆满 7 个位置才能准备。你能看到自己的牌，可在位置之间拖动，或拖回手牌。点击“我准备好了”会盖上并锁定。金色圆点表示你已向大家翻开的牌。',
+    hintArrange: '摆满 7 个位置才能准备。点击手牌会放入下一个空位（从最上面一行开始），点击已摆的牌会放回手牌，也可以随意拖动。点击“我准备好了”会盖上并锁定。',
     pillReady: '✓ 已准备', pillArranging: (v) => `摆牌中 ${v.n}/${v.t}`,
     handHidden: '你的手牌（已隐藏）', handDone: '你的手牌 — 所有牌都已摆好',
-    handExpert: '你的手牌 — 点击一张牌，自动放入下一个空位', handNormal: '你的手牌 — 把牌拖到位置上（或先点牌，再点位置）',
-    expert: '高手模式', expertTip: '点击手牌会放入下一个空位（从最上面一行开始）；点击已摆的牌会放回手牌。',
+    handTap: '你的手牌 — 点击一张牌放入下一个空位，或拖到指定位置',
     observing: '观战中', watching: '观战', obsTitle: '你正在观战本轮',
     obsText: '你是在游戏进行中加入的。可以先在下方观看，房主开始下一轮时你会被一起发牌。',
     obsWait: '等待下一轮…', e_spec: '请等待下一轮',
@@ -463,11 +453,10 @@ const I18N = {
     youReady: '你已準備', waitMore: (v) => `還在等待 ${v.n} 位玩家`,
     hintProgress: '全員已準備。使用每一行的「翻開 / 蓋上」按鈕，或點擊單張牌來翻開或蓋上。房主可以開始新的一輪。',
     hintReady: '你已準備：所有牌都已蓋上並鎖定。正在等待其他玩家。點擊「取消準備」可重新移動牌。',
-    hintArrange: '擺滿 7 個位置才能準備。你能看到自己的牌，可在位置之間拖動，或拖回手牌。點擊「我準備好了」會蓋上並鎖定。金色圓點表示你已向大家翻開的牌。',
+    hintArrange: '擺滿 7 個位置才能準備。點擊手牌會放入下一個空位（從最上面一行開始），點擊已擺的牌會放回手牌，也可以隨意拖動。點擊「我準備好了」會蓋上並鎖定。',
     pillReady: '✓ 已準備', pillArranging: (v) => `擺牌中 ${v.n}/${v.t}`,
     handHidden: '你的手牌（已隱藏）', handDone: '你的手牌 — 所有牌都已擺好',
-    handExpert: '你的手牌 — 點擊一張牌，自動放入下一個空位', handNormal: '你的手牌 — 把牌拖到位置上（或先點牌，再點位置）',
-    expert: '高手模式', expertTip: '點擊手牌會放入下一個空位（從最上面一行開始）；點擊已擺的牌會放回手牌。',
+    handTap: '你的手牌 — 點擊一張牌放入下一個空位，或拖到指定位置',
     observing: '觀戰中', watching: '觀戰', obsTitle: '你正在觀戰本輪',
     obsText: '你是在遊戲進行中加入的。可以先在下方觀看，房主開始下一輪時你會被一起發牌。',
     obsWait: '等待下一輪…', e_spec: '請等待下一輪',
@@ -529,7 +518,6 @@ const POLL_MS = 1500;
 const app = document.getElementById('app');
 let session = load();   // {code, pid}
 let st = null;          // latest server view
-let selected = null;    // selected card id in my hand
 let err = '';
 let timer = null;
 let lastKey = '';
@@ -540,8 +528,6 @@ let dealAnim = false;        // cards fly in after a deal
 let formName = localStorage.getItem('sct-name') || '', formCode = new URLSearchParams(location.search).get('room') || '';
 const BANNER_SECONDS = 8;
 let confettiAt = 0;
-let expert = false;          // "Expert mode": tap a hand card to auto-place it, tap a placed card to return it
-try { expert = localStorage.getItem('sct-expert') === '1'; } catch {}
 
 // ambient floating suits
 (() => {
@@ -652,7 +638,6 @@ function enableDrag(node, src, cardId, onTap) {
 }
 
 function drop(src, cardId, t) {
-  selected = null;
   if (t.dataset.hand !== undefined) {
     if (src === 'hand') return render();
     return act('unplace', { slot: src });
@@ -683,12 +668,11 @@ function boardEl(board, mine, pid) {
           // You see your own cards until you press Ready; then only the ones you flipped face up.
           const flip = () => act('flip', { slot });
           const look = { up: !me.ready || s.up, shared: !me.ready && s.up, extra: fxCls };
-          inner = cardEl(s.c, canMove ? { ...look, src: slot, onclick: expert ? () => act('unplace', { slot }) : flip } : { ...look, onclick: dealt ? flip : null });
+          inner = cardEl(s.c, canMove ? { ...look, src: slot, onclick: () => act('unplace', { slot }) } : { ...look, onclick: dealt ? flip : null });
         }
-      } else if (canMove && selected) cls += ' target';
+      }
       const node = el('div', { class: cls }, inner);
       if (canMove) node.dataset.slot = slot;
-      if (canMove && selected) node.onclick = () => { const card = selected; selected = null; act('place', { card, slot }); };
       row.append(node);
     }
     if (mine && dealt && activePlayers().every((p) => p.ready)) {
@@ -875,25 +859,18 @@ function renderGame() {
     const d = dealAnim ? ' fx-deal' : '';
     const node = me.ready
       ? cardEl(c, { up: false, extra: d.trim() })
-      : cardEl(c, { src: 'hand', extra: ((c === selected ? 'sel ' : '') + d).trim(), onclick: expert
-          ? () => { const slot = me.board.findIndex((x) => !x); if (slot >= 0) act('place', { card: c, slot }); }
-          : () => { selected = selected === c ? null : c; render(); } });
+      : cardEl(c, { src: 'hand', extra: d.trim(), onclick: () => {   // tap: drop into the next free slot (top row first)
+          const slot = me.board.findIndex((x) => !x);
+          if (slot >= 0) act('place', { card: c, slot });
+        } });
     if (dealAnim) node.style.animationDelay = i * 90 + 150 + 'ms';
     hand.append(node);
   });
-  const toggle = el('label', { class: 'switch', title: t('expertTip') },
-    el('input', { type: 'checkbox', checked: expert, onchange: (e) => {
-      expert = e.target.checked; selected = null;
-      try { localStorage.setItem('sct-expert', expert ? '1' : '0'); } catch {}
-      render();
-    } }),
-    el('span', { class: 'track' }), t('expert'));
   const handTitle = me.ready ? t('handHidden')
     : !st.hand.length ? t('handDone')
-    : expert ? t('handExpert')
-    : t('handNormal');
+    : t('handTap');
   const handPanel = el('div', panel(2),
-    el('div', { class: 'row' }, el('div', { class: 'name grow' }, handTitle), toggle), hand);
+    el('div', { class: 'name' }, handTitle), hand);
   if (!me.ready) handPanel.dataset.hand = '';
   if (!inProgress) app.append(handPanel);   // nothing left to do with the hand once the round is under way
 
@@ -983,7 +960,6 @@ function adopt(j) {
   const key = (x) => x.phase + ':' + x.round;
   if (!prev || key(prev) !== key(j)) { screenAnim = true; dealAnim = j.phase === 'dealt'; }
   st = j; lastKey = j.version;
-  if (selected && !st.hand.includes(selected)) selected = null;
   return true;
 }
 
@@ -1132,7 +1108,7 @@ function predict(action, x) {
 function act(action, extra = {}) {
   err = '';
   const next = st && predict(action, extra);
-  if (next) { diffFx(st, next); st = next; selected = null; render(); }
+  if (next) { diffFx(st, next); st = next; render(); }
   pending++;
   // Requests go out one at a time, in order, so quick successive moves can't overtake each other.
   queue = queue
@@ -1154,7 +1130,7 @@ function act(action, extra = {}) {
 
 async function leave() {
   try { await api('leave'); } catch {}
-  session = null; st = null; selected = null; save(); clearInterval(timer); render();
+  session = null; st = null; save(); clearInterval(timer); render();
 }
 
 async function poll() {
