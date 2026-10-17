@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Seven Card Table</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
     --serif:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
     --display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   }
-  html { background: var(--bg3); }
+  html { background: var(--bg3); overflow-x: hidden; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }   /* no double-tap zoom, no text inflation on rotate */
   body { overflow-x: hidden; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: var(--serif); font-size:15px; color:#f4ead2; min-height:100vh;
@@ -132,7 +132,7 @@
   /* ---- one-shot animations (classes are applied only for a single render) ---- */
   @keyframes pop { 0% { transform: scale(.4) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.14) rotate(2deg); opacity: 1; } 100% { transform: none; } }
   @keyframes flipin { from { transform: perspective(600px) rotateY(-90deg); } to { transform: perspective(600px) rotateY(0); } }
-  @keyframes deal { from { opacity: 0; transform: translate(-60px,-90px) rotate(-22deg) scale(.6); } to { opacity: 1; transform: none; } }
+  @keyframes deal { from { opacity: 0; transform: translateY(-50px) rotate(-12deg) scale(.7); } to { opacity: 1; transform: none; } }
   @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
   .fx-pop { animation: pop .5s cubic-bezier(.2,1.4,.4,1) backwards; }
   .fx-flip { animation: flipin .45s ease-out backwards; }
@@ -216,11 +216,13 @@
   @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -20px); } 10%, 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
 
   .roundfx { position: fixed; inset: 0; z-index: 80; display: grid; place-content: center; text-align: center; pointer-events: none;
-    background: radial-gradient(circle at center, rgba(6,9,20,.72), rgba(6,9,20,0) 70%); animation: roundfx 4s ease forwards; }
+    background: radial-gradient(circle at center, rgba(6,9,20,.72), rgba(6,9,20,0) 70%); animation: roundfx 4s ease forwards; overflow: hidden; }
+  .roundfx .rf-box { animation: roundbox 4s ease forwards; }
   .roundfx .rf-k { font-size: clamp(18px, 5vw, 30px); letter-spacing: .5em; padding-left: .5em; text-transform: uppercase; color: var(--gold-hi); font-weight: 600; }
-  .roundfx .rf-n { font-size: clamp(110px, 34vw, 260px); line-height: 1; font-weight: 800; color: var(--gold-hi); text-shadow: 0 0 50px rgba(201,169,106,.65), 0 6px 30px rgba(0,0,0,.6); }
+  .roundfx .rf-n { font-size: clamp(90px, min(34vw, 38vh), 260px); line-height: 1; font-weight: 800; color: var(--gold-hi); text-shadow: 0 0 50px rgba(201,169,106,.65), 0 6px 30px rgba(0,0,0,.6); }
   /* pops in within ~0.3s, stays until 2s, then fades away over the last 2s */
-  @keyframes roundfx { 0% { opacity: 0; transform: scale(.6); } 8% { opacity: 1; transform: scale(1.08); } 12% { transform: scale(1); } 50% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
+  @keyframes roundfx { 0% { opacity: 0; } 8% { opacity: 1; } 50% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes roundbox { 0% { transform: scale(.6); } 8% { transform: scale(1.08); } 12%, 100% { transform: scale(1); } }
 
 
   .pill.live { margin-left: 0; padding: 9px 16px; font-size: 13px; background: rgba(201,169,106,.16); color: var(--gold-hi); border: 1px solid var(--gold); }
@@ -299,13 +301,15 @@
   .mc { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--ivory); color: var(--ink); font-weight: 700; font-size: 12px; }
   .mc.red { color: var(--red); }
   /* announcement pop-up */
-  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 5s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; }
+  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 5s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; overflow: hidden; }
   .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(18,22,40,.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
   .resbox .rf-k { font-size: clamp(16px, 4.5vw, 24px); letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .resbox .resk { margin-top: 10px; font-size: 13px; }
-  .resnames { font-size: clamp(30px, 9vw, 60px); font-weight: 800; line-height: 1.15; margin: 4px 0 14px; word-break: break-word; animation: namepulse 1.2s ease-in-out infinite; }
-  .respen.big { font-size: clamp(34px, 10vw, 64px); padding: 6px 24px; }
-  @keyframes resfx { 0% { opacity: 0; transform: scale(.7) rotate(-2deg); } 6% { opacity: 1; transform: scale(1.06); } 9% { transform: scale(1); } 77% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.03); } }
+  .resnames { font-size: clamp(26px, min(9vw, 13vh), 60px); font-weight: 800; line-height: 1.15; margin: 4px 0 14px; word-break: break-word; animation: namepulse 1.2s ease-in-out infinite; }
+  .respen.big { font-size: clamp(30px, min(10vw, 14vh), 64px); padding: 6px 24px; }
+  @keyframes resfx { 0% { opacity: 0; } 6% { opacity: 1; } 77% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes boxpop { 0% { transform: scale(.7) rotate(-2deg); } 6%, 100% { transform: none; } 3% { transform: scale(1.06); } }
+  .resbox:not(.youlose) { animation: boxpop .5s cubic-bezier(.2,1.4,.4,1) backwards; }
 
   .observer { text-align: center; display: grid; justify-items: center; gap: 10px; padding: 26px 20px; border-style: dashed; border-color: rgba(124,196,255,.55); }
   .obs-eye { font-size: 44px; animation: bob 2.4s ease-in-out infinite; }
@@ -368,17 +372,17 @@
   .resbox.youlose { position: relative; border-color: #ff5a4d; background: rgba(42,6,8,.96); box-shadow: 0 0 80px rgba(255,70,60,.6), 0 20px 60px rgba(0,0,0,.7); animation: slam .55s cubic-bezier(.2,1.6,.4,1) backwards, boxshake .5s .55s 2; }
   @keyframes slam { 0% { transform: scale(2.6) rotate(-7deg); opacity: 0; } 60% { transform: scale(.93); opacity: 1; } 100% { transform: none; } }
   @keyframes boxshake { 0%,100% { transform: none; } 20% { transform: translate(-9px, 3px) rotate(-1.5deg); } 40% { transform: translate(8px, -3px) rotate(1.5deg); } 60% { transform: translate(-6px, 2px); } 80% { transform: translate(5px, -2px); } }
-  .resnames.youlose { color: #ff6b5e; font-size: clamp(38px, 12vw, 84px); letter-spacing: .02em; text-shadow: 0 0 30px rgba(255,70,60,.85), 0 4px 0 rgba(0,0,0,.4); animation: namepulse .8s ease-in-out infinite; }
+  .resnames.youlose { color: #ff6b5e; font-size: clamp(34px, min(12vw, 20vh), 84px); letter-spacing: .02em; text-shadow: 0 0 30px rgba(255,70,60,.85), 0 4px 0 rgba(0,0,0,.4); animation: namepulse .8s ease-in-out infinite; }
   /* transition to the next row */
-  .nextfx { position: fixed; inset: 0; z-index: 84; display: grid; place-items: center; pointer-events: none; animation: nextfade 1.9s ease forwards; background: linear-gradient(90deg, transparent, rgba(8,12,24,.88) 28%, rgba(8,12,24,.88) 72%, transparent); }
+  .nextfx { position: fixed; inset: 0; z-index: 84; display: grid; place-items: center; pointer-events: none; overflow: hidden; animation: nextfade 1.9s ease forwards; background: linear-gradient(90deg, transparent, rgba(8,12,24,.88) 28%, rgba(8,12,24,.88) 72%, transparent); }
   .nx-box { text-align: center; padding: 0 20px; animation: nxslide 1.9s cubic-bezier(.2,.9,.3,1) forwards; }
   .nx-k { font-size: 14px; letter-spacing: .4em; padding-left: .4em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
-  .nx-n { font-size: clamp(54px, 16vw, 120px); font-weight: 800; line-height: 1.05; color: #fff; text-shadow: 0 0 40px rgba(201,169,106,.6); }
+  .nx-n { font-size: clamp(48px, min(16vw, 24vh), 120px); font-weight: 800; line-height: 1.05; color: #fff; text-shadow: 0 0 40px rgba(201,169,106,.6); }
   .nx-r { font-size: 15px; opacity: .8; margin-top: 4px; }
   @keyframes nxslide { 0% { transform: translateX(105vw); } 24% { transform: translateX(0); } 76% { transform: translateX(0); } 100% { transform: translateX(-105vw); } }
   @keyframes nextfade { 0% { opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { opacity: 0; } }
   .stage-enter { animation: stagein .55s ease-out backwards; }
-  @keyframes stagein { from { opacity: 0; transform: translateX(44px); } }
+  @keyframes stagein { from { opacity: 0; transform: translateY(18px); } }
   /* final board */
   .final { --cw: 36px; }
   .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
@@ -488,6 +492,7 @@
     .gfoot > button { padding: 9px 10px; font-size: 12px; } .gdots { gap: 4px; } .gdot { width: 6px; height: 6px; } .gdot.on { width: 15px; }
     .gtapdemo { gap: 8px; }
   }
+
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -523,6 +528,78 @@
     .panel > .board .slot, .panel > .board .card { width: 52px; height: 76px; }
     .panel > .board .card .ix { font-size: 14px; top: 4px; left: 5px; } .panel > .board .card .ix i { font-size: 13px; }
     .panel > .board .card .pip { font-size: 30px; padding-top: 12px; padding-left: 6px; } }
+  /* ===== phone in landscape: short and wide ===== */
+  @media (orientation: landscape) and (max-height: 520px) {
+    main { max-width: none; padding: 6px max(12px, env(safe-area-inset-right)) 14px max(12px, env(safe-area-inset-left)); }
+    h1 { display: none; } .topbar { margin-bottom: 6px; }
+    .panel { padding: 10px 14px; margin-bottom: 0; border-radius: 14px; }
+    .name { margin-bottom: 6px; }
+    /* game screens become a grid so panels sit side by side */
+    #app[data-screen=arrange], #app[data-screen=stage], #app[data-screen=wait] { display: grid; gap: 8px 10px; align-items: start; }
+    #app[data-screen=arrange] { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); }
+    #app[data-screen=stage], #app[data-screen=wait] { grid-template-columns: minmax(0, 1fr); }
+    #app[data-screen=arrange] > .gamehead, #app[data-screen=arrange] > .lastbanner, #app[data-screen=arrange] > .results, #app[data-screen=arrange] > .others,
+    #app[data-screen=arrange] > .watchers, #app[data-screen=arrange] > .err, #app[data-screen=arrange] > .observer { grid-column: 1 / -1; }
+    .gamehead { padding: 8px 14px; gap: 6px 14px; } .gamehead .code { font-size: 30px; letter-spacing: 5px; } .gamehead .kicker { font-size: 10px; }
+    .hstats { font-size: 13px; } .hactions button { padding: 8px 14px; } .gamehead .leavebtn { padding: 8px 14px; }
+    .lastbanner { padding: 8px 14px; } .lastbanner .lb-name { font-size: clamp(22px, 8vh, 36px); margin: 0; } .lastbanner .lb-bar { margin-top: 6px; }
+    /* arranging: your board on the left, your hand on the right */
+    .ownpanel { --cw: 40px; } .handpanel { --cw: 52px; }
+    .ownpanel .card, .handpanel .card, .ownpanel .slot { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); }
+    .ownpanel .card .ix, .handpanel .card .ix { font-size: calc(var(--cw) * .27); top: calc(var(--cw) * .06); left: calc(var(--cw) * .09); }
+    .ownpanel .card .ix i, .handpanel .card .ix i { font-size: calc(var(--cw) * .25); }
+    .ownpanel .card .pip, .handpanel .card .pip { font-size: calc(var(--cw) * .62); padding-top: calc(var(--cw) * .24); padding-left: calc(var(--cw) * .12); }
+    .ownpanel .board { gap: 5px; padding: 2px 0; } .ownpanel .board .r { gap: 6px; }
+    .ownpanel .hint, .handpanel .hint { display: none; } .readystrip { padding: 6px 10px; margin: 2px 0 6px; }
+    .ownpanel .row .readybtn, .ownpanel .row .unreadybtn { padding: 9px 16px; }
+    .hand { min-height: 0; gap: 6px; justify-content: flex-start; padding: 2px 0; }
+    .others { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+    .observer { padding: 12px; } .obs-eye { font-size: 30px; }
+    /* waiting room: code and buttons on the left, seats on the right */
+    #app[data-screen=wait] .waitroom { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); text-align: left; justify-items: stretch; align-items: center; gap: 8px 22px; padding: 12px 18px; margin-top: 0; }
+    #app[data-screen=wait] .waitroom > * { grid-column: 1; }
+    #app[data-screen=wait] .waitroom > .seats { grid-column: 2; grid-row: 1 / span 7; align-self: center; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-width: none; }
+    #app[data-screen=wait] .waitroom .row.center { justify-content: flex-start; }
+    .bigcode { font-size: clamp(40px, 22vh, 76px); padding-left: 0; letter-spacing: .1em; } .waitroom .kicker { font-size: 11px; } .waitroom .count { font-size: 13px; }
+    button.big { padding: 12px 22px; font-size: 15px; } .waiting { padding: 6px 0; font-size: 15px; }
+    .seat { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'av name' 'av tag'; column-gap: 10px; row-gap: 2px; align-items: center; justify-items: start; padding: 6px 10px; text-align: left; border-radius: 12px; }
+    .seat .avatar { grid-area: av; width: 34px; height: 34px; font-size: 15px; } .seat .sname { grid-area: name; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seat .tag { grid-area: tag; margin-left: 0; font-size: 9px; padding: 1px 7px; }
+    /* stage: row info on the left, tiles on the right */
+    #app[data-screen=stage] .stage { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 8px 14px; align-items: start; padding: 10px 14px; }
+    .stage .sthead { grid-column: 1; grid-row: 1; flex-direction: column; margin-bottom: 0; gap: 8px; } .stage .strule { font-size: 16px; }
+    .stage .stcontrol, .stage .stresult { grid-column: 1; grid-row: 2; margin: 0; align-self: start; }
+    .stage .stcontrol { flex-direction: column; align-items: stretch; gap: 6px; } .stage .stcontrol button.big { padding: 12px 14px; font-size: 14px; }
+    .stage .tiles { grid-column: 2; grid-row: 1 / span 3; gap: 8px; }
+    .stage .tile { padding: 6px 6px 8px; } .stage .tname { margin-bottom: 4px; } .stage .tfoot { margin-top: 4px; min-height: 0; gap: 4px; flex-direction: row; justify-content: center; flex-wrap: wrap; }
+    .final .ftiles { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; } .final { --cw: 30px; } .final .sthead { margin-bottom: 8px; flex-direction: row; }
+    .ritem { padding: 8px 10px; } .rtip { display: none; }
+    /* overlays and the guide have to fit a short screen */
+    .resbox { padding: 12px 26px 16px; } .resbox .resk { margin-top: 4px; } .resnames { margin: 2px 0 8px; }
+    .guide-ov { padding: 6px; } .guide { max-height: 97vh; --cw: 40px; } .ghead { padding: 8px 14px; } .gscroll { padding: 10px 16px 4px; } .gfoot { padding: 8px 14px; } .gbody h3 { font-size: 18px; margin-bottom: 4px; } .gbody p { font-size: 13.5px; margin-bottom: 10px; }
+    .glayout { --cw: 32px; padding: 8px; gap: 6px; } .gladder { --cw: 26px; } .gmini { --cw: 24px; } .gmini .gslot { width: 24px; height: 35px; }
+    .landing { gap: 22px; } .fan, .steps { display: none; } .hero h2 { font-size: 30px; margin: 4px 0 8px; } .hero p { font-size: 14px; margin-bottom: 10px; } .chips { margin-bottom: 8px; }
+    .joincard { padding: 16px; gap: 8px; }
+
+    /* compact chrome so the game itself gets the screen */
+    .guidebtn { padding: 4px 12px 4px 6px; } .langsw button { padding: 4px 11px; }
+    .gamehead { padding: 6px 12px; } .gamehead .code { font-size: 26px; } .gamehead .hactions button, .gamehead .leavebtn { padding: 7px 14px; font-size: 12px; }
+    /* the last-to-be-ready banner floats in the top bar's empty middle, so it never pushes the game down */
+    .lastbanner { position: fixed; top: 4px; left: 0; right: 0; margin: 0 auto; width: fit-content; max-width: calc(100vw - 330px); z-index: 60; display: flex; align-items: center; gap: 4px 16px; text-align: left; padding: 5px 16px 8px; border-radius: 12px; }
+    .lastbanner .lb-k { font-size: 10px; letter-spacing: 2px; } .lastbanner .lb-name { font-size: 22px; margin: 0; animation: none; } .lastbanner .lb-s { margin-left: auto; font-size: 13px; }
+    .lastbanner .lb-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; height: 3px; border-radius: 0; }
+    .stage .tname { flex-wrap: wrap; gap: 2px 6px; } .stage .tn { max-width: 100%; } .stage .tname .tag { display: none; } .stage .tile.me .tstat.wait { display: none; }
+    /* arranging: the four rows sit side by side, so the whole board fits on screen */
+    .ownpanel { --cw: 44px; }
+    .ownpanel .board { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 4px 16px; padding: 0; }
+    .ownpanel .rw { width: auto; position: relative; padding-top: 20px; }
+    .ownpanel .rw::before { content: attr(data-n); position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #1a1407; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+    .others .board { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px 10px; }
+    .others .rw { width: auto; } .others .card, .others .slot { width: 28px; height: 40px; border-radius: 5px; } .others .card .ix { font-size: 9px; top: 2px; left: 3px; } .others .card .ix i { font-size: 8px; } .others .card .pip { font-size: 15px; padding-top: 8px; padding-left: 3px; }
+    .others { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    .handpanel .name { font-size: 13px; margin-bottom: 4px; }
+    .stage .tstat { font-size: 9px; letter-spacing: .2px; padding: 2px 6px; } .stage .tflip { padding: 4px 8px; font-size: 10px; white-space: nowrap; } .stage .tn { font-size: 13px; }
+  }
 </style>
 </head>
 <body>
@@ -920,6 +997,7 @@ function boardEl(board, mine, pid) {
   for (const [rowIdx, n] of ROWS.entries()) {
     const row = el('div', { class: 'r' });
     const rw = el('div', { class: 'rw' }, row);
+    rw.dataset.n = String(rowIdx + 1);
     for (let k = 0; k < n; k++, i++) {
       const slot = i, s = board[slot];
       let cls = 'slot', inner = '';
@@ -1050,7 +1128,17 @@ setInterval(() => {
   document.getElementById('lb-fill').style.width = (left / BANNER_SECONDS) * 100 + '%';
 }, 500);
 
+const isLandscape = () => window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches;
+
+function screenName() {
+  if (!session || !st) return 'landing';
+  if (st.phase === 'lobby') return 'wait';
+  const active = st.players.filter((p) => !p.spectator);
+  return active.length && active.every((p) => p.ready) ? 'stage' : 'arrange';
+}
+
 function render() {
+  app.dataset.screen = screenName();
   app.replaceChildren();
   if (!session || !st) renderLobby();
   else renderGame();
@@ -1063,6 +1151,22 @@ const activePlayers = () => st.players.filter((p) => !p.spectator);   // joined 
 // ---- the stage: one row at a time, big cards ----
 function layoutFor(rowIdx, n) {
   const k = ROWS[rowIdx];
+  if (isLandscape()) {   // short, wide screen: row info on the left, tiles fill the rest; pick the biggest cards that fit on screen
+    const cap = [124, 124, 96, 80][rowIdx], gap = 10, pad = 16, cg = 6;
+    const W = (document.getElementById('app').clientWidth || window.innerWidth) - 28 - 230 - 14;
+    const appEl = document.getElementById('app');
+    const top = appEl.getBoundingClientRect().bottom + window.scrollY;   // header and banner are already on the page
+    const H = Math.max(170, window.innerHeight - top - 26), overhead = 84;
+    let best = null;
+    for (let c = 1; c <= Math.min(Math.max(n, 1), 8); c++) {
+      const rows = Math.ceil(n / c);
+      const cwW = ((W - (c - 1) * gap) / c - pad - (k - 1) * cg) / k;
+      const cwH = ((H - (rows - 1) * gap) / rows - overhead) / 1.45;
+      const cw = Math.floor(Math.min(cap, cwW, cwH));
+      if (!best || cw > best.cw) best = { cols: c, cw };
+    }
+    return { cols: best.cols, cw: Math.max(34, best.cw) };
+  }
   const W = (document.getElementById('app').clientWidth || window.innerWidth) - 30;   // panel padding
   const cap = [124, 124, 96, 80][rowIdx], minCw = [70, 70, 54, 40][rowIdx], gap = 10, pad = 16, cg = 6;
   const cwFor = (c) => Math.floor(Math.min(cap, ((W - (c - 1) * gap) / c - pad - (k - 1) * cg) / k));
@@ -1234,7 +1338,7 @@ function renderGame() {
     : el('button', { class: 'readybtn', disabled: placed < total, style: `--p:${(placed / total) * 100}%`, onclick: () => act('ready', { ready: true }) },
         placed < total ? t('placeAll', { p: placed, t: total }) : t('imReady'));
 
-  app.append(el('div', panel(1, me.ready ? 'is-ready' : ''),
+  app.append(el('div', panel(1, 'ownpanel' + (me.ready ? ' is-ready' : '')),
     el('div', { class: 'row' },
       who(me, me.name + t('you')),
       readyBtn),
@@ -1265,7 +1369,7 @@ function renderGame() {
   const handTitle = me.ready ? t('handHidden')
     : !st.hand.length ? t('handDone')
     : t('handTap');
-  const handPanel = el('div', panel(2),
+  const handPanel = el('div', panel(2, 'handpanel'),
     el('div', { class: 'name' }, handTitle), hand);
   if (!me.ready) handPanel.dataset.hand = '';
   if (!inProgress) app.append(handPanel);   // nothing left to do with the hand once the round is under way
@@ -1585,8 +1689,9 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGuide
 
 function showRound(n) {
   document.querySelector('.roundfx')?.remove();
-  const o = el('div', { class: 'roundfx' }, el('div', { class: 'rf-k' }, t('roundK')), el('div', { class: 'rf-n' }, String(n)));
+  const o = el('div', { class: 'roundfx' }, el('div', { class: 'rf-box' }, el('div', { class: 'rf-k' }, t('roundK')), el('div', { class: 'rf-n' }, String(n))));
   document.body.append(o);
+  window.scrollTo(0, 0);   // a new round starts at the top, instead of landing wherever the old screen was scrolled to
   setTimeout(() => o.remove(), 4200);
 }
 
