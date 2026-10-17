@@ -79,9 +79,26 @@ const post = (b) => call('POST', b, {});
   v = (await post({ action: 'flipRow', code: room.code, pid: rp[0], row: 3, up: true })).j;
   assert.equal(v.rowResults.length, 0, 'one player alone opening a row is not enough');
   v = (await post({ action: 'flipRow', code: room.code, pid: rp[0], row: 3, up: false })).j;
-  const joiner = (await post({ action: 'join', code: room.code, name: 'D' })).j;
-  assert.equal(joiner.allReady, null, 'late joiner clears the all-ready banner');
-  assert.equal((await post({ action: 'ready', code: room.code, pid: rp[1], ready: false })).s, 200, 'can unready again once someone is not ready');
+  // joining while the game is in progress (everyone ready): watch only, then dealt in next round
+  const watch = (await post({ action: 'join', code: room.code, name: 'Watcher' })).j;
+  assert.equal(watch.players.find(pl => pl.id === watch.meId).spectator, true, 'joiner is a spectator');
+  assert.equal(watch.hand.length, 0);
+  assert.equal(watch.allReady && watch.allReady.name, 'B', 'banner not disturbed by a spectator');
+  assert.equal((await post({ action: 'place', code: room.code, pid: watch.meId, card: '2S', slot: 0 })).s, 409, 'spectator cannot place');
+  assert.equal((await post({ action: 'ready', code: room.code, pid: watch.meId, ready: true })).s, 409, 'spectator cannot ready');
+  assert.equal((await post({ action: 'flipRowAll', code: room.code, pid: rp[0], row: 0, up: true })).s, 200, 'host can still open rows (spectator is not waited for)');
+  assert.equal((await post({ action: 'ready', code: room.code, pid: rp[1], ready: false })).s, 409, 'still in progress');
+  assert.equal((await call('GET', null, { code: room.code, pid: watch.meId })).j.rowResults.length, 1, 'spectator sees results');
+  const nextRound = (await post({ action: 'deal', code: room.code, pid: rp[0] })).j;
+  assert.ok(nextRound.players.every(pl => !pl.spectator), 'everyone is dealt in at the next round');
+  assert.equal((await call('GET', null, { code: room.code, pid: watch.meId })).j.hand.length, 7, 'former spectator now has cards');
+  // joining while still arranging (not everyone ready) -> dealt in as a normal player, banner/ready state reset
+  const arr = (await post({ action: 'create', name: 'X' })).j;
+  const ar2 = (await post({ action: 'join', code: arr.code, name: 'Y' })).j;
+  await post({ action: 'deal', code: arr.code, pid: arr.meId });
+  const late2 = (await post({ action: 'join', code: arr.code, name: 'Z' })).j;
+  assert.equal(late2.players.find(pl => pl.id === late2.meId).spectator, false, 'joining before everyone is ready: a normal player');
+  assert.equal(late2.hand.length, 7);
   // 10 players: allowed, 11th rejected, 70 cards dealt from two decks
   const big = (await post({ action: 'create', name: 'H' })).j;
   for (let i = 1; i < 10; i++) assert.equal((await post({ action: 'join', code: big.code, name: 'Q' + i })).s, 200);

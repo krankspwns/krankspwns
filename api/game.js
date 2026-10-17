@@ -143,15 +143,19 @@ function evaluateRow(row, players) {
   return { row, losers: tie ? [] : losers.map((e) => e.id), penalty: tie ? 0 : penalty, tie, entries };
 }
 
+// Players who joined while a round was under way only watch until the next deal.
+const activeOf = (room) => room.players.filter((p) => !p.spectator);
+
 // A row is scored once everyone's cards in it are face up (and the game is under way).
 function rowResults(room) {
-  if (room.phase !== 'dealt' || room.players.length < 2 || !room.players.every((p) => p.ready)) return [];
+  const players = activeOf(room);
+  if (room.phase !== 'dealt' || players.length < 2 || !players.every((p) => p.ready)) return [];
   const out = [];
   let start = 0;
   ROW_SIZES.forEach((n, row) => {
-    const slice = room.players.map((p) => p.board.slice(start, start + n));
+    const slice = players.map((p) => p.board.slice(start, start + n));
     if (slice.every((cs) => cs.every((c) => c && c.up))) {
-      out.push(evaluateRow(row, room.players.map((p, i) => ({ id: p.id, name: p.name, cards: slice[i].map((c) => c.c) }))));
+      out.push(evaluateRow(row, players.map((p, i) => ({ id: p.id, name: p.name, cards: slice[i].map((c) => c.c) }))));
     }
     start += n;
   });
@@ -180,6 +184,7 @@ function view(room, pid) {
         name: p.name,
         isHost: p.id === room.hostId,
         ready: p.ready,
+        spectator: !!p.spectator,
         handCount: p.hand.length,
         // Board slots are null or {c, up}. Others only see cards flipped face up.
         board: p.board.map((s) => (s && (mine || s.up) ? s : s ? { c: '?', up: false } : null)),
@@ -222,10 +227,15 @@ async function handle(action, b, query) {
     need(!room.players.some((p) => p.name.toLowerCase() === name.toLowerCase()), 409, 'Name already taken');
     const p = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
     if (room.phase === 'dealt') {
-      // Joining mid-round: deal 7 cards from what's left (top up with a fresh deck if short).
-      if (!room.deck || room.deck.length < HAND_SIZE) room.deck = shuffle((room.deck || []).concat(newDeck()));
-      p.hand = room.deck.splice(0, HAND_SIZE);
-      room.allReady = null;
+      if (activeOf(room).every((q) => q.ready)) {
+        // Game in progress (everyone is ready): watch this round, get dealt in at the next one.
+        p.spectator = true;
+      } else {
+        // Still arranging: deal 7 cards from what's left (top up with a fresh deck if short).
+        if (!room.deck || room.deck.length < HAND_SIZE) room.deck = shuffle((room.deck || []).concat(newDeck()));
+        p.hand = room.deck.splice(0, HAND_SIZE);
+        room.allReady = null;
+      }
     }
     room.players.push(p);
     await saveRoom(room);
@@ -235,6 +245,9 @@ async function handle(action, b, query) {
   const pid = String(b.pid || query.pid || '');
   const me = room.players.find((p) => p.id === pid);
   need(me, 404, 'You are not in this room');
+  const PLAYER_ACTIONS = ['place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
+  need(!(me.spectator && PLAYER_ACTIONS.includes(action)), 409, 'Wait for the next round');
+  const active = activeOf(room);
 
   switch (action) {
     case 'state':
@@ -246,6 +259,7 @@ async function handle(action, b, query) {
       const decks = Math.ceil((room.players.length * HAND_SIZE) / 52);
       const deck = shuffle(Array.from({ length: decks }, newDeck).flat());
       for (const p of room.players) {
+        p.spectator = false;
         p.hand = deck.splice(0, HAND_SIZE);
         p.board = Array(SLOTS).fill(null);
         p.ready = false;
@@ -301,7 +315,7 @@ async function handle(action, b, query) {
     case 'flipRowUp': // kept for older clients
     case 'flipRow': {
       need(room.phase === 'dealt', 409, 'No cards dealt');
-      need(room.players.every((p) => p.ready), 409, 'Wait until everyone is ready');
+      need(active.every((p) => p.ready), 409, 'Wait until everyone is ready');
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
@@ -314,11 +328,11 @@ async function handle(action, b, query) {
       // Host reveals (or hides) one row for every player at once.
       need(room.hostId === pid, 403, 'Only the host can do that');
       need(room.phase === 'dealt', 409, 'No cards dealt');
-      need(room.players.every((p) => p.ready), 409, 'Wait until everyone is ready');
+      need(active.every((p) => p.ready), 409, 'Wait until everyone is ready');
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
-      for (const pl of room.players) {
+      for (const pl of active) {
         for (let i = start; i < start + ROW_SIZES[row]; i++) if (pl.board[i]) pl.board[i].up = !!b.up;
       }
       break;
@@ -328,14 +342,14 @@ async function handle(action, b, query) {
       // Ready hides every face (for you too) and freezes your cards until you unready.
       need(room.phase === 'dealt', 409, 'No cards dealt');
       // Once everyone is ready the round is under way: no taking it back until a new deal.
-      need(b.ready || !room.players.every((p) => p.ready), 409, 'Game in progress');
+      need(b.ready || !active.every((p) => p.ready), 409, 'Game in progress');
       me.ready = !!b.ready;
       if (me.ready) {
         need(me.board.every(Boolean), 409, 'Place all 7 cards in the rows first');
         for (const c of me.board) c.up = false;
       }
       // When the last player becomes ready, remember who it was so everyone can see.
-      room.allReady = me.ready && room.players.length > 1 && room.players.every((p) => p.ready)
+      room.allReady = me.ready && active.length > 1 && active.every((p) => p.ready)
         ? { id: me.id, name: me.name, at: Date.now() }
         : null;
       break;
@@ -347,7 +361,7 @@ async function handle(action, b, query) {
         else await redis(['DEL', `room:${code}`]);
         return { left: true };
       }
-      if (room.hostId === pid) room.hostId = room.players[0].id;
+      if (room.hostId === pid) room.hostId = (room.players.find((p) => !p.spectator) || room.players[0]).id;
       room.allReady = null;
       await saveRoom(room);
       return { left: true };

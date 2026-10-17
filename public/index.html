@@ -300,6 +300,13 @@
   .resnames { font-size: clamp(30px, 9vw, 60px); font-weight: 800; line-height: 1.15; margin: 4px 0 14px; word-break: break-word; animation: namepulse 1.2s ease-in-out infinite; }
   .respen.big { font-size: clamp(34px, 10vw, 64px); padding: 6px 24px; }
   @keyframes resfx { 0% { opacity: 0; transform: scale(.7) rotate(-2deg); } 6% { opacity: 1; transform: scale(1.06); } 9% { transform: scale(1); } 77% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.03); } }
+
+  .observer { text-align: center; display: grid; justify-items: center; gap: 10px; padding: 26px 20px; border-style: dashed; border-color: rgba(124,196,255,.55); }
+  .obs-eye { font-size: 44px; animation: bob 2.4s ease-in-out infinite; }
+  .obs-title { font-size: 20px; font-weight: 800; }
+  .obs-text { font-size: 14px; opacity: .8; max-width: 420px; line-height: 1.5; }
+  .watchers { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; }
+  .wchip { background: rgba(124,196,255,.14); border-color: rgba(124,196,255,.5); color: #cfe9ff; }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -375,6 +382,9 @@ const I18N = {
     handHidden: 'Your hand (hidden)', handDone: 'Your hand — all cards are placed',
     handExpert: 'Your hand — tap a card to place it in the next free slot', handNormal: 'Your hand — drag a card onto a slot (or tap it, then tap a slot)',
     expert: 'Expert mode', expertTip: 'Tap a hand card to drop it into the next free slot (top row first); tap a placed card to send it back.',
+    observing: 'Observing', watching: 'Watching', obsTitle: 'You’re watching this round',
+    obsText: 'You joined while a game was in progress. You can follow along below — the host will deal you in when the next round starts.',
+    obsWait: 'Waiting for the next round…', e_spec: 'Wait for the next round',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 — over 10.5 loses, otherwise the lowest loses', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
@@ -415,6 +425,9 @@ const I18N = {
     handHidden: '你的手牌（已隐藏）', handDone: '你的手牌 — 所有牌都已摆好',
     handExpert: '你的手牌 — 点击一张牌，自动放入下一个空位', handNormal: '你的手牌 — 把牌拖到位置上（或先点牌，再点位置）',
     expert: '高手模式', expertTip: '点击手牌会放入下一个空位（从最上面一行开始）；点击已摆的牌会放回手牌。',
+    observing: '观战中', watching: '观战', obsTitle: '你正在观战本轮',
+    obsText: '你是在游戏进行中加入的。可以先在下方观看，房主开始下一轮时你会被一起发牌。',
+    obsWait: '等待下一轮…', e_spec: '请等待下一轮',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5，超过 10.5 即输；否则点数最小者输', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
@@ -455,6 +468,9 @@ const I18N = {
     handHidden: '你的手牌（已隱藏）', handDone: '你的手牌 — 所有牌都已擺好',
     handExpert: '你的手牌 — 點擊一張牌，自動放入下一個空位', handNormal: '你的手牌 — 把牌拖到位置上（或先點牌，再點位置）',
     expert: '高手模式', expertTip: '點擊手牌會放入下一個空位（從最上面一行開始）；點擊已擺的牌會放回手牌。',
+    observing: '觀戰中', watching: '觀戰', obsTitle: '你正在觀戰本輪',
+    obsText: '你是在遊戲進行中加入的。可以先在下方觀看，房主開始下一輪時你會被一起發牌。',
+    obsWait: '等待下一輪…', e_spec: '請等待下一輪',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5，超過 10.5 即輸；否則點數最小者輸', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
@@ -487,7 +503,7 @@ const ERR_MAP = [
   ['Enter a name', 'e_name'], ['Room is full', 'e_full'], ['Name already taken', 'e_taken'], ['Room not found', 'e_room'],
   ['You are not in this room', 'e_notin'], ['Only the host', 'e_host'], ['No cards dealt', 'e_nodeal'], ['Unready to move', 'e_unready'],
   ['Card not in', 'e_card'], ['Bad ', 'e_slot'], ['Nothing there', 'e_nothing'], ['Place all 7', 'e_fill'], ['Wait until everyone', 'e_wait'],
-  ['Game in progress', 'e_game'], ['Busy', 'e_busy'], ['Server error', 'e_server'],
+  ['Wait for the next round', 'e_spec'], ['Game in progress', 'e_game'], ['Busy', 'e_busy'], ['Server error', 'e_server'],
 ];
 function tErr(msg) {
   if (!msg) return '';
@@ -675,12 +691,12 @@ function boardEl(board, mine, pid) {
       if (canMove && selected) node.onclick = () => { const card = selected; selected = null; act('place', { card, slot }); };
       row.append(node);
     }
-    if (mine && dealt && st.players.every((p) => p.ready)) {
+    if (mine && dealt && activePlayers().every((p) => p.ready)) {
       const cards = board.slice(i - n, i).filter(Boolean);
       const up = cards.length > 0 && cards.every((c) => c.up);   // already face up -> offer to flip back down
       if (st.isHost) {   // host only: open / close this row for everyone, on the left
         const start = i - n;
-        const everyoneUp = st.players.every((pl) => pl.board.slice(start, start + n).every((c) => c && c.up));
+        const everyoneUp = activePlayers().every((pl) => pl.board.slice(start, start + n).every((c) => c && c.up));
         rw.append(el('button', { class: 'ghost rowbtn hostbtn', title: everyoneUp ? t('closeAllTip') : t('openAllTip'),
           onclick: () => act('flipRowAll', { row: rowIdx, up: !everyoneUp }) }, everyoneUp ? t('closeAll') : t('openAll')));
       }
@@ -738,6 +754,7 @@ function who(p, label) {
 }
 
 function pill(p) {
+  if (p.spectator) return el('span', { class: 'pill wait' }, t('observing'));
   if (p.ready) return el('span', { class: 'pill go' }, t('pillReady'));
   const n = p.board.filter(Boolean).length;
   return el('span', { class: 'pill wait' }, t('pillArranging', { n, t: p.board.length }));
@@ -793,27 +810,43 @@ function render() {
   fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false;
 }
 
+const activePlayers = () => st.players.filter((p) => !p.spectator);   // joined mid-round players only watch
+
 function renderGame() {
   if (err) app.append(el('div', { class: 'err' }, tErr(err)));
   if (st.phase === 'lobby') return renderWaitingRoom();
   const me = st.players.find(p => p.id === st.meId);
-  const readyCount = st.players.filter(p => p.ready).length;
+  const active = activePlayers();
+  const readyCount = active.filter(p => p.ready).length;
   const panel = (i, extraCls = '') => ({ class: ('panel ' + extraCls + ' ' + (screenAnim ? 'fx-in' : '')).trim(), style: screenAnim ? `animation-delay:${i * 80}ms` : '' });
 
   const invite = el('button', { class: 'ghost', title: t('inviteTip'), onclick: () => copyText(`${location.origin}/?room=${st.code}`, invite) }, t('invite'));
   const head = el('div', panel(0, 'gamehead'),
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, t('room')), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'hstats' }, t('playersN', { n: st.players.length, max: st.maxPlayers }), el('span', { class: 'sep' }, '·'),
-      el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: st.players.length })), el('span', { class: 'sep' }, '·'), t('roundN', { n: st.round })),
+      el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: active.length })), el('span', { class: 'sep' }, '·'), t('roundN', { n: st.round })),
     el('div', { class: 'hactions' }, invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
     el('button', { class: 'ghost leavebtn', onclick: leave }, t('leave')));
   app.append(head);
   const banner = lastBanner();
   if (banner) app.append(banner);
 
+  if (me.spectator) {   // joined while the round was under way: watch, and get dealt in next round
+    app.append(el('div', panel(1, 'observer'),
+      el('div', { class: 'obs-eye' }, '👀'),
+      el('div', { class: 'obs-title' }, t('obsTitle')),
+      el('div', { class: 'obs-text' }, t('obsText')),
+      el('div', { class: 'waiting' }, el('span', { class: 'dot' }), t('obsWait'))));
+    const res = resultsPanel(); if (res) app.append(res);
+    const grid = el('div', { class: 'others' });
+    active.forEach((p, i) => grid.append(el('div', panel(2 + i * .5, p.ready ? 'is-ready' : ''), who(p, p.name), boardEl(p.board, false, p.id))));
+    if (grid.children.length) app.append(grid);
+    return;
+  }
+
   const placed = me.board.filter(Boolean).length;
   const total = me.board.length;
-  const inProgress = st.players.every((p) => p.ready);   // everyone is ready: round is under way
+  const inProgress = active.every((p) => p.ready);   // everyone playing is ready: round is under way
   const readyBtn = inProgress
     ? el('span', { class: 'pill live' }, el('i', { class: 'livedot' }), t('inProgress'))
     : me.ready
@@ -826,7 +859,7 @@ function renderGame() {
       who(me, me.name + t('you')),
       readyBtn),
     inProgress ? '' : me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, '✓'),
-      el('div', {}, t('youReady'), el('small', {}, t('waitMore', { n: st.players.length - readyCount })))) : '',
+      el('div', {}, t('youReady'), el('small', {}, t('waitMore', { n: active.length - readyCount })))) : '',
     boardEl(me.board, true, me.id),
     el('div', { class: 'hint' }, inProgress
       ? t('hintProgress')
@@ -865,10 +898,14 @@ function renderGame() {
   if (!inProgress) app.append(handPanel);   // nothing left to do with the hand once the round is under way
 
   const others = el('div', { class: 'others' });
-  st.players.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5, p.ready ? 'is-ready' : ''),
+  active.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5, p.ready ? 'is-ready' : ''),
     who(p, p.name),
     boardEl(p.board, false, p.id))));
   if (others.children.length) app.append(others);
+  const watchers = st.players.filter((p) => p.spectator);
+  if (watchers.length) {
+    app.append(el('div', { class: 'panel watchers' }, el('span', { class: 'lrk' }, t('watching')), ...watchers.map((p) => el('span', { class: 'loserchip wchip' }, p.name))));
+  }
 }
 
 function renderLobby() {
@@ -1069,20 +1106,20 @@ function predict(action, x) {
       me.board[x.slot].up = !me.board[x.slot].up;
       return next;
     case 'flipRow': {
-      if (!next.players.every((p) => p.ready)) return null;
+      if (!next.players.filter((p) => !p.spectator).every((p) => p.ready)) return null;
       const start = ROWS.slice(0, x.row).reduce((a, n) => a + n, 0);
       for (let i = start; i < start + ROWS[x.row]; i++) if (me.board[i]) me.board[i].up = !!x.up;
       return next;
     }
     case 'flipRowAll': {
-      if (!next.players.every((p) => p.ready)) return null;
+      if (!next.players.filter((p) => !p.spectator).every((p) => p.ready)) return null;
       const start = ROWS.slice(0, x.row).reduce((a, n) => a + n, 0);
-      for (const pl of next.players) for (let i = start; i < start + ROWS[x.row]; i++) if (pl.board[i]) pl.board[i].up = !!x.up;
+      for (const pl of next.players.filter((p) => !p.spectator)) for (let i = start; i < start + ROWS[x.row]; i++) if (pl.board[i]) pl.board[i].up = !!x.up;
       return next;
     }
     case 'ready':
       if (x.ready && !me.board.every(Boolean)) return null;
-      if (!x.ready && next.players.every((p) => p.ready)) return null;   // game in progress
+      if (!x.ready && next.players.filter((p) => !p.spectator).every((p) => p.ready)) return null;   // game in progress
       me.ready = !!x.ready;
       if (me.ready) me.board.forEach((c) => c && (c.up = false));
       return next;
