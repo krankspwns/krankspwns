@@ -255,7 +255,8 @@
   .langsw button:hover { transform: none; filter: none; color: #fff; }
   .langsw button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
   /* Chinese: system CJK fonts, and no wide uppercase tracking */
-  html[lang^="zh"] body, html[lang^="zh"] button, html[lang^="zh"] input { font-family: var(--serif), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif; }
+  html[lang="zh-CN"] body, html[lang="zh-CN"] button, html[lang="zh-CN"] input { font-family: var(--serif), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif; }
+  html[lang="zh-TW"] body, html[lang="zh-TW"] button, html[lang="zh-TW"] input { font-family: var(--serif), 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans CJK TC', 'Noto Sans TC', sans-serif; }
   html[lang^="zh"] :is(h1, .kicker, .lb-k, .joincard label, .or, .tag, .pill, .rf-k, button) { letter-spacing: .06em; }
   html[lang^="zh"] h1 { letter-spacing: .3em; }
   html[lang^="zh"] .hero h2 { letter-spacing: 0; }
@@ -299,7 +300,7 @@
 <body>
 <div class="bg" id="bg"></div>
 <main>
-  <div class="topbar"><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">中文</button></div></div>
+  <div class="topbar"><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div>
   <h1 id="h1">Seven Card Table</h1>
   <div id="app"></div>
 </main>
@@ -378,13 +379,50 @@ const I18N = {
     e_nothing: '那里没有牌', e_fill: '请先把 7 张牌都摆好', e_wait: '请等待所有人准备好', e_game: '游戏进行中',
     e_busy: '服务器繁忙，请重试', e_server: '服务器错误', e_unknown: '出错了',
   },
+  zht: {
+    title: '七張牌桌', langLabel: '語言',
+    kicker: '多人紙牌桌', h2a: '發牌，排列，', h2b: '揭曉！',
+    heroP: '最多邀請十位朋友，每人發七張牌，在自己的牌桌上悄悄排好，再一起揭曉。',
+    chip1: '👥 最多 10 位玩家', chip2: '🖐 拖放操作', chip3: '🙈 準備前保持隱藏', chip4: '📱 手機也能玩',
+    takeSeat: '入座', yourName: '你的名字', namePh: '例如：小明', create: '建立新房間', orJoin: '或加入朋友的房間', roomCode: '房間代碼', join: '加入',
+    s1t: '建立或加入', s1d: '一人建立房間，並分享 4 位字母代碼。',
+    s2t: '獲發 7 張牌', s2d: '房主洗牌並發牌，只有你能看到自己的手牌。',
+    s3t: '排滿牌行', s3d: '依 1、1、2、3 張的行數擺牌，然後點擊「我準備好了」。',
+    s4t: '揭曉', s4d: '準備好後翻開牌，向大家展示。',
+    copyCode: '複製代碼', copyLink: '複製邀請連結', copied: '已複製 ✓',
+    joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
+    host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待加入…',
+    dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
+    waitingHost: '等待房主發牌…', leaveRoom: '離開房間',
+    room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
+    invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
+    inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
+    youReady: '你已準備', waitMore: (v) => `還在等待 ${v.n} 位玩家`,
+    hintProgress: '全員已準備。使用每一行的「翻開 / 蓋上」按鈕，或點擊單張牌來翻開或蓋上。房主可以開始新的一輪。',
+    hintReady: '你已準備：所有牌都已蓋上並鎖定。正在等待其他玩家。點擊「取消準備」可重新移動牌。',
+    hintArrange: '擺滿 7 個位置才能準備。你能看到自己的牌，可在位置之間拖動，或拖回手牌。點擊「我準備好了」會蓋上並鎖定。金色圓點表示你已向大家翻開的牌。',
+    pillReady: '✓ 已準備', pillArranging: (v) => `擺牌中 ${v.n}/${v.t}`,
+    handHidden: '你的手牌（已隱藏）', handDone: '你的手牌 — 所有牌都已擺好',
+    handExpert: '你的手牌 — 點擊一張牌，自動放入下一個空位', handNormal: '你的手牌 — 把牌拖到位置上（或先點牌，再點位置）',
+    expert: '高手模式', expertTip: '點擊手牌會放入下一個空位（從最上面一行開始）；點擊已擺的牌會放回手牌。',
+    flipUp: '翻開', flipDown: '蓋上', flipUpTip: '向所有人翻開這一行', flipDownTip: '蓋上這一行', shared: '所有人可見',
+    bannerK: '全員已準備 · 最後一位準備的是', secs: (v) => `${v.n} 秒`,
+    roundK: '回合', toastJoin: (v) => `${v.name} 加入了牌桌`, toastLeft: (v) => `${v.name} 離開了牌桌`,
+    roomGone: '房間已不存在',
+    e_name: '請輸入名字', e_full: (v) => '房間已滿', e_taken: '這個名字已被使用', e_room: '找不到該房間', e_notin: '你不在這個房間裡',
+    e_host: '只有房主可以發牌', e_nodeal: '還沒有發牌', e_unready: '請先取消準備再移動牌', e_card: '這張牌不在你的手牌中', e_slot: '位置無效',
+    e_nothing: '那裡沒有牌', e_fill: '請先把 7 張牌都擺好', e_wait: '請等待所有人準備好', e_game: '遊戲進行中',
+    e_busy: '伺服器忙碌，請重試', e_server: '伺服器錯誤', e_unknown: '發生錯誤',
+  },
 };
 let lang = 'en';
 try {
   const saved = localStorage.getItem('sct-lang');
-  lang = saved === 'zh' || saved === 'en' ? saved : (navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+  const nav = (navigator.language || 'en').toLowerCase();
+  lang = I18N[saved] ? saved : nav.startsWith('zh') ? (/tw|hk|mo|hant/.test(nav) ? 'zht' : 'zh') : 'en';
 } catch {}
-document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+const HTML_LANG = { en: 'en', zh: 'zh-CN', zht: 'zh-TW' };
+document.documentElement.lang = HTML_LANG[lang];
 function t(key, vars) {
   const v = I18N[lang][key] ?? I18N.en[key] ?? key;
   return typeof v === 'function' ? v(vars || {}) : v;
@@ -400,12 +438,12 @@ function tErr(msg) {
   if (!msg) return '';
   if (msg === 'Room no longer available') return t('roomGone');
   const hit = ERR_MAP.find(([prefix]) => msg.startsWith(prefix));
-  return hit ? t(hit[1]) : lang === 'zh' ? t('e_unknown') : msg;
+  return hit ? t(hit[1]) : lang !== 'en' ? t('e_unknown') : msg;
 }
 function setLang(l) {
   lang = l;
   try { localStorage.setItem('sct-lang', l); } catch {}
-  document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+  document.documentElement.lang = HTML_LANG[l];
   applyStatic();
   render();
 }
