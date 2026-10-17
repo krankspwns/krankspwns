@@ -266,8 +266,12 @@
 
   /* row results */
   .results { border-color: rgba(255,155,148,.55); background: linear-gradient(180deg, rgba(255,155,148,.09), rgba(255,255,255,.03)); }
+  .lastready { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px; margin: 2px 0 10px; border-radius: 10px; background: rgba(201,169,106,.14); border: 1px solid rgba(201,169,106,.5); }
+  .lrk { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
+  .lrn { font-size: 17px; font-weight: 800; }
   .res { padding: 12px 0; border-top: 1px solid var(--line); }
   .res:first-of-type { border-top: 0; padding-top: 4px; }
+  .lastready + .res { border-top: 0; padding-top: 2px; }
   .reshead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
   .reshead b { font-size: 15px; color: var(--gold-hi); }
   .resrule { font-size: 12px; opacity: .65; }
@@ -289,7 +293,7 @@
   .mc { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--ivory); color: var(--ink); font-weight: 700; font-size: 12px; }
   .mc.red { color: var(--red); }
   /* announcement pop-up */
-  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 6.7s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; }
+  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 4s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; }
   .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(18,22,40,.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
   .resbox .rf-k { font-size: clamp(16px, 4.5vw, 24px); letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .resbox .resk { margin-top: 10px; font-size: 13px; }
@@ -374,7 +378,7 @@ const I18N = {
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 — over 10.5 loses, otherwise the lowest loses', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
-    h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush (same suit)', h_triple: 'Triple', h_sflush: 'Straight flush',
+    h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush (same suit)', h_triple: 'Triple', h_sflush: 'Straight flush', h_royal: 'Royal flush', lastReady: 'Last to be ready',
     openAll: 'Open all', closeAll: 'Close all', openAllTip: 'Open this row for every player', closeAllTip: 'Close this row for every player',
     flipUp: 'Flip up', flipDown: 'Flip down', flipUpTip: 'Turn this row face up for everyone', flipDownTip: 'Turn this row face down', shared: 'Face up for everyone',
     bannerK: 'Everyone is ready · last to be ready', secs: (v) => `${v.n}s`,
@@ -414,7 +418,7 @@ const I18N = {
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5，超过 10.5 即输；否则点数最小者输', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
-    h_none: '散牌', h_pair: '对子', h_straight: '顺子', h_flush: '同花', h_triple: '三条', h_sflush: '同花顺',
+    h_none: '散牌', h_pair: '对子', h_straight: '顺子', h_flush: '同花', h_triple: '三条', h_sflush: '同花顺', h_royal: '皇家同花顺', lastReady: '最后一位准备的是',
     openAll: '全部翻开', closeAll: '全部盖上', openAllTip: '为所有玩家翻开这一行', closeAllTip: '为所有玩家盖上这一行',
     flipUp: '翻开', flipDown: '盖上', flipUpTip: '向所有人翻开这一行', flipDownTip: '盖上这一行', shared: '所有人可见',
     bannerK: '全员已准备 · 最后一位准备的是', secs: (v) => `${v.n} 秒`,
@@ -454,7 +458,7 @@ const I18N = {
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5，超過 10.5 即輸；否則點數最小者輸', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
-    h_none: '散牌', h_pair: '對子', h_straight: '順子', h_flush: '同花', h_triple: '三條', h_sflush: '同花順',
+    h_none: '散牌', h_pair: '對子', h_straight: '順子', h_flush: '同花', h_triple: '三條', h_sflush: '同花順', h_royal: '皇家同花順', lastReady: '最後一位準備的是',
     openAll: '全部翻開', closeAll: '全部蓋上', openAllTip: '為所有玩家翻開這一行', closeAllTip: '為所有玩家蓋上這一行',
     flipUp: '翻開', flipDown: '蓋上', flipUpTip: '向所有人翻開這一行', flipDownTip: '蓋上這一行', shared: '所有人可見',
     bannerK: '全員已準備 · 最後一位準備的是', secs: (v) => `${v.n} 秒`,
@@ -518,7 +522,7 @@ let newSeats = new Set();    // players who just joined (one render only)
 let screenAnim = false;      // entrance animation for a newly shown screen
 let dealAnim = false;        // cards fly in after a deal
 let formName = localStorage.getItem('sct-name') || '', formCode = new URLSearchParams(location.search).get('room') || '';
-const BANNER_SECONDS = 12;
+const BANNER_SECONDS = 8;
 let confettiAt = 0;
 let expert = false;          // "Expert mode": tap a hand card to auto-place it, tap a placed card to return it
 try { expert = localStorage.getItem('sct-expert') === '1'; } catch {}
@@ -961,8 +965,11 @@ function loserNames(r) { return r.losers.map((id) => r.entries.find((e) => e.id 
 
 function resultsPanel() {
   const list = st.rowResults || [];
-  if (!list.length) return null;
+  if (!list.length && !st.allReady) return null;
   const box = el('div', { class: 'panel results' }, el('div', { class: 'name' }, t('resTitle')));
+  if (st.allReady) {   // stays visible after the banner is gone
+    box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, st.allReady.name)));
+  }
   list.forEach((r) => {
     const names = loserNames(r);
     const detail = el('div', { class: 'resdet' });
@@ -996,7 +1003,7 @@ function showResult(r) {
     el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
     r.tie ? el('div', { class: 'respen big none' }, t('noPenalty')) : el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty)));
   document.body.append(o);
-  setTimeout(() => o.remove(), 6700);
+  setTimeout(() => o.remove(), 4100);
 }
 
 function showRound(n) {

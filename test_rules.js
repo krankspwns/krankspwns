@@ -34,13 +34,22 @@ assert.equal(h(['QS', 'KH', 'AD']), 'straight', 'Q-K-A'); assert.equal(h(['AS', 
 assert.equal(h(['KS', 'AH', '2D']), 'none', 'K-A-2 does not wrap');
 assert.equal(h(['5S', '9S', 'KS']), 'flush'); assert.equal(h(['5S', '9S', 'KH']), 'none', 'two of a suit is not a combo');
 assert.equal(h(['7S', '7H', '7D']), 'triple'); assert.equal(h(['2S', '3S', '4S']), 'sflush');
+// royal flush: 10-J-Q, J-Q-K or Q-K-A in one suit
+assert.equal(h(['10S', 'JS', 'QS']), 'royal'); assert.equal(h(['JH', 'QH', 'KH']), 'royal'); assert.equal(h(['QD', 'KD', 'AD']), 'royal');
+assert.equal(h(['AD', 'KD', 'QD']), 'royal', 'order does not matter');
+assert.equal(h(['9S', '10S', 'JS']), 'sflush', '9-10-J is only a straight flush');
+assert.equal(h(['AS', '2S', '3S']), 'sflush', 'A-2-3 suited is a straight flush, not royal');
+assert.equal(h(['10S', 'JS', 'QH']), 'straight', 'royal needs one suit');
 // only the weakest hand loses
 assert.deepEqual(ev(3, [['2S', '3S', '4S'], ['5S', '9S', 'KS'], ['2H', '2D', '6C']]), { losers: 'p2', penalty: 6 }, 'pair loses; flush(2)+royal(4) raise it');
 assert.deepEqual(ev(3, [['2S', '4H', '6D'], ['3S', '8H', 'JD'], ['7S', '7H', '9C']]), { losers: 'p0,p1', penalty: 1 }, 'both no-pattern lose, penalty 1');
 assert.deepEqual(ev(3, [['7S', '7H', '7D'], ['2H', '2D', '6C']]), { losers: 'p1', penalty: 3 }, 'triple adds 3');
 assert.deepEqual(ev(3, [['5S', '9S', 'KS'], ['2H', '3D', '4C']]), { losers: 'p1', penalty: 2 }, 'flush adds 2');
-assert.deepEqual(ev(3, [['2S', '3S', '4S'], ['2H', '3D', '4C']]), { losers: 'p1', penalty: 4 }, 'royal flush adds 4');
-assert.deepEqual(ev(3, [['2S', '3S', '4S'], ['AH', 'AD', 'AC'], ['KS', 'QS', 'JS']]), { losers: 'p1', penalty: 11 }, 'triple is weakest of these; 4 + 3 + 4 adds up');
+assert.deepEqual(ev(3, [['2S', '3S', '4S'], ['2H', '3D', '4C']]), { losers: 'p1', penalty: 4 }, 'straight flush adds 4');
+assert.deepEqual(ev(3, [['QS', 'KS', 'AS'], ['2H', '3D', '4C']]), { losers: 'p1', penalty: 5 }, 'royal flush adds 5');
+assert.deepEqual(ev(3, [['10S', 'JS', 'QS'], ['2S', '3S', '4S'], ['2H', '2D', '6C']]), { losers: 'p2', penalty: 9 }, 'only the pair loses; royal 5 + straight flush 4');
+assert.deepEqual(ev(3, [['10S', 'JS', 'QS'], ['2S', '3S', '4S']]), { losers: 'p1', penalty: 9 }, 'straight flush loses to royal flush');
+assert.deepEqual(ev(3, [['2S', '3S', '4S'], ['AH', 'AD', 'AC'], ['KS', 'QS', 'JS']]), { losers: 'p1', penalty: 12 }, 'triple loses; straight flush 4 + triple 3 + royal flush 5');
 
 // Everyone the same -> nobody is the loser, no penalty (even when Aces / 2s would normally add to it)
 assert.deepEqual(ev(0, [['KS'], ['KH']]), TIE, 'row 1: two Kings');

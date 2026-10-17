@@ -94,13 +94,13 @@ const suitOf = (c) => c.slice(-1);
 const pts2 = (c) => { const r = c.slice(0, -1); return r === 'A' ? 2 : 'JQK'.includes(r) ? 1 : Number(r) * 2; };
 
 // Row 4 hands, weakest to strongest
-const HAND_ORDER = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush'];
-const HAND_PENALTY = { flush: 2, triple: 3, sflush: 4 };   // what a strong hand adds to the losers' penalty
+const HAND_ORDER = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush', 'royal'];
+const HAND_PENALTY = { flush: 2, triple: 3, sflush: 4, royal: 5 };   // what a strong hand adds to the losers' penalty
 function handOf(cards) {
   const rs = cards.map(rankOf).sort((a, b) => a - b);
   const flush = cards.every((c) => suitOf(c) === suitOf(cards[0]));
   const straight = (rs[1] === rs[0] + 1 && rs[2] === rs[1] + 1) || (rs[0] === 2 && rs[1] === 3 && rs[2] === 14);   // A-2-3 and Q-K-A both count
-  if (straight && flush) return 'sflush';
+  if (straight && flush) return rs[0] >= 10 ? 'royal' : 'sflush';   // 10-J-Q, J-Q-K or Q-K-A in one suit is a royal flush
   if (rs[0] === rs[2]) return 'triple';
   if (flush) return 'flush';
   if (straight) return 'straight';
