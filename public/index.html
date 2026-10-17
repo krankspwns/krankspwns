@@ -437,6 +437,11 @@
   .seat.empty { animation: seatglow 2.4s ease-in-out infinite; } .seat.empty:nth-child(odd) { animation-delay: .6s; }
   .tname .av, .hav .av { box-shadow: none; } .hav { display: grid; }
   @keyframes avspin { to { transform: rotate(360deg); } } @keyframes avpulse { 50% { transform: scale(1.25); opacity: .6; } } @keyframes wdot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } } @keyframes seatglow { 50% { opacity: .85; } }
+  /* row criteria tip (beginner help) */
+  .rowinfo { position: absolute; left: 0; top: 0; bottom: 0; margin: auto 0; height: 34px; width: 34px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(111,211,255,.12) !important; border: 1px solid rgba(111,211,255,.45) !important; box-shadow: none !important; line-height: 0; z-index: 2; } .rowinfo:hover { transform: none; filter: brightness(1.2); } .rowinfo.on { background: rgba(111,211,255,.35) !important; }
+  .rowtip { position: absolute; left: 0; right: 0; top: calc(50% + 24px); z-index: 30; padding: 12px 14px 12px; border-radius: 14px; text-align: left; background: rgb(22,30,56); border: 1px solid rgba(111,211,255,.6); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .25s ease backwards; }
+  .rowtip::before { content: ''; position: absolute; left: 13px; top: -7px; width: 12px; height: 12px; background: rgb(22,30,56); border-left: 1px solid rgba(111,211,255,.6); border-top: 1px solid rgba(111,211,255,.6); transform: rotate(45deg); }
+  .rowtip b { color: var(--gold-hi); font-size: 14px; } .rowtip p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; opacity: .9; } .rowtip .tj { color: #d9b8ff; } .rowtip button { margin-top: 10px; padding: 7px 16px; font-size: 13px; }
   /* final board */
   .final { --cw: 36px; }
   .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
@@ -574,7 +579,7 @@
   .ic-eye{color:#6fd3ff}.ic-eye-off{color:#ff7eb6}.ic-zap{color:#ffd23f}.ic-hand{color:#ffb86b}.ic-phone{color:#b69cff}.ic-ticket{color:#ff9f43}
   .ic-crown{color:#ffcf40}.ic-hourglass{color:#ffb347}.ic-wifi{color:#4fdc8a}.ic-wifi-off{color:#ff7a7a}.ic-help{color:#7fb2ff}.ic-user-x{color:#ff6b6b}
   .ic-link{color:#6fd3ff}.ic-copy{color:#9fb4ff}.ic-logout{color:#ff8a7a}.ic-shuffle{color:#c58bff}.ic-volume-x{color:#9aa7c7}.ic-volume-2{color:#5fe0c0}
-  .ic-music{color:#1f9d55}.ic-trophy{color:#ffcf40}.ic-swap{color:#6fd3ff}
+  .ic-music{color:#1f9d55}.ic-info{color:#6fd3ff}.ic-trophy{color:#ffcf40}.ic-swap{color:#6fd3ff}
   button.big .ic, .big .ic, .guidebtn b .ic, .gtitle b .ic, .pill .ic, .tag .ic, .readystrip .tick .ic, .btn-solid .ic { color: inherit; }
   .ic { display: inline-block; flex: none; vertical-align: middle; }
   .iconlabel { display: inline-flex; align-items: center; gap: 7px; }
@@ -744,6 +749,7 @@ const ICONS = {
   trophy: '<path d="M7.5 4h9v5.2a4.5 4.5 0 01-9 0z" fill="currentColor" fill-opacity=".32"/><path d="M7.5 5.5H4.2c0 3 1.3 4.6 3.5 4.9M16.5 5.5h3.3c0 3-1.3 4.6-3.5 4.9M12 13.7V17M8.5 20h7M9.5 17h5v3h-5z"/>',
   book: '<path d="M12 6.6C10.2 5.1 7.5 4.6 3.8 4.9v13.3c3.7-.3 6.4.2 8.2 1.7 1.8-1.5 4.5-2 8.2-1.7V4.9c-3.7-.3-6.4.2-8.2 1.7z" fill="currentColor" fill-opacity=".25"/><path d="M12 6.6v13.3M6.4 8.7c1.2 0 2.3.1 3.2.4M6.4 12c1.2 0 2.3.1 3.2.4M17.6 8.7c-1.2 0-2.3.1-3.2.4M17.6 12c-1.2 0-2.3.1-3.2.4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.2"/><circle cx="12" cy="7.8" r=".9" fill="currentColor"/>',
   swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
 };
 function icon(name, size = 18, cls = '') {
@@ -1052,6 +1058,7 @@ const I18N = {
     e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
     invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
+    tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: nothing < pair < straight < flush < three of a kind < straight flush < royal flush.', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
@@ -1123,6 +1130,7 @@ const I18N = {
     e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
     invitedTo: (v) => `你被邀请加入房间 ${v.code}`, leftOld: '你已离开之前的房间。', joinRoomN: (v) => `加入房间 ${v.code}`, otherCode: '使用其他代码', createOwn: '或创建自己的房间',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
+    tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
@@ -1194,6 +1202,7 @@ const I18N = {
     e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
     invitedTo: (v) => `你被邀請加入房間 ${v.code}`, leftOld: '你已離開之前的房間。', joinRoomN: (v) => `加入房間 ${v.code}`, otherCode: '使用其他代碼', createOwn: '或建立自己的房間',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
+    tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
@@ -1428,6 +1437,8 @@ function drop(src, cardId, t) {
   return act('move', { from: src, to });
 }
 
+let tipRow = null;   // which row's criteria tip is open
+document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; safeRender(); } });
 function boardEl(board, mine, pid) {
   const wrap = el('div', { class: 'board' });
   const me = st.players.find(p => p.id === st.meId);
@@ -1455,6 +1466,12 @@ function boardEl(board, mine, pid) {
       const node = el('div', { class: cls }, inner);
       if (canMove) node.dataset.slot = slot;
       row.append(node);
+    }
+    if (mine && dealt && !me.ready) {   // beginner help: an (i) per row explains how that row is won or lost
+      rw.append(el('button', { type: 'button', class: 'rowinfo' + (tipRow === rowIdx ? ' on' : ''), 'aria-label': t('rowN', { n: rowIdx + 1 }), onclick: (e) => { e.stopPropagation(); tipRow = tipRow === rowIdx ? null : rowIdx; safeRender(); } }, icon('info', 18)));
+      if (tipRow === rowIdx) rw.append(el('div', { class: 'rowtip', onclick: (e) => e.stopPropagation() },
+        el('b', {}, t('rowN', { n: rowIdx + 1 }) + ' · ' + t('rule' + (rowIdx + 1))), el('p', {}, t('tip' + (rowIdx + 1))), el('p', { class: 'tj' }, t('tipJoker')),
+        el('button', { type: 'button', class: 'ghost', onclick: () => { tipRow = null; safeRender(); } }, t('tipClose'))));
     }
     if (mine && dealt && activePlayers().every((p) => p.ready)) {
       const cards = board.slice(i - n, i).filter(Boolean);
