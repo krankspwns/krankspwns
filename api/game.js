@@ -224,19 +224,23 @@ async function handle(action, b, query) {
       break;
     }
 
-    case 'flipRowUp': {
+    case 'flipRowUp': // kept for older clients
+    case 'flipRow': {
       need(room.phase === 'dealt', 409, 'No cards dealt');
       need(room.players.every((p) => p.ready), 409, 'Wait until everyone is ready');
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
-      for (let i = start; i < start + ROW_SIZES[row]; i++) if (me.board[i]) me.board[i].up = true;
+      const up = action === 'flipRowUp' ? true : !!b.up;
+      for (let i = start; i < start + ROW_SIZES[row]; i++) if (me.board[i]) me.board[i].up = up;
       break;
     }
 
     case 'ready':
       // Ready hides every face (for you too) and freezes your cards until you unready.
       need(room.phase === 'dealt', 409, 'No cards dealt');
+      // Once everyone is ready the round is under way: no taking it back until a new deal.
+      need(b.ready || !room.players.every((p) => p.ready), 409, 'Game in progress');
       me.ready = !!b.ready;
       if (me.ready) {
         need(me.board.every(Boolean), 409, 'Place all 7 cards in the rows first');

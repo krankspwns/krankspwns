@@ -152,7 +152,7 @@
   @keyframes ping { 0% { transform: scale(.8); opacity: .8; } 100% { transform: scale(2.2); opacity: 0; } }
 
   /* ---- last-to-ready banner ---- */
-  .lastbanner { position: sticky; top: 8px; z-index: 30; text-align: center; padding: 16px 18px 14px; margin-bottom: 16px; border-radius: 16px; overflow: hidden;
+  .lastbanner { position: relative; text-align: center; padding: 16px 18px 14px; margin-bottom: 16px; border-radius: 16px; overflow: hidden;
     background: linear-gradient(135deg, #3a2f12, #6b5420 45%, #3a2f12); border: 1px solid var(--gold); box-shadow: 0 12px 40px rgba(0,0,0,.55), 0 0 40px rgba(201,169,106,.35);
     animation: bannerin .7s cubic-bezier(.2,1.3,.4,1) backwards; }
   @keyframes bannerin { from { transform: translateY(-40px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -228,6 +228,10 @@
   .switch input:checked + .track { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--gold); }
   .switch input:checked + .track::after { transform: translateX(16px); background: #1a1407; }
   .switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(201,169,106,.35); }
+
+  .pill.live { margin-left: 0; padding: 9px 16px; font-size: 13px; background: rgba(201,169,106,.16); color: var(--gold-hi); border: 1px solid var(--gold); }
+  .livedot { width: 9px; height: 9px; border-radius: 50%; background: #6fcf97; box-shadow: 0 0 0 0 rgba(111,207,151,.7); animation: livepulse 1.5s infinite; }
+  @keyframes livepulse { 70% { box-shadow: 0 0 0 9px rgba(111,207,151,0); } 100% { box-shadow: 0 0 0 0 rgba(111,207,151,0); } }
   @media (max-width: 600px) {
     main { padding: 14px 12px 32px; }
     .waitroom { padding: 22px 14px 20px; gap: 14px; }
@@ -428,7 +432,9 @@ function boardEl(board, mine, pid) {
       row.append(node);
     }
     if (mine && dealt && st.players.every((p) => p.ready)) {
-      rw.append(el('button', { class: 'ghost rowbtn', title: 'Flip this row face up for everyone', onclick: () => act('flipRowUp', { row: rowIdx }) }, 'Flip up'));
+      const cards = board.slice(i - n, i).filter(Boolean);
+      const up = cards.length > 0 && cards.every((c) => c.up);   // already face up -> offer to flip back down
+      rw.append(el('button', { class: 'ghost rowbtn', title: up ? 'Turn this row face down' : 'Turn this row face up for everyone', onclick: () => act('flipRow', { row: rowIdx, up: !up }) }, up ? 'Flip down' : 'Flip up'));
     }
     wrap.append(rw);
   }
@@ -537,9 +543,6 @@ function renderGame() {
   const readyCount = st.players.filter(p => p.ready).length;
   const panel = (i, extraCls = '') => ({ class: ('panel ' + extraCls + ' ' + (screenAnim ? 'fx-in' : '')).trim(), style: screenAnim ? `animation-delay:${i * 80}ms` : '' });
 
-  const banner = lastBanner();
-  if (banner) app.append(banner);
-
   const head = el('div', panel(0, 'row'),
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, 'Room'), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'grow' }, `${st.players.length}/${st.maxPlayers} players · `, el('b', { style: 'color:#8fe0ae' }, `${readyCount}/${st.players.length} ready`), ` · round ${st.round}`),
@@ -548,10 +551,15 @@ function renderGame() {
   head.insertBefore(invite, head.lastChild);
   if (st.isHost) head.insertBefore(el('button', { onclick: () => act('deal') }, 'Reset, shuffle & deal'), head.lastChild);
   app.append(head);
+  const banner = lastBanner();
+  if (banner) app.append(banner);
 
   const placed = me.board.filter(Boolean).length;
   const total = me.board.length;
-  const readyBtn = me.ready
+  const inProgress = st.players.every((p) => p.ready);   // everyone is ready: round is under way
+  const readyBtn = inProgress
+    ? el('span', { class: 'pill live' }, el('i', { class: 'livedot' }), 'Game in progress')
+    : me.ready
     ? el('button', { class: 'unreadybtn', onclick: () => act('ready', { ready: false }) }, 'Unready (move cards)')
     : el('button', { class: 'readybtn', disabled: placed < total, style: `--p:${(placed / total) * 100}%`, onclick: () => act('ready', { ready: true }) },
         placed < total ? `Place all cards (${placed}/${total})` : "I'm ready");
@@ -560,11 +568,13 @@ function renderGame() {
     el('div', { class: 'row' },
       el('div', { class: 'name grow' }, `${me.name} (you)`, me.isHost ? el('span', { class: 'tag' }, 'host') : '', pill(me)),
       readyBtn),
-    me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, '✓'),
-      el('div', {}, "You're ready", el('small', {}, readyCount < st.players.length ? `Waiting for ${st.players.length - readyCount} more player${st.players.length - readyCount > 1 ? 's' : ''}` : 'Everyone is ready'))) : '',
+    inProgress ? '' : me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, '✓'),
+      el('div', {}, "You're ready", el('small', {}, `Waiting for ${st.players.length - readyCount} more player${st.players.length - readyCount > 1 ? 's' : ''}`))) : '',
     boardEl(me.board, true, me.id),
-    el('div', { class: 'hint' }, me.ready
-      ? 'You are ready: all your cards are hidden and locked. Click a card to flip it face up for everyone, or press Unready to move cards again.'
+    el('div', { class: 'hint' }, inProgress
+      ? 'Everyone is ready. Use the Flip up / Flip down buttons on each row, or click a card, to reveal or hide it. The host can deal a new round.'
+      : me.ready
+      ? 'You are ready: all your cards are hidden and locked. Waiting for the other players. Press Unready to move cards again.'
       : 'Fill all 7 slots to get ready. You can see your own cards — drag them between slots or back to your hand. “I’m ready” hides and locks them. A gold dot marks a card you’ve flipped face up for others.')));
 
   const hand = el('div', { class: 'hand' });
@@ -740,13 +750,15 @@ function predict(action, x) {
       if (!me.board[x.slot]) return null;
       me.board[x.slot].up = !me.board[x.slot].up;
       return next;
-    case 'flipRowUp': {
+    case 'flipRow': {
+      if (!next.players.every((p) => p.ready)) return null;
       const start = ROWS.slice(0, x.row).reduce((a, n) => a + n, 0);
-      for (let i = start; i < start + ROWS[x.row]; i++) if (me.board[i]) me.board[i].up = true;
+      for (let i = start; i < start + ROWS[x.row]; i++) if (me.board[i]) me.board[i].up = !!x.up;
       return next;
     }
     case 'ready':
       if (x.ready && !me.board.every(Boolean)) return null;
+      if (!x.ready && next.players.every((p) => p.ready)) return null;   // game in progress
       me.ready = !!x.ready;
       if (me.ready) me.board.forEach((c) => c && (c.up = false));
       return next;

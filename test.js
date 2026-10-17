@@ -60,9 +60,14 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'ready', code: room.code, pid: rp[2], ready: true })).j.allReady, null, 'not all ready yet');
   const done = (await post({ action: 'ready', code: room.code, pid: rp[1], ready: true })).j;
   assert.equal(done.allReady.name, 'B', 'last to ready is shown'); assert.ok(done.now >= done.allReady.at);
-  v = (await post({ action: 'flipRowUp', code: room.code, pid: rp[0], row: 3 })).j;
+  v = (await post({ action: 'flipRow', code: room.code, pid: rp[0], row: 3, up: true })).j;
   assert.ok(v.players[0].board.slice(4).every(x => x.up) && !v.players[0].board[0].up, 'row 3 flipped up once all ready');
-  assert.equal((await post({ action: 'ready', code: room.code, pid: rp[1], ready: false })).j.allReady, null, 'cleared on unready');
+  v = (await post({ action: 'flipRow', code: room.code, pid: rp[0], row: 3, up: false })).j;
+  assert.ok(v.players[0].board.slice(4).every(x => !x.up), 'row 3 flipped back down');
+  assert.equal((await post({ action: 'ready', code: room.code, pid: rp[1], ready: false })).s, 409, 'cannot unready once everyone is ready');
+  const joiner = (await post({ action: 'join', code: room.code, name: 'D' })).j;
+  assert.equal(joiner.allReady, null, 'late joiner clears the all-ready banner');
+  assert.equal((await post({ action: 'ready', code: room.code, pid: rp[1], ready: false })).s, 200, 'can unready again once someone is not ready');
   // 10 players: allowed, 11th rejected, 70 cards dealt from two decks
   const big = (await post({ action: 'create', name: 'H' })).j;
   for (let i = 1; i < 10; i++) assert.equal((await post({ action: 'join', code: big.code, name: 'Q' + i })).s, 200);
