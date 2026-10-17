@@ -729,6 +729,7 @@ const ICONS = {
   'volume-2': '<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" fill="currentColor" fill-opacity=".3"/><path d="M15.5 9.2a4 4 0 010 5.6M18.2 6.6a8 8 0 010 10.8"/>',
   music: '<path d="M9 17.5V6.2l10-2v11.3"/><circle cx="6.5" cy="17.6" r="2.5" fill="currentColor" fill-opacity=".35"/><circle cx="16.5" cy="15.6" r="2.5" fill="currentColor" fill-opacity=".35"/>',
   trophy: '<path d="M7.5 4h9v5.2a4.5 4.5 0 01-9 0z" fill="currentColor" fill-opacity=".32"/><path d="M7.5 5.5H4.2c0 3 1.3 4.6 3.5 4.9M16.5 5.5h3.3c0 3-1.3 4.6-3.5 4.9M12 13.7V17M8.5 20h7M9.5 17h5v3h-5z"/>',
+  book: '<path d="M12 6.6C10.2 5.1 7.5 4.6 3.8 4.9v13.3c3.7-.3 6.4.2 8.2 1.7 1.8-1.5 4.5-2 8.2-1.7V4.9c-3.7-.3-6.4.2-8.2 1.7z" fill="currentColor" fill-opacity=".25"/><path d="M12 6.6v13.3M6.4 8.7c1.2 0 2.3.1 3.2.4M6.4 12c1.2 0 2.3.1 3.2.4M17.6 8.7c-1.2 0-2.3.1-3.2.4M17.6 12c-1.2 0-2.3.1-3.2.4"/>',
   swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
 };
 function icon(name, size = 18, cls = '') {
@@ -1184,7 +1185,7 @@ function applyStatic() {
   document.title = t('title');
   updateSndBtn();
   document.getElementById('h1').textContent = t('title');
-  { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', {}, icon('help', 15)), t('guideBtn')); }
+  { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', {}, icon('book', 16)), t('guideBtn')); }
   if (document.querySelector('.guide-ov.g-guide')) renderGuide();
   document.querySelectorAll('.langsw button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
   document.querySelector('.langsw').setAttribute('aria-label', t('langLabel'));
@@ -2136,7 +2137,7 @@ function renderGuide() {
   const prev = ov.querySelector('.gscroll');
   const keepTop = prev ? prev.scrollTop : 0;
   ov.replaceChildren(el('div', { class: 'guide', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('guideTitle') },
-    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('help', 15)), t('guideTitle')),
+    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('book', 16)), t('guideTitle')),
       el('div', { class: 'langsw gl' }, ...[['en', 'EN'], ['zh', '简体'], ['zht', '繁體']].map(([l, label]) => el('button', { type: 'button', class: l === lang ? 'on' : '', onclick: () => setLang(l) }, label))),
       el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closeGuide }, icon('x', 16))),
     el('div', { class: 'gscroll' }, guideBody(guideIdx)),
