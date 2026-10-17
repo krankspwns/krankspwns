@@ -268,10 +268,10 @@
   .rowbtn { width: 74px; text-align: center; justify-content: center; padding-left: 0; padding-right: 0; }
 
   .topbar { display: flex; justify-content: flex-end; margin-bottom: 2px; }
-  .langsw { display: inline-flex; padding: 3px; border-radius: 99px; border: 1px solid var(--line); background: rgba(255,255,255,.05); }
-  .langsw button { padding: 5px 13px; border-radius: 99px; font-size: 12px; letter-spacing: .3px; background: transparent; color: rgba(255,255,255,.7); border: 0; box-shadow: none; font-weight: 600; }
-  .langsw button:hover { transform: none; filter: none; color: #fff; }
-  .langsw button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
+  .langsw, .sndsw { display: inline-flex; padding: 3px; border-radius: 99px; border: 1px solid var(--line); background: rgba(255,255,255,.05); }
+  .langsw button, .sndsw button { white-space: nowrap; padding: 5px 13px; border-radius: 99px; font-size: 12px; letter-spacing: .3px; background: transparent; color: rgba(255,255,255,.7); border: 0; box-shadow: none; font-weight: 600; }
+  .langsw button:hover, .sndsw button:hover { transform: none; filter: none; color: #fff; }
+  .langsw button.on, .sndsw button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
   /* Chinese: system CJK fonts, and no wide uppercase tracking */
   html[lang="zh-CN"] body, html[lang="zh-CN"] button, html[lang="zh-CN"] input { font-family: var(--serif), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif; }
   html[lang="zh-TW"] body, html[lang="zh-TW"] button, html[lang="zh-TW"] input { font-family: var(--serif), 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans CJK TC', 'Noto Sans TC', sans-serif; }
@@ -577,10 +577,10 @@
   .guide .gx, .pl .gx { display: grid; place-items: center; padding: 8px 10px; }
 
   .topright { display: flex; align-items: center; gap: 8px; }
-  .sndbtn { display: grid; place-items: center; width: 38px; height: 34px; padding: 0; border-radius: 99px; background: rgba(255,255,255,.06); color: rgba(255,255,255,.55); border: 1px solid var(--line); box-shadow: none; }
-  .sndbtn.on { color: var(--gold-hi); border-color: var(--gold-lo); background: rgba(201,169,106,.14); }
-  .sndbtn.music { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-color: var(--gold); }
-  .sndbtn:hover { transform: none; filter: none; background: rgba(255,255,255,.12); } .sndbtn.music:hover { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+  @media (max-width: 440px) { .guidebtn { padding: 5px; gap: 0; } .guidebtn .glabel { display: none; } }
+  .sndsw button { padding: 5px 10px; display: grid; place-items: center; height: 28px; } .sndsw .ic { color: inherit; }
+  @media (max-width: 440px) { .sndsw button { padding: 5px 8px; } .langsw button { padding: 5px 10px; } .topright { gap: 6px; } }
+  @media (max-width: 345px) { .sndsw button { padding: 5px 6px; } .langsw button { padding: 5px 7px; font-size: 11px; } }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -693,7 +693,7 @@
 <body>
 <div class="bg" id="bg"></div>
 <main>
-  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><div class="topright"><button type="button" class="sndbtn" id="sndBtn"></button><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div></div>
+  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><div class="topright"><div class="sndsw" id="sndSw" role="group"><button type="button" data-m="0"></button><button type="button" data-m="1"></button><button type="button" data-m="2"></button></div><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div></div>
   <h1 id="h1">Row of Reckoning</h1>
   <div id="app"></div>
 </main>
@@ -923,14 +923,17 @@ window.SND = SND;
 // audio is only woken on touchend/click/keydown (iOS requires that anyway) and never inside a pointerdown, so it can't interfere with a card being picked up
 ['click', 'keydown', 'touchend'].forEach((ev) => window.addEventListener(ev, () => SND.unlock(), { once: true, capture: true }));
 // a soft tick on every button
-document.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest('button:not(.gdot):not(.sndbtn)')) SND.play('tap'); }, true);
+document.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest('button:not(.gdot):not(#sndSw button)')) SND.play('tap'); }, true);
 
 function updateSndBtn() {
-  const b = document.getElementById('sndBtn'); if (!b) return;
-  const m = SND.mode;
-  b.replaceChildren(icon(m === 0 ? 'volume-x' : m === 1 ? 'volume-2' : 'music', 18));
-  b.className = 'sndbtn' + (m > 0 ? ' on' : '') + (m === 2 ? ' music' : '');
-  b.title = b.ariaLabel = t('sndMode' + m);
+  const sw = document.getElementById('sndSw'); if (!sw) return;
+  const icons = ['volume-x', 'volume-2', 'music'];
+  sw.querySelectorAll('button').forEach((b) => {
+    const m = +b.dataset.m;
+    b.replaceChildren(icon(icons[m], 16));
+    b.classList.toggle('on', SND.mode === m);
+    b.title = b.ariaLabel = t('sndMode' + m);
+  });
 }
 
 // ---- translations (English / 简体中文) ----
@@ -1185,7 +1188,7 @@ function applyStatic() {
   document.title = t('title');
   updateSndBtn();
   document.getElementById('h1').textContent = t('title');
-  { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', {}, icon('book', 16)), t('guideBtn')); }
+  { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', {}, icon('book', 16)), el('span', { class: 'glabel' }, t('guideBtn'))); }
   if (document.querySelector('.guide-ov.g-guide')) renderGuide();
   document.querySelectorAll('.langsw button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
   document.querySelector('.langsw').setAttribute('aria-label', t('langLabel'));
@@ -2366,7 +2369,7 @@ let resizeT, lastW = window.innerWidth;
 window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(resizeT); resizeT = setTimeout(() => { if (st && !dragging) safeRender(); }, 150); });
 document.querySelectorAll('.langsw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.l)));
 document.getElementById('guideBtn').addEventListener('click', () => openGuide(0));
-document.getElementById('sndBtn').addEventListener('click', () => { const m = SND.cycle(); updateSndBtn(); toast(t('sndMode' + m), 'low'); if (m > 0) setTimeout(() => SND.play('ready'), 60); });
+document.querySelectorAll('#sndSw button').forEach((b) => b.addEventListener('click', () => { const m = +b.dataset.m; SND.setMode(m); updateSndBtn(); toast(t('sndMode' + m), 'low'); if (m > 0) setTimeout(() => SND.play('ready'), 60); }));
 applyStatic();
 if (session) { poll().then(() => { if (session) startPolling(); }); } 
 render();
