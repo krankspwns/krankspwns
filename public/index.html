@@ -1864,13 +1864,7 @@ function renderLobby() {
     el('div', { class: 'err' }, tErr(err)));
   const jb = form.querySelector('.row .big'); if (jb) jb.style.cssText = 'width:auto;padding:12px 22px;font-size:14px';
 
-  const step = (n, t, d) => el('div', { class: 'step fx-in', style: `animation-delay:${n * 90}ms` }, el('b', {}, String(n)), el('div', {}, el('strong', {}, t), d));
-  app.append(el('div', { class: 'landing' + (invited ? ' invited' : '') }, hero, form),
-    el('div', { class: 'steps' },
-      step(1, t('s1t'), t('s1d')),
-      step(2, t('s2t'), t('s2d')),
-      step(3, t('s3t'), t('s3d')),
-      step(4, t('s4t'), t('s4d'))));
+  app.append(el('div', { class: 'landing' + (invited ? ' invited' : '') }, hero, form));
 }
 
 async function enter(action, body) {
