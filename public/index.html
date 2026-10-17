@@ -52,7 +52,6 @@
   .tag.ok { background: rgba(111,207,151,.18); color: var(--green); border-color: rgba(111,207,151,.6); }
   .tag.joined { opacity:.7; }
   button.readybtn { background: linear-gradient(180deg,#8fe0ae,#52b97c); color:#06210f; padding: 12px 26px; font-size: 15px; }
-  .panel.is-ready { border-color: rgba(111,207,151,.55); box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(111,207,151,.25); }
   .card.shared::after { content:''; position:absolute; right:5px; top:5px; width:8px; height:8px; border-radius:50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); }
   .others .card.shared::after { display:none; }
   .roomcode { display:flex; align-items:baseline; gap:10px; }
@@ -176,7 +175,7 @@
   .hero p { font-size: 17px; line-height: 1.55; opacity: .8; max-width: 520px; margin: 0 0 18px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
   .chip { font-size: 13px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: rgba(255,255,255,.05); }
-  .fan { position: relative; height: 150px; max-width: 460px; margin: 0 0 6px; }
+  .fan { position: relative; z-index: 1; height: 146px; max-width: 460px; margin: 0 0 18px; }
   .fan .card { position: absolute; bottom: 0; left: 50%; width: 92px; height: 132px; margin-left: -46px; transform-origin: 50% 160%; transform: rotate(var(--r)); animation: fanin .8s cubic-bezier(.2,1.2,.4,1) backwards, sway 6s ease-in-out infinite; animation-delay: var(--d), calc(var(--d) + .8s); cursor: default; }
   .fan .card .ix { font-size: 24px; top: 8px; left: 9px; } .fan .card .ix i { font-size: 22px; }
   .fan .card .pip { font-size: 56px; padding-top: 22px; padding-left: 12px; }
@@ -195,8 +194,18 @@
   .step b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; margin-bottom: 10px; }
   .step div { font-size: 14px; line-height: 1.45; opacity: .85; }
   .step strong { display: block; font-size: 15px; margin-bottom: 2px; opacity: 1; }
-  @media (max-width: 800px) { .landing { grid-template-columns: minmax(0,1fr); gap: 22px; } .fan { margin: 0 auto; height: 160px; } .fan .card { width: 76px; height: 108px; margin-left: -38px; } .fan .card .pip { font-size: 44px; padding-top: 18px; } .hero { text-align: center; } .hero p { margin-left: auto; margin-right: auto; } .chips { justify-content: center; } .steps { margin-top: 26px; } }
+  @media (max-width: 800px) { .landing { grid-template-columns: minmax(0,1fr); gap: 22px; } .fan { margin: -6px auto 22px; height: 118px; } .chips { margin-bottom: 14px; } .fan .card { width: 76px; height: 108px; margin-left: -38px; } .fan .card .pip { font-size: 44px; padding-top: 18px; } .hero { text-align: center; } .hero p { margin-left: auto; margin-right: auto; } .chips { justify-content: center; } .steps { margin-top: 26px; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  button.unreadybtn { background: linear-gradient(180deg, #ffb25e, #f0801f); color: #2b1300; box-shadow: 0 2px 10px rgba(240,128,31,.35); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .3px; padding: 3px 10px; border-radius: 99px; margin-left: 8px; vertical-align: middle; white-space: nowrap; }
+  .pill.wait { background: rgba(255,255,255,.08); color: rgba(255,255,255,.65); border: 1px solid var(--line); font-weight: 600; }
+  .pill.go { background: linear-gradient(180deg, #8fe0ae, #52b97c); color: #06210f; box-shadow: 0 0 14px rgba(111,207,151,.55); animation: pillpop .5s cubic-bezier(.2,1.5,.4,1) backwards; }
+  @keyframes pillpop { from { transform: scale(.5); opacity: 0; } }
+  .panel.is-ready { border-color: #6fcf97; background: linear-gradient(180deg, rgba(111,207,151,.14), rgba(111,207,151,.04)); box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(111,207,151,.5), 0 0 26px rgba(111,207,151,.22); }
+  .readystrip { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; margin: 4px 0 10px; border-radius: 12px; background: rgba(111,207,151,.18); border: 1px solid rgba(111,207,151,.55); color: #b9f0cd; font-weight: 700; text-align: center; animation: rise .4s ease-out backwards; }
+  .readystrip .tick { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #52b97c; color: #06210f; font-size: 15px; flex: none; }
+  .readystrip small { display: block; font-weight: 500; opacity: .8; font-size: 12px; }
   @media (max-width: 600px) {
     main { padding: 14px 12px 32px; }
     .waitroom { padding: 22px 14px 20px; gap: 14px; }
@@ -210,6 +219,7 @@
     .others .panel { padding: 8px; }
     .others .name { font-size: 12px; margin-bottom: 6px; }
     .others .tag { margin-left: 4px; }
+    .others .pill { margin-left: 0; margin-top: 4px; font-size: 10px; padding: 2px 8px; display: flex; width: fit-content; }
     .others .card, .others .slot { width: 30px; height: 43px; }
     .others .card .ix { font-size: 10px; top: 2px; left: 2px; } .others .card .ix i { font-size: 9px; }
     .others .card .pip { font-size: 17px; padding-top: 8px; padding-left: 3px; }
@@ -440,6 +450,12 @@ function renderWaitingRoom() {
     el('div', { class: 'row center' }, el('button', { class: 'ghost', onclick: leave }, 'Leave room'))));
 }
 
+function pill(p) {
+  if (p.ready) return el('span', { class: 'pill go' }, '✓ READY');
+  const n = p.board.filter(Boolean).length;
+  return el('span', { class: 'pill wait' }, `Arranging ${n}/${p.board.length}`);
+}
+
 function bannerRemaining() {
   if (!st || !st.allReady) return 0;
   const elapsed = (st.now - st.allReady.at + (Date.now() - st.recvAt)) / 1000;
@@ -502,7 +518,7 @@ function renderGame() {
 
   const head = el('div', panel(0, 'row'),
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, 'Room'), el('span', { class: 'code' }, st.code)),
-    el('div', { class: 'grow' }, `${st.players.length}/${st.maxPlayers} players · ${readyCount} ready · round ${st.round}`),
+    el('div', { class: 'grow' }, `${st.players.length}/${st.maxPlayers} players · `, el('b', { style: 'color:#8fe0ae' }, `${readyCount}/${st.players.length} ready`), ` · round ${st.round}`),
     el('button', { class: 'ghost', onclick: leave }, 'Leave'));
   if (st.isHost) head.insertBefore(el('button', { onclick: () => act('deal') }, 'Reset, shuffle & deal'), head.lastChild);
   app.append(head);
@@ -510,14 +526,16 @@ function renderGame() {
   const placed = me.board.filter(Boolean).length;
   const total = me.board.length;
   const readyBtn = me.ready
-    ? el('button', { class: 'ghost', onclick: () => act('ready', { ready: false }) }, 'Unready (move cards)')
+    ? el('button', { class: 'unreadybtn', onclick: () => act('ready', { ready: false }) }, 'Unready (move cards)')
     : el('button', { class: 'readybtn', disabled: placed < total, onclick: () => act('ready', { ready: true }) },
         placed < total ? `Place all cards (${placed}/${total})` : "I'm ready");
 
   app.append(el('div', panel(1, me.ready ? 'is-ready' : ''),
     el('div', { class: 'row' },
-      el('div', { class: 'name grow' }, `${me.name} (you)`, me.isHost ? el('span', { class: 'tag' }, 'host') : '', me.ready ? el('span', { class: 'tag ok' }, 'ready') : ''),
+      el('div', { class: 'name grow' }, `${me.name} (you)`, me.isHost ? el('span', { class: 'tag' }, 'host') : '', pill(me)),
       readyBtn),
+    me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, '✓'),
+      el('div', {}, "You're ready", el('small', {}, readyCount < st.players.length ? `Waiting for ${st.players.length - readyCount} more player${st.players.length - readyCount > 1 ? 's' : ''}` : 'Everyone is ready'))) : '',
     boardEl(me.board, true, me.id),
     el('div', { class: 'hint' }, me.ready
       ? 'You are ready: all your cards are hidden and locked. Click a card to flip it face up for everyone, or press Unready to move cards again.'
@@ -538,8 +556,8 @@ function renderGame() {
   app.append(handPanel);
 
   const others = el('div', { class: 'others' });
-  st.players.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5),
-    el('div', { class: 'name' }, p.name, p.isHost ? el('span', { class: 'tag' }, 'host') : '', p.ready ? el('span', { class: 'tag ok' }, 'ready') : '', ` · ${p.handCount} in hand`),
+  st.players.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5, p.ready ? 'is-ready' : ''),
+    el('div', { class: 'name' }, p.name, p.isHost ? el('span', { class: 'tag' }, 'host') : '', pill(p)),
     boardEl(p.board, false, p.id))));
   if (others.children.length) app.append(others);
 }
