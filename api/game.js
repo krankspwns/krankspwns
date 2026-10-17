@@ -163,11 +163,17 @@ function rowResults(room) {
   return out;
 }
 
-// Rows that have been scored at any point this round; lets clients announce a row only the first time.
-function markScored(room) {
-  const rows = rowResults(room).map((r) => r.row);
-  room.scored = [...new Set([...(room.scored || []), ...rows])].sort();
+// Results are kept for the whole round once a row has been scored, even if the cards are turned back over.
+function storeResults(room) {
+  room.results = room.results || {};
+  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = r;
 }
+// The game goes top to bottom: the current row is the first one that has not been scored yet (4 = all done).
+function currentRowOf(room) {
+  for (let r = 0; r < ROW_SIZES.length; r++) if (!(room.results && room.results[r])) return r;
+  return ROW_SIZES.length;
+}
+const rowOfSlot = (slot) => { let acc = 0; for (let r = 0; r < ROW_SIZES.length; r++) { acc += ROW_SIZES[r]; if (slot < acc) return r; } return ROW_SIZES.length; };
 
 function view(room, pid) {
   const me = room.players.find((p) => p.id === pid);
@@ -180,8 +186,8 @@ function view(room, pid) {
     maxPlayers: MAX_PLAYERS,
     now: Date.now(),
     allReady: room.allReady || null,
-    rowResults: rowResults(room),
-    scoredRows: room.scored || [],
+    rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
+    currentRow: currentRowOf(room),
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -273,7 +279,7 @@ async function handle(action, b, query) {
         p.ready = false;
       }
       room.deck = deck; // leftovers, for players who join mid-round
-      room.scored = [];
+      room.results = {};
       room.phase = 'dealt';
       room.allReady = null;
       room.round += 1;
@@ -317,6 +323,7 @@ async function handle(action, b, query) {
       need(room.phase === 'dealt', 409, 'No cards dealt');
       const slot = slotOf(b.slot);
       need(me.board[slot], 400, 'Nothing there');
+      need(rowOfSlot(slot) <= currentRowOf(room), 409, 'Not this row yet');
       me.board[slot].up = !me.board[slot].up;
       break;
     }
@@ -327,6 +334,7 @@ async function handle(action, b, query) {
       need(active.every((p) => p.ready), 409, 'Wait until everyone is ready');
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
+      need(row <= currentRowOf(room), 409, 'Not this row yet');
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
       const up = action === 'flipRowUp' ? true : !!b.up;
       for (let i = start; i < start + ROW_SIZES[row]; i++) if (me.board[i]) me.board[i].up = up;
@@ -340,6 +348,7 @@ async function handle(action, b, query) {
       need(active.every((p) => p.ready), 409, 'Wait until everyone is ready');
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
+      need(row <= currentRowOf(room), 409, 'Not this row yet');
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
       for (const pl of active) {
         for (let i = start; i < start + ROW_SIZES[row]; i++) if (pl.board[i]) pl.board[i].up = !!b.up;
@@ -372,7 +381,7 @@ async function handle(action, b, query) {
       }
       if (room.hostId === pid) room.hostId = (room.players.find((p) => !p.spectator) || room.players[0]).id;
       room.allReady = null;
-      markScored(room);
+      storeResults(room);
       await saveRoom(room);
       return { left: true };
     }
@@ -380,7 +389,7 @@ async function handle(action, b, query) {
     default:
       throw new HttpError(400, 'Unknown action');
   }
-  markScored(room);
+  storeResults(room);
   await saveRoom(room);
   return view(room, pid);
 }

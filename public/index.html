@@ -313,6 +313,93 @@
   .obs-text { font-size: 14px; opacity: .8; max-width: 420px; line-height: 1.5; }
   .watchers { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; }
   .wchip { background: rgba(124,196,255,.14); border-color: rgba(124,196,255,.5); color: #cfe9ff; }
+
+  /* ===== stage: one row at a time ===== */
+  .stage, .final { padding: 14px; }
+  .sthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .strule { font-size: 18px; font-weight: 800; margin-top: 2px; }
+  .sdots { display: flex; gap: 6px; }
+  .sdot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.55); border: 2px solid transparent; }
+  .sdot.done { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
+  .sdot.now { border-color: #fff; box-shadow: 0 0 12px rgba(232,211,162,.7); }
+  .stcontrol { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stcontrol button.big { padding: 14px 24px; font-size: 15px; border-radius: 14px; }
+  .swait { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; opacity: .85; }
+  .scount { font-size: 13px; opacity: .75; }
+  .stresult { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-radius: 12px; margin-bottom: 14px; background: rgba(255,120,110,.12); border: 1px solid rgba(255,120,110,.5); animation: rise .4s ease-out backwards; }
+  .stresult.tie { background: rgba(255,255,255,.06); border-color: var(--line); }
+  .tiles { display: grid; gap: 10px; }
+  .tile { padding: 10px 8px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); text-align: center; position: relative; min-width: 0; }
+  .tile.me { border-color: var(--gold); background: rgba(201,169,106,.08); }
+  .tile.safe { border-color: rgba(111,207,151,.6); background: rgba(111,207,151,.09); }
+  .tile.lose { border-color: #ff6b5e; background: rgba(255,90,80,.16); box-shadow: 0 0 22px rgba(255,90,80,.35); animation: tileshake .6s .45s both; }
+  @keyframes tileshake { 0%,100% { transform: none; } 15% { transform: translate(-7px, 2px) rotate(-1.2deg); } 35% { transform: translate(7px, -2px) rotate(1.2deg); } 55% { transform: translate(-5px, 1px); } 75% { transform: translate(4px, -1px); } }
+  .tname { display: flex; gap: 6px; align-items: center; justify-content: center; margin-bottom: 8px; min-width: 0; }
+  .tn { font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .tcards { display: flex; justify-content: center; gap: 6px; }
+  .tfoot { margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 24px; }
+  .tstat { font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; }
+  .tstat.wait { background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
+  .tstat.open { background: rgba(111,207,151,.18); color: #8fe0ae; }
+  .tstat.lost { background: rgba(255,90,80,.3); color: #ffd2cd; }
+  .tstat.safe { background: rgba(111,207,151,.22); color: #b9f0cd; }
+  .tflip { padding: 6px 14px; font-size: 11px; }
+  /* big cards on the stage / small ones on the final board are sized from --cw */
+  .stage .card, .final .card { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); }
+  .stage .card .ix, .final .card .ix { font-size: calc(var(--cw) * .27); top: calc(var(--cw) * .06); left: calc(var(--cw) * .09); }
+  .stage .card .ix i, .final .card .ix i { font-size: calc(var(--cw) * .25); }
+  .stage .card .pip, .final .card .pip { font-size: calc(var(--cw) * .62); padding-top: calc(var(--cw) * .24); padding-left: calc(var(--cw) * .12); }
+  .stage .tcards .card[style*="cursor"] { cursor: pointer; }
+  /* torn cards: two halves along a jagged line, drifting apart */
+  .tcard { position: relative; width: var(--cw); height: calc(var(--cw) * 1.45); margin: 0 4px; }
+  .tcard .card.half { position: absolute; inset: 0; filter: grayscale(.55) brightness(.82); box-shadow: none; }
+  .tcard .card.half.l { clip-path: polygon(0 0, 54% 0, 47% 11%, 55% 23%, 46% 36%, 54% 49%, 45% 62%, 55% 74%, 47% 87%, 53% 100%, 0 100%); transform: translate(calc(var(--cw) * -.035), 3px) rotate(-4.5deg); transform-origin: 100% 100%; }
+  .tcard .card.half.r { clip-path: polygon(54% 0, 100% 0, 100% 100%, 53% 100%, 47% 87%, 55% 74%, 45% 62%, 54% 49%, 46% 36%, 55% 23%, 47% 11%); transform: translate(calc(var(--cw) * .035), -3px) rotate(5deg); transform-origin: 0 100%; }
+  .tcard.tearing .card.half { animation: tear .9s .5s cubic-bezier(.2,1.5,.4,1) backwards; }
+  @keyframes tear { from { transform: none; filter: none; } 30% { transform: translate(0, -4px) scale(1.04); filter: none; } }
+  /* "you lose" pop-up: red flash, spiky burst, slam and shake */
+  .resfx.lose { animation: resfx 5s ease forwards, redflash .7s ease-out; background: radial-gradient(circle, rgba(130,12,12,.88), rgba(25,0,0,0) 78%); }
+  @keyframes redflash { 0% { background-color: rgba(255,60,50,.55); } 100% { background-color: rgba(255,60,50,0); } }
+  .resfx .spikes { position: absolute; inset: -25%; background: repeating-conic-gradient(from 0deg, rgba(255,70,60,.6) 0 6deg, transparent 6deg 16deg);
+    -webkit-mask: radial-gradient(circle, transparent 14%, #000 17%, rgba(0,0,0,.0) 62%); mask: radial-gradient(circle, transparent 14%, #000 17%, rgba(0,0,0,0) 62%);
+    animation: spin 7s linear infinite, spikepulse .9s ease-in-out infinite; pointer-events: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spikepulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+  .resbox.youlose { position: relative; border-color: #ff5a4d; background: rgba(42,6,8,.96); box-shadow: 0 0 80px rgba(255,70,60,.6), 0 20px 60px rgba(0,0,0,.7); animation: slam .55s cubic-bezier(.2,1.6,.4,1) backwards, boxshake .5s .55s 2; }
+  @keyframes slam { 0% { transform: scale(2.6) rotate(-7deg); opacity: 0; } 60% { transform: scale(.93); opacity: 1; } 100% { transform: none; } }
+  @keyframes boxshake { 0%,100% { transform: none; } 20% { transform: translate(-9px, 3px) rotate(-1.5deg); } 40% { transform: translate(8px, -3px) rotate(1.5deg); } 60% { transform: translate(-6px, 2px); } 80% { transform: translate(5px, -2px); } }
+  .resnames.youlose { color: #ff6b5e; font-size: clamp(38px, 12vw, 84px); letter-spacing: .02em; text-shadow: 0 0 30px rgba(255,70,60,.85), 0 4px 0 rgba(0,0,0,.4); animation: namepulse .8s ease-in-out infinite; }
+  /* transition to the next row */
+  .nextfx { position: fixed; inset: 0; z-index: 84; display: grid; place-items: center; pointer-events: none; animation: nextfade 1.9s ease forwards; background: linear-gradient(90deg, transparent, rgba(8,12,24,.88) 28%, rgba(8,12,24,.88) 72%, transparent); }
+  .nx-box { text-align: center; padding: 0 20px; animation: nxslide 1.9s cubic-bezier(.2,.9,.3,1) forwards; }
+  .nx-k { font-size: 14px; letter-spacing: .4em; padding-left: .4em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
+  .nx-n { font-size: clamp(54px, 16vw, 120px); font-weight: 800; line-height: 1.05; color: #fff; text-shadow: 0 0 40px rgba(201,169,106,.6); }
+  .nx-r { font-size: 15px; opacity: .8; margin-top: 4px; }
+  @keyframes nxslide { 0% { transform: translateX(105vw); } 24% { transform: translateX(0); } 76% { transform: translateX(0); } 100% { transform: translateX(-105vw); } }
+  @keyframes nextfade { 0% { opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { opacity: 0; } }
+  .stage-enter { animation: stagein .55s ease-out backwards; }
+  @keyframes stagein { from { opacity: 0; transform: translateX(44px); } }
+  /* final board */
+  .final { --cw: 36px; }
+  .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
+  .ftile { padding: 10px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); min-width: 0; }
+  .ftile.me { border-color: var(--gold); background: rgba(201,169,106,.08); }
+  .ftile .tname { justify-content: flex-start; }
+  .frows { display: grid; gap: 5px; }
+  .frow { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 10px; border-left: 4px solid transparent; }
+  .frow.lost { background: rgba(255,90,80,.2); border-left-color: #ff6b5e; }
+  .frow.safe { background: rgba(111,207,151,.12); border-left-color: #6fcf97; }
+  .frow.tie { background: rgba(255,255,255,.06); border-left-color: rgba(255,255,255,.35); }
+  .fnum { font-size: 12px; font-weight: 800; opacity: .8; }
+  .fcards { display: flex; gap: 3px; }
+  .fmark { font-size: 12px; font-weight: 800; white-space: nowrap; } .frow.lost .fmark { color: #ffb0a8; } .frow.safe .fmark { color: #8fe0ae; }
+  .fsum { margin-top: 8px; font-size: 12px; text-align: center; opacity: .75; } .fsum.bad { color: #ff9b94; opacity: 1; font-weight: 700; }
+  .flegend { display: flex; gap: 6px; flex-wrap: wrap; }
+  .lg { padding: 3px 11px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid; }
+  .lg.lost { background: rgba(255,90,80,.2); border-color: #ff6b5e; color: #ffd2cd; } .lg.safe { background: rgba(111,207,151,.15); border-color: #6fcf97; color: #b9f0cd; } .lg.tie { background: rgba(255,255,255,.08); border-color: var(--line); }
+  .observer.slim { display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 14px; border-style: dashed; border-color: rgba(124,196,255,.55); }
+  .obs-eye.sm { font-size: 26px; animation: none; }
+  .observer.slim .obs-title { font-size: 15px; } .observer.slim .obs-text { font-size: 12px; margin: 0; }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -390,6 +477,10 @@ const I18N = {
     observing: 'Observing', watching: 'Watching', obsTitle: 'You’re watching this round',
     obsText: 'You joined while a game was in progress. You can follow along below — the host will deal you in when the next round starts.',
     obsWait: 'Waiting for the next round…', e_spec: 'Wait for the next round',
+    stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `Open row ${v.n} for everyone`, stageWaitHost: 'Waiting for the host to open this row…',
+    openedN: (v) => `${v.n}/${v.total} opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
+    youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
+    finalTitle: 'Final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
@@ -433,6 +524,10 @@ const I18N = {
     observing: '观战中', watching: '观战', obsTitle: '你正在观战本轮',
     obsText: '你是在游戏进行中加入的。可以先在下方观看，房主开始下一轮时你会被一起发牌。',
     obsWait: '等待下一轮…', e_spec: '请等待下一轮',
+    stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `为所有人翻开第 ${v.n} 行`, stageWaitHost: '等待房主翻开这一行…',
+    openedN: (v) => `${v.n}/${v.total} 已翻开`, hiddenState: '未翻开', openedState: '已翻开', lostTag: '输了', safeTag: '安全',
+    youLose: '你输了！', alongWith: (v) => `还有 ${v.names}`, nextUp: '下一行', allDone: '四行全部结束',
+    finalTitle: '最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
@@ -476,6 +571,10 @@ const I18N = {
     observing: '觀戰中', watching: '觀戰', obsTitle: '你正在觀戰本輪',
     obsText: '你是在遊戲進行中加入的。可以先在下方觀看，房主開始下一輪時你會被一起發牌。',
     obsWait: '等待下一輪…', e_spec: '請等待下一輪',
+    stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `為所有人翻開第 ${v.n} 行`, stageWaitHost: '等待房主翻開這一行…',
+    openedN: (v) => `${v.n}/${v.total} 已翻開`, hiddenState: '未翻開', openedState: '已翻開', lostTag: '輸了', safeTag: '安全',
+    youLose: '你輸了！', alongWith: (v) => `還有 ${v.names}`, nextUp: '下一行', allDone: '四行全部結束',
+    finalTitle: '最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
@@ -808,10 +907,130 @@ function render() {
   app.replaceChildren();
   if (!session || !st) renderLobby();
   else renderGame();
-  fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false;
+  fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false; tearRows.clear(); stageEnter = false;
 }
 
 const activePlayers = () => st.players.filter((p) => !p.spectator);   // joined mid-round players only watch
+
+
+// ---- the stage: one row at a time, big cards ----
+function layoutFor(rowIdx, n) {
+  const k = ROWS[rowIdx];
+  const W = (document.getElementById('app').clientWidth || window.innerWidth) - 30;   // panel padding
+  const cap = [124, 124, 96, 80][rowIdx], minCw = [70, 70, 54, 40][rowIdx], gap = 10, pad = 16, cg = 6;
+  const cwFor = (c) => Math.floor(Math.min(cap, ((W - (c - 1) * gap) / c - pad - (k - 1) * cg) / k));
+  const rowsOf = (c) => Math.ceil(n / c), maxC = Math.max(1, Math.min(n, 6));
+  let cols = null;
+  for (let c = maxC; c >= 1; c--) if (cwFor(c) >= cap && rowsOf(c) <= 6) { cols = c; break; }   // full-size cards, as many across as fit
+  if (cols === null) for (let c = 1; c <= maxC; c++) if (cwFor(c) >= minCw && rowsOf(c) <= 6) { cols = c; break; }
+  if (cols === null) { cols = 1; for (let c = 1; c <= maxC; c++) if (cwFor(c) >= minCw) cols = c; }
+  return { cols, cw: Math.max(30, cwFor(cols)) };
+}
+
+// a card split along a jagged line, halves drifting apart
+function tornCard(id, animate) {
+  const half = (side) => { const c = cardEl(id, {}); c.classList.add('half', side); return c; };
+  return el('div', { class: 'tcard' + (animate ? ' tearing' : '') }, half('l'), half('r'));
+}
+
+function stagePanel(active) {
+  const row = Math.min(stageRow ?? st.currentRow ?? 0, 4);
+  if (row >= 4) return finalPanel(active);
+  const res = (st.rowResults || []).find((r) => r.row === row);
+  const isCurrent = row === st.currentRow;
+  const start = ROWS.slice(0, row).reduce((a, n) => a + n, 0), k = ROWS[row];
+  const { cols, cw } = layoutFor(row, active.length);
+  const tearNow = tearRows.has(row);
+  const cellsOf = (p) => p.board.slice(start, start + k);
+  const upOf = (p) => cellsOf(p).every((c) => c && c.up);
+  const openedN = active.filter(upOf).length;
+
+  const dots = el('div', { class: 'sdots' });
+  for (let r = 0; r < 4; r++) {
+    const done = (st.rowResults || []).some((x) => x.row === r);
+    dots.append(el('span', { class: 'sdot' + (done ? ' done' : '') + (r === row ? ' now' : '') }, String(r + 1)));
+  }
+  const head = el('div', { class: 'sthead' },
+    el('div', {}, el('div', { class: 'kicker' }, t('stageRowOf', { n: row + 1 })), el('div', { class: 'strule' }, t('rule' + (row + 1)))),
+    dots);
+
+  // what happens next: the host opens the row, everyone else waits (or turns their own cards over)
+  let control = '';
+  if (res) {
+    const names = loserNames(res);
+    control = el('div', { class: 'stresult' + (res.tie ? ' tie' : '') },
+      res.tie ? el('span', { class: 'tiechip' }, t('tie')) : el('span', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
+      ...(res.tie ? [] : names.map((n) => el('span', { class: 'loserchip' }, n))),
+      el('span', { class: 'grow' }),
+      res.tie ? el('div', { class: 'rpen none' }, t('noPenalty')) : el('div', { class: 'rpen' }, '×' + res.penalty));
+  } else if (isCurrent) {
+    control = el('div', { class: 'stcontrol' },
+      st.isHost ? el('button', { class: 'big', onclick: () => act('flipRowAll', { row, up: true }) }, t('stageHost', { n: row + 1 })) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), t('stageWaitHost')),
+      el('div', { class: 'scount' }, t('openedN', { n: openedN, total: active.length })));
+  }
+
+  const grid = el('div', { class: 'tiles', style: `grid-template-columns: repeat(${cols}, minmax(0, 1fr))` });
+  const ordered = [...active].sort((a, b) => (b.id === st.meId) - (a.id === st.meId));   // you first
+  ordered.forEach((p, idx) => {
+    const mine = p.id === st.meId;
+    const lose = !!res && !res.tie && res.losers.includes(p.id);
+    const safe = !!res && !res.tie && !lose;
+    const cells = cellsOf(p), allUp = upOf(p);
+    const flipMine = () => act('flipRow', { row, up: !allUp });
+    const cards = el('div', { class: 'tcards' });
+    cells.forEach((cell, i) => {
+      const vis = !!cell && cell.up && cell.c !== '?';
+      const f = fx[p.id + ':' + (start + i)];
+      const fxCls = f ? 'fx-' + f : '';
+      if (vis && lose) cards.append(tornCard(cell.c, tearNow));
+      else if (vis) cards.append(cardEl(cell.c, { up: true, extra: fxCls }));
+      else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
+    });
+    const status = res
+      ? (lose ? el('span', { class: 'tstat lost' }, '✗ ' + t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, '✓ ' + t('safeTag')) : '')
+      : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, allUp ? '✓ ' + t('openedState') : t('hiddenState'));
+    grid.append(el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 70}ms` : '' },
+      el('div', { class: 'tname' }, el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+      cards,
+      el('div', { class: 'tfoot' }, status,
+        mine && isCurrent && !res ? el('button', { class: 'ghost tflip', onclick: flipMine }, allUp ? t('flipDown') : t('flipUp')) : '')));
+  });
+
+  return el('div', { class: 'panel stage' + (stageEnter ? ' stage-enter' : ''), style: `--cw:${cw}px` },
+    head, control, grid);
+}
+
+// after row 4: everyone's whole board, each row coloured by whether they lost it
+function finalPanel(active) {
+  const results = Object.fromEntries((st.rowResults || []).map((r) => [r.row, r]));
+  const legend = el('div', { class: 'flegend' },
+    el('span', { class: 'lg lost' }, t('legLost')), el('span', { class: 'lg safe' }, t('legSafe')), el('span', { class: 'lg tie' }, t('legTie')));
+  const grid = el('div', { class: 'ftiles' });
+  const ordered = [...active].sort((a, b) => (b.id === st.meId) - (a.id === st.meId));
+  ordered.forEach((p, idx) => {
+    let lostCount = 0;
+    const rows = el('div', { class: 'frows' });
+    for (let r = 0; r < 4; r++) {
+      const res = results[r];
+      const entry = res && res.entries.find((e) => e.id === p.id);
+      const lose = !!res && !res.tie && res.losers.includes(p.id);
+      if (lose) lostCount++;
+      const cls = !res || res.tie ? 'tie' : lose ? 'lost' : 'safe';
+      rows.append(el('div', { class: 'frow ' + cls },
+        el('span', { class: 'fnum' }, String(r + 1)),
+        el('span', { class: 'fcards' }, ...(entry ? entry.cards.map((c) => cardEl(c, { up: true })) : [])),
+        el('span', { class: 'fmark' }, lose ? el('b', {}, '✗ ×' + res.penalty) : res && !res.tie ? '✓' : '')));
+    }
+    grid.append(el('div', { class: 'ftile' + (p.id === st.meId ? ' me' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 80}ms` : '' },
+      el('div', { class: 'tname' }, el('span', { class: 'tn' }, p.name + (p.id === st.meId ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+      rows,
+      el('div', { class: 'fsum' + (lostCount ? ' bad' : '') }, t('lostRows', { n: lostCount }))));
+  });
+  return el('div', { class: 'panel final' + (stageEnter ? ' stage-enter' : '') },
+    el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('allDone')), el('div', { class: 'strule' }, t('finalTitle'))), legend),
+    grid);
+}
+
 
 function renderGame() {
   if (err) app.append(el('div', { class: 'err' }, tErr(err)));
@@ -831,6 +1050,19 @@ function renderGame() {
   app.append(head);
   const banner = lastBanner();
   if (banner) app.append(banner);
+
+  // Everyone playing is ready: the game moves to the stage, one row at a time
+  if (active.length && active.every((p) => p.ready)) {
+    if (me.spectator) {
+      app.append(el('div', { class: 'panel observer slim' }, el('span', { class: 'obs-eye sm' }, '👀'),
+        el('div', {}, el('div', { class: 'obs-title' }, t('obsTitle')), el('div', { class: 'obs-text' }, t('obsWait')))));
+    }
+    app.append(stagePanel(active));
+    const res = resultsPanel(); if (res) app.append(res);
+    const watchers = st.players.filter((p) => p.spectator);
+    if (watchers.length) app.append(el('div', { class: 'panel watchers' }, el('span', { class: 'lrk' }, t('watching')), ...watchers.map((p) => el('span', { class: 'loserchip wchip' }, p.name))));
+    return;
+  }
 
   if (me.spectator) {   // joined while the round was under way: watch, and get dealt in next round
     app.append(el('div', panel(1, 'observer'),
@@ -959,21 +1191,45 @@ async function enter(action, body) {
 
 // Only accept state that is at least as new as what we already show, so a slow
 // poll response can't roll the board back after a move.
+// ---- row-by-row stage: which row is on screen, and how long a scored row stays up before moving on ----
+let stageRow = null, holdTimer = null, stageEnter = false;
+const tearRows = new Set();   // rows whose tear animation should play on the next render
+const HOLD_MS = 6800;         // 5s pop-up + a moment to look at the torn cards
+
+function advanceStage() {
+  holdTimer = null;
+  if (!st) return;
+  const target = st.currentRow ?? 0;
+  if (stageRow < target) {
+    stageRow = Math.min(stageRow + 1, target);
+    stageEnter = true;
+    showNext(stageRow);
+    render();
+    document.querySelector('.stage, .final')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (stageRow < target) holdTimer = setTimeout(advanceStage, 2500);   // catching up on rows scored while we were busy
+  }
+}
+
 function adopt(j) {
   if (st && st.code === j.code && j.version < st.version) return false;
   const prev = st && st.code === j.code ? st : null;
   j.recvAt = Date.now();
   if (prev) diffFx(prev, j);
   if (prev && j.round > prev.round) showRound(j.round);
-  if (prev) {   // announce a row the moment it gets scored (or its outcome changes)
-    const sig = (r) => (r ? r.losers.join(',') + '|' + r.penalty : '');
-    const byRow = (x) => Object.fromEntries((x.rowResults || []).map((r) => [r.row, r]));
-    const a = byRow(prev), b = byRow(j);
-    // announce a row only the first time it is scored this round, not when cards are closed and reopened
-    const seen = new Set(prev.scoredRows || []);
-    const fresh = Object.keys(b).filter((k) => !a[k] && !seen.has(Number(k)) && sig(a[k]) !== sig(b[k]));
-    if (fresh.length) showResult(b[fresh[fresh.length - 1]]);
+  const target = j.currentRow ?? 0;
+  if (!prev || prev.round !== j.round) { stageRow = Math.min(target, 4); clearTimeout(holdTimer); holdTimer = null; }
+  if (prev) {   // announce a row the moment it is scored; results persist, so reopening a row is never re-announced
+    const had = new Set((prev.rowResults || []).map((r) => r.row));
+    const fresh = (j.rowResults || []).filter((r) => !had.has(r.row));
+    if (fresh.length) {
+      const r = fresh[fresh.length - 1];
+      showResult(r, j);
+      tearRows.add(r.row);
+      stageRow = r.row;                       // keep the scored row on stage while the result sinks in
+      clearTimeout(holdTimer); holdTimer = setTimeout(advanceStage, HOLD_MS);
+    }
   }
+  if (stageRow == null || (!holdTimer && stageRow !== target)) stageRow = Math.min(target, 4);
   const key = (x) => x.phase + ':' + x.round;
   if (!prev || key(prev) !== key(j)) { screenAnim = true; dealAnim = j.phase === 'dealt'; }
   st = j; lastKey = j.version;
@@ -1042,16 +1298,39 @@ function resultsPanel() {
   return box;
 }
 
-function showResult(r) {
+function showResult(r, view) {
   document.querySelector('.resfx')?.remove();
+  const meId = (view || st).meId;
   const names = loserNames(r);
-  const o = el('div', { class: 'resfx' }, el('div', { class: 'resbox' },
-    el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
-    r.tie ? '' : el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
-    el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
-    r.tie ? el('div', { class: 'respen big none' }, t('noPenalty')) : el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty)));
+  const iLose = !r.tie && r.losers.includes(meId);
+  const others = r.losers.filter((id) => id !== meId).map((id) => r.entries.find((e) => e.id === id).name);
+  const penalty = r.tie ? el('div', { class: 'respen big none' }, t('noPenalty')) : el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty);
+  const box = iLose
+    ? el('div', { class: 'resbox youlose' },
+        el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
+        el('div', { class: 'resnames youlose' }, t('youLose')),
+        others.length ? el('div', { class: 'resk' }, t('alongWith', { names: others.join(' · ') })) : '',
+        penalty)
+    : el('div', { class: 'resbox' },
+        el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
+        r.tie ? '' : el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
+        el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
+        penalty);
+  const o = el('div', { class: 'resfx' + (iLose ? ' lose' : '') }, iLose ? el('div', { class: 'spikes' }) : '', box);
   document.body.append(o);
+  if (iLose) { try { navigator.vibrate && navigator.vibrate([220, 90, 220, 90, 360]); } catch {} }
   setTimeout(() => o.remove(), 5100);
+}
+
+function showNext(row) {
+  document.querySelector('.nextfx')?.remove();
+  const done = row >= 4;
+  const o = el('div', { class: 'nextfx' }, el('div', { class: 'nx-box' },
+    el('div', { class: 'nx-k' }, done ? t('allDone') : t('nextUp')),
+    el('div', { class: 'nx-n' }, done ? t('finalTitle') : t('rowN', { n: row + 1 })),
+    done ? '' : el('div', { class: 'nx-r' }, t('rule' + (row + 1)))));
+  document.body.append(o);
+  setTimeout(() => o.remove(), 1900);
 }
 
 function showRound(n) {
@@ -1182,6 +1461,7 @@ async function poll() {
 
 function startPolling() { clearInterval(timer); timer = setInterval(poll, POLL_MS); }
 
+let resizeT; window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (st && !dragging) render(); }, 150); });
 document.querySelectorAll('.langsw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.l)));
 applyStatic();
 if (session) { poll().then(() => { if (session) startPolling(); }); } 
