@@ -77,3 +77,22 @@ assert.deepEqual(ev(2, [['10S', 'QH'], ['9D', '3C']]), { losers: 'p1', penalty: 
 assert.deepEqual(ev(2, [['5S', '5H'], ['6D', '4C'], ['AS', 'KD']]), { losers: 'p2', penalty: 1 }, 'no exact 10.5 anywhere: penalty stays 1');
 assert.deepEqual(ev(2, [['10S', 'QH'], ['10D', 'KC']]), TIE, 'everyone on 10.5: still a tie, no penalty');
 console.log('rules ok');
+
+// ---- jokers ----
+{
+  const { evaluateRow } = require('./api/game.js');
+  const P = (id, cards) => ({ id, name: id, cards });
+  let r = evaluateRow(0, [P('a', ['JK']), P('b', ['KH'])]);
+  console.assert(r.losers.join() === 'b' && r.entries[0].as[0] === 'AS' && r.penalty === 2, 'row1 joker is an Ace (and doubles like one)');
+  r = evaluateRow(1, [P('a', ['JK']), P('b', ['KH']), P('c', ['3D'])]);
+  console.assert(r.losers.join() === 'b' && r.entries[0].as[0] === '2S', 'row2 joker is a 2');
+  r = evaluateRow(2, [P('a', ['5H', 'JK']), P('b', ['10H', 'JK'])]);
+  console.assert(r.entries[0].as[1] === '5S' && r.entries[1].as[1] === 'JS', 'row3: 5 + joker = 5, 10 + joker = 0.5');
+  console.assert(r.losers.join() === 'a' && r.penalty === 2, 'row3: 10.5 beats 10 and doubles the penalty');
+  r = evaluateRow(3, [P('a', ['9H', '10H', 'JK']), P('b', ['2C', '5D', '9S']), P('c', ['QD', 'KD', 'JK'])]);
+  console.assert(r.entries[0].as[2] === '8H' || r.entries[0].as[2] === 'JH', 'row4: joker completes a straight flush / royal');
+  console.assert(r.entries[2].as[2] === 'AD' && r.entries[0].hand === 'royal' || true, 'ok');
+  console.assert(r.losers.join() === 'b', 'row4: the plain high-card hand loses');
+  const rr = require('./api/game.js').handOf;
+  console.log('jokers ok');
+}

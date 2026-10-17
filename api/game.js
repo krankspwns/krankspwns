@@ -56,6 +56,7 @@ function newDeck() {
   const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   const deck = [];
   for (const s of ['S', 'H', 'D', 'C']) for (const r of ranks) deck.push(r + s);
+  deck.push('JK');   // one joker per deck: a wild card that becomes whatever is best for its row
   return deck;
 }
 
@@ -93,6 +94,11 @@ const suitOf = (c) => c.slice(-1);
 // Row 3 points, doubled so everything stays an integer: A = 1, J/Q/K = 0.5, others face value
 const pts2 = (c) => { const r = c.slice(0, -1); return r === 'A' ? 2 : 'JQK'.includes(r) ? 1 : Number(r) * 2; };
 
+// ---- jokers: each one turns into the best card for the row it sits in ----
+const isJoker = (c) => c === 'JK';
+const ALL_CARDS = ['S', 'H', 'D', 'C'].flatMap((s) => ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'].map((r) => r + s));
+const ROW3_CARDS = ['JS', 'AS', '2S', '3S', '4S', '5S', '6S', '7S', '8S', '9S', '10S'];   // every value a joker can be worth in row 3 (0.5, 1, 2 ... 10)
+
 // Row 4 hands, weakest to strongest
 const HAND_ORDER = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush', 'royal'];
 const HAND_PENALTY = { flush: 2, triple: 3, sflush: 4, royal: 5 };   // what a strong hand adds to the losers' penalty
@@ -108,32 +114,54 @@ function handOf(cards) {
   return 'none';
 }
 
+// Row 1 -> Ace, row 2 -> 2 (lowest wins), row 3 -> the value that gets closest to 10.5 without going over,
+// row 4 -> whichever card makes the strongest hand. Returns the cards with every joker replaced.
+function resolveJokers(row, cards) {
+  const at = cards.map((c, i) => (isJoker(c) ? i : -1)).filter((i) => i >= 0);
+  if (!at.length) return cards;
+  const cands = row === 0 ? ['AS'] : row === 1 ? ['2S'] : row === 2 ? ROW3_CARDS : ALL_CARDS;
+  const work = cards.slice();
+  let best = null, bestScore = -Infinity;
+  const score = () => {
+    if (row === 2) { const t = work.reduce((a, c) => a + pts2(c), 0); return t <= 21 ? t : -t; }
+    if (row === 3) return HAND_ORDER.indexOf(handOf(work));
+    return 0;
+  };
+  const rec = (k) => {
+    if (k === at.length) { const sc = score(); if (sc > bestScore) { bestScore = sc; best = work.slice(); } return; }
+    for (const c of cands) { work[at[k]] = c; rec(k + 1); }
+  };
+  rec(0);
+  return best;
+}
+
 // players: [{ id, name, cards: ['AS', ...] }] -> { row, losers: [id], penalty, entries }
 function evaluateRow(row, players) {
-  const entries = players.map((p) => ({ id: p.id, name: p.name, cards: p.cards }));
+  const effs = players.map((p) => resolveJokers(row, p.cards));
+  const entries = players.map((p, i) => ({ id: p.id, name: p.name, cards: p.cards, ...(effs[i] !== p.cards ? { as: effs[i] } : {}) }));
   const pick = (vals, fn) => { const t = fn(...vals); return entries.filter((_, i) => vals[i] === t); };
   let losers, penalty = 1;
   if (row === 0) {            // lowest card loses; every Ace held by anyone doubles up the penalty
-    const v = entries.map((e) => rankOf(e.cards[0]));
+    const v = effs.map((cs) => rankOf(cs[0]));
     entries.forEach((e, i) => (e.val = v[i]));
     losers = pick(v, Math.min);
     const aces = v.filter((x) => x === 14).length;
     if (aces) penalty = aces * 2;
   } else if (row === 1) {     // smallest card wins, so the highest card loses; every 2 doubles up the penalty
-    const v = entries.map((e) => rankOf(e.cards[0]));
+    const v = effs.map((cs) => rankOf(cs[0]));
     entries.forEach((e, i) => (e.val = v[i]));
     losers = pick(v, Math.max);
     const twos = v.filter((x) => x === 2).length;
     if (twos) penalty = twos * 2;
   } else if (row === 2) {     // closest to 10.5: anything over loses; if nobody is over, the lowest total loses
-    const v = entries.map((e) => e.cards.reduce((a, c) => a + pts2(c), 0));
+    const v = effs.map((cs) => cs.reduce((a, c) => a + pts2(c), 0));
     entries.forEach((e, i) => { e.total = v[i] / 2; e.bust = v[i] > 21; });
     const bust = entries.filter((e) => e.bust);
     losers = bust.length ? bust : pick(v, Math.min);
     const perfect = entries.filter((e) => e.total === 10.5).length;   // every exact 10.5 doubles up the penalty, like Aces in row 1
     if (perfect) penalty = perfect * 2;
   } else {                    // pattern: only the weakest hand loses; strong hands raise the penalty
-    const h = entries.map((e) => handOf(e.cards));
+    const h = effs.map((cs) => handOf(cs));
     entries.forEach((e, i) => (e.hand = h[i]));
     const weakest = Math.min(...h.map((x) => HAND_ORDER.indexOf(x)));
     losers = entries.filter((e, i) => HAND_ORDER.indexOf(h[i]) === weakest);

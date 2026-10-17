@@ -87,6 +87,27 @@
   .card.mine { cursor: grab; -webkit-touch-callout: none; }   /* no touch-action:none: swiping over cards still scrolls the page */
   .card.lifted { transform: scale(1.07); box-shadow: 0 10px 22px rgba(0,0,0,.55), 0 0 0 2px var(--gold); }
 
+  /* joker: a wild card that turns into the best card for its row */
+  .card.joker { background: radial-gradient(circle at 30% 18%, #fff4cf 0%, #f4d27a 28%, #c28bff 70%, #6f3fd0 100%); color: #3b1a7a; border-color: #e9c8ff; display: grid; place-items: center; align-content: center; text-align: center; }
+  .card.joker .jk-star { font-size: 1.9em; line-height: 1; filter: drop-shadow(0 1px 0 rgba(255,255,255,.6)); }
+  .card.joker .jk-w { font-size: .5em; font-weight: 800; letter-spacing: .14em; margin-top: 4px; }
+  .card.joker .jk-star { font-size: calc(var(--cw, 58px) * .5); } .card.joker .jk-w { font-size: calc(var(--cw, 58px) * .15); }
+  .card.down.joker .jk-star, .card.down.joker .jk-w { opacity: 0; }
+  .card.joker-as { background: linear-gradient(180deg, #fffdf6, #f1e6ff); border-color: #b678ff; box-shadow: 0 0 0 1px #b678ff, 0 0 14px rgba(182,120,255,.55), 0 4px 12px rgba(0,0,0,.45); }
+  .card.joker-as::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,230,150,.55) 46%, rgba(190,140,255,.45) 54%, transparent 70%); background-size: 250% 100%; animation: jkshimmer 3.2s linear infinite; }
+  .card .jk-badge { position: absolute; right: 3px; bottom: 2px; font-size: calc(var(--cw, 58px) * .24); line-height: 1; color: #8a4fe0; }
+  .card.joker-as .jk-badge { font-size: calc(var(--cw, 58px) * .24); }
+  .card .jk-cover { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; align-content: center; background: radial-gradient(circle at 30% 18%, #fff4cf 0%, #f4d27a 28%, #c28bff 70%, #6f3fd0 100%); color: #3b1a7a; text-align: center; animation: jkcover 1.5s .55s ease-in forwards; }
+  .card .jk-cover .jk-star { font-size: calc(var(--cw, 58px) * .5); line-height: 1; } .card .jk-cover .jk-w { font-size: calc(var(--cw, 58px) * .15); font-weight: 800; letter-spacing: .14em; margin-top: 4px; }
+  .card.morph .ix, .card.morph .pip { animation: jkreveal 1.5s .55s ease-out backwards; }
+  .card.morph { animation: jkglow 1.5s .55s ease-out; }
+  .gjk { margin: 6px 0 12px; padding: 10px 12px; border-radius: 14px; background: rgba(182,120,255,.1); border: 1px solid rgba(182,120,255,.4); } .gjk-t { color: #d9b8ff; margin-bottom: 4px; }
+  .gjk .gcards { --cw: 27px; } .gjk-r { display: grid; gap: 4px; margin-top: 10px; } .gjk-c { display: flex; align-items: center; gap: 8px; } .gjk-a { font-size: 20px; color: #d9b8ff; } .gjk-l { font-size: 13px; line-height: 1.3; } .gjk .gcards { flex: none; }
+  .mc.jk { background: linear-gradient(90deg, #fff4cf, #e5ccff); color: #4b1f9e; }
+  @keyframes jkshimmer { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  @keyframes jkcover { 0% { opacity: 1; transform: none; } 25% { transform: rotate(-6deg) scale(1.06); } 45% { opacity: 1; transform: rotate(5deg) scale(1.1); filter: brightness(1.5); } 100% { opacity: 0; transform: scale(1.35) rotate(0); filter: brightness(2) blur(3px); } }
+  @keyframes jkreveal { 0%, 45% { opacity: 0; transform: scale(.5); } 100% { opacity: .9; transform: none; } }
+  @keyframes jkglow { 0% { box-shadow: 0 0 0 0 rgba(255,210,90,0); } 45% { box-shadow: 0 0 0 6px rgba(255,210,90,.9), 0 0 36px 10px rgba(190,140,255,.9); } 100% { box-shadow: 0 0 0 1px #b678ff, 0 0 14px rgba(182,120,255,.55), 0 4px 12px rgba(0,0,0,.45); } }
   /* card back: midnight navy with a fine gold diamond lattice */
   .card.back, .card.down {
     color: transparent; cursor: default; border: 1px solid var(--gold-lo);
@@ -808,6 +829,10 @@ const SND = (() => {
       for (let i = 0; i < 9; i++) noise({ at: 0.03 + i * 0.055 + rnd(0, 0.02), dur: 0.03, vol: 0.14, type: 'bandpass', f: rnd(1500, 5000), q: 3 });
       tone({ f: 90, f2: 55, at: 0.05, dur: 0.35, vol: 0.18, type: 'sawtooth', lp: 400 });
     },
+    morph: () => {   // a rising sparkle as the joker turns into its card
+      [660, 830, 988, 1244, 1568, 1976].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.22, vol: 0.07, type: 'triangle' }));
+      noise({ at: 0.05, dur: 0.5, vol: 0.05, type: 'bandpass', f: 3000, f2: 9000, q: 2 }); tone({ f: 2637, at: 0.45, dur: 0.4, vol: 0.06 });
+    },
     safe: () => { tone({ f: 880, dur: 0.18, vol: 0.1 }); tone({ f: 1320, at: 0.06, dur: 0.22, vol: 0.08 }); },
     tie: () => { tone({ f: 392, dur: 0.18, vol: 0.11, type: 'triangle' }); tone({ f: 392, at: 0.2, dur: 0.25, vol: 0.11, type: 'triangle' }); },
     names: () => { tone({ f: 330, f2: 300, dur: 0.5, vol: 0.16 }); tone({ f: 660, dur: 0.4, vol: 0.05 }); noise({ dur: 0.08, vol: 0.1, type: 'lowpass', f: 800 }); },
@@ -958,7 +983,7 @@ const I18N = {
     h7a: 'weakest', h7b: 'strongest', g7note: 'A-2-3 and Q-K-A both count as straights. Royal flush = 10-J-Q, J-Q-K or Q-K-A in one suit.', g7pen: 'Penalty = the bonuses of everyone else’s hands added up (×1 if none).',
     gh_none: 'No pattern', gh_pair: 'Pair', gh_straight: 'Straight', gh_flush: 'Three of one suit', gh_triple: 'Three of a kind', gh_sflush: 'Straight flush', gh_royal: 'Royal flush',
     g8t: 'Good to know', g8a: 'If every player would lose a row (everyone has the same), it’s a tie — no penalty for anyone.', g8b: 'Penalties start fresh on every row; they don’t add up across rows.',
-    g8c: 'After row 4 a final board shows all rows, coloured by who lost what.', g8d: 'Joined while a game is in progress? You watch until the next round, then you’re dealt in.', g8e: 'Pop-ups, torn cards and the “You lose!” screen are just for fun — the rules above decide who loses.',
+    gjkT: 'Joker (wild card)', gjkP: 'Each deck has one joker. It turns into the best card for the row it is in, and morphs when the row is opened.', gjk1: 'Row 1: Ace', gjk2: 'Row 2: 2 (lowest wins)', gjk3: 'Row 3: the value closest to 10.5', gjk4: 'Row 4: whatever makes the strongest hand',g8c: 'After row 4 a final board shows all rows, coloured by who lost what.', g8d: 'Joined while a game is in progress? You watch until the next round, then you’re dealt in.', g8e: 'Pop-ups, torn cards and the “You lose!” screen are just for fun — the rules above decide who loses.',
     sndMode0: 'Sound off', sndMode1: 'Sound effects on', sndMode2: 'Effects + music on',
     playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
     kickHint: 'Players who lost their connection show as offline. Kicked players can rejoin with the room code.', hostOnlyHint: 'Only the host can remove players.',
@@ -1029,7 +1054,7 @@ const I18N = {
     h7a: '最弱', h7b: '最强', g7note: 'A-2-3 和 Q-K-A 都算顺子。皇家同花顺 = 同一花色的 10-J-Q、J-Q-K 或 Q-K-A。', g7pen: '惩罚 = 其他人牌型的加成相加（没有则为 ×1）。',
     gh_none: '散牌', gh_pair: '对子', gh_straight: '顺子', gh_flush: '同花', gh_triple: '三条', gh_sflush: '同花顺', gh_royal: '皇家同花顺',
     g8t: '小提示', g8a: '如果这一行所有人都会输（所有人都一样），就是平局——没有人受惩罚。', g8b: '每一行的惩罚单独计算，不会跨行累加。',
-    g8c: '第 4 行结束后会显示最终结果，用颜色标出每个人输了哪几行。', g8d: '在游戏进行中加入的玩家先观战，下一轮会一起发牌。', g8e: '弹出提示、撕牌和“你输了！”画面只是为了好玩——谁输由上面的规则决定。',
+    gjkT: '鬼牌（万能牌）', gjkP: '每副牌有一张鬼牌。它会变成所在行里最有利的牌，并在该行翻开时变形。', gjk1: '第 1 行：变成 A', gjk2: '第 2 行：变成 2（最小者赢）', gjk3: '第 3 行：变成最接近 10.5 的点数', gjk4: '第 4 行：变成能组成最强牌型的牌',g8c: '第 4 行结束后会显示最终结果，用颜色标出每个人输了哪几行。', g8d: '在游戏进行中加入的玩家先观战，下一轮会一起发牌。', g8e: '弹出提示、撕牌和“你输了！”画面只是为了好玩——谁输由上面的规则决定。',
     playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
     kickHint: '断线的玩家会显示为离线。被移出的玩家可以用房间代码重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '声音已关闭', sndMode1: '音效已开启', sndMode2: '音效 + 音乐已开启',
@@ -1100,7 +1125,7 @@ const I18N = {
     h7a: '最弱', h7b: '最強', g7note: 'A-2-3 和 Q-K-A 都算順子。皇家同花順 = 同一花色的 10-J-Q、J-Q-K 或 Q-K-A。', g7pen: '懲罰 = 其他人牌型的加成相加（沒有則為 ×1）。',
     gh_none: '散牌', gh_pair: '對子', gh_straight: '順子', gh_flush: '同花', gh_triple: '三條', gh_sflush: '同花順', gh_royal: '皇家同花順',
     g8t: '小提示', g8a: '如果這一行所有人都會輸（所有人都一樣），就是平局——沒有人受懲罰。', g8b: '每一行的懲罰單獨計算，不會跨行累加。',
-    g8c: '第 4 行結束後會顯示最終結果，用顏色標出每個人輸了哪幾行。', g8d: '在遊戲進行中加入的玩家先觀戰，下一輪會一起發牌。', g8e: '彈出提示、撕牌和「你輸了！」畫面只是為了好玩——誰輸由上面的規則決定。',
+    gjkT: '鬼牌（萬能牌）', gjkP: '每副牌有一張鬼牌。它會變成所在行裡最有利的牌，並在該行翻開時變形。', gjk1: '第 1 行：變成 A', gjk2: '第 2 行：變成 2（最小者贏）', gjk3: '第 3 行：變成最接近 10.5 的點數', gjk4: '第 4 行：變成能組成最強牌型的牌',g8c: '第 4 行結束後會顯示最終結果，用顏色標出每個人輸了哪幾行。', g8d: '在遊戲進行中加入的玩家先觀戰，下一輪會一起發牌。', g8e: '彈出提示、撕牌和「你輸了！」畫面只是為了好玩——誰輸由上面的規則決定。',
     playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
     kickHint: '斷線的玩家會顯示為離線。被移出的玩家可以用房間代碼重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '聲音已關閉', sndMode1: '音效已開啟', sndMode2: '音效 + 音樂已開啟',
@@ -1234,15 +1259,24 @@ function el(tag, props = {}, ...kids) {
 
 // A card on screen. src ('hand' | slot index) makes it draggable (own cards only);
 // onclick without src is a plain click. shared = visible to the other players.
-function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared = false } = {}) {
+function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared = false, as = null, morph = false } = {}) {
   if (id === '?') return el('div', { class: 'card back' });
-  const suit = id.slice(-1), rank = id.slice(0, -1);
+  if (id !== 'JK') as = null;
+  const face = as || id;   // `as`: the card a joker has turned into once its row is scored
+  const suit = face.slice(-1), rank = face.slice(0, -1);
   const red = suit === 'H' || suit === 'D';
-  const cls = ['card', red ? 'red' : '', extra];
+  const isJk = id === 'JK';
+  const cls = ['card', red && !(isJk && !as) ? 'red' : '', extra];
+  if (isJk) cls.push(as ? 'joker-as' : 'joker');
+  if (as && morph) cls.push('morph');
   if (!up) cls.push('down');
   if (shared) cls.push('shared');
   if (src !== null) cls.push('mine');
-  const e = el('div', { class: cls.join(' ') }, el('div', { class: 'ix' }, rank, el('i', {}, SUIT[suit])), el('div', { class: 'pip' }, SUIT[suit]));
+  const jokerFace = () => [el('div', { class: 'jk-star' }, '★'), el('div', { class: 'jk-w' }, 'JOKER')];
+  const e = isJk && !as
+    ? el('div', { class: cls.join(' ') }, ...jokerFace())
+    : el('div', { class: cls.join(' ') }, el('div', { class: 'ix' }, rank, el('i', {}, SUIT[suit])), el('div', { class: 'pip' }, SUIT[suit]),
+        ...(isJk ? [el('div', { class: 'jk-badge' }, '★'), ...(morph ? [el('div', { class: 'jk-cover' }, ...jokerFace())] : [])] : []));
   if (shared) e.title = t('shared');
   if (src !== null) enableDrag(e, src, id, onclick);
   else if (onclick) { e.onclick = onclick; e.style.cursor = 'pointer'; }
@@ -1544,8 +1578,8 @@ function layoutFor(rowIdx, n) {
 }
 
 // a card split along a jagged line, halves drifting apart
-function tornCard(id, animate) {
-  const half = (side) => { const c = cardEl(id, {}); c.classList.add('half', side); return c; };
+function tornCard(id, animate, as = null) {
+  const half = (side) => { const c = cardEl(id, { as }); c.classList.add('half', side); return c; };
   return el('div', { class: 'tcard' + (animate ? ' tearing' : '') }, half('l'), half('r'));
 }
 
@@ -1598,8 +1632,9 @@ function stagePanel(active) {
       const vis = !!cell && cell.up && cell.c !== '?';
       const f = fx[p.id + ':' + (start + i)];
       const fxCls = f ? 'fx-' + f : '';
-      if (vis && lose) cards.append(tornCard(cell.c, tearNow));
-      else if (vis) cards.append(cardEl(cell.c, { up: true, extra: fxCls }));
+      const as = vis && res ? effOf(res, p.id, i) : null;   // a joker turns into its best card once the row is scored
+      if (vis && lose) cards.append(tornCard(cell.c, tearNow, as));
+      else if (vis) cards.append(cardEl(cell.c, { up: true, extra: fxCls, as, morph: !!as && tearNow }));
       else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
     });
     const status = res
@@ -1634,7 +1669,7 @@ function finalPanel(active) {
       const cls = !res || res.tie ? 'tie' : lose ? 'lost' : 'safe';
       rows.append(el('div', { class: 'frow ' + cls },
         el('span', { class: 'fnum' }, String(r + 1)),
-        el('span', { class: 'fcards' }, ...(entry ? entry.cards.map((c) => cardEl(c, { up: true })) : [])),
+        el('span', { class: 'fcards' }, ...(entry ? entry.cards.map((c, ci) => cardEl(c, { up: true, as: entry.as ? entry.as[ci] : null })) : [])),
         el('span', { class: 'fmark' }, lose ? el('b', { class: 'iconlabel' }, icon('x', 12), '×' + res.penalty) : res && !res.tie ? icon('tick', 14) : '')));
     }
     grid.append(el('div', { class: 'ftile' + (p.id === st.meId ? ' me' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 80}ms` : '' },
@@ -1902,10 +1937,13 @@ function face(view, p, s) {
 
 
 // ---- row results (computed by the server once everyone's row is face up) ----
-function cardChip(id) {
+function cardChip(id, as) {
+  if (as) return el('span', { class: 'mc jk' }, '★→' + as.slice(0, -1) + SUIT[as.slice(-1)]);
+  if (id === 'JK') return el('span', { class: 'mc jk' }, '★');
   const suit = id.slice(-1);
   return el('span', { class: 'mc' + (suit === 'H' || suit === 'D' ? ' red' : '') }, id.slice(0, -1) + SUIT[suit]);
 }
+const effOf = (r, id, i) => { const e = r.entries.find((x) => x.id === id); return e && e.as ? e.as[i] : null; };
 function loserNames(r) { return r.losers.map((id) => r.entries.find((e) => e.id === id).name); }
 
 // Scoreboard: four fixed rows, always in the same place. Tap a row to see everyone's cards.
@@ -1942,7 +1980,7 @@ function resultsPanel() {
       const detail = el('div', { class: 'rdet' });
       r.entries.forEach((e) => {
         const lose = r.losers.includes(e.id);
-        const value = el('span', { class: 'rdv' }, ...e.cards.map(cardChip));
+        const value = el('span', { class: 'rdv' }, ...e.cards.map((c, ci) => cardChip(c, e.as ? e.as[ci] : null)));
         if (r.row === 2) value.append(el('b', { class: e.bust ? 'bad' : '' }, ` ${e.total}`), e.bust ? el('em', {}, ` ${t('bust')}`) : '');
         if (r.row === 3) value.append(el('em', {}, ` ${t('h_' + e.hand)}`));
         detail.append(el('div', { class: 'rd' + (lose ? ' lose' : '') }, el('span', { class: 'rdn' }, e.name), value));
@@ -1976,7 +2014,7 @@ function showResult(r, view) {
       const lose = !r.tie && r.losers.includes(e.id), safe = !r.tie && !lose, mine = e.id === meId;
       return el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') },
         el('div', { class: 'tname' }, el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
-        el('div', { class: 'tcards' }, ...e.cards.map((c) => lose ? tornCard(c, true) : cardEl(c, { up: true }))),
+        el('div', { class: 'tcards' }, ...e.cards.map((c, ci) => lose ? tornCard(c, true, e.as ? e.as[ci] : null) : cardEl(c, { up: true, as: e.as ? e.as[ci] : null, morph: !!e.as }))),
         el('div', { class: 'tfoot' }, lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : ''));
     }));
   const box = iLose
@@ -1994,6 +2032,7 @@ function showResult(r, view) {
   document.body.append(o);
   // the row turns over, the loser's cards tear, then the verdict
   SND.play('flip');
+  if (r.entries.some((e) => e.as)) { setTimeout(() => SND.play('morph'), 520); }
   if (r.tie) setTimeout(() => SND.play('tie'), 380);
   else {
     setTimeout(() => SND.play('tear'), 520);
@@ -2081,6 +2120,9 @@ function guideBody(i) {
   } else {   // good to know
     wrap.append(h('g8t'),
       el('div', { class: 'gtie' }, gexample('Ann', ['KS'], '', 'tie'), gexample('Bob', ['KH'], '', 'tie'), el('div', { class: 'gtie-r' }, gchip(t('tie'), 'tiechip'), gchip(t('noPenalty'), 'nop'))),
+      el('div', { class: 'gjk' }, el('div', { class: 'gjk-t' }, el('b', {}, '★ ' + t('gjkT'))), el('p', { class: 'gnote' }, t('gjkP')),
+        ...[['gjk1', ['JK'], ['AS']], ['gjk2', ['JK'], ['2S']], ['gjk3', ['5H', 'JK'], ['5H', '5S']], ['gjk4', ['9H', '10H', 'JK'], ['9H', '10H', '8H']]].map(([k, ids, as]) =>
+          el('div', { class: 'gjk-r' }, el('div', { class: 'gjk-c' }, el('div', { class: 'gcards' }, ...ids.map((c) => cardEl(c, { up: true }))), el('span', { class: 'gjk-a' }, '→'), el('div', { class: 'gcards' }, ...ids.map((c, i) => cardEl(c, { up: true, as: c === 'JK' ? as[i] : null })))), el('span', { class: 'gjk-l' }, t(k))))),
       el('ul', { class: 'glist bullets' }, ...['g8a', 'g8b', 'g8c', 'g8d', 'g8e'].map((k) => el('li', {}, t(k)))),
       el('div', { class: 'flegend gleg' }, el('span', { class: 'lg lost' }, t('legLost')), el('span', { class: 'lg safe' }, t('legSafe')), el('span', { class: 'lg tie' }, t('legTie'))));
   }
