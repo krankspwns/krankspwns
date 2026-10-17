@@ -213,6 +213,13 @@
   .toast { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 70; padding: 10px 18px; border-radius: 99px; font-weight: 600; font-size: 14px;
     background: rgba(20,26,46,.95); border: 1px solid var(--gold); color: var(--gold-hi); box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: toast 3.2s ease forwards; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
   @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -20px); } 10%, 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
+
+  .roundfx { position: fixed; inset: 0; z-index: 80; display: grid; place-content: center; text-align: center; pointer-events: none;
+    background: radial-gradient(circle at center, rgba(6,9,20,.72), rgba(6,9,20,0) 70%); animation: roundfx 7s ease forwards; }
+  .roundfx .rf-k { font-size: clamp(18px, 5vw, 30px); letter-spacing: .5em; padding-left: .5em; text-transform: uppercase; color: var(--gold-hi); font-weight: 600; }
+  .roundfx .rf-n { font-size: clamp(110px, 34vw, 260px); line-height: 1; font-weight: 800; color: var(--gold-hi); text-shadow: 0 0 50px rgba(201,169,106,.65), 0 6px 30px rgba(0,0,0,.6); }
+  /* ~0.5s in, hold until 5s, fade away over the last 2s */
+  @keyframes roundfx { 0% { opacity: 0; transform: scale(.6); } 7% { opacity: 1; transform: scale(1.08); } 10% { transform: scale(1); } 71.4% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
   @media (max-width: 600px) {
     main { padding: 14px 12px 32px; }
     .waitroom { padding: 22px 14px 20px; gap: 14px; }
@@ -633,6 +640,7 @@ function adopt(j) {
   const prev = st && st.code === j.code ? st : null;
   j.recvAt = Date.now();
   if (prev) diffFx(prev, j);
+  if (prev && j.round > prev.round) showRound(j.round);
   const key = (x) => x.phase + ':' + x.round;
   if (!prev || key(prev) !== key(j)) { screenAnim = true; dealAnim = j.phase === 'dealt'; }
   st = j; lastKey = j.version;
@@ -645,6 +653,13 @@ function face(view, p, s) {
   if (!s) return null;
   const visible = p.id === view.meId ? (!p.ready || s.up) : s.up;
   return visible ? s.c : '#';
+}
+
+function showRound(n) {
+  document.querySelector('.roundfx')?.remove();
+  const o = el('div', { class: 'roundfx' }, el('div', { class: 'rf-k' }, 'Round'), el('div', { class: 'rf-n' }, String(n)));
+  document.body.append(o);
+  setTimeout(() => o.remove(), 7200);
 }
 
 function toast(msg) {
@@ -671,11 +686,72 @@ function diffFx(prev, next) {
   }
 }
 
-async function act(action, extra = {}) {
+// ---- optimistic actions: the board updates instantly, the server confirms in the background ----
+let pending = 0, queue = Promise.resolve(), best = null, failed = false;
+
+function predict(action, x) {
+  const next = structuredClone(st);
+  const me = next.players.find((p) => p.id === next.meId);
+  if (next.phase !== 'dealt') return null;
+  const move = ['place', 'move', 'unplace'].includes(action);
+  if (move && me.ready) return null;
+  switch (action) {
+    case 'place': {
+      const i = next.hand.indexOf(x.card);
+      if (i < 0) return null;
+      next.hand.splice(i, 1);
+      if (me.board[x.slot]) next.hand.push(me.board[x.slot].c);
+      me.board[x.slot] = { c: x.card, up: false };
+      return next;
+    }
+    case 'move':
+      if (!me.board[x.from]) return null;
+      [me.board[x.from], me.board[x.to]] = [me.board[x.to], me.board[x.from]];
+      return next;
+    case 'unplace':
+      if (!me.board[x.slot]) return null;
+      next.hand.push(me.board[x.slot].c);
+      me.board[x.slot] = null;
+      return next;
+    case 'flip':
+      if (!me.board[x.slot]) return null;
+      me.board[x.slot].up = !me.board[x.slot].up;
+      return next;
+    case 'flipRowUp': {
+      const start = ROWS.slice(0, x.row).reduce((a, n) => a + n, 0);
+      for (let i = start; i < start + ROWS[x.row]; i++) if (me.board[i]) me.board[i].up = true;
+      return next;
+    }
+    case 'ready':
+      if (x.ready && !me.board.every(Boolean)) return null;
+      me.ready = !!x.ready;
+      if (me.ready) me.board.forEach((c) => c && (c.up = false));
+      return next;
+  }
+  return null;
+}
+
+function act(action, extra = {}) {
   err = '';
-  try { adopt(await api(action, extra)); }
-  catch (e) { err = e.message; }
-  render();
+  const next = st && predict(action, extra);
+  if (next) { diffFx(st, next); st = next; selected = null; render(); }
+  pending++;
+  // Requests go out one at a time, in order, so quick successive moves can't overtake each other.
+  queue = queue
+    .then(async () => {
+      try { const j = await api(action, extra); if (!best || j.version > best.version) best = j; }
+      catch (e) { err = e.message; failed = true; }
+    })
+    .then(async () => {
+      if (--pending > 0) return;
+      let j = best; best = null;
+      if (failed) {   // something was rejected: pull the real state so the screen can't drift
+        failed = false;
+        try { j = await (await fetch(`/api/game?code=${session.code}&pid=${session.pid}`)).json(); } catch {}
+      }
+      if (j && !j.error) adopt(j);
+      if (!dragging) render();
+    });
 }
 
 async function leave() {
@@ -689,7 +765,7 @@ async function poll() {
     const r = await fetch(`/api/game?code=${session.code}&pid=${session.pid}`);
     const j = await r.json();
     if (r.status === 404) { session = null; st = null; save(); clearInterval(timer); err = 'Room no longer available'; return render(); }
-    if (!r.ok || dragging) return;
+    if (!r.ok || dragging || pending > 0) return;
     if (j.version <= (st?.version ?? 0)) return;
     adopt(j);
     err = '';
