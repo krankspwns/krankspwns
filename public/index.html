@@ -385,6 +385,18 @@
   @keyframes nextfade { 0% { opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { opacity: 0; } }
   .stage-enter { animation: stagein .55s ease-out backwards; }
   @keyframes stagein { from { opacity: 0; transform: translateY(18px); } }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(8px); } }
+  /* hall of fame + collapsible final board */
+  .hallwrap { margin-bottom: 14px; } .hall { display: grid; gap: 8px; }
+  .hrow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); animation: fadeup .4s ease both; }
+  .hrow.me { border-color: var(--gold); background: rgba(201,169,106,.1); } .hrow.top { background: linear-gradient(90deg, rgba(255,207,64,.16), rgba(255,255,255,.04)); border-color: rgba(255,207,64,.55); }
+  .hrank .ic { color: #1a1407; }
+  .hrank { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: rgba(255,255,255,.1); }
+  .hname { flex: 1; min-width: 0; display: grid; } .hname b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .hname small, .hpts small { opacity: .65; font-size: 12px; }
+  .hpts { text-align: right; display: grid; } .hpts b { font-size: 18px; color: var(--gold-hi); }
+  .fdrop { border-top: 1px solid rgba(255,255,255,.1); padding-top: 10px; } .fdrop summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 6px 2px; font-weight: 700; }
+  .fdrop summary::-webkit-details-marker { display: none; } .fd-h { margin-left: auto; font-size: 12px; font-weight: 600; opacity: .7; } .fd-c { transition: transform .2s; opacity: .7; } .fdrop[open] .fd-c { transform: rotate(180deg); }
+  .fdrop .sthead { margin: 10px 0; }
   /* final board */
   .final { --cw: 36px; }
   .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
@@ -521,7 +533,7 @@
   .ic-eye{color:#6fd3ff}.ic-eye-off{color:#9aa7c7}.ic-zap{color:#ffd23f}.ic-hand{color:#ffb86b}.ic-phone{color:#b69cff}.ic-ticket{color:#ff9f43}
   .ic-crown{color:#ffcf40}.ic-hourglass{color:#ffb347}.ic-wifi{color:#4fdc8a}.ic-wifi-off{color:#ff7a7a}.ic-help{color:#7fb2ff}.ic-user-x{color:#ff6b6b}
   .ic-link{color:#6fd3ff}.ic-copy{color:#9fb4ff}.ic-logout{color:#ff8a7a}.ic-shuffle{color:#c58bff}.ic-volume-x{color:#9aa7c7}.ic-volume-2{color:#5fe0c0}
-  .ic-music{color:#ffd23f}.ic-swap{color:#6fd3ff}
+  .ic-music{color:#ffd23f}.ic-trophy{color:#ffcf40}.ic-swap{color:#6fd3ff}
   button.big .ic, .big .ic, .guidebtn b .ic, .gtitle b .ic, .pill .ic, .tag .ic, .readystrip .tick .ic, .btn-solid .ic { color: inherit; }
   .ic { display: inline-block; flex: none; vertical-align: middle; }
   .iconlabel { display: inline-flex; align-items: center; gap: 7px; }
@@ -688,6 +700,7 @@ const ICONS = {
   'volume-x': '<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" fill="currentColor" fill-opacity=".3"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
   'volume-2': '<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" fill="currentColor" fill-opacity=".3"/><path d="M15.5 9.2a4 4 0 010 5.6M18.2 6.6a8 8 0 010 10.8"/>',
   music: '<path d="M9 17.5V6.2l10-2v11.3"/><circle cx="6.5" cy="17.6" r="2.5" fill="currentColor" fill-opacity=".35"/><circle cx="16.5" cy="15.6" r="2.5" fill="currentColor" fill-opacity=".35"/>',
+  trophy: '<path d="M7.5 4h9v5.2a4.5 4.5 0 01-9 0z" fill="currentColor" fill-opacity=".32"/><path d="M7.5 5.5H4.2c0 3 1.3 4.6 3.5 4.9M16.5 5.5h3.3c0 3-1.3 4.6-3.5 4.9M12 13.7V17M8.5 20h7M9.5 17h5v3h-5z"/>',
   swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
 };
 function icon(name, size = 18, cls = '') {
@@ -920,7 +933,7 @@ const I18N = {
     stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `Open row ${v.n} for everyone`, stageWaitHost: 'Waiting for the host to open this row…',
     openedN: (v) => `${v.n}/${v.total} opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
     youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
-    finalTitle: 'Final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
+    finalTitle: 'Final board', hallTitle: 'Hall of Fame', hallSub: (v) => `Lowest total penalty wins · ${v.n} round${v.n === 1 ? '' : 's'} played`, hallPts: (v) => `${v.n} pts`, hallLast: (v) => `+${v.n} this round`, hallLost: (v) => `${v.n} row${v.n === 1 ? '' : 's'} lost`, hallRounds: (v) => `${v.n} rd`, showBoard: 'Show final board', hideBoard: 'Hide final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
     guideBtn: 'How to play', guideTitle: 'How to play', gClose: 'Close', gBack: 'Back', gNext: 'Next', gDone: 'Got it!', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: 'Lowest card loses', g_r2: 'Highest card loses', g_r3: 'Closest to 10.5', g_r4: 'Best pattern', gCards: (v) => `${v.n} card${v.n > 1 ? 's' : ''}`,
     gLoses: 'LOSES', gSafe: 'safe', gBust: 'BUST', gPerfect: 'PERFECT', gPenaltyIs: 'Penalty',
@@ -991,7 +1004,7 @@ const I18N = {
     stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `为所有人翻开第 ${v.n} 行`, stageWaitHost: '等待房主翻开这一行…',
     openedN: (v) => `${v.n}/${v.total} 已翻开`, hiddenState: '未翻开', openedState: '已翻开', lostTag: '输了', safeTag: '安全',
     youLose: '你输了！', alongWith: (v) => `还有 ${v.names}`, nextUp: '下一行', allDone: '四行全部结束',
-    finalTitle: '最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
+    finalTitle: '最终结果', hallTitle: '名人堂', hallSub: (v) => `总罚分最低者获胜 · 已玩 ${v.n} 回合`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `输了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '显示最终结果', hideBoard: '收起最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
     guideBtn: '玩法说明', guideTitle: '玩法说明', gClose: '关闭', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: '最小的牌输', g_r2: '最大的牌输', g_r3: '最接近 10.5', g_r4: '牌型最强', gCards: (v) => `${v.n} 张牌`,
     gLoses: '输', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '惩罚',
@@ -1062,7 +1075,7 @@ const I18N = {
     stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `為所有人翻開第 ${v.n} 行`, stageWaitHost: '等待房主翻開這一行…',
     openedN: (v) => `${v.n}/${v.total} 已翻開`, hiddenState: '未翻開', openedState: '已翻開', lostTag: '輸了', safeTag: '安全',
     youLose: '你輸了！', alongWith: (v) => `還有 ${v.names}`, nextUp: '下一行', allDone: '四行全部結束',
-    finalTitle: '最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
+    finalTitle: '最終結果', hallTitle: '名人堂', hallSub: (v) => `總罰分最低者獲勝 · 已玩 ${v.n} 回合`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `輸了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '顯示最終結果', hideBoard: '收起最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
     guideBtn: '玩法說明', guideTitle: '玩法說明', gClose: '關閉', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: '最小的牌輸', g_r2: '最大的牌輸', g_r3: '最接近 10.5', g_r4: '牌型最強', gCards: (v) => `${v.n} 張牌`,
     gLoses: '輸', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '懲罰',
@@ -1623,9 +1636,33 @@ function finalPanel(active) {
       rows,
       el('div', { class: 'fsum' + (lostCount ? ' bad' : '') }, t('lostRows', { n: lostCount }))));
   });
-  return el('div', { class: 'panel final' + (stageEnter ? ' stage-enter' : '') },
-    el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('allDone')), el('div', { class: 'strule' }, t('finalTitle'))), legend),
-    grid);
+  const hall = hallPanel();
+  const det = el('details', { class: 'fdrop' }, el('summary', {}, el('span', { class: 'fd-t' }, t('finalTitle')), el('span', { class: 'fd-h' }, t('showBoard')), el('span', { class: 'fd-c' }, '▾')),
+    el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('allDone'))), legend), grid);
+  det.open = finalOpen;
+  det.addEventListener('toggle', () => { finalOpen = det.open; det.querySelector('.fd-h').textContent = t(det.open ? 'hideBoard' : 'showBoard'); });
+  if (finalOpen) det.querySelector('.fd-h').textContent = t('hideBoard');
+  return el('div', { class: 'panel final' + (stageEnter ? ' stage-enter' : '') }, hall, det);
+}
+let finalOpen = false;
+
+// running ranking over every completed round in this room: the lowest total penalty is on top
+function hallPanel() {
+  const list = st.hall || [];
+  if (!list.length) return '';
+  const medals = ['#ffcf40', '#cfd6e6', '#d99a63'];
+  const rounds = Math.max(...list.map((h) => h.rounds));
+  const rows = el('div', { class: 'hall' });
+  let rank = 0, prevKey = null;
+  list.forEach((h, i) => {
+    const key = h.penalty + ':' + h.lost; if (key !== prevKey) rank = i + 1; prevKey = key;
+    const me = h.id === st.meId;
+    rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
+      el('span', { class: 'hrank', style: rank <= 3 ? `background:${medals[rank - 1]};color:#1a1407` : '' }, rank === 1 ? icon('trophy', 16) : String(rank)),
+      el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }) + ' · ' + t('hallRounds', { n: h.rounds }))),
+      el('span', { class: 'hpts' }, el('b', {}, t('hallPts', { n: h.penalty })), h.last ? el('small', {}, t('hallLast', { n: h.last })) : '')));
+  });
+  return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: rounds })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))), rows);
 }
 
 
