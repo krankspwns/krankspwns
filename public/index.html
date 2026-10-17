@@ -278,7 +278,7 @@ let newSeats = new Set();    // players who just joined (one render only)
 let screenAnim = false;      // entrance animation for a newly shown screen
 let dealAnim = false;        // cards fly in after a deal
 let formName = localStorage.getItem('sct-name') || '', formCode = new URLSearchParams(location.search).get('room') || '';
-const BANNER_SECONDS = 20;
+const BANNER_SECONDS = 12;
 let confettiAt = 0;
 let expert = false;          // "Expert mode": tap a hand card to auto-place it, tap a placed card to return it
 try { expert = localStorage.getItem('sct-expert') === '1'; } catch {}
