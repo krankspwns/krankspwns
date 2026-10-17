@@ -579,7 +579,7 @@
   .topright { display: flex; align-items: center; gap: 8px; }
   @media (max-width: 440px) { .guidebtn { padding: 5px; gap: 0; } .guidebtn .glabel { display: none; } }
   .sndsw button { padding: 5px 10px; display: grid; place-items: center; height: 28px; } .sndsw .ic { color: inherit; }
-  @media (max-width: 440px) { .sndsw button { padding: 5px 8px; } .langsw button { padding: 5px 10px; } .topright { gap: 6px; } }
+  @media (max-width: 440px) { .topbar { gap: 8px; } .topright { flex: 1; min-width: 0; } .sndsw { flex: 1; } .langsw { flex: 1.5; } .sndsw button, .langsw button { flex: 1; justify-content: center; text-align: center; } .sndsw button { padding: 5px 8px; } .langsw button { padding: 5px 10px; } .topright { gap: 6px; } }
   @media (max-width: 345px) { .sndsw button { padding: 5px 6px; } .langsw button { padding: 5px 7px; font-size: 11px; } }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
