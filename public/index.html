@@ -122,6 +122,81 @@
 
   .ghost-card { position: fixed; pointer-events: none; z-index: 99; opacity: .95; transform: translate(-50%,-50%) scale(1.1) rotate(-3deg); box-shadow: 0 14px 26px rgba(0,0,0,.65) !important; }
   .dragging-src { opacity: .3; }
+
+  /* ---- ambient background suits ---- */
+  .bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .bg span { position: absolute; bottom: -80px; color: var(--gold); opacity: .07; animation: drift linear infinite; will-change: transform; }
+  @keyframes drift { from { transform: translateY(0) rotate(0deg); } to { transform: translateY(-120vh) rotate(360deg); } }
+  main { position: relative; z-index: 1; }
+
+  /* ---- one-shot animations (classes are applied only for a single render) ---- */
+  @keyframes pop { 0% { transform: scale(.4) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.14) rotate(2deg); opacity: 1; } 100% { transform: none; } }
+  @keyframes flipin { from { transform: perspective(600px) rotateY(-90deg); } to { transform: perspective(600px) rotateY(0); } }
+  @keyframes deal { from { opacity: 0; transform: translate(-60px,-90px) rotate(-22deg) scale(.6); } to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .fx-pop { animation: pop .5s cubic-bezier(.2,1.4,.4,1) backwards; }
+  .fx-flip { animation: flipin .45s ease-out backwards; }
+  .fx-deal { animation: deal .6s cubic-bezier(.2,.9,.3,1.1) backwards; }
+  .fx-in { animation: rise .55s ease-out backwards; }
+
+  /* ---- continuous touches ---- */
+  button:active { transform: scale(.96); }
+  .hand .card.mine:not(.sel):hover, .board .card.mine:hover { transform: translateY(-5px) rotate(-1.5deg); }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 0 rgba(111,207,151,0); } 50% { box-shadow: 0 0 14px rgba(111,207,151,.7); } }
+  .tag.ok { animation: glow 2s infinite; }
+  @keyframes readypulse { 0%,100% { box-shadow: 0 2px 10px rgba(0,0,0,.35), 0 0 0 0 rgba(111,207,151,.6); } 50% { box-shadow: 0 2px 10px rgba(0,0,0,.35), 0 0 0 10px rgba(111,207,151,0); } }
+  button.readybtn:not(:disabled) { animation: readypulse 1.6s infinite; }
+  button.readybtn:disabled { background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); box-shadow: none; }
+  @keyframes shimmer { to { background-position: 200% center; } }
+  .bigcode, .code { background: linear-gradient(90deg, var(--gold-lo), var(--gold-hi), var(--gold-lo), var(--gold-hi)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 5s linear infinite; text-shadow: none; }
+  @keyframes bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+  @keyframes ping { 0% { transform: scale(.8); opacity: .8; } 100% { transform: scale(2.2); opacity: 0; } }
+
+  /* ---- last-to-ready banner ---- */
+  .lastbanner { position: sticky; top: 8px; z-index: 30; text-align: center; padding: 16px 18px 14px; margin-bottom: 16px; border-radius: 16px; overflow: hidden;
+    background: linear-gradient(135deg, #3a2f12, #6b5420 45%, #3a2f12); border: 1px solid var(--gold); box-shadow: 0 12px 40px rgba(0,0,0,.55), 0 0 40px rgba(201,169,106,.35);
+    animation: bannerin .7s cubic-bezier(.2,1.3,.4,1) backwards; }
+  @keyframes bannerin { from { transform: translateY(-40px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+  .lastbanner::before { content:''; position:absolute; inset:0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%); background-size: 250% 100%; animation: sheen 3s linear infinite; }
+  @keyframes sheen { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  .lastbanner .lb-k { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-hi); position: relative; }
+  .lastbanner .lb-name { font-size: clamp(30px, 8vw, 54px); font-weight: 800; line-height: 1.1; margin: 4px 0 2px; color: #fff; position: relative; animation: namepulse 1.4s ease-in-out infinite; word-break: break-word; }
+  @keyframes namepulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .lastbanner .lb-s { font-size: 14px; opacity: .85; position: relative; }
+  .lastbanner .lb-bar { position: relative; height: 5px; border-radius: 99px; background: rgba(255,255,255,.15); margin-top: 12px; overflow: hidden; }
+  .lastbanner .lb-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); transition: width .5s linear; }
+  .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+  .confetti i { position: absolute; top: -20px; width: 10px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  /* ---- landing page ---- */
+  .landing { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; align-items: center; margin-top: 8px; }
+  .hero h2 { font-size: clamp(34px, 6vw, 60px); line-height: 1.05; margin: 10px 0 14px; font-weight: 800; letter-spacing: -.02em; }
+  .hero h2 em { font-style: normal; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { font-size: 17px; line-height: 1.55; opacity: .8; max-width: 520px; margin: 0 0 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+  .chip { font-size: 13px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: rgba(255,255,255,.05); }
+  .fan { position: relative; height: 150px; max-width: 460px; margin: 0 0 6px; }
+  .fan .card { position: absolute; bottom: 0; left: 50%; width: 92px; height: 132px; margin-left: -46px; transform-origin: 50% 160%; transform: rotate(var(--r)); animation: fanin .8s cubic-bezier(.2,1.2,.4,1) backwards, sway 6s ease-in-out infinite; animation-delay: var(--d), calc(var(--d) + .8s); cursor: default; }
+  .fan .card .ix { font-size: 24px; top: 8px; left: 9px; } .fan .card .ix i { font-size: 22px; }
+  .fan .card .pip { font-size: 56px; padding-top: 22px; padding-left: 12px; }
+  @keyframes fanin { from { transform: rotate(0) translateY(40px); opacity: 0; } }
+  @keyframes sway { 0%,100% { transform: rotate(var(--r)); } 50% { transform: rotate(calc(var(--r) + 3deg)); } }
+  .joincard { padding: 28px 26px; display: grid; gap: 14px; }
+  .joincard h3 { margin: 0; font-size: 22px; }
+  .joincard label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: .7; margin-bottom: -6px; }
+  .joincard button.big { width: 100%; }
+  .joincard .err:empty { display: none; }
+  .or { display: flex; align-items: center; gap: 12px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: .6; }
+  .or::before, .or::after { content:''; flex: 1; height: 1px; background: var(--line); }
+  input.codein { text-align: center; text-transform: uppercase; letter-spacing: .4em; padding-left: calc(.4em + 13px); font-size: 22px; font-weight: 700; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-top: 44px; }
+  .step { padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); }
+  .step b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; margin-bottom: 10px; }
+  .step div { font-size: 14px; line-height: 1.45; opacity: .85; }
+  .step strong { display: block; font-size: 15px; margin-bottom: 2px; opacity: 1; }
+  @media (max-width: 800px) { .landing { grid-template-columns: minmax(0,1fr); gap: 22px; } .fan { margin: 0 auto; height: 160px; } .fan .card { width: 76px; height: 108px; margin-left: -38px; } .fan .card .pip { font-size: 44px; padding-top: 18px; } .hero { text-align: center; } .hero p { margin-left: auto; margin-right: auto; } .chips { justify-content: center; } .steps { margin-top: 26px; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
   @media (max-width: 600px) {
     main { padding: 14px 12px 32px; }
     .waitroom { padding: 22px 14px 20px; gap: 14px; }
@@ -146,6 +221,7 @@
 </style>
 </head>
 <body>
+<div class="bg" id="bg"></div>
 <main>
   <h1>Seven Card Table</h1>
   <div id="app"></div>
@@ -161,6 +237,27 @@ let selected = null;    // selected card id in my hand
 let err = '';
 let timer = null;
 let lastKey = '';
+let fx = {};                 // 'playerId:slot' -> 'pop' | 'flip' (one render only)
+let newSeats = new Set();    // players who just joined (one render only)
+let screenAnim = false;      // entrance animation for a newly shown screen
+let dealAnim = false;        // cards fly in after a deal
+let formName = localStorage.getItem('sct-name') || '', formCode = new URLSearchParams(location.search).get('room') || '';
+const BANNER_SECONDS = 20;
+let confettiAt = 0;
+
+// ambient floating suits
+(() => {
+  const bg = document.getElementById('bg');
+  for (let i = 0; i < 16; i++) {
+    const sp = document.createElement('span');
+    sp.textContent = '♠♥♦♣'[i % 4];
+    sp.style.left = (i * 6.4 + Math.random() * 4) + '%';
+    sp.style.fontSize = (28 + Math.random() * 56) + 'px';
+    sp.style.animationDuration = (26 + Math.random() * 30) + 's';
+    sp.style.animationDelay = (-Math.random() * 50) + 's';
+    bg.append(sp);
+  }
+})();
 
 function load() { try { return JSON.parse(localStorage.getItem('sct') || 'null'); } catch { return null; } }
 function save() { try { session ? localStorage.setItem('sct', JSON.stringify(session)) : localStorage.removeItem('sct'); } catch {} }
@@ -229,7 +326,8 @@ function enableDrag(node, src, cardId, onTap) {
         if (Math.hypot(e.clientX - sx, e.clientY - sy) < 6) return;
         dragging = true;
         ghost = node.cloneNode(true);
-        ghost.classList.add('ghost-card');
+        ghost.className = ghost.className.replace(/fx-\S+/g, '').trim() + ' ghost-card';
+        ghost.style.animation = 'none';
         document.body.append(ghost);
         node.classList.add('dragging-src');
       }
@@ -267,7 +365,7 @@ function drop(src, cardId, t) {
   return act('move', { from: src, to });
 }
 
-function boardEl(board, mine) {
+function boardEl(board, mine, pid) {
   const wrap = el('div', { class: 'board' });
   const me = st.players.find(p => p.id === st.meId);
   const dealt = st.phase === 'dealt';
@@ -279,12 +377,14 @@ function boardEl(board, mine) {
     for (let k = 0; k < n; k++, i++) {
       const slot = i, s = board[slot];
       let cls = 'slot', inner = '';
+      const f = fx[pid + ':' + slot];
+      const fxCls = f ? 'fx-' + f : '';
       if (s) {
-        if (!mine) inner = cardEl(s.c, { up: s.up });
+        if (!mine) inner = cardEl(s.c, { up: s.up, extra: fxCls });
         else {
           // You see your own cards until you press Ready; then only the ones you flipped face up.
           const flip = () => act('flip', { slot });
-          const look = { up: !me.ready || s.up, shared: !me.ready && s.up };
+          const look = { up: !me.ready || s.up, shared: !me.ready && s.up, extra: fxCls };
           inner = cardEl(s.c, canMove ? { ...look, src: slot, onclick: flip } : { ...look, onclick: dealt ? flip : null });
         }
       } else if (canMove && selected) cls += ' target';
@@ -315,8 +415,9 @@ function renderWaitingRoom() {
   const seats = el('div', { class: 'seats' });
   for (let i = 0; i < st.maxPlayers; i++) {
     const p = st.players[i];
+    const pop = p && newSeats.has(p.id) ? ' fx-pop' : '';
     seats.append(p
-      ? el('div', { class: 'seat' + (p.id === st.meId ? ' me' : '') },
+      ? el('div', { class: 'seat' + (p.id === st.meId ? ' me' : '') + pop },
           el('div', { class: 'avatar' }, p.name.slice(0, 1).toUpperCase()),
           el('div', { class: 'sname' }, p.name + (p.id === st.meId ? ' (you)' : '')),
           p.isHost ? el('span', { class: 'tag' }, 'host') : el('span', { class: 'tag joined' }, 'joined'))
@@ -329,7 +430,7 @@ function renderWaitingRoom() {
     ? el('button', { class: 'big', onclick: () => act('deal') }, `Shuffle & deal to ${st.players.length} player${st.players.length > 1 ? 's' : ''}`)
     : el('div', { class: 'waiting' }, el('span', { class: 'dot' }), 'Waiting for the host to deal…');
 
-  app.append(el('div', { class: 'panel waitroom' },
+  app.append(el('div', { class: 'panel waitroom' + (screenAnim ? ' fx-in' : '') },
     el('div', { class: 'kicker' }, 'Room code'),
     el('div', { class: 'bigcode' }, st.code),
     el('div', { class: 'row center' }, copyCode, copyLink),
@@ -339,56 +440,152 @@ function renderWaitingRoom() {
     el('div', { class: 'row center' }, el('button', { class: 'ghost', onclick: leave }, 'Leave room'))));
 }
 
+function bannerRemaining() {
+  if (!st || !st.allReady) return 0;
+  const elapsed = (st.now - st.allReady.at + (Date.now() - st.recvAt)) / 1000;
+  return BANNER_SECONDS - elapsed;
+}
+
+function burstConfetti() {
+  const box = el('div', { class: 'confetti' });
+  const colors = ['#e8d3a2', '#c9a96a', '#6fcf97', '#ff9b94', '#8ab4ff', '#fff'];
+  for (let i = 0; i < 70; i++) {
+    const c = el('i');
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = 2 + Math.random() * 2.2 + 's';
+    c.style.animationDelay = Math.random() * .6 + 's';
+    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+    box.append(c);
+  }
+  document.body.append(box);
+  setTimeout(() => box.remove(), 5500);
+}
+
+function lastBanner() {
+  const left = bannerRemaining();
+  if (left <= 0) return null;
+  if (confettiAt !== st.allReady.at) { confettiAt = st.allReady.at; if (left > BANNER_SECONDS - 6) burstConfetti(); }
+  return el('div', { class: 'lastbanner', id: 'lastbanner' },
+    el('div', { class: 'lb-k' }, 'Everyone is ready · last to be ready'),
+    el('div', { class: 'lb-name' }, st.allReady.name),
+    el('div', { class: 'lb-s' }, el('span', { id: 'lb-sec' }, Math.ceil(left)), 's'),
+    el('div', { class: 'lb-bar' }, el('i', { id: 'lb-fill', style: `width:${(left / BANNER_SECONDS) * 100}%` })));
+}
+
+// keeps the banner countdown moving and removes it when the 20 seconds are up
+setInterval(() => {
+  const b = document.getElementById('lastbanner');
+  if (!b) return;
+  const left = bannerRemaining();
+  if (left <= 0) return render();
+  document.getElementById('lb-sec').textContent = Math.ceil(left);
+  document.getElementById('lb-fill').style.width = (left / BANNER_SECONDS) * 100 + '%';
+}, 500);
+
 function render() {
   app.replaceChildren();
-  if (!session || !st) return renderLobby();
+  if (!session || !st) renderLobby();
+  else renderGame();
+  fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false;
+}
+
+function renderGame() {
   if (err) app.append(el('div', { class: 'err' }, err));
   if (st.phase === 'lobby') return renderWaitingRoom();
   const me = st.players.find(p => p.id === st.meId);
   const readyCount = st.players.filter(p => p.ready).length;
+  const panel = (i, extraCls = '') => ({ class: ('panel ' + extraCls + ' ' + (screenAnim ? 'fx-in' : '')).trim(), style: screenAnim ? `animation-delay:${i * 80}ms` : '' });
 
-  const head = el('div', { class: 'panel row' },
+  const banner = lastBanner();
+  if (banner) app.append(banner);
+
+  const head = el('div', panel(0, 'row'),
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, 'Room'), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'grow' }, `${st.players.length}/${st.maxPlayers} players · ${readyCount} ready · round ${st.round}`),
     el('button', { class: 'ghost', onclick: leave }, 'Leave'));
   if (st.isHost) head.insertBefore(el('button', { onclick: () => act('deal') }, 'Reset, shuffle & deal'), head.lastChild);
   app.append(head);
 
-  app.append(el('div', { class: 'panel' + (me.ready ? ' is-ready' : '') },
+  const placed = me.board.filter(Boolean).length;
+  const total = me.board.length;
+  const readyBtn = me.ready
+    ? el('button', { class: 'ghost', onclick: () => act('ready', { ready: false }) }, 'Unready (move cards)')
+    : el('button', { class: 'readybtn', disabled: placed < total, onclick: () => act('ready', { ready: true }) },
+        placed < total ? `Place all cards (${placed}/${total})` : "I'm ready");
+
+  app.append(el('div', panel(1, me.ready ? 'is-ready' : ''),
     el('div', { class: 'row' },
       el('div', { class: 'name grow' }, `${me.name} (you)`, me.isHost ? el('span', { class: 'tag' }, 'host') : '', me.ready ? el('span', { class: 'tag ok' }, 'ready') : ''),
-      el('button', { class: me.ready ? 'ghost' : 'readybtn', onclick: () => act('ready', { ready: !me.ready }) }, me.ready ? 'Unready (move cards)' : "I'm ready")),
-    boardEl(me.board, true),
+      readyBtn),
+    boardEl(me.board, true, me.id),
     el('div', { class: 'hint' }, me.ready
       ? 'You are ready: all your cards are hidden and locked. Click a card to flip it face up for everyone, or press Unready to move cards again.'
-      : 'You can see your own cards. Drag them between slots or back to your hand. Press “I’m ready” to hide and lock them. A gold dot marks a card you’ve flipped face up for others.')));
+      : 'Fill all 7 slots to get ready. You can see your own cards — drag them between slots or back to your hand. “I’m ready” hides and locks them. A gold dot marks a card you’ve flipped face up for others.')));
 
   const hand = el('div', { class: 'hand' });
-  st.hand.forEach(c => hand.append(me.ready
-    ? cardEl(c, { up: false })
-    : cardEl(c, { src: 'hand', extra: c === selected ? 'sel' : '', onclick: () => { selected = selected === c ? null : c; render(); } })));
-  const handPanel = el('div', { class: 'panel' },
-    el('div', { class: 'name' }, me.ready ? 'Your hand (hidden)' : 'Your hand — drag a card onto a slot (or tap it, then tap a slot)'), hand);
+  st.hand.forEach((c, i) => {
+    const d = dealAnim ? ' fx-deal' : '';
+    const node = me.ready
+      ? cardEl(c, { up: false, extra: d.trim() })
+      : cardEl(c, { src: 'hand', extra: ((c === selected ? 'sel ' : '') + d).trim(), onclick: () => { selected = selected === c ? null : c; render(); } });
+    if (dealAnim) node.style.animationDelay = i * 90 + 150 + 'ms';
+    hand.append(node);
+  });
+  const handPanel = el('div', panel(2),
+    el('div', { class: 'name' }, me.ready ? 'Your hand (hidden)' : st.hand.length ? 'Your hand — drag a card onto a slot (or tap it, then tap a slot)' : 'Your hand — all cards are placed'), hand);
   if (!me.ready) handPanel.dataset.hand = '';
   app.append(handPanel);
 
   const others = el('div', { class: 'others' });
-  st.players.filter(p => p.id !== st.meId).forEach(p => others.append(el('div', { class: 'panel' },
+  st.players.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5),
     el('div', { class: 'name' }, p.name, p.isHost ? el('span', { class: 'tag' }, 'host') : '', p.ready ? el('span', { class: 'tag ok' }, 'ready') : '', ` · ${p.handCount} in hand`),
-    boardEl(p.board, false))));
+    boardEl(p.board, false, p.id))));
   if (others.children.length) app.append(others);
 }
 
 function renderLobby() {
-  const name = el('input', { placeholder: 'Your name', maxLength: 16, value: localStorage.getItem('sct-name') || '' });
-  const code = el('input', { placeholder: 'Room code', maxLength: 4, style: 'text-transform:uppercase', value: new URLSearchParams(location.search).get('room') || '' });
-  const remember = () => { try { localStorage.setItem('sct-name', name.value); } catch {} };
-  app.append(el('div', { class: 'panel lobby' },
-    name,
-    el('button', { onclick: () => { remember(); enter('create', { name: name.value }); } }, 'Create room (you are host)'),
-    el('div', { class: 'row' }, el('div', { class: 'grow' }, code),
-      el('button', { onclick: () => { remember(); enter('join', { name: name.value, code: code.value }); } }, 'Join')),
-    el('div', { class: 'err' }, err)));
+  const name = el('input', { placeholder: 'e.g. Alex', maxLength: 16, value: formName, oninput: (e) => { formName = e.target.value; } });
+  const code = el('input', { class: 'codein', placeholder: 'ABCD', maxLength: 4, value: formCode, oninput: (e) => { formCode = e.target.value; } });
+  const remember = () => { try { localStorage.setItem('sct-name', formName); } catch {} };
+  const go = (action) => { remember(); enter(action, { name: formName, code: formCode }); };
+
+  const fan = el('div', { class: 'fan' });
+  ['AS', 'KH', 'QD', 'JC', '10S'].forEach((id, i) => {
+    const c = cardEl(id, {});
+    c.style.setProperty('--r', (i - 2) * 14 + 'deg');
+    c.style.setProperty('--d', i * 90 + 'ms');
+    fan.append(c);
+  });
+
+  const hero = el('div', { class: 'hero' },
+    el('div', { class: 'kicker' }, 'Multiplayer card table'),
+    el('h2', {}, 'Deal. Arrange. ', el('em', {}, 'Reveal.')),
+    el('p', {}, 'Gather up to ten friends, get dealt seven cards each, and arrange them in secret on your own table before the big reveal.'),
+    el('div', { class: 'chips' },
+      el('span', { class: 'chip' }, '👥 Up to 10 players'),
+      el('span', { class: 'chip' }, '🖐 Drag & drop'),
+      el('span', { class: 'chip' }, '🙈 Hidden until you’re ready'),
+      el('span', { class: 'chip' }, '📱 Works on phones')),
+    fan);
+
+  const form = el('div', { class: 'panel joincard fx-in' },
+    el('h3', {}, 'Take a seat'),
+    el('label', {}, 'Your name'), name,
+    el('button', { class: 'big', onclick: () => go('create') }, 'Create a new room'),
+    el('div', { class: 'or' }, 'or join a friend'),
+    el('label', {}, 'Room code'),
+    el('div', { class: 'row' }, el('div', { class: 'grow' }, code), el('button', { class: 'ghost big', onclick: () => go('join') }, 'Join')),
+    el('div', { class: 'err' }, err));
+  form.querySelector('.row .big').style.cssText = 'width:auto;padding:12px 22px;font-size:14px';
+
+  const step = (n, t, d) => el('div', { class: 'step fx-in', style: `animation-delay:${n * 90}ms` }, el('b', {}, String(n)), el('div', {}, el('strong', {}, t), d));
+  app.append(el('div', { class: 'landing' }, hero, form),
+    el('div', { class: 'steps' },
+      step(1, 'Create or join', 'One person makes a room and shares the 4-letter code.'),
+      step(2, 'Get dealt 7 cards', 'The host shuffles and deals. Only you can see your hand.'),
+      step(3, 'Fill your rows', 'Arrange cards in rows of 1, 1, 2 and 3, then press “I’m ready”.'),
+      step(4, 'Reveal', 'Flip cards face up when you’re ready to show the table.')));
 }
 
 async function enter(action, body) {
@@ -406,9 +603,35 @@ async function enter(action, body) {
 // poll response can't roll the board back after a move.
 function adopt(j) {
   if (st && st.code === j.code && j.version < st.version) return false;
-  st = j; lastKey = JSON.stringify(j);
+  const prev = st && st.code === j.code ? st : null;
+  j.recvAt = Date.now();
+  if (prev) diffFx(prev, j);
+  const key = (x) => x.phase + ':' + x.round;
+  if (!prev || key(prev) !== key(j)) { screenAnim = true; dealAnim = j.phase === 'dealt'; }
+  st = j; lastKey = j.version;
   if (selected && !st.hand.includes(selected)) selected = null;
   return true;
+}
+
+// What a card looks like to me: its id, '#' for a face-down card, or null for an empty slot.
+function face(view, p, s) {
+  if (!s) return null;
+  const visible = p.id === view.meId ? (!p.ready || s.up) : s.up;
+  return visible ? s.c : '#';
+}
+
+function diffFx(prev, next) {
+  for (const p of next.players) {
+    const pp = prev.players.find((x) => x.id === p.id);
+    if (!pp) { newSeats.add(p.id); continue; }
+    for (let i = 0; i < p.board.length; i++) {
+      const a = face(prev, pp, pp.board[i]), b = face(next, p, p.board[i]);
+      if (a === b || !b && a) continue;
+      if (!a) fx[p.id + ':' + i] = 'pop';
+      else if (a === '#' || b === '#') fx[p.id + ':' + i] = 'flip';
+      else fx[p.id + ':' + i] = 'pop';
+    }
+  }
 }
 
 async function act(action, extra = {}) {
@@ -430,7 +653,7 @@ async function poll() {
     const j = await r.json();
     if (r.status === 404) { session = null; st = null; save(); clearInterval(timer); err = 'Room no longer available'; return render(); }
     if (!r.ok || dragging) return;
-    if (j.version < (st?.version ?? 0) || JSON.stringify(j) === lastKey) return;
+    if (j.version <= (st?.version ?? 0)) return;
     adopt(j);
     err = '';
     render();

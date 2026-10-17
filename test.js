@@ -32,6 +32,9 @@ const post = (b) => call('POST', b, {});
   assert.equal(v.hand.length, 5, 'occupant returned to hand'); assert.equal(v.players[0].board.filter(Boolean).length, 2);
   v = (await post({ action: 'flipRowUp', code: c.code, pid: me, row: 3 })).j;
   assert.equal(v.players[0].board[6].up, true, 'row 3 flipped up'); assert.equal(v.players[0].board[0].up, false, 'row 0 untouched');
+  assert.equal((await post({ action: 'ready', code: c.code, pid: me, ready: true })).s, 409, 'cannot ready with empty slots');
+  for (const slot of [1, 2, 3, 4, 5]) v = (await post({ action: 'place', code: c.code, pid: me, card: v.hand[0], slot })).j;
+  assert.equal(v.hand.length, 0); assert.ok(v.players[0].board.every(Boolean));
   v = (await post({ action: 'ready', code: c.code, pid: me, ready: true })).j;
   assert.ok(v.players[0].ready && v.players[0].board.every(x => !x || !x.up), 'ready hides all faces');
   assert.equal((await post({ action: 'move', code: c.code, pid: me, from: 0, to: 1 })).s, 409, 'frozen while ready');
@@ -40,11 +43,25 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'flip', code: c.code, pid: me, slot: 0 })).s, 200, 'flip allowed while ready');
   v = (await post({ action: 'ready', code: c.code, pid: me, ready: false })).j;
   assert.equal(v.players[0].ready, false);
-  assert.equal((await post({ action: 'move', code: c.code, pid: me, from: 5, to: 1 })).s, 400, 'empty source');
   v = (await post({ action: 'unplace', code: c.code, pid: me, slot: 0 })).j;
-  assert.equal(v.hand.length, 6);
+  assert.equal(v.hand.length, 1);
+  assert.equal((await post({ action: 'move', code: c.code, pid: me, from: 0, to: 1 })).s, 400, 'empty source');
   v = (await post({ action: 'deal', code: c.code, pid: ps[0].pid })).j;
   assert.equal(v.hand.length, 7); assert.ok(v.players.every(p => !p.ready && p.board.every(x => !x)), 'reset');
+  // everyone ready -> last player to ready is recorded; unready clears it
+  const room = (await post({ action: 'create', name: 'A' })).j;
+  const rp = [room.meId];
+  for (const n of ['B', 'C']) rp.push((await post({ action: 'join', code: room.code, name: n })).j.meId);
+  await post({ action: 'deal', code: room.code, pid: rp[0] });
+  for (const id of rp) {
+    let s = (await call('GET', null, { code: room.code, pid: id })).j;
+    for (let slot = 0; slot < 7; slot++) s = (await post({ action: 'place', code: room.code, pid: id, card: s.hand[0], slot })).j;
+  }
+  await post({ action: 'ready', code: room.code, pid: rp[0], ready: true });
+  assert.equal((await post({ action: 'ready', code: room.code, pid: rp[2], ready: true })).j.allReady, null, 'not all ready yet');
+  const done = (await post({ action: 'ready', code: room.code, pid: rp[1], ready: true })).j;
+  assert.equal(done.allReady.name, 'B', 'last to ready is shown'); assert.ok(done.now >= done.allReady.at);
+  assert.equal((await post({ action: 'ready', code: room.code, pid: rp[1], ready: false })).j.allReady, null, 'cleared on unready');
   // 10 players: allowed, 11th rejected, 70 cards dealt from two decks
   const big = (await post({ action: 'create', name: 'H' })).j;
   for (let i = 1; i < 10; i++) assert.equal((await post({ action: 'join', code: big.code, name: 'Q' + i })).s, 200);

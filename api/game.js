@@ -94,6 +94,8 @@ function view(room, pid) {
     phase: room.phase,
     round: room.round,
     maxPlayers: MAX_PLAYERS,
+    now: Date.now(),
+    allReady: room.allReady || null,
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -170,6 +172,7 @@ async function handle(action, b, query) {
         p.ready = false;
       }
       room.phase = 'dealt';
+      room.allReady = null;
       room.round += 1;
       break;
     }
@@ -228,7 +231,14 @@ async function handle(action, b, query) {
       // Ready hides every face (for you too) and freezes your cards until you unready.
       need(room.phase === 'dealt', 409, 'No cards dealt');
       me.ready = !!b.ready;
-      if (me.ready) for (const c of me.board) if (c) c.up = false;
+      if (me.ready) {
+        need(me.board.every(Boolean), 409, 'Place all 7 cards in the rows first');
+        for (const c of me.board) c.up = false;
+      }
+      // When the last player becomes ready, remember who it was so everyone can see.
+      room.allReady = me.ready && room.players.length > 1 && room.players.every((p) => p.ready)
+        ? { id: me.id, name: me.name, at: Date.now() }
+        : null;
       break;
 
     case 'leave': {
@@ -239,6 +249,7 @@ async function handle(action, b, query) {
         return { left: true };
       }
       if (room.hostId === pid) room.hostId = room.players[0].id;
+      room.allReady = null;
       await saveRoom(room);
       return { left: true };
     }
