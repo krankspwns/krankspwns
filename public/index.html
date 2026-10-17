@@ -220,6 +220,14 @@
   .roundfx .rf-n { font-size: clamp(110px, 34vw, 260px); line-height: 1; font-weight: 800; color: var(--gold-hi); text-shadow: 0 0 50px rgba(201,169,106,.65), 0 6px 30px rgba(0,0,0,.6); }
   /* ~0.5s in, hold until 5s, fade away over the last 2s */
   @keyframes roundfx { 0% { opacity: 0; transform: scale(.6); } 7% { opacity: 1; transform: scale(1.08); } 10% { transform: scale(1); } 71.4% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
+
+  .switch { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; margin-bottom: 10px; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch .track { position: relative; width: 38px; height: 22px; border-radius: 99px; background: rgba(255,255,255,.14); border: 1px solid var(--line); transition: background .2s; flex: none; }
+  .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .switch input:checked + .track { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--gold); }
+  .switch input:checked + .track::after { transform: translateX(16px); background: #1a1407; }
+  .switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(201,169,106,.35); }
   @media (max-width: 600px) {
     main { padding: 14px 12px 32px; }
     .waitroom { padding: 22px 14px 20px; gap: 14px; }
@@ -268,6 +276,8 @@ let dealAnim = false;        // cards fly in after a deal
 let formName = localStorage.getItem('sct-name') || '', formCode = new URLSearchParams(location.search).get('room') || '';
 const BANNER_SECONDS = 20;
 let confettiAt = 0;
+let expert = false;          // "Expert mode": tap a hand card to auto-place it, tap a placed card to return it
+try { expert = localStorage.getItem('sct-expert') === '1'; } catch {}
 
 // ambient floating suits
 (() => {
@@ -409,7 +419,7 @@ function boardEl(board, mine, pid) {
           // You see your own cards until you press Ready; then only the ones you flipped face up.
           const flip = () => act('flip', { slot });
           const look = { up: !me.ready || s.up, shared: !me.ready && s.up, extra: fxCls };
-          inner = cardEl(s.c, canMove ? { ...look, src: slot, onclick: flip } : { ...look, onclick: dealt ? flip : null });
+          inner = cardEl(s.c, canMove ? { ...look, src: slot, onclick: expert ? () => act('unplace', { slot }) : flip } : { ...look, onclick: dealt ? flip : null });
         }
       } else if (canMove && selected) cls += ' target';
       const node = el('div', { class: cls }, inner);
@@ -562,12 +572,25 @@ function renderGame() {
     const d = dealAnim ? ' fx-deal' : '';
     const node = me.ready
       ? cardEl(c, { up: false, extra: d.trim() })
-      : cardEl(c, { src: 'hand', extra: ((c === selected ? 'sel ' : '') + d).trim(), onclick: () => { selected = selected === c ? null : c; render(); } });
+      : cardEl(c, { src: 'hand', extra: ((c === selected ? 'sel ' : '') + d).trim(), onclick: expert
+          ? () => { const slot = me.board.findIndex((x) => !x); if (slot >= 0) act('place', { card: c, slot }); }
+          : () => { selected = selected === c ? null : c; render(); } });
     if (dealAnim) node.style.animationDelay = i * 90 + 150 + 'ms';
     hand.append(node);
   });
+  const toggle = el('label', { class: 'switch', title: 'Tap a hand card to drop it into the next free slot (top row first); tap a placed card to send it back.' },
+    el('input', { type: 'checkbox', checked: expert, onchange: (e) => {
+      expert = e.target.checked; selected = null;
+      try { localStorage.setItem('sct-expert', expert ? '1' : '0'); } catch {}
+      render();
+    } }),
+    el('span', { class: 'track' }), 'Expert mode');
+  const handTitle = me.ready ? 'Your hand (hidden)'
+    : !st.hand.length ? 'Your hand — all cards are placed'
+    : expert ? 'Your hand — tap a card to place it in the next free slot'
+    : 'Your hand — drag a card onto a slot (or tap it, then tap a slot)';
   const handPanel = el('div', panel(2),
-    el('div', { class: 'name' }, me.ready ? 'Your hand (hidden)' : st.hand.length ? 'Your hand — drag a card onto a slot (or tap it, then tap a slot)' : 'Your hand — all cards are placed'), hand);
+    el('div', { class: 'row' }, el('div', { class: 'name grow' }, handTitle), toggle), hand);
   if (!me.ready) handPanel.dataset.hand = '';
   app.append(handPanel);
 
