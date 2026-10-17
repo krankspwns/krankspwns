@@ -113,6 +113,39 @@ const post = (b) => call('POST', b, {});
   const late2 = (await post({ action: 'join', code: arr.code, name: 'Z' })).j;
   assert.equal(late2.players.find(pl => pl.id === late2.meId).spectator, false, 'joining before everyone is ready: a normal player');
   assert.equal(late2.hand.length, 7);
+  // kicking and presence
+  const kr = (await post({ action: 'create', name: 'KHost' })).j;
+  const kp = [];
+  for (const n of ['K1', 'K2', 'K3']) kp.push((await post({ action: 'join', code: kr.code, name: n })).j.meId);
+  const hostView = (await call('GET', null, { code: kr.code, pid: kr.meId })).j;
+  assert.ok(hostView.players.every(pl => pl.online === true), 'everyone just checked in: online (host view)');
+  const guestView = (await call('GET', null, { code: kr.code, pid: kp[0] })).j;
+  assert.ok(guestView.players.every(pl => pl.online === undefined), 'non-hosts do not get presence info');
+  globalThis.__seen.get(kr.code)[kp[1]] = Date.now() - 60000;   // K2 stopped checking in a minute ago
+  const hv2 = (await call('GET', null, { code: kr.code, pid: kr.meId })).j;
+  assert.equal(hv2.players.find(pl => pl.id === kp[1]).online, false, 'a player who stopped checking in shows as offline');
+  assert.ok(hv2.players.find(pl => pl.id === kp[1]).seenAgo >= 59);
+  assert.equal((await post({ action: 'kick', code: kr.code, pid: kp[0], target: kp[2] })).s, 403, 'only the host can kick');
+  assert.equal((await post({ action: 'kick', code: kr.code, pid: kr.meId, target: kr.meId })).s, 400, 'host cannot kick themselves');
+  assert.equal((await post({ action: 'kick', code: kr.code, pid: kr.meId, target: 'nobody' })).s, 404, 'unknown player');
+  const afterKick = (await post({ action: 'kick', code: kr.code, pid: kr.meId, target: kp[1] })).j;
+  assert.equal(afterKick.players.length, 3); assert.ok(!afterKick.players.some(pl => pl.id === kp[1]), 'kicked player is gone');
+  const gone = await call('GET', null, { code: kr.code, pid: kp[1] });
+  assert.equal(gone.s, 404, 'the kicked player is no longer in the room'); assert.match(gone.j.error, /not in this room/);
+  assert.equal((await post({ action: 'join', code: kr.code, name: 'K2' })).s, 200, 'their name is free again, so they can rejoin');
+  // kicking mid-game: if the kicked player was the only one not ready, the game moves on
+  await post({ action: 'deal', code: kr.code, pid: kr.meId });
+  const live = (await call('GET', null, { code: kr.code, pid: kr.meId })).j;
+  for (const pl of live.players) {
+    if (pl.id === kp[0]) continue;   // K1 never gets ready
+    let sv = (await call('GET', null, { code: kr.code, pid: pl.id })).j;
+    while (sv.hand.length) { const me2 = sv.players.find(q => q.id === pl.id); sv = (await post({ action: 'place', code: kr.code, pid: pl.id, card: sv.hand[0], slot: me2.board.findIndex(q => !q) })).j; }
+    await post({ action: 'ready', code: kr.code, pid: pl.id, ready: true });
+  }
+  const stuck = (await call('GET', null, { code: kr.code, pid: kr.meId })).j;
+  assert.equal(stuck.players.filter(pl => !pl.spectator).every(pl => pl.ready), false, 'K1 still not ready: game waits');
+  const kicked2 = (await post({ action: 'kick', code: kr.code, pid: kr.meId, target: kp[0] })).j;
+  assert.ok(kicked2.players.filter(pl => !pl.spectator).every(pl => pl.ready), 'after kicking the only player who was not ready, everyone left is ready');
   // 10 players: allowed, 11th rejected, 70 cards dealt from two decks
   const big = (await post({ action: 'create', name: 'H' })).j;
   for (let i = 1; i < 10; i++) assert.equal((await post({ action: 'join', code: big.code, name: 'Q' + i })).s, 200);

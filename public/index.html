@@ -494,6 +494,24 @@
     .gtapdemo { gap: 8px; }
   }
 
+
+  /* player list + invite */
+  .plist { display: grid; gap: 8px; }
+  .prow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+  .prow.offline { background: rgba(255,90,80,.09); border-color: rgba(255,120,110,.5); }
+  .prow .avatar { width: 40px; height: 40px; font-size: 17px; }
+  .pname { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pname .tag { margin-left: 0; }
+  .ptags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; } .ptags .pill, .ptags .tag { margin: 0; }
+  .pdot { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; } .pdot.on { background: rgba(111,207,151,.18); color: #8fe0ae; } .pdot.off { background: rgba(255,90,80,.25); color: #ffd2cd; }
+  .kickbtn { padding: 8px 14px; font-size: 12px; background: rgba(255,90,80,.16); color: #ffd2cd; border: 1px solid rgba(255,120,110,.6); box-shadow: none; white-space: nowrap; }
+  .kickbtn:hover { background: rgba(255,90,80,.3); filter: none; transform: none; }
+  .kickbtn.armed { background: linear-gradient(180deg, #ff7a6e, #e0483b); color: #fff; border-color: #ff5a4d; animation: readypulse 1s infinite; }
+  .plhint { margin: 12px 0 6px; font-size: 13px; opacity: .65; text-align: center; }
+  .tag.offl { background: rgba(255,90,80,.25); color: #ffd2cd; border-color: rgba(255,120,110,.6); }
+  .invitebanner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, rgba(201,169,106,.22), rgba(201,169,106,.08)); border: 1px solid var(--gold); }
+  .invitebanner .inv-i { font-size: 28px; } .invitebanner b { display: block; font-size: 17px; } .invitebanner small { opacity: .75; font-size: 12px; }
+  @media (max-width: 800px) { .landing.invited .joincard { order: -1; } .landing.invited .fan, .landing.invited .chips { display: none; } .landing.invited .hero h2 { margin-top: 0; } }
+  .joincard.invited .row { gap: 8px; flex-wrap: wrap; } .joincard.invited .row button { flex: 1; padding: 11px 12px; font-size: 12px; }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -666,6 +684,10 @@ const I18N = {
     gh_none: 'No pattern', gh_pair: 'Pair', gh_straight: 'Straight', gh_flush: 'Three of one suit', gh_triple: 'Three of a kind', gh_sflush: 'Straight flush', gh_royal: 'Royal flush',
     g8t: 'Good to know', g8a: 'If every player would lose a row (everyone has the same), it’s a tie — no penalty for anyone.', g8b: 'Penalties start fresh on every row; they don’t add up across rows.',
     g8c: 'After row 4 a final board shows all rows, coloured by who lost what.', g8d: 'Joined while a game is in progress? You watch until the next round, then you’re dealt in.', g8e: 'Pop-ups, torn cards and the “You lose!” screen are just for fun — the rules above decide who loses.',
+    playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
+    kickHint: 'Players who lost their connection show as offline. Kicked players can rejoin with the room code.', hostOnlyHint: 'Only the host can remove players.',
+    e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
+    invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
@@ -732,6 +754,10 @@ const I18N = {
     gh_none: '散牌', gh_pair: '对子', gh_straight: '顺子', gh_flush: '同花', gh_triple: '三条', gh_sflush: '同花顺', gh_royal: '皇家同花顺',
     g8t: '小提示', g8a: '如果这一行所有人都会输（所有人都一样），就是平局——没有人受惩罚。', g8b: '每一行的惩罚单独计算，不会跨行累加。',
     g8c: '第 4 行结束后会显示最终结果，用颜色标出每个人输了哪几行。', g8d: '在游戏进行中加入的玩家先观战，下一轮会一起发牌。', g8e: '弹出提示、撕牌和“你输了！”画面只是为了好玩——谁输由上面的规则决定。',
+    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
+    kickHint: '断线的玩家会显示为离线。被移出的玩家可以用房间代码重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
+    e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
+    invitedTo: (v) => `你被邀请加入房间 ${v.code}`, leftOld: '你已离开之前的房间。', joinRoomN: (v) => `加入房间 ${v.code}`, otherCode: '使用其他代码', createOwn: '或创建自己的房间',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
@@ -798,6 +824,10 @@ const I18N = {
     gh_none: '散牌', gh_pair: '對子', gh_straight: '順子', gh_flush: '同花', gh_triple: '三條', gh_sflush: '同花順', gh_royal: '皇家同花順',
     g8t: '小提示', g8a: '如果這一行所有人都會輸（所有人都一樣），就是平局——沒有人受懲罰。', g8b: '每一行的懲罰單獨計算，不會跨行累加。',
     g8c: '第 4 行結束後會顯示最終結果，用顏色標出每個人輸了哪幾行。', g8d: '在遊戲進行中加入的玩家先觀戰，下一輪會一起發牌。', g8e: '彈出提示、撕牌和「你輸了！」畫面只是為了好玩——誰輸由上面的規則決定。',
+    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
+    kickHint: '斷線的玩家會顯示為離線。被移出的玩家可以用房間代碼重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
+    e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
+    invitedTo: (v) => `你被邀請加入房間 ${v.code}`, leftOld: '你已離開之前的房間。', joinRoomN: (v) => `加入房間 ${v.code}`, otherCode: '使用其他代碼', createOwn: '或建立自己的房間',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
@@ -831,7 +861,7 @@ const ERR_MAP = [
   ['Enter a name', 'e_name'], ['Room is full', 'e_full'], ['Name already taken', 'e_taken'], ['Room not found', 'e_room'],
   ['You are not in this room', 'e_notin'], ['Only the host', 'e_host'], ['No cards dealt', 'e_nodeal'], ['Unready to move', 'e_unready'],
   ['Card not in', 'e_card'], ['Bad ', 'e_slot'], ['Nothing there', 'e_nothing'], ['Place all 7', 'e_fill'], ['Wait until everyone', 'e_wait'],
-  ['Wait for the next round', 'e_spec'], ['Game in progress', 'e_game'], ['Busy', 'e_busy'], ['Server error', 'e_server'],
+  ['You were removed', 'e_removed'], ['Player not found', 'e_nop'], ['You can’t remove yourself', 'e_self'], ['Wait for the next round', 'e_spec'], ['Game in progress', 'e_game'], ['Busy', 'e_busy'], ['Server error', 'e_server'],
 ];
 function tErr(msg) {
   if (!msg) return '';
@@ -850,7 +880,7 @@ function applyStatic() {
   document.title = t('title');
   document.getElementById('h1').textContent = t('title');
   document.getElementById('guideBtn').innerHTML = '<b>?</b>' + t('guideBtn');
-  if (document.querySelector('.guide-ov')) renderGuide();
+  if (document.querySelector('.guide-ov.g-guide')) renderGuide();
   document.querySelectorAll('.langsw button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
   document.querySelector('.langsw').setAttribute('aria-label', t('langLabel'));
 }
@@ -858,6 +888,20 @@ const ROWS = [1, 1, 2, 3];
 const POLL_MS = 1500;
 const app = document.getElementById('app');
 let session = load();   // {code, pid}
+// Opened via an invite link (?room=CODE): if we were in a different room, leave it and offer to join the new one instead.
+const invitedCode = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+let inviteCode = '', leftOld = false;
+if (invitedCode) {
+  if (!(session && session.code === invitedCode)) {
+    inviteCode = invitedCode;
+    if (session) {
+      const old = session; session = null; leftOld = true;
+      try { fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', code: old.code, pid: old.pid }), keepalive: true }); } catch {}
+      try { localStorage.removeItem('sct'); } catch {}
+    }
+  }
+  try { history.replaceState(null, '', location.pathname); } catch {}   // so a reload doesn't repeat this
+}
 let st = null;          // latest server view
 let err = '';
 let timer = null;
@@ -866,7 +910,7 @@ let fx = {};                 // 'playerId:slot' -> 'pop' | 'flip' (one render on
 let newSeats = new Set();    // players who just joined (one render only)
 let screenAnim = false;      // entrance animation for a newly shown screen
 let dealAnim = false;        // cards fly in after a deal
-let formName = localStorage.getItem('sct-name') || '', formCode = new URLSearchParams(location.search).get('room') || '';
+let formName = localStorage.getItem('sct-name') || '', formCode = inviteCode;
 const BANNER_SECONDS = 8;
 let confettiAt = 0;
 
@@ -1072,7 +1116,7 @@ function renderWaitingRoom() {
       ? el('div', { class: 'seat' + (p.id === st.meId ? ' me' : '') + pop },
           el('div', { class: 'avatar' }, p.name.slice(0, 1).toUpperCase()),
           el('div', { class: 'sname' }, p.name + (p.id === st.meId ? t('you') : '')),
-          p.isHost ? el('span', { class: 'tag' }, t('host')) : el('span', { class: 'tag joined' }, t('joined')))
+          p.isHost ? el('span', { class: 'tag' }, t('host')) : p.online === false ? el('span', { class: 'tag offl' }, t('offlineTag')) : el('span', { class: 'tag joined' }, t('joined')))
       : el('div', { class: 'seat empty' },
           el('div', { class: 'avatar' }, '+'),
           el('div', { class: 'sname' }, t('waitingPlayer'))));
@@ -1085,7 +1129,7 @@ function renderWaitingRoom() {
   app.append(el('div', { class: 'panel waitroom' + (screenAnim ? ' fx-in' : '') },
     el('div', { class: 'kicker' }, t('roomCode')),
     el('div', { class: 'bigcode' }, st.code),
-    el('div', { class: 'row center' }, copyCode, copyLink),
+    el('div', { class: 'row center' }, copyCode, copyLink, el('button', { class: 'ghost', onclick: openPlayers }, '👥 ' + t('playersBtn'))),
     el('div', { class: 'count' }, t('joinedCount', { n: st.players.length, max: st.maxPlayers })),
     seats,
     action,
@@ -1177,6 +1221,7 @@ function render() {
   if (!session || !st) renderLobby();
   else renderGame();
   fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false; tearRows.clear(); stageEnter = false;
+  renderPlayers();   // keep an open player list in step with the room
   // measuring the half-built page can clamp the scroll position; put it back
   if (Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY);
   if (stageScroll) {   // moving on to the next row: bring it into view, but never while the player is scrolling
@@ -1337,7 +1382,7 @@ function renderGame() {
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, t('room')), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'hstats' }, t('playersN', { n: st.players.length, max: st.maxPlayers }), el('span', { class: 'sep' }, '·'),
       el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: active.length })), el('span', { class: 'sep' }, '·'), t('roundN', { n: st.round })),
-    el('div', { class: 'hactions' }, invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
+    el('div', { class: 'hactions' }, el('button', { class: 'ghost', onclick: openPlayers }, '👥 ' + t('playersBtn')), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
     el('button', { class: 'ghost leavebtn', onclick: leave }, t('leave')));
   app.append(head);
   const banner = lastBanner();
@@ -1451,7 +1496,18 @@ function renderLobby() {
       el('span', { class: 'chip' }, t('chip4'))),
     fan);
 
-  const form = el('div', { class: 'panel joincard fx-in' },
+  const invited = !!inviteCode;
+  const form = invited
+    ? el('div', { class: 'panel joincard fx-in invited' },
+        el('div', { class: 'invitebanner' }, el('span', { class: 'inv-i' }, '🎟'), el('div', {}, el('b', {}, t('invitedTo', { code: inviteCode })), leftOld ? el('small', {}, t('leftOld')) : '')),
+        el('label', {}, t('yourName')), name,
+        el('button', { class: 'big', onclick: () => { remember(); enter('join', { name: formName, code: inviteCode }); } }, t('joinRoomN', { code: inviteCode })),
+        el('div', { class: 'or' }, t('createOwn')),
+        el('div', { class: 'row' },
+          el('button', { class: 'ghost', onclick: () => go('create') }, t('create')),
+          el('button', { class: 'ghost', onclick: () => { formCode = inviteCode; inviteCode = ''; leftOld = false; render(); } }, t('otherCode'))),
+        el('div', { class: 'err' }, tErr(err)))
+    : el('div', { class: 'panel joincard fx-in' },
     el('h3', {}, t('takeSeat')),
     el('label', {}, t('yourName')), name,
     el('button', { class: 'big', onclick: () => go('create') }, t('create')),
@@ -1459,10 +1515,10 @@ function renderLobby() {
     el('label', {}, t('roomCode')),
     el('div', { class: 'row' }, el('div', { class: 'grow' }, code), el('button', { class: 'ghost big', onclick: () => go('join') }, t('join'))),
     el('div', { class: 'err' }, tErr(err)));
-  form.querySelector('.row .big').style.cssText = 'width:auto;padding:12px 22px;font-size:14px';
+  const jb = form.querySelector('.row .big'); if (jb) jb.style.cssText = 'width:auto;padding:12px 22px;font-size:14px';
 
   const step = (n, t, d) => el('div', { class: 'step fx-in', style: `animation-delay:${n * 90}ms` }, el('b', {}, String(n)), el('div', {}, el('strong', {}, t), d));
-  app.append(el('div', { class: 'landing' }, hero, form),
+  app.append(el('div', { class: 'landing' + (invited ? ' invited' : '') }, hero, form),
     el('div', { class: 'steps' },
       step(1, t('s1t'), t('s1d')),
       step(2, t('s2t'), t('s2d')),
@@ -1475,6 +1531,7 @@ async function enter(action, body) {
   try {
     session = null;
     adopt(await api(action, body));
+    inviteCode = ''; leftOld = false;
     session = { code: st.code, pid: st.meId };
     save(); startPolling();
   } catch (e) { err = e.message; }
@@ -1697,7 +1754,7 @@ function guideBody(i) {
 }
 
 function renderGuide() {
-  let ov = document.querySelector('.guide-ov');
+  let ov = document.querySelector('.guide-ov.g-guide');
   if (!ov) return;
   const prev = ov.querySelector('.gscroll');
   const keepTop = prev ? prev.scrollTop : 0;
@@ -1717,15 +1774,60 @@ function renderGuide() {
 
 function openGuide(i = 0) {
   guideIdx = i;
-  if (!document.querySelector('.guide-ov')) {
-    const ov = el('div', { class: 'guide-ov', onclick: (e) => { if (e.target === ov) closeGuide(); } });
+  if (!document.querySelector('.guide-ov.g-guide')) {
+    const ov = el('div', { class: 'guide-ov g-guide', onclick: (e) => { if (e.target === ov) closeGuide(); } });
     document.body.append(ov);
     document.body.classList.add('noscroll');
   }
   renderGuide();
 }
-function closeGuide() { document.querySelector('.guide-ov')?.remove(); document.body.classList.remove('noscroll'); }
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGuide(); });
+function closeGuide() { document.querySelector('.guide-ov.g-guide')?.remove(); if (!document.querySelector('.guide-ov')) document.body.classList.remove('noscroll'); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closePlayers(); closeGuide(); } });
+
+
+
+// ---- player list: everyone can see it; the host can remove players ----
+let kickArm = null, kickTimer = null;   // two-step kick: first tap arms it, second confirms
+
+function openPlayers() {
+  if (document.querySelector('.pl-ov')) return;
+  const ov = el('div', { class: 'guide-ov pl-ov', onclick: (e) => { if (e.target === ov) closePlayers(); } });
+  document.body.append(ov);
+  document.body.classList.add('noscroll');
+  renderPlayers();
+}
+function closePlayers() { document.querySelector('.pl-ov')?.remove(); if (!document.querySelector('.guide-ov')) document.body.classList.remove('noscroll'); kickArm = null; clearTimeout(kickTimer); }
+
+function renderPlayers() {
+  const ov = document.querySelector('.pl-ov');
+  if (!ov || !st) return;
+  const rows = st.players.map((p) => {
+    const me = p.id === st.meId;
+    const status = p.spectator ? el('span', { class: 'pill wait' }, t('observing'))
+      : st.phase === 'lobby' ? el('span', { class: 'tag joined' }, t('joined'))
+      : p.ready ? el('span', { class: 'pill go' }, '✓ ' + t('plReady')) : pill(p);
+    const canKick = st.isHost && !me;
+    const armed = kickArm === p.id;
+    const presence = st.isHost && p.online !== undefined && !me
+      ? el('span', { class: 'pdot ' + (p.online ? 'on' : 'off') }, p.online ? t('online') : t('offlineAgo', { n: p.seenAgo ?? '?' })) : '';
+    return el('div', { class: 'prow' + (p.online === false ? ' offline' : '') },
+      el('div', { class: 'avatar' }, p.name.slice(0, 1).toUpperCase()),
+      el('div', { class: 'pinfo' },
+        el('div', { class: 'pname' }, p.name + (me ? t('you') : ''), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+        el('div', { class: 'ptags' }, status, presence)),
+      canKick ? el('button', { class: 'kickbtn' + (armed ? ' armed' : ''), onclick: () => {
+        if (armed) { kickArm = null; clearTimeout(kickTimer); act('kick', { target: p.id }); }
+        else { kickArm = p.id; clearTimeout(kickTimer); kickTimer = setTimeout(() => { kickArm = null; renderPlayers(); }, 4000); renderPlayers(); }
+      } }, armed ? t('kickSure') : t('kick')) : '');
+  });
+  const keep = ov.querySelector('.gscroll')?.scrollTop || 0;
+  ov.replaceChildren(el('div', { class: 'guide pl', role: 'dialog', 'aria-modal': 'true' },
+    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, '👥'), t('playersTitle', { n: st.players.length })),
+      el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: closePlayers }, '✕')),
+    el('div', { class: 'gscroll' }, el('div', { class: 'plist' }, ...rows), el('p', { class: 'plhint' }, st.isHost ? t('kickHint') : t('hostOnlyHint'))),
+    el('div', { class: 'gfoot' }, el('span'), el('button', { onclick: closePlayers }, t('gClose')))));
+  const sc = ov.querySelector('.gscroll'); if (sc) sc.scrollTop = keep;
+}
 
 
 function showRound(n) {
@@ -1829,16 +1931,24 @@ function act(action, extra = {}) {
       let j = best; best = null;
       if (failed) {   // something was rejected: pull the real state so the screen can't drift
         failed = false;
-        try { j = await (await fetch(`/api/game?code=${session.code}&pid=${session.pid}`)).json(); } catch {}
+        try {
+          const rr = await fetch(`/api/game?code=${session.code}&pid=${session.pid}`);
+          j = await rr.json();
+          if (rr.status === 404) return dropSession(/not in this room/i.test(j.error || '') ? 'You were removed from the room by the host' : 'Room no longer available');
+        } catch {}
       }
       if (j && !j.error) adopt(j);
       if (!dragging) render();
     });
 }
 
+function dropSession(message) {
+  session = null; st = null; save(); clearInterval(timer); closePlayers(); err = message; render();
+}
+
 async function leave() {
   try { await api('leave'); } catch {}
-  session = null; st = null; save(); clearInterval(timer); render();
+  session = null; st = null; save(); clearInterval(timer); closePlayers(); render();
 }
 
 async function poll() {
@@ -1846,9 +1956,11 @@ async function poll() {
   try {
     const r = await fetch(`/api/game?code=${session.code}&pid=${session.pid}`);
     const j = await r.json();
-    if (r.status === 404) { session = null; st = null; save(); clearInterval(timer); err = 'Room no longer available'; return render(); }
+    if (r.status === 404) return dropSession(/not in this room/i.test(j.error || '') ? 'You were removed from the room by the host' : 'Room no longer available');
     if (!r.ok || dragging || pending > 0) return;
-    if (j.version <= (st?.version ?? 0)) return;
+    // the host's online/offline dots change without the room itself changing, so look for those too
+    const presenceSig = (v) => v.players.map((q) => q.id + (q.online === false ? 'x' : '')).join();
+    if (j.version <= (st?.version ?? 0) && !(st?.isHost && (document.querySelector('.pl-ov') || presenceSig(j) !== presenceSig(st)))) return;
     adopt(j);
     err = '';
     safeRender();

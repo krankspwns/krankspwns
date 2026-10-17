@@ -177,7 +177,34 @@ function currentRowOf(room) {
 }
 const rowOfSlot = (slot) => { let acc = 0; for (let r = 0; r < ROW_SIZES.length; r++) { acc += ROW_SIZES[r]; if (slot < acc) return r; } return ROW_SIZES.length; };
 
-function view(room, pid) {
+// ---- presence: when each player's browser last checked in (kept apart from the room, so it never changes the room version) ----
+const seenMem = (globalThis.__seen = globalThis.__seen || new Map());          // code -> { pid: timestamp } (local testing only)
+const seenThrottle = (globalThis.__seenW = globalThis.__seenW || new Map());   // 'code:pid' -> last write; keeps Redis traffic low
+const PRESENCE_LUA = "redis.call('HSET', KEYS[1], ARGV[1], ARGV[2]) redis.call('EXPIRE', KEYS[1], ARGV[3]) return 1";
+async function touchPresence(code, pid) {
+  const k = code + ':' + pid, now = Date.now();
+  if (now - (seenThrottle.get(k) || 0) < 8000) return;
+  seenThrottle.set(k, now);
+  if (!REDIS_URL) { const m = seenMem.get(code) || {}; m[pid] = now; seenMem.set(code, m); return; }
+  try { await redis(['EVAL', PRESENCE_LUA, '1', `seen:${code}`, pid, String(now), String(TTL_SECONDS)]); } catch {}
+}
+async function readPresence(code) {
+  if (!REDIS_URL) return seenMem.get(code) || {};
+  try {
+    const flat = await redis(['HGETALL', `seen:${code}`]);
+    const o = {};
+    for (let i = 0; i + 1 < flat.length; i += 2) o[flat[i]] = Number(flat[i + 1]);
+    return o;
+  } catch { return {}; }
+}
+const OFFLINE_AFTER_MS = 15000;
+// only the host gets the presence info (it is what the kick button is for)
+async function viewFor(room, pid) {
+  const seen = room.hostId === pid ? await readPresence(room.code) : null;
+  return view(room, pid, seen);
+}
+
+function view(room, pid, seen) {
   const me = room.players.find((p) => p.id === pid);
   if (!me) throw new HttpError(404, 'You are not in this room');
   return {
@@ -201,6 +228,7 @@ function view(room, pid) {
         isHost: p.id === room.hostId,
         ready: p.ready,
         spectator: !!p.spectator,
+        ...(seen ? (() => { const ts = seen[p.id]; const ago = ts ? Date.now() - ts : null; return { online: p.id === room.hostId || (ago !== null && ago < OFFLINE_AFTER_MS), seenAgo: ago === null ? null : Math.round(ago / 1000) }; })() : {}),
         handCount: p.hand.length,
         // Board slots are null or {c, up}. Others only see cards flipped face up.
         board: p.board.map((s) => (s && (mine || s.up) ? s : s ? { c: '?', up: false } : null)),
@@ -229,7 +257,8 @@ async function handle(action, b, query) {
     const host = { id: crypto.randomUUID(), name, hand: [], board: Array(SLOTS).fill(null), ready: false };
     const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0 };
     await saveRoom(room);
-    return view(room, host.id);
+    await touchPresence(code, host.id);
+    return viewFor(room, host.id);
   }
 
   const code = String(b.code || query.code || '').toUpperCase();
@@ -255,19 +284,21 @@ async function handle(action, b, query) {
     }
     room.players.push(p);
     await saveRoom(room);
-    return view(room, p.id);
+    await touchPresence(code, p.id);
+    return viewFor(room, p.id);
   }
 
   const pid = String(b.pid || query.pid || '');
   const me = room.players.find((p) => p.id === pid);
   need(me, 404, 'You are not in this room');
+  await touchPresence(code, pid);
   const PLAYER_ACTIONS = ['place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
   need(!(me.spectator && PLAYER_ACTIONS.includes(action)), 409, 'Wait for the next round');
   const active = activeOf(room);
 
   switch (action) {
     case 'state':
-      return view(room, pid);
+      return viewFor(room, pid);
 
     case 'deal': {
       need(room.hostId === pid, 403, 'Only the host can do that');
@@ -374,6 +405,18 @@ async function handle(action, b, query) {
         : null;
       break;
 
+    case 'kick': {
+      // The host removes a player (for example someone who lost their connection and can't get back in).
+      need(room.hostId === pid, 403, 'Only the host can do that');
+      const target = room.players.find((q) => q.id === String(b.target));
+      need(target, 404, 'Player not found');
+      need(target.id !== pid, 400, 'You can’t remove yourself');
+      room.players = room.players.filter((q) => q.id !== target.id);
+      room.allReady = null;
+      seenMem.get(code) && delete seenMem.get(code)[target.id];
+      break;
+    }
+
     case 'leave': {
       room.players = room.players.filter((p) => p.id !== pid);
       if (!room.players.length) {
@@ -393,7 +436,7 @@ async function handle(action, b, query) {
   }
   storeResults(room);
   await saveRoom(room);
-  return view(room, pid);
+  return viewFor(room, pid);
 }
 
 module.exports = async (req, res) => {
