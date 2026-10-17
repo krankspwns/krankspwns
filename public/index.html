@@ -398,11 +398,8 @@
   .fdrop summary::-webkit-details-marker { display: none; } .fd-h { margin-left: auto; font-size: 12px; font-weight: 600; opacity: .7; } .fd-c { transition: transform .2s; opacity: .7; } .fdrop[open] .fd-c { transform: rotate(180deg); }
   .fdrop .sthead { margin: 10px 0; }
   /* the verdict pop-up also lists everyone's cards for the row (you first), so nothing is hidden behind it */
-  .resbox { --cw: 30px; } .resboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-top: 12px; max-width: min(92vw, 520px); }
-  .resboard .rb { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); }
-  .resboard .rb.me { border-color: var(--gold); background: rgba(201,169,106,.16); } .resboard .rb.lost { background: rgba(255,80,70,.22); border-color: rgba(255,120,110,.7); }
-  .resboard .rbn { font-size: 12px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; } .resboard .rbc { display: flex; gap: 3px; flex: none; }
-  .resboard.many { --cw: 22px; }
+  .resbox.hasboard { width: min(92vw, 580px); padding: 16px 18px 18px; } .resboard { gap: 8px; margin-top: 12px; } .resboard .tile { animation: none; padding: 8px 6px; } .resboard .tcard { margin: 0 3px; }
+  .resbox.hasboard .resnames { font-size: clamp(26px, 8vw, 44px); } .resbox.hasboard .respen.big { transform: scale(.82); margin: 2px auto 0; }
   /* final board */
   .final { --cw: 36px; }
   .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
@@ -1962,16 +1959,30 @@ function showResult(r, view) {
   const iLose = !r.tie && r.losers.includes(meId);
   const others = r.losers.filter((id) => id !== meId).map((id) => r.entries.find((e) => e.id === id).name);
   const penalty = r.tie ? el('div', { class: 'respen big none' }, t('noPenalty')) : el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty);
-  const board = el('div', { class: 'resboard' + (r.entries.length > 5 ? ' many' : '') },
-    ...[...r.entries].sort((a, b) => (b.id === meId) - (a.id === meId)).map((e) => el('div', { class: 'rb' + (e.id === meId ? ' me' : '') + (!r.tie && r.losers.includes(e.id) ? ' lost' : '') },
-      el('span', { class: 'rbn' }, e.name + (e.id === meId ? t('you') : '')), el('span', { class: 'rbc' }, ...e.cards.map((c) => cardEl(c, { up: true }))))));
+  // the same torn / safe tiles as the stage, inside the pop-up (you first), sized so they all fit on screen
+  const k = r.entries[0].cards.length, n = r.entries.length;
+  const availW = Math.min(window.innerWidth * 0.92, 580) - 36, availH = window.innerHeight * 0.94 - 190;
+  let best = null;
+  for (let c = 1; c <= Math.min(n, 6); c++) {
+    const rows = Math.ceil(n / c), tw = (availW - (c - 1) * 8) / c;
+    const cw = Math.floor(Math.min(70, (tw - 16 - (k - 1) * 14) / k, ((availH - (rows - 1) * 8) / rows - 62) / 1.45));
+    if (!best || cw > best.cw) best = { c, cw };
+  }
+  const board = el('div', { class: 'tiles resboard', style: `--cw:${Math.max(best.cw, 14)}px; grid-template-columns: repeat(${best.c}, minmax(0, 1fr))` },
+    ...[...r.entries].sort((a, b) => (b.id === meId) - (a.id === meId)).map((e) => {
+      const lose = !r.tie && r.losers.includes(e.id), safe = !r.tie && !lose, mine = e.id === meId;
+      return el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') },
+        el('div', { class: 'tname' }, el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
+        el('div', { class: 'tcards' }, ...e.cards.map((c) => lose ? tornCard(c, true) : cardEl(c, { up: true }))),
+        el('div', { class: 'tfoot' }, lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : ''));
+    }));
   const box = iLose
-    ? el('div', { class: 'resbox youlose' },
+    ? el('div', { class: 'resbox hasboard youlose' },
         el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
         el('div', { class: 'resnames youlose' }, t('youLose')),
         others.length ? el('div', { class: 'resk' }, t('alongWith', { names: others.join(' · ') })) : '',
         penalty, board)
-    : el('div', { class: 'resbox' },
+    : el('div', { class: 'resbox hasboard' },
         el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
         r.tie ? '' : el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
         el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
