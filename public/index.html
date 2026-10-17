@@ -565,7 +565,7 @@
     .gamehead .leavebtn { padding: 7px 14px; }
     .hstats { font-size: 14px; }
     .hactions button { padding: 11px 12px; font-size: 12px; }
-    .hactions button:last-child { flex: 1; }
+    .hactions button:last-child { flex: 1; } .hactions.even button { flex: 1; }
     .rowbtn { width: 56px; padding: 4px 0; font-size: 9.5px; }
     .others .who { margin-bottom: 6px; } .others .wname { font-size: 13px; }
     .others .wtags .pill { margin: 0; display: inline-flex; font-size: 10px; padding: 2px 8px; }
@@ -1689,7 +1689,7 @@ function renderGame() {
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, t('room')), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'hstats' }, t('playersN', { n: st.players.length, max: st.maxPlayers }), el('span', { class: 'sep' }, '·'),
       el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: active.length })), el('span', { class: 'sep' }, '·'), t('roundN', { n: st.round })),
-    el('div', { class: 'hactions' }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
+    el('div', { class: 'hactions' + (st.isHost ? '' : ' even') }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
     el('button', { class: 'ghost leavebtn', onclick: leave }, withIcon('logout', t('leave'))));
   app.append(head);
   const banner = lastBanner();
