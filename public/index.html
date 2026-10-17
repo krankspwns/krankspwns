@@ -2022,7 +2022,7 @@ function face(view, p, s) {
 
 // ---- row results (computed by the server once everyone's row is face up) ----
 function cardChip(id, as) {
-  if (as) return el('span', { class: 'mc jk' }, '★→' + as.slice(0, -1) + SUIT[as.slice(-1)]);
+  if (as && id === 'JK') return el('span', { class: 'mc jk' }, '★→' + as.slice(0, -1) + SUIT[as.slice(-1)]);
   if (id === 'JK') return el('span', { class: 'mc jk' }, '★');
   const suit = id.slice(-1);
   return el('span', { class: 'mc' + (suit === 'H' || suit === 'D' ? ' red' : '') }, id.slice(0, -1) + SUIT[suit]);
