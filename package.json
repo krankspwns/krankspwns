@@ -1,5 +1,5 @@
 {
-  "name": "seven-card-table",
+  "name": "row-of-reckoning",
   "version": "1.0.0",
   "private": true,
   "description": "Multiplayer (up to 5) card table: 7 cards each, arranged in rows of 1-1-2-3.",
