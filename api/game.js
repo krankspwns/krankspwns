@@ -15,7 +15,7 @@ function pickAvatar(want, taken = []) {
   const pool = free.length ? free : AVATARS;
   return pool[crypto.randomInt(pool.length)];
 }
-const MAX_PLAYERS = 10;
+const MAX_PLAYERS = 15;
 const HAND_SIZE = 7;
 const ROW_SIZES = [1, 1, 2, 3];
 const SLOTS = 7; // rows of 1, 1, 2, 3

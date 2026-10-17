@@ -146,12 +146,12 @@ const post = (b) => call('POST', b, {});
   assert.equal(stuck.players.filter(pl => !pl.spectator).every(pl => pl.ready), false, 'K1 still not ready: game waits');
   const kicked2 = (await post({ action: 'kick', code: kr.code, pid: kr.meId, target: kp[0] })).j;
   assert.ok(kicked2.players.filter(pl => !pl.spectator).every(pl => pl.ready), 'after kicking the only player who was not ready, everyone left is ready');
-  // 10 players: allowed, 11th rejected, 70 cards dealt from two decks
+  // 15 players: allowed, 16th rejected, 105 cards dealt from three decks
   const big = (await post({ action: 'create', name: 'H' })).j;
-  for (let i = 1; i < 10; i++) assert.equal((await post({ action: 'join', code: big.code, name: 'Q' + i })).s, 200);
-  assert.equal((await post({ action: 'join', code: big.code, name: 'Q10' })).s, 409, '11th player rejected');
+  for (let i = 1; i < 15; i++) assert.equal((await post({ action: 'join', code: big.code, name: 'Q' + i })).s, 200);
+  assert.equal((await post({ action: 'join', code: big.code, name: 'Q15' })).s, 409, '16th player rejected');
   const bv = (await post({ action: 'deal', code: big.code, pid: big.meId })).j;
-  assert.equal(bv.players.length, 10); assert.equal(bv.maxPlayers, 10); assert.equal(bv.hand.length, 7);
+  assert.equal(bv.players.length, 15); assert.equal(bv.maxPlayers, 15); assert.equal(bv.hand.length, 7);
   // late joiners: dealt 7 cards mid-round, even when the deck is nearly used up
   const late = (await post({ action: 'create', name: 'L0' })).j;
   for (let i = 1; i < 7; i++) await post({ action: 'join', code: late.code, name: 'L' + i });
