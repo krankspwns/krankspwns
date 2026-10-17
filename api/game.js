@@ -83,8 +83,10 @@ function makeCode() {
   return c;
 }
 
+const NAME_MAX = 12;   // characters (an emoji or a Chinese character counts as one)
 function cleanName(n) {
-  return String(n || '').trim().slice(0, 16);
+  const clean = String(n || '').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, '').replace(/\s+/g, ' ').trim();
+  return Array.from(clean).slice(0, NAME_MAX).join('').trim();
 }
 
 class HttpError extends Error {
@@ -516,3 +518,4 @@ module.exports = async (req, res) => {
 
 module.exports.evaluateRow = evaluateRow;
 module.exports.handOf = handOf;
+module.exports.cleanName = cleanName;

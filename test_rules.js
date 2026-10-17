@@ -96,3 +96,14 @@ console.log('rules ok');
   const rr = require('./api/game.js').handOf;
   console.log('jokers ok');
 }
+
+// ---- names ----
+{
+  const { cleanName } = require('./api/game.js');
+  console.assert(cleanName('  Alexander the Great of Macedon ') === 'Alexander th', 'long names are cut at 12 characters');
+  console.assert(cleanName('Bo\u0000b‮\n  x') === 'Bob x', 'control / direction characters are stripped, whitespace collapsed');
+  console.assert(Array.from(cleanName('😀😀😀😀😀😀😀😀😀😀😀😀😀😀')).length === 12, 'emoji count as one character and are never split');
+  console.assert(cleanName('   ​  ') === '', 'blank names are empty');
+  console.assert(cleanName('一二三四五六七八九十十一十二十三') === '一二三四五六七八九十十一', 'Chinese names are limited by characters too');
+  console.log('names ok');
+}

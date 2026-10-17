@@ -1296,7 +1296,8 @@ let fx = {};                 // 'playerId:slot' -> 'pop' | 'flip' (one render on
 let newSeats = new Set();    // players who just joined (one render only)
 let screenAnim = false;      // entrance animation for a newly shown screen
 let dealAnim = false;        // cards fly in after a deal
-let formName = localStorage.getItem('sct-name') || '', formCode = inviteCode;
+const NAME_MAX = 12;   // same limit as the server
+let formName = Array.from(localStorage.getItem('sct-name') || '').slice(0, NAME_MAX).join(''), formCode = inviteCode;
 const BANNER_SECONDS = 8;
 let confettiAt = 0;
 
@@ -1906,7 +1907,7 @@ function renderGame() {
 }
 
 function renderLobby() {
-  const nameIn = el('input', { placeholder: t('namePh'), maxLength: 16, value: formName, oninput: (e) => { formName = e.target.value; } });
+  const nameIn = el('input', { placeholder: t('namePh'), maxLength: NAME_MAX, value: formName, oninput: (e) => { formName = e.target.value; } });
   const avBtn = el('button', { type: 'button', class: 'avedit lg', title: t('changeAvatar'), onclick: () => openAvatarPicker(formAvatar, (k) => { formAvatar = k; try { localStorage.setItem('sct-av', k); } catch {} avBtn.replaceChildren(avatarEl(k, 46), el('i', {}, icon('swap', 11))); }) }, avatarEl(formAvatar, 46), el('i', {}, icon('swap', 11)));
   const name = el('div', { class: 'namerow' }, avBtn, nameIn);
   const code = el('input', { class: 'codein', placeholder: 'ABCD', maxLength: 4, value: formCode, oninput: (e) => { formCode = e.target.value; } });
