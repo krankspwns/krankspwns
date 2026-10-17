@@ -15,8 +15,8 @@
     --serif:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
     --display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   }
-  html { background: var(--bg3); overflow-x: hidden; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }   /* no double-tap zoom, no text inflation on rotate */
-  body { overflow-x: hidden; }
+  html { background: var(--bg3); overflow-x: clip; overflow-anchor: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }   /* no double-tap zoom, no text inflation on rotate */
+  body { overflow-x: clip; overflow-anchor: none; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: var(--serif); font-size:15px; color:#f4ead2; min-height:100vh;
     background:
@@ -84,7 +84,8 @@
   .card .ix { position:absolute; top:5px; left:6px; display:flex; flex-direction:column; align-items:center; font-weight:700; font-size:16px; line-height:1; }
   .card .ix i { font-style: normal; font-size: 15px; margin-top:2px; }
   .card .pip { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size: 34px; padding-top: 14px; padding-left: 8px; opacity:.9; }
-  .card.mine { touch-action: none; cursor: grab; }
+  .card.mine { cursor: grab; -webkit-touch-callout: none; }   /* no touch-action:none: swiping over cards still scrolls the page */
+  .card.lifted { transform: scale(1.07); box-shadow: 0 10px 22px rgba(0,0,0,.55), 0 0 0 2px var(--gold); }
 
   /* card back: midnight navy with a fine gold diamond lattice */
   .card.back, .card.down {
@@ -616,7 +617,7 @@ const SUIT = { S:'♠', H:'♥', D:'♦', C:'♣' };
 const I18N = {
   en: {
     title: 'Row of Reckoning', langLabel: 'Language',
-    kicker: 'Multiplayer card table', h2a: 'Deal. Arrange. ', h2b: 'Reveal.',
+    kicker: 'Every row has a loser', h2a: 'Deal. Arrange. ', h2b: 'Reveal.',
     heroP: 'Gather up to ten friends, get dealt seven cards each, and arrange them in secret on your own table before the big reveal.',
     chip1: '👥 Up to 10 players', chip2: '🖐 Drag & drop', chip3: '🙈 Hidden until you’re ready', chip4: '📱 Works on phones',
     takeSeat: 'Take a seat', yourName: 'Your name', namePh: 'e.g. Alex', create: 'Create a new room', orJoin: 'or join a friend', roomCode: 'Room code', join: 'Join',
@@ -682,7 +683,7 @@ const I18N = {
   },
   zh: {
     title: '审判之行', langLabel: '语言',
-    kicker: '多人纸牌桌', h2a: '发牌，排列，', h2b: '揭晓！',
+    kicker: '每一行，都有一个输家', h2a: '发牌，排列，', h2b: '揭晓！',
     heroP: '最多邀请十位朋友，每人发七张牌，在自己的牌桌上悄悄排好，再一起揭晓。',
     chip1: '👥 最多 10 位玩家', chip2: '🖐 拖放操作', chip3: '🙈 准备前保持隐藏', chip4: '📱 手机也能玩',
     takeSeat: '入座', yourName: '你的名字', namePh: '例如：小明', create: '创建新房间', orJoin: '或加入朋友的房间', roomCode: '房间代码', join: '加入',
@@ -748,7 +749,7 @@ const I18N = {
   },
   zht: {
     title: '審判之行', langLabel: '語言',
-    kicker: '多人紙牌桌', h2a: '發牌，排列，', h2b: '揭曉！',
+    kicker: '每一行，都有一個輸家', h2a: '發牌，排列，', h2b: '揭曉！',
     heroP: '最多邀請十位朋友，每人發七張牌，在自己的牌桌上悄悄排好，再一起揭曉。',
     chip1: '👥 最多 10 位玩家', chip2: '🖐 拖放操作', chip3: '🙈 準備前保持隱藏', chip4: '📱 手機也能玩',
     takeSeat: '入座', yourName: '你的名字', namePh: '例如：小明', create: '建立新房間', orJoin: '或加入朋友的房間', roomCode: '房間代碼', join: '加入',
@@ -927,11 +928,15 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared 
 
 // ---- pointer-based drag & drop (works with mouse and touch) ----
 let dragging = false;
+let touchDrag = false;   // true once a finger has picked a card up: only then do we stop the page from scrolling
+document.addEventListener('touchmove', (e) => { if (touchDrag && e.cancelable) e.preventDefault(); }, { passive: false });
+
 function enableDrag(node, src, cardId, onTap) {
   node.addEventListener('pointerdown', (ev) => {
     if (ev.button !== undefined && ev.button !== 0) return;
+    const touch = ev.pointerType === 'touch';
     const sx = ev.clientX, sy = ev.clientY;
-    let ghost = null, over = null;
+    let ghost = null, over = null, armed = !touch, holdT = null, scrolled = false;
     const target = (x, y) => {
       const t = document.elementFromPoint(x, y);
       const hit = t && (t.closest('[data-slot]') || t.closest('[data-hand]'));
@@ -945,10 +950,25 @@ function enableDrag(node, src, cardId, onTap) {
       });
       return best;
     };
+    const stop = () => {
+      clearTimeout(holdT); touchDrag = false; node.classList.remove('lifted');
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+    if (touch) holdT = setTimeout(() => {   // held still for a moment: the card is picked up
+      armed = true; touchDrag = true; node.classList.add('lifted');
+      try { navigator.vibrate && navigator.vibrate(10); } catch {}
+    }, 170);
     const move = (e) => {
+      if (!armed) {   // finger moved before the hold finished: it's a scroll, leave it to the browser
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) { scrolled = true; stop(); }
+        return;
+      }
       if (!ghost) {
         if (Math.hypot(e.clientX - sx, e.clientY - sy) < 6) return;
         dragging = true;
+        node.classList.remove('lifted');
         ghost = node.cloneNode(true);
         ghost.className = ghost.className.replace(/fx-\S+/g, '').trim() + ' ghost-card';
         ghost.style.animation = 'none';
@@ -961,10 +981,11 @@ function enableDrag(node, src, cardId, onTap) {
       if (t !== over) { over?.classList.remove('over'); over = t; over?.classList.add('over'); }
     };
     const up = (e) => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
-      if (!ghost) return onTap && onTap();           // plain tap
+      stop();
+      if (!ghost) {   // a plain tap (never a cancelled or scrolled touch)
+        if (e.type === 'pointerup' && !scrolled) onTap && onTap();
+        return;
+      }
       const t = target(e.clientX, e.clientY);
       ghost.remove(); over?.classList.remove('over'); node.classList.remove('dragging-src');
       dragging = false;
@@ -1123,7 +1144,7 @@ setInterval(() => {
   const b = document.getElementById('lastbanner');
   if (!b) return;
   const left = bannerRemaining();
-  if (left <= 0) return render();
+  if (left <= 0) return safeRender();
   document.getElementById('lb-sec').textContent = t('secs', { n: Math.ceil(left) });
   document.getElementById('lb-fill').style.width = (left / BANNER_SECONDS) * 100 + '%';
 }, 500);
@@ -1137,12 +1158,32 @@ function screenName() {
   return active.length && active.every((p) => p.ready) ? 'stage' : 'arrange';
 }
 
+// Rebuilding the page while someone is scrolling stops the scroll dead (or throws the page back up).
+// So updates that arrive from the network wait until the finger has been still for a moment.
+let lastTouch = 0, renderTimer = null, renderQueued = false, stageScroll = false;
+['touchstart', 'touchmove', 'touchend', 'wheel', 'scroll'].forEach((ev) => window.addEventListener(ev, () => { lastTouch = Date.now(); }, { passive: true, capture: true }));
+function safeRender() {
+  const idle = Date.now() - lastTouch;
+  if (idle >= 400 && !dragging) { renderQueued = false; return render(); }
+  renderQueued = true;
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(() => { if (renderQueued) safeRender(); }, Math.max(60, 420 - idle));
+}
+
 function render() {
+  const keepY = window.scrollY;
   app.dataset.screen = screenName();
   app.replaceChildren();
   if (!session || !st) renderLobby();
   else renderGame();
   fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false; tearRows.clear(); stageEnter = false;
+  // measuring the half-built page can clamp the scroll position; put it back
+  if (Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY);
+  if (stageScroll) {   // moving on to the next row: bring it into view, but never while the player is scrolling
+    stageScroll = false;
+    const e = document.querySelector('.stage, .final');
+    if (e && Date.now() - lastTouch > 2500) { const r = e.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.5) e.scrollIntoView({ block: 'start' }); }
+  }
 }
 
 const activePlayers = () => st.players.filter((p) => !p.spectator);   // joined mid-round players only watch
@@ -1455,8 +1496,8 @@ function advanceStage() {
     stageRow = Math.min(stageRow + 1, target);
     stageEnter = true;
     showNext(stageRow);
-    render();
-    document.querySelector('.stage, .final')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    stageScroll = true;
+    safeRender();
     if (stageRow < target) holdTimer = setTimeout(advanceStage, 2500);   // catching up on rows scored while we were busy
   }
 }
@@ -1810,13 +1851,15 @@ async function poll() {
     if (j.version <= (st?.version ?? 0)) return;
     adopt(j);
     err = '';
-    render();
+    safeRender();
   } catch {}
 }
 
 function startPolling() { clearInterval(timer); timer = setInterval(poll, POLL_MS); }
 
-let resizeT; window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (st && !dragging) render(); }, 150); });
+// a phone's address bar sliding away fires height-only resizes while scrolling: only a real width change (rotation) needs a rebuild
+let resizeT, lastW = window.innerWidth;
+window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(resizeT); resizeT = setTimeout(() => { if (st && !dragging) safeRender(); }, 150); });
 document.querySelectorAll('.langsw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.l)));
 document.getElementById('guideBtn').addEventListener('click', () => openGuide(0));
 applyStatic();
