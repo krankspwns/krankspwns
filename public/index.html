@@ -281,6 +281,9 @@
   .rd { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
   .rd.lose { background: rgba(255,120,110,.14); }
   .rdn { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tiechip { padding: 4px 14px; border-radius: 99px; background: rgba(255,255,255,.1); border: 1px solid var(--line); font-weight: 700; font-size: 14px; }
+  .respen.none { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); box-shadow: none; font-size: 15px; font-weight: 700; padding: 8px 14px; }
+  .respen.big.none { font-size: clamp(22px, 6vw, 34px); padding: 8px 22px; }
   .rdv { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
   .rdv em { font-style: normal; opacity: .75; } .rdv .bad { color: #ff9b94; }
   .mc { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--ivory); color: var(--ink); font-weight: 700; font-size: 12px; }
@@ -370,8 +373,8 @@ const I18N = {
     expert: 'Expert mode', expertTip: 'Tap a hand card to drop it into the next free slot (top row first); tap a placed card to send it back.',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 — over 10.5 loses, otherwise the lowest loses', rule4: 'Weakest pattern loses',
-    loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust',
-    h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush', h_triple: 'Triple', h_sflush: 'Royal flush',
+    loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
+    h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush (same suit)', h_triple: 'Triple', h_sflush: 'Straight flush',
     openAll: 'Open all', closeAll: 'Close all', openAllTip: 'Open this row for every player', closeAllTip: 'Close this row for every player',
     flipUp: 'Flip up', flipDown: 'Flip down', flipUpTip: 'Turn this row face up for everyone', flipDownTip: 'Turn this row face down', shared: 'Face up for everyone',
     bannerK: 'Everyone is ready · last to be ready', secs: (v) => `${v.n}s`,
@@ -410,7 +413,7 @@ const I18N = {
     expert: '高手模式', expertTip: '点击手牌会放入下一个空位（从最上面一行开始）；点击已摆的牌会放回手牌。',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5，超过 10.5 即输；否则点数最小者输', rule4: '牌型最弱者输',
-    loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了',
+    loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
     h_none: '散牌', h_pair: '对子', h_straight: '顺子', h_flush: '同花', h_triple: '三条', h_sflush: '同花顺',
     openAll: '全部翻开', closeAll: '全部盖上', openAllTip: '为所有玩家翻开这一行', closeAllTip: '为所有玩家盖上这一行',
     flipUp: '翻开', flipDown: '盖上', flipUpTip: '向所有人翻开这一行', flipDownTip: '盖上这一行', shared: '所有人可见',
@@ -450,7 +453,7 @@ const I18N = {
     expert: '高手模式', expertTip: '點擊手牌會放入下一個空位（從最上面一行開始）；點擊已擺的牌會放回手牌。',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5，超過 10.5 即輸；否則點數最小者輸', rule4: '牌型最弱者輸',
-    loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了',
+    loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
     h_none: '散牌', h_pair: '對子', h_straight: '順子', h_flush: '同花', h_triple: '三條', h_sflush: '同花順',
     openAll: '全部翻開', closeAll: '全部蓋上', openAllTip: '為所有玩家翻開這一行', closeAllTip: '為所有玩家蓋上這一行',
     flipUp: '翻開', flipDown: '蓋上', flipUpTip: '向所有人翻開這一行', flipDownTip: '蓋上這一行', shared: '所有人可見',
@@ -973,8 +976,12 @@ function resultsPanel() {
     box.append(el('div', { class: 'res' },
       el('div', { class: 'reshead' }, el('b', {}, t('rowN', { n: r.row + 1 })), el('span', { class: 'resrule' }, t('rule' + (r.row + 1)))),
       el('div', { class: 'resmain' },
-        el('div', { class: 'resl' }, el('span', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')), ...names.map((n) => el('span', { class: 'loserchip' }, n))),
-        el('div', { class: 'respen' }, el('small', {}, t('penalty')), '×' + r.penalty)),
+        r.tie
+          ? el('div', { class: 'resl' }, el('span', { class: 'tiechip' }, t('tie')))
+          : el('div', { class: 'resl' }, el('span', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')), ...names.map((n) => el('span', { class: 'loserchip' }, n))),
+        r.tie
+          ? el('div', { class: 'respen none' }, t('noPenalty'))
+          : el('div', { class: 'respen' }, el('small', {}, t('penalty')), '×' + r.penalty)),
       detail));
   });
   return box;
@@ -985,9 +992,9 @@ function showResult(r) {
   const names = loserNames(r);
   const o = el('div', { class: 'resfx' }, el('div', { class: 'resbox' },
     el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
-    el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
-    el('div', { class: 'resnames' }, names.join(' · ')),
-    el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty)));
+    r.tie ? '' : el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
+    el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
+    r.tie ? el('div', { class: 'respen big none' }, t('noPenalty')) : el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty)));
   document.body.append(o);
   setTimeout(() => o.remove(), 6700);
 }

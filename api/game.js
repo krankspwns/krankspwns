@@ -138,7 +138,9 @@ function evaluateRow(row, players) {
     const bonus = h.reduce((a, x) => a + (HAND_PENALTY[x] || 0), 0);
     if (bonus) penalty = bonus;
   }
-  return { row, losers: losers.map((e) => e.id), penalty, entries };
+  // If everybody would lose, nobody is behind anybody else: a tie, no penalty for anyone.
+  const tie = losers.length === entries.length;
+  return { row, losers: tie ? [] : losers.map((e) => e.id), penalty: tie ? 0 : penalty, tie, entries };
 }
 
 // A row is scored once everyone's cards in it are face up (and the game is under way).
