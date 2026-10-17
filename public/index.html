@@ -933,7 +933,7 @@ const I18N = {
     stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `Open row ${v.n} for everyone`, stageWaitHost: 'Waiting for the host to open this row…',
     openedN: (v) => `${v.n}/${v.total} opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
     youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
-    finalTitle: 'Final board', hallTitle: 'Hall of Fame', hallSub: (v) => `Lowest total penalty wins · ${v.n} round${v.n === 1 ? '' : 's'} played`, hallPts: (v) => `${v.n} pts`, hallLast: (v) => `+${v.n} this round`, hallLost: (v) => `${v.n} row${v.n === 1 ? '' : 's'} lost`, hallRounds: (v) => `${v.n} rd`, showBoard: 'Show final board', hideBoard: 'Hide final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
+    finalTitle: 'Final board', hallTitle: 'Hall of Fame', hallSub: (v) => `Round ${v.n} · lowest penalty wins`, hallPts: (v) => `${v.n} pts`, hallLast: (v) => `+${v.n} this round`, hallLost: (v) => `${v.n} row${v.n === 1 ? '' : 's'} lost`, hallRounds: (v) => `${v.n} rd`, showBoard: 'Show final board', hideBoard: 'Hide final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
     guideBtn: 'How to play', guideTitle: 'How to play', gClose: 'Close', gBack: 'Back', gNext: 'Next', gDone: 'Got it!', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: 'Lowest card loses', g_r2: 'Highest card loses', g_r3: 'Closest to 10.5', g_r4: 'Best pattern', gCards: (v) => `${v.n} card${v.n > 1 ? 's' : ''}`,
     gLoses: 'LOSES', gSafe: 'safe', gBust: 'BUST', gPerfect: 'PERFECT', gPenaltyIs: 'Penalty',
@@ -1004,7 +1004,7 @@ const I18N = {
     stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `为所有人翻开第 ${v.n} 行`, stageWaitHost: '等待房主翻开这一行…',
     openedN: (v) => `${v.n}/${v.total} 已翻开`, hiddenState: '未翻开', openedState: '已翻开', lostTag: '输了', safeTag: '安全',
     youLose: '你输了！', alongWith: (v) => `还有 ${v.names}`, nextUp: '下一行', allDone: '四行全部结束',
-    finalTitle: '最终结果', hallTitle: '名人堂', hallSub: (v) => `总罚分最低者获胜 · 已玩 ${v.n} 回合`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `输了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '显示最终结果', hideBoard: '收起最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
+    finalTitle: '最终结果', hallTitle: '名人堂', hallSub: (v) => `第 ${v.n} 回合 · 罚分最低者获胜`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `输了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '显示最终结果', hideBoard: '收起最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
     guideBtn: '玩法说明', guideTitle: '玩法说明', gClose: '关闭', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: '最小的牌输', g_r2: '最大的牌输', g_r3: '最接近 10.5', g_r4: '牌型最强', gCards: (v) => `${v.n} 张牌`,
     gLoses: '输', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '惩罚',
@@ -1075,7 +1075,7 @@ const I18N = {
     stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `為所有人翻開第 ${v.n} 行`, stageWaitHost: '等待房主翻開這一行…',
     openedN: (v) => `${v.n}/${v.total} 已翻開`, hiddenState: '未翻開', openedState: '已翻開', lostTag: '輸了', safeTag: '安全',
     youLose: '你輸了！', alongWith: (v) => `還有 ${v.names}`, nextUp: '下一行', allDone: '四行全部結束',
-    finalTitle: '最終結果', hallTitle: '名人堂', hallSub: (v) => `總罰分最低者獲勝 · 已玩 ${v.n} 回合`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `輸了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '顯示最終結果', hideBoard: '收起最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
+    finalTitle: '最終結果', hallTitle: '名人堂', hallSub: (v) => `第 ${v.n} 回合 · 罰分最低者獲勝`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `輸了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '顯示最終結果', hideBoard: '收起最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
     guideBtn: '玩法說明', guideTitle: '玩法說明', gClose: '關閉', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: '最小的牌輸', g_r2: '最大的牌輸', g_r3: '最接近 10.5', g_r4: '牌型最強', gCards: (v) => `${v.n} 張牌`,
     gLoses: '輸', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '懲罰',
@@ -1646,12 +1646,16 @@ function finalPanel(active) {
 }
 let finalOpen = false;
 
-// running ranking over every completed round in this room: the lowest total penalty is on top
+// this round's ranking: the lowest total penalty over the four rows is on top (nothing carries over between rounds)
 function hallPanel() {
-  const list = st.hall || [];
+  const res = st.rowResults || [];
+  const list = activePlayers().map((p) => {
+    let penalty = 0, lost = 0;
+    for (const r of res) if (!r.tie && r.losers.includes(p.id)) { penalty += r.penalty; lost++; }
+    return { id: p.id, name: p.name, penalty, lost };
+  }).sort((a, b) => a.penalty - b.penalty || a.lost - b.lost || a.name.localeCompare(b.name));
   if (!list.length) return '';
   const medals = ['#ffcf40', '#cfd6e6', '#d99a63'];
-  const rounds = Math.max(...list.map((h) => h.rounds));
   const rows = el('div', { class: 'hall' });
   let rank = 0, prevKey = null;
   list.forEach((h, i) => {
@@ -1659,10 +1663,10 @@ function hallPanel() {
     const me = h.id === st.meId;
     rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
       el('span', { class: 'hrank', style: rank <= 3 ? `background:${medals[rank - 1]};color:#1a1407` : '' }, rank === 1 ? icon('trophy', 16) : String(rank)),
-      el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }) + ' · ' + t('hallRounds', { n: h.rounds }))),
-      el('span', { class: 'hpts' }, el('b', {}, t('hallPts', { n: h.penalty })), h.last ? el('small', {}, t('hallLast', { n: h.last })) : '')));
+      el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
+      el('span', { class: 'hpts' }, el('b', {}, t('hallPts', { n: h.penalty })))));
   });
-  return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: rounds })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))), rows);
+  return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: st.round })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))), rows);
 }
 
 

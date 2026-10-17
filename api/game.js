@@ -169,17 +169,6 @@ function rowResults(room) {
 function storeResults(room) {
   room.results = room.results || {};
   for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = r;
-  // Hall of fame: when the 4th row is scored the round is complete and counts once towards everybody's running total.
-  if (ROW_SIZES.every((_, i) => room.results[i]) && room.tallied !== room.round) {
-    room.tallied = room.round;
-    room.hall = room.hall || {};
-    for (const p of activeOf(room)) {
-      const h = room.hall[p.id] || (room.hall[p.id] = { name: p.name, penalty: 0, lost: 0, rounds: 0, last: 0 });
-      let pen = 0, lost = 0;
-      for (const r of Object.values(room.results)) if (!r.tie && r.losers.includes(p.id)) { pen += r.penalty; lost++; }
-      h.name = p.name; h.penalty += pen; h.lost += lost; h.rounds += 1; h.last = pen;
-    }
-  }
 }
 // The game goes top to bottom: the current row is the first one that has not been scored yet (4 = all done).
 function currentRowOf(room) {
@@ -228,8 +217,6 @@ function view(room, pid, seen) {
     allReady: room.allReady || null,
     rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
     currentRow: currentRowOf(room),
-    hall: Object.entries(room.hall || {}).filter(([id]) => room.players.some((p) => p.id === id))
-      .map(([id, h]) => ({ id, ...h })).sort((a, b) => a.penalty - b.penalty || a.lost - b.lost || a.name.localeCompare(b.name)),
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
