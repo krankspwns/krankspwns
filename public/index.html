@@ -831,8 +831,7 @@ const SND = (() => {
       const now = performance.now();
       if (now - (lastPlayed[name] || 0) < (name === 'tap' ? 40 : 60)) return;
       lastPlayed[name] = now;
-      if (!ensure()) return;
-      try { R[name](); } catch {}
+      setTimeout(() => { try { if (ensure()) R[name](); } catch {} }, 0);   // never run audio work inside a touch/drag handler
     },
     unlock() { ensure(); applyMode(); },
     get mode() { return mode; },
@@ -857,7 +856,8 @@ const SND = (() => {
 })();
 window.SND = SND;
 // browsers only allow audio after a tap: wake the sound engine on the first one
-['pointerdown', 'keydown', 'touchend'].forEach((ev) => window.addEventListener(ev, () => SND.unlock(), { once: true, capture: true }));
+// audio is only woken on touchend/click/keydown (iOS requires that anyway) and never inside a pointerdown, so it can't interfere with a card being picked up
+['click', 'keydown', 'touchend'].forEach((ev) => window.addEventListener(ev, () => SND.unlock(), { once: true, capture: true }));
 // a soft tick on every button
 document.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest('button:not(.gdot):not(.sndbtn)')) SND.play('tap'); }, true);
 
