@@ -426,6 +426,19 @@
   .resbox.hasboard .resnames { font-size: clamp(26px, 8vw, 44px); } .resbox.hasboard .respen.big { transform: scale(.82); margin: 2px auto 0; }
   /* animal avatars */
   .av { display: inline-block; flex: none; border-radius: 50%; overflow: hidden; line-height: 0; background: none !important; box-shadow: 0 0 0 2px rgba(255,255,255,.14); } .av svg { display: block; }
+  /* living avatars: breathing, blinking, tap / hover reactions, happy and sad moods */
+  .av .avb { transform-box: fill-box; transform-origin: 50% 100%; animation: avbreathe 3.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+  .av .eye { transform-box: fill-box; transform-origin: 50% 50%; animation: avblink 4.6s infinite; animation-delay: var(--d, 0s); }
+  .av.hop { animation: avhop .7s cubic-bezier(.3,.7,.4,1); } @media (hover: hover) { .av:hover:not(.hop) .avb { animation: avwiggle .5s ease-in-out infinite; } }
+  .av.happy .avb { animation: avhappy .9s ease-in-out infinite; animation-delay: var(--d, 0s); } .av.sad .avb { animation: avsad 1.6s ease-in-out infinite; animation-delay: var(--d, 0s); filter: saturate(.55); }
+  .av.sad .eye { animation: none; transform: scaleY(.55); }
+  @keyframes avbreathe { 0%, 100% { transform: scale(1, 1) rotate(0); } 50% { transform: scale(1.025, .985) translateY(.4px) rotate(.6deg); } }
+  @keyframes avblink { 0%, 93%, 100% { transform: scaleY(1); } 95.5% { transform: scaleY(.08); } }
+  @keyframes avhop { 0% { transform: none; } 30% { transform: translateY(-9px) rotate(-8deg) scale(1.1); } 55% { transform: translateY(0) rotate(5deg) scale(.96); } 75% { transform: translateY(-3px) rotate(-2deg); } 100% { transform: none; } }
+  @keyframes avwiggle { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  @keyframes avhappy { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-2px) rotate(3deg) scale(1.04); } }
+  @keyframes avsad { 0%, 100% { transform: translateY(1px) rotate(-1.5deg); } 50% { transform: translateY(2px) rotate(1.5deg) scale(.97); } }
+  @media (prefers-reduced-motion: reduce) { .av .avb, .av .eye, .av.hop, .av.happy .avb, .av.sad .avb { animation: none !important; } }
   .avedit { position: relative; padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 50%; cursor: pointer; line-height: 0; flex: none; } .avedit:hover { transform: none; filter: brightness(1.1); }
   .avedit i { position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: #1a1407; border: 2px solid #1b2038; font-style: normal; } .avedit i .ic { stroke-width: 2.6; color: #1a1407; }
   .namerow { display: flex; align-items: center; gap: 10px; } .namerow input { flex: 1; min-width: 0; }
@@ -856,6 +869,7 @@ const SND = (() => {
       for (let i = 0; i < 9; i++) noise({ at: 0.03 + i * 0.055 + rnd(0, 0.02), dur: 0.03, vol: 0.14, type: 'bandpass', f: rnd(1500, 5000), q: 3 });
       tone({ f: 90, f2: 55, at: 0.05, dur: 0.35, vol: 0.18, type: 'sawtooth', lp: 400 });
     },
+    boing: () => { tone({ f: 300, f2: 700, dur: 0.14, vol: 0.09, type: 'triangle' }); tone({ f: 700, f2: 420, at: 0.12, dur: 0.12, vol: 0.06, type: 'triangle' }); },
     morph: () => {   // a rising sparkle as the joker turns into its card
       [660, 830, 988, 1244, 1568, 1976].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.22, vol: 0.07, type: 'triangle' }));
       noise({ at: 0.05, dur: 0.5, vol: 0.05, type: 'bandpass', f: 3000, f2: 9000, q: 2 }); tone({ f: 2637, at: 0.45, dur: 0.4, vol: 0.06 });
@@ -962,19 +976,19 @@ function updateSndBtn() {
 }
 
 // 48x48 animal faces: flat shapes on a coloured disc
-const eyes = (y = 26, dx = 6, r = 1.9, c = '#2a2118') => `<circle cx="${24 - dx}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${24 + dx}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${24 - dx + .7}" cy="${y - .7}" r=".6" fill="#fff"/><circle cx="${24 + dx + .7}" cy="${y - .7}" r=".6" fill="#fff"/>`;
+const eyes = (y = 26, dx = 6, r = 1.9, c = '#2a2118') => `<g class="eye"><circle cx="${24 - dx}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${24 - dx + .7}" cy="${y - .7}" r=".6" fill="#fff"/></g><g class="eye"><circle cx="${24 + dx}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${24 + dx + .7}" cy="${y - .7}" r=".6" fill="#fff"/></g>`;
 const AVATARS = {
   cat: ['#ffcf8a', `<path d="M10.5 22L11 7.5l10 6.5zM37.5 22L37 7.5 27 14z" fill="#e8923c"/><path d="M13 19l.4-7 5 3.4zM35 19l-.4-7-5 3.4z" fill="#ffb6bf"/><ellipse cx="24" cy="27.5" rx="14.5" ry="12.5" fill="#f2a65a"/><path d="M24 15.5v4M19.5 16.4l1.2 3.4M28.5 16.4l-1.2 3.4" stroke="#c9722a" stroke-width="1.6" stroke-linecap="round"/>${eyes(26.5, 6.2)}<path d="M22.2 30.6h3.6L24 32.6z" fill="#e0687c"/><path d="M24 32.6v1.2M21.4 34.6q2.6 1.7 5.2 0" fill="none" stroke="#7a4a1d" stroke-width="1.1" stroke-linecap="round"/><path d="M8 29.5l7-1.2M8.5 33l6.5-2M40 29.5l-7-1.2M39.5 33l-6.5-2" stroke="#fff6e6" stroke-width="1" stroke-linecap="round"/>`],
   dog: ['#cfe3ff', `<ellipse cx="10.5" cy="25" rx="5.2" ry="10" fill="#7a4a24" transform="rotate(12 10.5 25)"/><ellipse cx="37.5" cy="25" rx="5.2" ry="10" fill="#7a4a24" transform="rotate(-12 37.5 25)"/><ellipse cx="24" cy="26.5" rx="13.5" ry="13" fill="#e2b078"/><ellipse cx="24" cy="31.5" rx="8" ry="6.2" fill="#fbe9cf"/>${eyes(24.5, 6.4)}<ellipse cx="24" cy="29" rx="3.4" ry="2.4" fill="#2a2118"/><path d="M24 31.2v2.2M20.6 33.4q3.4 2.6 6.8 0" fill="none" stroke="#2a2118" stroke-width="1.2" stroke-linecap="round"/><path d="M22.2 35.2q1.8 3 3.6 0z" fill="#f06b85"/>`],
   fox: ['#ffe0c2', `<path d="M8.5 25L8 6.5l12 8.5zM39.5 25L40 6.5 28 15z" fill="#e8631c"/><path d="M11.5 20l.2-7 5 3.6zM36.5 20l-.2-7-5 3.6z" fill="#2a2118"/><path d="M9.5 24.5C9.5 16.5 16 13.5 24 13.5s14.5 3 14.5 11c0 8-6.5 14-14.5 14S9.5 32.5 9.5 24.5z" fill="#ef7a2e"/><path d="M9.8 28C14 28 19 31 24 38.5 29 31 34 28 38.2 28 36 34.5 30.5 38.5 24 38.5S12 34.5 9.8 28z" fill="#fff4e6"/>${eyes(25, 6.2)}<ellipse cx="24" cy="33.2" rx="2.6" ry="1.9" fill="#2a2118"/>`],
   bear: ['#e8d3bd', `<circle cx="11.5" cy="14" r="5.8" fill="#7b4f2e"/><circle cx="36.5" cy="14" r="5.8" fill="#7b4f2e"/><circle cx="11.5" cy="14" r="2.8" fill="#d9a17a"/><circle cx="36.5" cy="14" r="2.8" fill="#d9a17a"/><ellipse cx="24" cy="27" rx="14.5" ry="13.5" fill="#94643c"/><ellipse cx="24" cy="31.5" rx="7.2" ry="5.6" fill="#ddb892"/>${eyes(24.5, 6.6)}<ellipse cx="24" cy="29.5" rx="2.9" ry="2.1" fill="#2a2118"/><path d="M24 31.6v1.6M21.4 33.6q2.6 2 5.2 0" fill="none" stroke="#2a2118" stroke-width="1.1" stroke-linecap="round"/>`],
-  panda: ['#d6f0e0', `<circle cx="11.5" cy="14" r="5.8" fill="#2b2b33"/><circle cx="36.5" cy="14" r="5.8" fill="#2b2b33"/><ellipse cx="24" cy="27" rx="14.5" ry="13.5" fill="#fbfbfb"/><ellipse cx="17.2" cy="25" rx="4.4" ry="5.6" fill="#2b2b33" transform="rotate(25 17.2 25)"/><ellipse cx="30.8" cy="25" rx="4.4" ry="5.6" fill="#2b2b33" transform="rotate(-25 30.8 25)"/><circle cx="17.6" cy="25" r="1.7" fill="#fff"/><circle cx="30.4" cy="25" r="1.7" fill="#fff"/><circle cx="17.8" cy="25.2" r=".8" fill="#2b2b33"/><circle cx="30.2" cy="25.2" r=".8" fill="#2b2b33"/><ellipse cx="24" cy="31" rx="2.8" ry="2" fill="#2b2b33"/><path d="M24 33v1.4M21.6 35q2.4 1.8 4.8 0" fill="none" stroke="#2b2b33" stroke-width="1.1" stroke-linecap="round"/>`],
+  panda: ['#d6f0e0', `<circle cx="11.5" cy="14" r="5.8" fill="#2b2b33"/><circle cx="36.5" cy="14" r="5.8" fill="#2b2b33"/><ellipse cx="24" cy="27" rx="14.5" ry="13.5" fill="#fbfbfb"/><ellipse cx="17.2" cy="25" rx="4.4" ry="5.6" fill="#2b2b33" transform="rotate(25 17.2 25)"/><ellipse cx="30.8" cy="25" rx="4.4" ry="5.6" fill="#2b2b33" transform="rotate(-25 30.8 25)"/><g class="eye"><circle cx="17.6" cy="25" r="1.7" fill="#fff"/><circle cx="17.8" cy="25.2" r=".8" fill="#2b2b33"/></g><g class="eye"><circle cx="30.4" cy="25" r="1.7" fill="#fff"/><circle cx="30.2" cy="25.2" r=".8" fill="#2b2b33"/></g><ellipse cx="24" cy="31" rx="2.8" ry="2" fill="#2b2b33"/><path d="M24 33v1.4M21.6 35q2.4 1.8 4.8 0" fill="none" stroke="#2b2b33" stroke-width="1.1" stroke-linecap="round"/>`],
   rabbit: ['#ffe3ee', `<ellipse cx="17.5" cy="11" rx="4" ry="10" fill="#f4ece6" transform="rotate(-8 17.5 11)"/><ellipse cx="30.5" cy="11" rx="4" ry="10" fill="#f4ece6" transform="rotate(8 30.5 11)"/><ellipse cx="17.5" cy="11.5" rx="2" ry="7" fill="#ffb3c6" transform="rotate(-8 17.5 11.5)"/><ellipse cx="30.5" cy="11.5" rx="2" ry="7" fill="#ffb3c6" transform="rotate(8 30.5 11.5)"/><ellipse cx="24" cy="29" rx="13.5" ry="12" fill="#f9f3ee"/>${eyes(27.5, 6)}<ellipse cx="14.5" cy="31" rx="2.6" ry="1.8" fill="#ffc2cf" opacity=".8"/><ellipse cx="33.5" cy="31" rx="2.6" ry="1.8" fill="#ffc2cf" opacity=".8"/><path d="M22.4 30.6h3.2L24 32.4z" fill="#f0708a"/><path d="M24 32.4v1.4M21.6 34.4q2.4 1.6 4.8 0" fill="none" stroke="#9a6b73" stroke-width="1.1" stroke-linecap="round"/>`],
-  frog: ['#d5f3c8', `<ellipse cx="24" cy="29" rx="16" ry="12.5" fill="#5fbf63"/><circle cx="15" cy="17" r="6.6" fill="#5fbf63"/><circle cx="33" cy="17" r="6.6" fill="#5fbf63"/><circle cx="15" cy="17" r="4.6" fill="#fff"/><circle cx="33" cy="17" r="4.6" fill="#fff"/><circle cx="15.6" cy="17.4" r="2.4" fill="#2a2118"/><circle cx="32.4" cy="17.4" r="2.4" fill="#2a2118"/><circle cx="16.3" cy="16.6" r=".8" fill="#fff"/><circle cx="33.1" cy="16.6" r=".8" fill="#fff"/><path d="M13 31.5q11 8 22 0" fill="none" stroke="#2e7a3a" stroke-width="1.8" stroke-linecap="round"/><circle cx="21.5" cy="26.5" r=".9" fill="#2e7a3a"/><circle cx="26.5" cy="26.5" r=".9" fill="#2e7a3a"/><ellipse cx="13" cy="30" rx="2.4" ry="1.6" fill="#ff9aa8" opacity=".6"/><ellipse cx="35" cy="30" rx="2.4" ry="1.6" fill="#ff9aa8" opacity=".6"/>`],
+  frog: ['#d5f3c8', `<ellipse cx="24" cy="29" rx="16" ry="12.5" fill="#5fbf63"/><circle cx="15" cy="17" r="6.6" fill="#5fbf63"/><circle cx="33" cy="17" r="6.6" fill="#5fbf63"/><circle cx="15" cy="17" r="4.6" fill="#fff"/><circle cx="33" cy="17" r="4.6" fill="#fff"/><g class="eye"><circle cx="15.6" cy="17.4" r="2.4" fill="#2a2118"/><circle cx="16.3" cy="16.6" r=".8" fill="#fff"/></g><g class="eye"><circle cx="32.4" cy="17.4" r="2.4" fill="#2a2118"/><circle cx="33.1" cy="16.6" r=".8" fill="#fff"/></g><path d="M13 31.5q11 8 22 0" fill="none" stroke="#2e7a3a" stroke-width="1.8" stroke-linecap="round"/><circle cx="21.5" cy="26.5" r=".9" fill="#2e7a3a"/><circle cx="26.5" cy="26.5" r=".9" fill="#2e7a3a"/><ellipse cx="13" cy="30" rx="2.4" ry="1.6" fill="#ff9aa8" opacity=".6"/><ellipse cx="35" cy="30" rx="2.4" ry="1.6" fill="#ff9aa8" opacity=".6"/>`],
   lion: ['#ffe9a8', `<circle cx="24" cy="26" r="19" fill="#c9761e"/><circle cx="24" cy="26" r="15" fill="#e19a36" opacity=".6"/><circle cx="12.5" cy="15" r="4.2" fill="#f2c46d"/><circle cx="35.5" cy="15" r="4.2" fill="#f2c46d"/><ellipse cx="24" cy="27" rx="11.6" ry="11.4" fill="#f6cf7a"/><ellipse cx="24" cy="31.6" rx="6" ry="4.6" fill="#fff0cf"/>${eyes(25, 5.4)}<path d="M22 29h4l-2 2.4z" fill="#8a4a1d"/><path d="M24 31.4v1.4M21.6 33.4q2.4 1.8 4.8 0" fill="none" stroke="#8a4a1d" stroke-width="1.1" stroke-linecap="round"/>`],
   pig: ['#ffd9e2', `<path d="M10.5 20.5l-1-11 10 5zM37.5 20.5l1-11-10 5z" fill="#f08aa4"/><ellipse cx="24" cy="27" rx="14.5" ry="13" fill="#f9aabd"/>${eyes(23.5, 6.8)}<ellipse cx="24" cy="31" rx="6.6" ry="4.8" fill="#f27f9f"/><ellipse cx="21.7" cy="31" rx="1.3" ry="1.8" fill="#a9455f"/><ellipse cx="26.3" cy="31" rx="1.3" ry="1.8" fill="#a9455f"/><ellipse cx="13" cy="29" rx="2.4" ry="1.7" fill="#ff7f9d" opacity=".5"/><ellipse cx="35" cy="29" rx="2.4" ry="1.7" fill="#ff7f9d" opacity=".5"/>`],
   koala: ['#dde7f3', `<circle cx="9.5" cy="17" r="7.4" fill="#9aa4b0"/><circle cx="38.5" cy="17" r="7.4" fill="#9aa4b0"/><circle cx="9.5" cy="17" r="4" fill="#f1f3f6"/><circle cx="38.5" cy="17" r="4" fill="#f1f3f6"/><ellipse cx="24" cy="27.5" rx="13.5" ry="13" fill="#aab3be"/>${eyes(25, 6.4)}<ellipse cx="24" cy="29.6" rx="4.2" ry="5.4" fill="#3b3f48"/><ellipse cx="22.8" cy="27.6" rx="1.1" ry="1.5" fill="#6a707c"/><path d="M21.5 36q2.5 1.6 5 0" fill="none" stroke="#3b3f48" stroke-width="1.1" stroke-linecap="round"/>`],
-  owl: ['#e3d6f7', `<path d="M11 19L9 8l10 5zM37 19l2-11-10 5z" fill="#6b4a33"/><ellipse cx="24" cy="27.5" rx="14.5" ry="14" fill="#8d6648"/><ellipse cx="24" cy="32" rx="8.4" ry="7" fill="#d9bf9b"/><circle cx="17" cy="22.5" r="6.7" fill="#f6ead0"/><circle cx="31" cy="22.5" r="6.7" fill="#f6ead0"/><circle cx="17" cy="22.5" r="4.2" fill="#f0b73a"/><circle cx="31" cy="22.5" r="4.2" fill="#f0b73a"/><circle cx="17" cy="22.5" r="2.4" fill="#2a2118"/><circle cx="31" cy="22.5" r="2.4" fill="#2a2118"/><circle cx="17.8" cy="21.7" r=".8" fill="#fff"/><circle cx="31.8" cy="21.7" r=".8" fill="#fff"/><path d="M21.8 27h4.4L24 31.4z" fill="#ee8a2b"/>`],
+  owl: ['#e3d6f7', `<path d="M11 19L9 8l10 5zM37 19l2-11-10 5z" fill="#6b4a33"/><ellipse cx="24" cy="27.5" rx="14.5" ry="14" fill="#8d6648"/><ellipse cx="24" cy="32" rx="8.4" ry="7" fill="#d9bf9b"/><circle cx="17" cy="22.5" r="6.7" fill="#f6ead0"/><circle cx="31" cy="22.5" r="6.7" fill="#f6ead0"/><circle cx="17" cy="22.5" r="4.2" fill="#f0b73a"/><circle cx="31" cy="22.5" r="4.2" fill="#f0b73a"/><g class="eye"><circle cx="17" cy="22.5" r="4.2" fill="#f0b73a"/><circle cx="17" cy="22.5" r="2.4" fill="#2a2118"/><circle cx="17.8" cy="21.7" r=".8" fill="#fff"/></g><g class="eye"><circle cx="31" cy="22.5" r="4.2" fill="#f0b73a"/><circle cx="31" cy="22.5" r="2.4" fill="#2a2118"/><circle cx="31.8" cy="21.7" r=".8" fill="#fff"/></g><path d="M21.8 27h4.4L24 31.4z" fill="#ee8a2b"/>`],
   tiger: ['#ffe3b8', `<circle cx="11.5" cy="14.5" r="5.4" fill="#ee9a2a"/><circle cx="36.5" cy="14.5" r="5.4" fill="#ee9a2a"/><circle cx="11.5" cy="14.5" r="2.4" fill="#fff1d6"/><circle cx="36.5" cy="14.5" r="2.4" fill="#fff1d6"/><ellipse cx="24" cy="27" rx="14.5" ry="13.2" fill="#f3a437"/><path d="M24 14.5v5.2M18.6 15.6l1.4 4.4M29.4 15.6L28 20M10.4 24l4.4 1M37.6 24l-4.4 1M11 30l4.2-.6M37 30l-4.2-.6" stroke="#3a2610" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="24" cy="32" rx="7.4" ry="5.4" fill="#fff4e0"/>${eyes(25, 6)}<path d="M22 29.4h4l-2 2.2z" fill="#3a2610"/><path d="M24 31.6v1.4M21.6 33.6q2.4 1.8 4.8 0" fill="none" stroke="#3a2610" stroke-width="1.1" stroke-linecap="round"/>`],
 };
 
@@ -984,9 +998,18 @@ function avatarEl(key, size = 40, cls = '') {
   const [bg, body] = AVATARS[key] || AVATARS.cat;
   const w = el('span', { class: 'av avatar ' + cls });
   w.style.width = w.style.height = size + 'px';
-  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/>${body}</svg>`;
+  w.style.setProperty('--d', (-Math.random() * 6).toFixed(2) + 's');   // every avatar breathes and blinks on its own rhythm
+  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${body}</g></svg>`;
   return w;
 }
+// tap or hover any animal and it reacts
+document.addEventListener('pointerdown', (e) => {
+  const a = e.target.closest && e.target.closest('.av');
+  if (!a || a.classList.contains('hop')) return;
+  a.classList.add('hop');
+  setTimeout(() => a.classList.remove('hop'), 700);
+  SND.play('boing');
+}, true);
 const avOf = (id) => (st && st.players.find((q) => q.id === id) || {}).avatar;
 let formAvatar = (() => { try { const a = localStorage.getItem('sct-av'); if (AVATARS[a]) return a; } catch {} return AVATAR_KEYS[Math.floor(Math.random() * AVATAR_KEYS.length)]; })();
 
@@ -1735,7 +1758,7 @@ function stagePanel(active) {
       ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : '')
       : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, ...(allUp ? [icon('tick', 12), t('openedState')] : [t('hiddenState')]));
     grid.append(el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 70}ms` : '' },
-      el('div', { class: 'tname' }, avatarEl(p.avatar, 20), el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+      el('div', { class: 'tname' }, avatarEl(p.avatar, 20, lose ? 'sad' : safe ? 'happy' : ''), el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
       cards,
       el('div', { class: 'tfoot' }, status,
         mine && isCurrent && !res ? el('button', { class: 'ghost tflip', onclick: flipMine }, allUp ? t('flipDown') : t('flipUp')) : '')));
@@ -1798,7 +1821,7 @@ function hallPanel() {
     const me = h.id === st.meId;
     rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
       el('span', { class: 'hrank', style: rank <= 3 ? `background:${medals[rank - 1]};color:#1a1407` : '' }, rank === 1 ? icon('trophy', 16) : String(rank)),
-      el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30)), el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
+      el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, rank === 1 ? 'happy' : i === list.length - 1 && list.length > 1 && h.penalty > list[0].penalty ? 'sad' : '')), el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
       el('span', { class: 'hpts' }, el('b', {}, t('hallPts', { n: h.penalty })))));
   });
   return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: st.round })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))), rows);
@@ -2123,7 +2146,7 @@ function buildResult(r, view) {
     ...[...r.entries].sort((a, b) => (b.id === meId) - (a.id === meId)).map((e) => {
       const lose = !r.tie && r.losers.includes(e.id), safe = !r.tie && !lose, mine = e.id === meId;
       return el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') },
-        el('div', { class: 'tname' }, avatarEl(avOf(e.id), 18), el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
+        el('div', { class: 'tname' }, avatarEl(avOf(e.id), 18, lose ? 'sad' : safe ? 'happy' : ''), el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
         el('div', { class: 'tcards' }, ...e.cards.map((c, ci) => lose ? tornCard(c, true, e.as ? e.as[ci] : null) : cardEl(c, { up: true, as: e.as ? e.as[ci] : null, morph: !!e.as }))),
         el('div', { class: 'tfoot' }, lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : ''));
     }));
