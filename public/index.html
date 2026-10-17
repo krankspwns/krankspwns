@@ -253,7 +253,12 @@
     button.big { width: 100%; padding: 15px 14px; font-size: 16px; }
     .code { font-size: 34px; letter-spacing: 5px; }
   }
-  @media (max-width: 520px) { h1 { font-size: 18px; letter-spacing: 3px; } h1::before, h1::after { margin: 0 6px; } .rowbtn { position: static; transform: none; margin-left: 8px; } .rw { justify-content: center; align-items: center; } }
+  @media (max-width: 520px) { h1 { font-size: 18px; letter-spacing: 3px; } h1::before, h1::after { margin: 0 6px; } .rowbtn { right: 0; padding: 4px 7px; font-size: 10px; }
+    /* own board: slightly smaller cards so the row stays centred with the button tucked at the edge */
+    .board .r { gap: 8px; }
+    .panel > .board .slot, .panel > .board .card { width: 52px; height: 76px; }
+    .panel > .board .card .ix { font-size: 14px; top: 4px; left: 5px; } .panel > .board .card .ix i { font-size: 13px; }
+    .panel > .board .card .pip { font-size: 30px; padding-top: 12px; padding-left: 6px; } }
 </style>
 </head>
 <body>
