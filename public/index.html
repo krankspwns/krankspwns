@@ -429,7 +429,9 @@
   .avedit { position: relative; padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 50%; cursor: pointer; line-height: 0; flex: none; } .avedit:hover { transform: none; filter: brightness(1.1); }
   .avedit i { position: absolute; right: -3px; bottom: -3px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: #1a1407; border: 2px solid #1b2038; font-style: normal; } .avedit i .ic { stroke-width: 2.6; color: #1a1407; }
   .namerow { display: flex; align-items: center; gap: 10px; } .namerow input { flex: 1; min-width: 0; }
-  .avbox { width: min(92vw, 380px); padding: 18px; border-radius: 20px; background: rgb(24,30,54); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: boxpop .3s ease backwards; } .avtitle { font-weight: 700; margin-bottom: 12px; text-align: center; }
+  .avbox { width: min(92vw, 380px); padding: 18px; border-radius: 20px; background: rgb(24,30,54); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: boxpop .3s ease backwards; }   .leavebox { text-align: center; } .leavep { margin: 0 0 16px; font-size: 14px; opacity: .8; line-height: 1.45; } .leaverow { display: flex; gap: 10px; } .leaverow button { flex: 1; padding: 12px; }
+  .dangerbtn { background: linear-gradient(180deg, #ff8d80, #e0513f) !important; color: #2a0805 !important; border: 0 !important; font-weight: 700; } .dangerbtn .ic { color: inherit; }
+  .avtitle { font-weight: 700; margin-bottom: 12px; text-align: center; }
   .avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center; } .avpick { padding: 4px; border-radius: 50%; border: 2px solid transparent; background: none; box-shadow: none; line-height: 0; } .avpick:hover { transform: scale(1.06); filter: none; } .avpick.on { border-color: var(--gold-hi); background: rgba(201,169,106,.25); }
   .avatar.av-empty { position: relative; display: grid; place-items: center; background: none; border: 0; color: var(--gold-lo); }
   .av-empty .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px dashed var(--gold-lo); animation: avspin 8s linear infinite; } .av-empty .ic { stroke-width: 2.4; animation: avpulse 1.8s ease-in-out infinite; }
@@ -1022,7 +1024,7 @@ const I18N = {
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
     host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
-    waitingHost: 'Waiting for the host to deal…', leaveRoom: 'Leave room',
+    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
@@ -1094,7 +1096,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
-    waitingHost: '等待房主发牌…', leaveRoom: '离开房间',
+    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `请摆满所有牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -1166,7 +1168,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
-    waitingHost: '等待房主發牌…', leaveRoom: '離開房間',
+    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -1534,7 +1536,7 @@ function renderWaitingRoom() {
     el('div', { class: 'count' }, t('joinedCount', { n: st.players.length, max: st.maxPlayers })),
     seats,
     action,
-    el('div', { class: 'row center' }, el('button', { class: 'ghost', onclick: leave }, t('leaveRoom')))));
+    el('div', { class: 'row center' }, el('button', { class: 'ghost', onclick: confirmLeave }, t('leaveRoom')))));
 }
 
 // player label: name on one line, status tags underneath so it never wraps messily
@@ -1813,7 +1815,7 @@ function renderGame() {
     el('div', { class: 'hstats' }, t('playersN', { n: st.players.length, max: st.maxPlayers }), el('span', { class: 'sep' }, '·'),
       el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: active.length })), el('span', { class: 'sep' }, '·'), t('roundN', { n: st.round })),
     el('div', { class: 'hactions' + (st.isHost ? '' : ' even') }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
-    el('button', { class: 'ghost leavebtn', onclick: leave }, withIcon('logout', t('leave'))));
+    el('button', { class: 'ghost leavebtn', onclick: confirmLeave }, withIcon('logout', t('leave'))));
   app.append(head);
   const banner = lastBanner();
   if (banner) app.append(banner);
@@ -2418,16 +2420,35 @@ function dropSession(message) {
   session = null; st = null; save(); clearInterval(timer); closePlayers(); err = message; render();
 }
 
+// leaving asks first; the poller is stopped before the request so a late reply can never be mistaken for being kicked
+function confirmLeave() {
+  if (document.querySelector('.leave-ov')) return;
+  const close = () => ov.remove();
+  const ov = el('div', { class: 'guide-ov leave-ov', onclick: (e) => { if (e.target === ov) close(); } },
+    el('div', { class: 'avbox leavebox', role: 'alertdialog', 'aria-modal': 'true' },
+      el('div', { class: 'avtitle' }, t('leaveQ')),
+      el('p', { class: 'leavep' }, st && st.isHost && st.players.length > 1 ? t('leaveHostNote') : t('leaveNote')),
+      el('div', { class: 'leaverow' },
+        el('button', { type: 'button', class: 'ghost', onclick: close }, t('stay')),
+        el('button', { type: 'button', class: 'dangerbtn', onclick: () => { close(); leave(); } }, withIcon('logout', t('leaveYes'))))));
+  document.body.append(ov);
+}
+
 async function leave() {
-  try { await api('leave'); } catch {}
-  session = null; st = null; save(); clearInterval(timer); closePlayers(); render();
+  const s = session;
+  clearTimeout(timer); session = null;   // stop polling at once
+  closePlayers();
+  try { if (s) await api('leave', s); } catch {}
+  st = null; save(); render();
 }
 
 async function poll() {
   if (!session) return;
   try {
-    const r = await fetch(`/api/game?code=${session.code}&pid=${session.pid}`);
+    const mine = session;
+    const r = await fetch(`/api/game?code=${mine.code}&pid=${mine.pid}`);
     const j = await r.json();
+    if (session !== mine) return;   // we left (or switched rooms) while this was in flight
     if (r.status === 404) return dropSession(/not in this room/i.test(j.error || '') ? 'You were removed from the room by the host' : 'Room no longer available');
     if (!r.ok || dragging || pending > 0) return;
     // the host's online/offline dots change without the room itself changing, so look for those too
