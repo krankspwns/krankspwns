@@ -2224,7 +2224,15 @@ async function poll() {
   } catch {}
 }
 
-function startPolling() { clearInterval(timer); timer = setInterval(poll, POLL_MS); }
+// adaptive polling keeps the free Redis quota alive: fast while cards are in play, slower in the lobby, slowest when the tab is hidden
+const pollDelay = () => document.hidden ? 12000 : st && st.phase === 'lobby' ? 4000 : POLL_MS;
+function startPolling() {
+  clearTimeout(timer);
+  const tick = async () => { await poll(); if (session) timer = setTimeout(tick, pollDelay()); };
+  timer = setTimeout(tick, pollDelay());
+}
+// coming back to the app (unlocking the phone, switching back from WhatsApp) catches up straight away
+document.addEventListener('visibilitychange', () => { if (!document.hidden && session) { clearTimeout(timer); poll().then(() => { if (session) startPolling(); }); } });
 
 // a phone's address bar sliding away fires height-only resizes while scrolling: only a real width change (rotation) needs a rebuild
 let resizeT, lastW = window.innerWidth;

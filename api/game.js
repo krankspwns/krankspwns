@@ -183,7 +183,7 @@ const seenThrottle = (globalThis.__seenW = globalThis.__seenW || new Map());   /
 const PRESENCE_LUA = "redis.call('HSET', KEYS[1], ARGV[1], ARGV[2]) redis.call('EXPIRE', KEYS[1], ARGV[3]) return 1";
 async function touchPresence(code, pid) {
   const k = code + ':' + pid, now = Date.now();
-  if (now - (seenThrottle.get(k) || 0) < 8000) return;
+  if (now - (seenThrottle.get(k) || 0) < 20000) return;
   seenThrottle.set(k, now);
   if (!REDIS_URL) { const m = seenMem.get(code) || {}; m[pid] = now; seenMem.set(code, m); return; }
   try { await redis(['EVAL', PRESENCE_LUA, '1', `seen:${code}`, pid, String(now), String(TTL_SECONDS)]); } catch {}
@@ -197,7 +197,7 @@ async function readPresence(code) {
     return o;
   } catch { return {}; }
 }
-const OFFLINE_AFTER_MS = 15000;
+const OFFLINE_AFTER_MS = 45000;
 // only the host gets the presence info (it is what the kick button is for)
 async function viewFor(room, pid) {
   const seen = room.hostId === pid ? await readPresence(room.code) : null;
