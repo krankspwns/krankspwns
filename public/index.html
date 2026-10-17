@@ -232,7 +232,30 @@
   .pill.live { margin-left: 0; padding: 9px 16px; font-size: 13px; background: rgba(201,169,106,.16); color: var(--gold-hi); border: 1px solid var(--gold); }
   .livedot { width: 9px; height: 9px; border-radius: 50%; background: #6fcf97; box-shadow: 0 0 0 0 rgba(111,207,151,.7); animation: livepulse 1.5s infinite; }
   @keyframes livepulse { 70% { box-shadow: 0 0 0 9px rgba(111,207,151,0); } 100% { box-shadow: 0 0 0 0 rgba(111,207,151,0); } }
+
+  /* game header */
+  .gamehead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px 16px; grid-template-areas: "code stats actions leave"; }
+  .gamehead .roomcode { grid-area: code; } .gamehead .hstats { grid-area: stats; } .gamehead .hactions { grid-area: actions; } .gamehead .leavebtn { grid-area: leave; }
+  .hactions { display: flex; gap: 8px; }
+  .hstats { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .hstats .sep { opacity: .4; }
+  /* who: name + tags */
+  .who { flex: 1; min-width: 0; margin-bottom: 4px; }
+  .wname { font-weight: 600; font-size: 16px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wtags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 5px; }
+  .wtags .tag, .wtags .pill { margin: 0; }
+  /* row buttons: fixed size so Flip up / Flip down don't shift */
+  .rowbtn { width: 74px; text-align: center; justify-content: center; padding-left: 0; padding-right: 0; }
   @media (max-width: 600px) {
+    .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
+    .gamehead .roomcode { gap: 8px; }
+    .gamehead .leavebtn { padding: 7px 14px; }
+    .hstats { font-size: 14px; }
+    .hactions button { padding: 11px 12px; font-size: 12px; }
+    .hactions button:last-child { flex: 1; }
+    .rowbtn { width: 56px; padding: 4px 0; font-size: 9.5px; }
+    .others .who { margin-bottom: 6px; } .others .wname { font-size: 13px; }
+    .others .wtags .pill { margin: 0; display: inline-flex; font-size: 10px; padding: 2px 8px; }
     main { padding: 14px 12px 32px; }
     .waitroom { padding: 22px 14px 20px; gap: 14px; }
     .bigcode { font-size: clamp(52px, 20vw, 96px); }
@@ -245,7 +268,6 @@
     .others .panel { padding: 8px; }
     .others .name { font-size: 12px; margin-bottom: 6px; }
     .others .tag { margin-left: 4px; }
-    .others .pill { margin-left: 0; margin-top: 4px; font-size: 10px; padding: 2px 8px; display: flex; width: fit-content; }
     .others .card, .others .slot { width: 30px; height: 43px; }
     .others .card .ix { font-size: 10px; top: 2px; left: 2px; } .others .card .ix i { font-size: 9px; }
     .others .card .pip { font-size: 17px; padding-top: 8px; padding-left: 3px; }
@@ -253,7 +275,7 @@
     button.big { width: 100%; padding: 15px 14px; font-size: 16px; }
     .code { font-size: 34px; letter-spacing: 5px; }
   }
-  @media (max-width: 520px) { h1 { font-size: 18px; letter-spacing: 3px; } h1::before, h1::after { margin: 0 6px; } .rowbtn { right: 0; padding: 4px 7px; font-size: 10px; }
+  @media (max-width: 520px) { h1 { font-size: 18px; letter-spacing: 3px; } h1::before, h1::after { margin: 0 6px; } .rowbtn { right: 0; font-size: 10px; }
     /* own board: slightly smaller cards so the row stays centred with the button tucked at the edge */
     .board .r { gap: 8px; }
     .panel > .board .slot, .panel > .board .card { width: 52px; height: 76px; }
@@ -485,6 +507,13 @@ function renderWaitingRoom() {
     el('div', { class: 'row center' }, el('button', { class: 'ghost', onclick: leave }, 'Leave room'))));
 }
 
+// player label: name on one line, status tags underneath so it never wraps messily
+function who(p, label) {
+  return el('div', { class: 'who' },
+    el('div', { class: 'wname' }, label),
+    el('div', { class: 'wtags' }, p.isHost ? el('span', { class: 'tag' }, 'host') : '', pill(p)));
+}
+
 function pill(p) {
   if (p.ready) return el('span', { class: 'pill go' }, '✓ READY');
   const n = p.board.filter(Boolean).length;
@@ -548,13 +577,13 @@ function renderGame() {
   const readyCount = st.players.filter(p => p.ready).length;
   const panel = (i, extraCls = '') => ({ class: ('panel ' + extraCls + ' ' + (screenAnim ? 'fx-in' : '')).trim(), style: screenAnim ? `animation-delay:${i * 80}ms` : '' });
 
-  const head = el('div', panel(0, 'row'),
-    el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, 'Room'), el('span', { class: 'code' }, st.code)),
-    el('div', { class: 'grow' }, `${st.players.length}/${st.maxPlayers} players · `, el('b', { style: 'color:#8fe0ae' }, `${readyCount}/${st.players.length} ready`), ` · round ${st.round}`),
-    el('button', { class: 'ghost', onclick: leave }, 'Leave'));
   const invite = el('button', { class: 'ghost', title: 'Copy a link so friends can join mid-game', onclick: () => copyText(`${location.origin}/?room=${st.code}`, invite) }, 'Invite');
-  head.insertBefore(invite, head.lastChild);
-  if (st.isHost) head.insertBefore(el('button', { onclick: () => act('deal') }, 'Reset, shuffle & deal'), head.lastChild);
+  const head = el('div', panel(0, 'gamehead'),
+    el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, 'Room'), el('span', { class: 'code' }, st.code)),
+    el('div', { class: 'hstats' }, `${st.players.length}/${st.maxPlayers} players`, el('span', { class: 'sep' }, '·'),
+      el('b', { style: 'color:#8fe0ae' }, `${readyCount}/${st.players.length} ready`), el('span', { class: 'sep' }, '·'), `round ${st.round}`),
+    el('div', { class: 'hactions' }, invite, st.isHost ? el('button', { onclick: () => act('deal') }, 'Reset, shuffle & deal') : ''),
+    el('button', { class: 'ghost leavebtn', onclick: leave }, 'Leave'));
   app.append(head);
   const banner = lastBanner();
   if (banner) app.append(banner);
@@ -571,7 +600,7 @@ function renderGame() {
 
   app.append(el('div', panel(1, me.ready ? 'is-ready' : ''),
     el('div', { class: 'row' },
-      el('div', { class: 'name grow' }, `${me.name} (you)`, me.isHost ? el('span', { class: 'tag' }, 'host') : '', pill(me)),
+      who(me, `${me.name} (you)`),
       readyBtn),
     inProgress ? '' : me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, '✓'),
       el('div', {}, "You're ready", el('small', {}, `Waiting for ${st.players.length - readyCount} more player${st.players.length - readyCount > 1 ? 's' : ''}`))) : '',
@@ -611,7 +640,7 @@ function renderGame() {
 
   const others = el('div', { class: 'others' });
   st.players.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5, p.ready ? 'is-ready' : ''),
-    el('div', { class: 'name' }, p.name, p.isHost ? el('span', { class: 'tag' }, 'host') : '', pill(p)),
+    who(p, p.name),
     boardEl(p.board, false, p.id))));
   if (others.children.length) app.append(others);
 }
