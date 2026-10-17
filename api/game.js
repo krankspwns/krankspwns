@@ -85,6 +85,77 @@ class HttpError extends Error {
   }
 }
 
+
+// ---- row scoring: who loses each row, and how big the penalty is ----
+const RANK_VAL = { A: 14, K: 13, Q: 12, J: 11 };
+const rankOf = (c) => RANK_VAL[c.slice(0, -1)] || Number(c.slice(0, -1));   // 2 is lowest, Ace highest
+const suitOf = (c) => c.slice(-1);
+// Row 3 points, doubled so everything stays an integer: A = 1, J/Q/K = 0.5, others face value
+const pts2 = (c) => { const r = c.slice(0, -1); return r === 'A' ? 2 : 'JQK'.includes(r) ? 1 : Number(r) * 2; };
+
+// Row 4 hands, weakest to strongest
+const HAND_ORDER = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush'];
+const HAND_PENALTY = { flush: 2, triple: 3, sflush: 4 };   // what a strong hand adds to the losers' penalty
+function handOf(cards) {
+  const rs = cards.map(rankOf).sort((a, b) => a - b);
+  const flush = cards.every((c) => suitOf(c) === suitOf(cards[0]));
+  const straight = (rs[1] === rs[0] + 1 && rs[2] === rs[1] + 1) || (rs[0] === 2 && rs[1] === 3 && rs[2] === 14);   // A-2-3 and Q-K-A both count
+  if (straight && flush) return 'sflush';
+  if (rs[0] === rs[2]) return 'triple';
+  if (flush) return 'flush';
+  if (straight) return 'straight';
+  if (rs[0] === rs[1] || rs[1] === rs[2]) return 'pair';
+  return 'none';
+}
+
+// players: [{ id, name, cards: ['AS', ...] }] -> { row, losers: [id], penalty, entries }
+function evaluateRow(row, players) {
+  const entries = players.map((p) => ({ id: p.id, name: p.name, cards: p.cards }));
+  const pick = (vals, fn) => { const t = fn(...vals); return entries.filter((_, i) => vals[i] === t); };
+  let losers, penalty = 1;
+  if (row === 0) {            // lowest card loses; every Ace held by anyone doubles up the penalty
+    const v = entries.map((e) => rankOf(e.cards[0]));
+    entries.forEach((e, i) => (e.val = v[i]));
+    losers = pick(v, Math.min);
+    const aces = v.filter((x) => x === 14).length;
+    if (aces) penalty = aces * 2;
+  } else if (row === 1) {     // smallest card wins, so the highest card loses; every 2 doubles up the penalty
+    const v = entries.map((e) => rankOf(e.cards[0]));
+    entries.forEach((e, i) => (e.val = v[i]));
+    losers = pick(v, Math.max);
+    const twos = v.filter((x) => x === 2).length;
+    if (twos) penalty = twos * 2;
+  } else if (row === 2) {     // closest to 10.5: anything over loses; if nobody is over, the lowest total loses
+    const v = entries.map((e) => e.cards.reduce((a, c) => a + pts2(c), 0));
+    entries.forEach((e, i) => { e.total = v[i] / 2; e.bust = v[i] > 21; });
+    const bust = entries.filter((e) => e.bust);
+    losers = bust.length ? bust : pick(v, Math.min);
+  } else {                    // pattern: only the weakest hand loses; strong hands raise the penalty
+    const h = entries.map((e) => handOf(e.cards));
+    entries.forEach((e, i) => (e.hand = h[i]));
+    const weakest = Math.min(...h.map((x) => HAND_ORDER.indexOf(x)));
+    losers = entries.filter((e, i) => HAND_ORDER.indexOf(h[i]) === weakest);
+    const bonus = h.reduce((a, x) => a + (HAND_PENALTY[x] || 0), 0);
+    if (bonus) penalty = bonus;
+  }
+  return { row, losers: losers.map((e) => e.id), penalty, entries };
+}
+
+// A row is scored once everyone's cards in it are face up (and the game is under way).
+function rowResults(room) {
+  if (room.phase !== 'dealt' || room.players.length < 2 || !room.players.every((p) => p.ready)) return [];
+  const out = [];
+  let start = 0;
+  ROW_SIZES.forEach((n, row) => {
+    const slice = room.players.map((p) => p.board.slice(start, start + n));
+    if (slice.every((cs) => cs.every((c) => c && c.up))) {
+      out.push(evaluateRow(row, room.players.map((p, i) => ({ id: p.id, name: p.name, cards: slice[i].map((c) => c.c) }))));
+    }
+    start += n;
+  });
+  return out;
+}
+
 function view(room, pid) {
   const me = room.players.find((p) => p.id === pid);
   if (!me) throw new HttpError(404, 'You are not in this room');
@@ -96,6 +167,7 @@ function view(room, pid) {
     maxPlayers: MAX_PLAYERS,
     now: Date.now(),
     allReady: room.allReady || null,
+    rowResults: rowResults(room),
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -310,3 +382,6 @@ module.exports = async (req, res) => {
     res.status(status).json({ error: status === 500 ? 'Server error' : status === 503 ? 'Busy, try again' : e.message });
   }
 };
+
+module.exports.evaluateRow = evaluateRow;
+module.exports.handOf = handOf;

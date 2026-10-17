@@ -263,6 +263,36 @@
 
   .rowbtn.hostbtn { right: auto; left: 0; border-color: var(--gold); color: var(--gold-hi); background: rgba(201,169,106,.12); }
   .rowbtn.hostbtn:hover { background: rgba(201,169,106,.22); }
+
+  /* row results */
+  .results { border-color: rgba(255,155,148,.55); background: linear-gradient(180deg, rgba(255,155,148,.09), rgba(255,255,255,.03)); }
+  .res { padding: 12px 0; border-top: 1px solid var(--line); }
+  .res:first-of-type { border-top: 0; padding-top: 4px; }
+  .reshead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .reshead b { font-size: 15px; color: var(--gold-hi); }
+  .resrule { font-size: 12px; opacity: .65; }
+  .resmain { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; }
+  .resl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+  .resk { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #ff9b94; font-weight: 700; margin-right: 2px; }
+  .loserchip { padding: 4px 12px; border-radius: 99px; background: rgba(255,120,110,.2); border: 1px solid rgba(255,120,110,.65); color: #ffd2cd; font-weight: 700; font-size: 14px; }
+  .respen { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 14px; border-radius: 12px; font-size: 24px; font-weight: 800; color: #2b1300; background: linear-gradient(180deg, #ffb25e, #f0801f); box-shadow: 0 2px 10px rgba(240,128,31,.35); }
+  .respen small { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; }
+  .resdet { display: grid; gap: 3px; }
+  .rd { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
+  .rd.lose { background: rgba(255,120,110,.14); }
+  .rdn { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rdv { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+  .rdv em { font-style: normal; opacity: .75; } .rdv .bad { color: #ff9b94; }
+  .mc { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--ivory); color: var(--ink); font-weight: 700; font-size: 12px; }
+  .mc.red { color: var(--red); }
+  /* announcement pop-up */
+  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 6.7s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; }
+  .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(18,22,40,.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
+  .resbox .rf-k { font-size: clamp(16px, 4.5vw, 24px); letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
+  .resbox .resk { margin-top: 10px; font-size: 13px; }
+  .resnames { font-size: clamp(30px, 9vw, 60px); font-weight: 800; line-height: 1.15; margin: 4px 0 14px; word-break: break-word; animation: namepulse 1.2s ease-in-out infinite; }
+  .respen.big { font-size: clamp(34px, 10vw, 64px); padding: 6px 24px; }
+  @keyframes resfx { 0% { opacity: 0; transform: scale(.7) rotate(-2deg); } 6% { opacity: 1; transform: scale(1.06); } 9% { transform: scale(1); } 77% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.03); } }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -338,6 +368,10 @@ const I18N = {
     handHidden: 'Your hand (hidden)', handDone: 'Your hand — all cards are placed',
     handExpert: 'Your hand — tap a card to place it in the next free slot', handNormal: 'Your hand — drag a card onto a slot (or tap it, then tap a slot)',
     expert: 'Expert mode', expertTip: 'Tap a hand card to drop it into the next free slot (top row first); tap a placed card to send it back.',
+    resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
+    rule3: 'Closest to 10.5 — over 10.5 loses, otherwise the lowest loses', rule4: 'Weakest pattern loses',
+    loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust',
+    h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush', h_triple: 'Triple', h_sflush: 'Royal flush',
     openAll: 'Open all', closeAll: 'Close all', openAllTip: 'Open this row for every player', closeAllTip: 'Close this row for every player',
     flipUp: 'Flip up', flipDown: 'Flip down', flipUpTip: 'Turn this row face up for everyone', flipDownTip: 'Turn this row face down', shared: 'Face up for everyone',
     bannerK: 'Everyone is ready · last to be ready', secs: (v) => `${v.n}s`,
@@ -374,6 +408,10 @@ const I18N = {
     handHidden: '你的手牌（已隐藏）', handDone: '你的手牌 — 所有牌都已摆好',
     handExpert: '你的手牌 — 点击一张牌，自动放入下一个空位', handNormal: '你的手牌 — 把牌拖到位置上（或先点牌，再点位置）',
     expert: '高手模式', expertTip: '点击手牌会放入下一个空位（从最上面一行开始）；点击已摆的牌会放回手牌。',
+    resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
+    rule3: '最接近 10.5，超过 10.5 即输；否则点数最小者输', rule4: '牌型最弱者输',
+    loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了',
+    h_none: '散牌', h_pair: '对子', h_straight: '顺子', h_flush: '同花', h_triple: '三条', h_sflush: '同花顺',
     openAll: '全部翻开', closeAll: '全部盖上', openAllTip: '为所有玩家翻开这一行', closeAllTip: '为所有玩家盖上这一行',
     flipUp: '翻开', flipDown: '盖上', flipUpTip: '向所有人翻开这一行', flipDownTip: '盖上这一行', shared: '所有人可见',
     bannerK: '全员已准备 · 最后一位准备的是', secs: (v) => `${v.n} 秒`,
@@ -410,6 +448,10 @@ const I18N = {
     handHidden: '你的手牌（已隱藏）', handDone: '你的手牌 — 所有牌都已擺好',
     handExpert: '你的手牌 — 點擊一張牌，自動放入下一個空位', handNormal: '你的手牌 — 把牌拖到位置上（或先點牌，再點位置）',
     expert: '高手模式', expertTip: '點擊手牌會放入下一個空位（從最上面一行開始）；點擊已擺的牌會放回手牌。',
+    resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
+    rule3: '最接近 10.5，超過 10.5 即輸；否則點數最小者輸', rule4: '牌型最弱者輸',
+    loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了',
+    h_none: '散牌', h_pair: '對子', h_straight: '順子', h_flush: '同花', h_triple: '三條', h_sflush: '同花順',
     openAll: '全部翻開', closeAll: '全部蓋上', openAllTip: '為所有玩家翻開這一行', closeAllTip: '為所有玩家蓋上這一行',
     flipUp: '翻開', flipDown: '蓋上', flipUpTip: '向所有人翻開這一行', flipDownTip: '蓋上這一行', shared: '所有人可見',
     bannerK: '全員已準備 · 最後一位準備的是', secs: (v) => `${v.n} 秒`,
@@ -785,6 +827,9 @@ function renderGame() {
       ? t('hintReady')
       : t('hintArrange'))));
 
+  const results = resultsPanel();   // below your own board, so opening rows never pushes the controls down
+  if (results) app.append(results);
+
   const hand = el('div', { class: 'hand' });
   st.hand.forEach((c, i) => {
     const d = dealAnim ? ' fx-deal' : '';
@@ -882,6 +927,13 @@ function adopt(j) {
   j.recvAt = Date.now();
   if (prev) diffFx(prev, j);
   if (prev && j.round > prev.round) showRound(j.round);
+  if (prev) {   // announce a row the moment it gets scored (or its outcome changes)
+    const sig = (r) => (r ? r.losers.join(',') + '|' + r.penalty : '');
+    const byRow = (x) => Object.fromEntries((x.rowResults || []).map((r) => [r.row, r]));
+    const a = byRow(prev), b = byRow(j);
+    const fresh = Object.keys(b).filter((k) => sig(a[k]) !== sig(b[k]));
+    if (fresh.length) showResult(b[fresh[fresh.length - 1]]);
+  }
   const key = (x) => x.phase + ':' + x.round;
   if (!prev || key(prev) !== key(j)) { screenAnim = true; dealAnim = j.phase === 'dealt'; }
   st = j; lastKey = j.version;
@@ -894,6 +946,50 @@ function face(view, p, s) {
   if (!s) return null;
   const visible = p.id === view.meId ? (!p.ready || s.up) : s.up;
   return visible ? s.c : '#';
+}
+
+
+// ---- row results (computed by the server once everyone's row is face up) ----
+function cardChip(id) {
+  const suit = id.slice(-1);
+  return el('span', { class: 'mc' + (suit === 'H' || suit === 'D' ? ' red' : '') }, id.slice(0, -1) + SUIT[suit]);
+}
+function loserNames(r) { return r.losers.map((id) => r.entries.find((e) => e.id === id).name); }
+
+function resultsPanel() {
+  const list = st.rowResults || [];
+  if (!list.length) return null;
+  const box = el('div', { class: 'panel results' }, el('div', { class: 'name' }, t('resTitle')));
+  list.forEach((r) => {
+    const names = loserNames(r);
+    const detail = el('div', { class: 'resdet' });
+    r.entries.forEach((e) => {
+      const lose = r.losers.includes(e.id);
+      const value = el('span', { class: 'rdv' }, ...e.cards.map(cardChip));
+      if (r.row === 2) value.append(el('b', { class: e.bust ? 'bad' : '' }, ` ${e.total}`), e.bust ? el('em', {}, ` ${t('bust')}`) : '');
+      if (r.row === 3) value.append(el('em', {}, ` ${t('h_' + e.hand)}`));
+      detail.append(el('div', { class: 'rd' + (lose ? ' lose' : '') }, el('span', { class: 'rdn' }, e.name), value));
+    });
+    box.append(el('div', { class: 'res' },
+      el('div', { class: 'reshead' }, el('b', {}, t('rowN', { n: r.row + 1 })), el('span', { class: 'resrule' }, t('rule' + (r.row + 1)))),
+      el('div', { class: 'resmain' },
+        el('div', { class: 'resl' }, el('span', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')), ...names.map((n) => el('span', { class: 'loserchip' }, n))),
+        el('div', { class: 'respen' }, el('small', {}, t('penalty')), '×' + r.penalty)),
+      detail));
+  });
+  return box;
+}
+
+function showResult(r) {
+  document.querySelector('.resfx')?.remove();
+  const names = loserNames(r);
+  const o = el('div', { class: 'resfx' }, el('div', { class: 'resbox' },
+    el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
+    el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
+    el('div', { class: 'resnames' }, names.join(' · ')),
+    el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty)));
+  document.body.append(o);
+  setTimeout(() => o.remove(), 6700);
 }
 
 function showRound(n) {
