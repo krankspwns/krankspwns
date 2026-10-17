@@ -985,6 +985,13 @@ function avatarEl(key, size = 40, cls = '') {
 const avOf = (id) => (st && st.players.find((q) => q.id === id) || {}).avatar;
 let formAvatar = (() => { try { const a = localStorage.getItem('sct-av'); if (AVATARS[a]) return a; } catch {} return AVATAR_KEYS[Math.floor(Math.random() * AVATAR_KEYS.length)]; })();
 
+function setMyAvatar(k) {
+  formAvatar = k; try { localStorage.setItem('sct-av', k); } catch {}
+  const me = st && st.players.find((q) => q.id === st.meId);
+  if (me) { me.avatar = k; render(); }   // show it straight away; the server copy follows
+  act('avatar', { avatar: k });
+}
+
 // a small picker: tap an animal to choose it
 function openAvatarPicker(current, onPick) {
   document.querySelector('.av-ov')?.remove();
@@ -1507,7 +1514,7 @@ function renderWaitingRoom() {
     seats.append(p
       ? el('div', { class: 'seat' + (p.id === st.meId ? ' me' : '') + pop },
           p.id === st.meId
-            ? el('button', { type: 'button', class: 'avedit', title: t('changeAvatar'), onclick: () => openAvatarPicker(p.avatar, (k) => { formAvatar = k; try { localStorage.setItem('sct-av', k); } catch {} act('avatar', { avatar: k }); }) }, avatarEl(p.avatar, 54), el('i', {}, icon('swap', 11)))
+            ? el('button', { type: 'button', class: 'avedit', title: t('changeAvatar'), onclick: () => openAvatarPicker(p.avatar, setMyAvatar) }, avatarEl(p.avatar, 54), el('i', {}, icon('swap', 11)))
             : avatarEl(p.avatar, 54),
           el('div', { class: 'sname' }, p.name + (p.id === st.meId ? t('you') : '')),
           p.isHost ? el('span', { class: 'tag' }, t('host')) : p.online === false ? el('span', { class: 'tag offl' }, t('offlineTag')) : el('span', { class: 'tag joined' }, t('joined')))
@@ -2264,7 +2271,9 @@ function renderPlayers() {
     const presence = st.isHost && p.online !== undefined && !me
       ? el('span', { class: 'pdot ' + (p.online ? 'on' : 'off') }, p.online ? t('online') : t('offlineAgo', { n: p.seenAgo ?? '?' })) : '';
     return el('div', { class: 'prow' + (p.online === false ? ' offline' : '') },
-      avatarEl(p.avatar, 40),
+      me
+        ? el('button', { type: 'button', class: 'avedit', title: t('changeAvatar'), onclick: () => openAvatarPicker(p.avatar, setMyAvatar) }, avatarEl(p.avatar, 40), el('i', {}, icon('swap', 11)))
+        : avatarEl(p.avatar, 40),
       el('div', { class: 'pinfo' },
         el('div', { class: 'pname' }, p.name + (me ? t('you') : ''), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
         el('div', { class: 'ptags' }, status, presence)),
