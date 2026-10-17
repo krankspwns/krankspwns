@@ -351,10 +351,10 @@
   .tstat.safe { background: rgba(111,207,151,.22); color: #b9f0cd; }
   .tflip { padding: 6px 14px; font-size: 11px; }
   /* big cards on the stage / small ones on the final board are sized from --cw */
-  .stage .card, .final .card { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); }
-  .stage .card .ix, .final .card .ix { font-size: calc(var(--cw) * .27); top: calc(var(--cw) * .06); left: calc(var(--cw) * .09); }
-  .stage .card .ix i, .final .card .ix i { font-size: calc(var(--cw) * .25); }
-  .stage .card .pip, .final .card .pip { font-size: calc(var(--cw) * .62); padding-top: calc(var(--cw) * .24); padding-left: calc(var(--cw) * .12); }
+  .stage .card, .final .card, .resbox .card { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); }
+  .stage .card .ix, .final .card .ix, .resbox .card .ix { font-size: calc(var(--cw) * .27); top: calc(var(--cw) * .06); left: calc(var(--cw) * .09); }
+  .stage .card .ix i, .final .card .ix i, .resbox .card .ix i { font-size: calc(var(--cw) * .25); }
+  .stage .card .pip, .final .card .pip, .resbox .card .pip { font-size: calc(var(--cw) * .62); padding-top: calc(var(--cw) * .24); padding-left: calc(var(--cw) * .12); }
   .stage .tcards .card[style*="cursor"] { cursor: pointer; }
   /* torn cards: two halves along a jagged line, drifting apart */
   .tcard { position: relative; width: var(--cw); height: calc(var(--cw) * 1.45); margin: 0 4px; }
@@ -397,6 +397,12 @@
   .fdrop { border-top: 1px solid rgba(255,255,255,.1); padding-top: 10px; } .fdrop summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 6px 2px; font-weight: 700; }
   .fdrop summary::-webkit-details-marker { display: none; } .fd-h { margin-left: auto; font-size: 12px; font-weight: 600; opacity: .7; } .fd-c { transition: transform .2s; opacity: .7; } .fdrop[open] .fd-c { transform: rotate(180deg); }
   .fdrop .sthead { margin: 10px 0; }
+  /* the verdict pop-up also lists everyone's cards for the row (you first), so nothing is hidden behind it */
+  .resbox { --cw: 30px; } .resboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-top: 12px; max-width: min(92vw, 520px); }
+  .resboard .rb { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); }
+  .resboard .rb.me { border-color: var(--gold); background: rgba(201,169,106,.16); } .resboard .rb.lost { background: rgba(255,80,70,.22); border-color: rgba(255,120,110,.7); }
+  .resboard .rbn { font-size: 12px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; } .resboard .rbc { display: flex; gap: 3px; flex: none; }
+  .resboard.many { --cw: 22px; }
   /* final board */
   .final { --cw: 36px; }
   .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
@@ -533,7 +539,7 @@
   .ic-eye{color:#6fd3ff}.ic-eye-off{color:#9aa7c7}.ic-zap{color:#ffd23f}.ic-hand{color:#ffb86b}.ic-phone{color:#b69cff}.ic-ticket{color:#ff9f43}
   .ic-crown{color:#ffcf40}.ic-hourglass{color:#ffb347}.ic-wifi{color:#4fdc8a}.ic-wifi-off{color:#ff7a7a}.ic-help{color:#7fb2ff}.ic-user-x{color:#ff6b6b}
   .ic-link{color:#6fd3ff}.ic-copy{color:#9fb4ff}.ic-logout{color:#ff8a7a}.ic-shuffle{color:#c58bff}.ic-volume-x{color:#9aa7c7}.ic-volume-2{color:#5fe0c0}
-  .ic-music{color:#4fdc8a}.ic-trophy{color:#ffcf40}.ic-swap{color:#6fd3ff}
+  .ic-music{color:#1f9d55}.ic-trophy{color:#ffcf40}.ic-swap{color:#6fd3ff}
   button.big .ic, .big .ic, .guidebtn b .ic, .gtitle b .ic, .pill .ic, .tag .ic, .readystrip .tick .ic, .btn-solid .ic { color: inherit; }
   .ic { display: inline-block; flex: none; vertical-align: middle; }
   .iconlabel { display: inline-flex; align-items: center; gap: 7px; }
@@ -1956,17 +1962,20 @@ function showResult(r, view) {
   const iLose = !r.tie && r.losers.includes(meId);
   const others = r.losers.filter((id) => id !== meId).map((id) => r.entries.find((e) => e.id === id).name);
   const penalty = r.tie ? el('div', { class: 'respen big none' }, t('noPenalty')) : el('div', { class: 'respen big' }, el('small', {}, t('penalty')), '×' + r.penalty);
+  const board = el('div', { class: 'resboard' + (r.entries.length > 5 ? ' many' : '') },
+    ...[...r.entries].sort((a, b) => (b.id === meId) - (a.id === meId)).map((e) => el('div', { class: 'rb' + (e.id === meId ? ' me' : '') + (!r.tie && r.losers.includes(e.id) ? ' lost' : '') },
+      el('span', { class: 'rbn' }, e.name + (e.id === meId ? t('you') : '')), el('span', { class: 'rbc' }, ...e.cards.map((c) => cardEl(c, { up: true }))))));
   const box = iLose
     ? el('div', { class: 'resbox youlose' },
         el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
         el('div', { class: 'resnames youlose' }, t('youLose')),
         others.length ? el('div', { class: 'resk' }, t('alongWith', { names: others.join(' · ') })) : '',
-        penalty)
+        penalty, board)
     : el('div', { class: 'resbox' },
         el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
         r.tie ? '' : el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
         el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
-        penalty);
+        penalty, board);
   const o = el('div', { class: 'resfx' + (iLose ? ' lose' : '') }, iLose ? el('div', { class: 'spikes' }) : '', box);
   document.body.append(o);
   // the row turns over, the loser's cards tear, then the verdict
