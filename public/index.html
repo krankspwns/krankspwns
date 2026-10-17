@@ -798,7 +798,7 @@ function renderGame() {
   const handPanel = el('div', panel(2),
     el('div', { class: 'row' }, el('div', { class: 'name grow' }, handTitle), toggle), hand);
   if (!me.ready) handPanel.dataset.hand = '';
-  app.append(handPanel);
+  if (!inProgress) app.append(handPanel);   // nothing left to do with the hand once the round is under way
 
   const others = el('div', { class: 'others' });
   st.players.filter(p => p.id !== st.meId).forEach((p, i) => others.append(el('div', panel(3 + i * .5, p.ready ? 'is-ready' : ''),
