@@ -892,7 +892,7 @@ const I18N = {
     youReady: "You're ready", waitMore: (v) => `Waiting for ${v.n} more player${v.n > 1 ? 's' : ''}`,
     hintProgress: 'Everyone is ready. Use the Flip up / Flip down buttons on each row, or click a card, to reveal or hide it. The host can deal a new round.',
     hintReady: 'You are ready: all your cards are hidden and locked. Waiting for the other players. Press Unready to move cards again.',
-    hintArrange: 'Fill all 7 slots to get ready. Tap a card in your hand to place it in the next free slot (top row first), tap a placed card to send it back, or drag cards anywhere. “I’m ready” hides and locks them.',
+    hintArrange: 'Fill all 7 slots to get ready. Tap a card in your hand to place it in the next free slot (top row first), tap a placed card to send it back, or press and hold a card, then drag it to any slot (or swap placed cards). “I’m ready” hides and locks them.',
     pillReady: 'READY', pillArranging: (v) => `Arranging ${v.n}/${v.t}`,
     handHidden: 'Your hand (hidden)', handDone: 'Your hand — all cards are placed',
     handTap: 'Your hand — tap a card to place it in the next free slot, or drag it to a slot',
@@ -963,7 +963,7 @@ const I18N = {
     youReady: '你已准备', waitMore: (v) => `还在等待 ${v.n} 位玩家`,
     hintProgress: '全员已准备。使用每一行的“翻开 / 盖上”按钮，或点击单张牌来翻开或盖上。房主可以开始新的一轮。',
     hintReady: '你已准备：所有牌都已盖上并锁定。正在等待其他玩家。点击“取消准备”可重新移动牌。',
-    hintArrange: '摆满 7 个位置才能准备。点击手牌会放入下一个空位（从最上面一行开始），点击已摆的牌会放回手牌，也可以随意拖动。点击“我准备好了”会盖上并锁定。',
+    hintArrange: '摆满 7 个位置才能准备。点击手牌会放入下一个空位（从最上面一行开始），点击已摆的牌会放回手牌，也可以按住一张牌后拖到任意位置（已摆的牌之间也能互换）。点击“我准备好了”会盖上并锁定。',
     pillReady: '已准备', pillArranging: (v) => `摆牌中 ${v.n}/${v.t}`,
     handHidden: '你的手牌（已隐藏）', handDone: '你的手牌 — 所有牌都已摆好',
     handTap: '你的手牌 — 点击一张牌放入下一个空位，或拖到指定位置',
@@ -1034,7 +1034,7 @@ const I18N = {
     youReady: '你已準備', waitMore: (v) => `還在等待 ${v.n} 位玩家`,
     hintProgress: '全員已準備。使用每一行的「翻開 / 蓋上」按鈕，或點擊單張牌來翻開或蓋上。房主可以開始新的一輪。',
     hintReady: '你已準備：所有牌都已蓋上並鎖定。正在等待其他玩家。點擊「取消準備」可重新移動牌。',
-    hintArrange: '擺滿 7 個位置才能準備。點擊手牌會放入下一個空位（從最上面一行開始），點擊已擺的牌會放回手牌，也可以隨意拖動。點擊「我準備好了」會蓋上並鎖定。',
+    hintArrange: '擺滿 7 個位置才能準備。點擊手牌會放入下一個空位（從最上面一行開始），點擊已擺的牌會放回手牌，也可以按住一張牌後拖到任意位置（已擺的牌之間也能互換）。點擊「我準備好了」會蓋上並鎖定。',
     pillReady: '已準備', pillArranging: (v) => `擺牌中 ${v.n}/${v.t}`,
     handHidden: '你的手牌（已隱藏）', handDone: '你的手牌 — 所有牌都已擺好',
     handTap: '你的手牌 — 點擊一張牌放入下一個空位，或拖到指定位置',
@@ -1245,7 +1245,7 @@ function enableDrag(node, src, cardId, onTap) {
     if (touch) holdT = setTimeout(() => {   // held still for a moment: the card is picked up
       armed = true; touchDrag = true; node.classList.add('lifted');
       try { navigator.vibrate && navigator.vibrate(10); } catch {}
-    }, 170);
+    }, 90);
     const move = (e) => {
       if (!armed) {   // finger moved before the hold finished: it's a scroll, leave it to the browser
         if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) { scrolled = true; stop(); }
