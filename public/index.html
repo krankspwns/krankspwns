@@ -260,6 +260,9 @@
   html[lang^="zh"] :is(h1, .kicker, .lb-k, .joincard label, .or, .tag, .pill, .rf-k, button) { letter-spacing: .06em; }
   html[lang^="zh"] h1 { letter-spacing: .3em; }
   html[lang^="zh"] .hero h2 { letter-spacing: 0; }
+
+  .rowbtn.hostbtn { right: auto; left: 0; border-color: var(--gold); color: var(--gold-hi); background: rgba(201,169,106,.12); }
+  .rowbtn.hostbtn:hover { background: rgba(201,169,106,.22); }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -335,12 +338,13 @@ const I18N = {
     handHidden: 'Your hand (hidden)', handDone: 'Your hand — all cards are placed',
     handExpert: 'Your hand — tap a card to place it in the next free slot', handNormal: 'Your hand — drag a card onto a slot (or tap it, then tap a slot)',
     expert: 'Expert mode', expertTip: 'Tap a hand card to drop it into the next free slot (top row first); tap a placed card to send it back.',
+    openAll: 'Open all', closeAll: 'Close all', openAllTip: 'Open this row for every player', closeAllTip: 'Close this row for every player',
     flipUp: 'Flip up', flipDown: 'Flip down', flipUpTip: 'Turn this row face up for everyone', flipDownTip: 'Turn this row face down', shared: 'Face up for everyone',
     bannerK: 'Everyone is ready · last to be ready', secs: (v) => `${v.n}s`,
     roundK: 'Round', toastJoin: (v) => `${v.name} joined the table`, toastLeft: (v) => `${v.name} left the table`,
     roomGone: 'Room no longer available',
     e_name: 'Enter a name', e_full: (v) => 'Room is full', e_taken: 'Name already taken', e_room: 'Room not found', e_notin: 'You are not in this room',
-    e_host: 'Only the host can deal', e_nodeal: 'No cards dealt', e_unready: 'Unready to move cards', e_card: 'Card not in your hand', e_slot: 'Bad slot',
+    e_host: 'Only the host can do that', e_nodeal: 'No cards dealt', e_unready: 'Unready to move cards', e_card: 'Card not in your hand', e_slot: 'Bad slot',
     e_nothing: 'Nothing there', e_fill: 'Place all 7 cards in the rows first', e_wait: 'Wait until everyone is ready', e_game: 'Game in progress',
     e_busy: 'Busy, try again', e_server: 'Server error', e_unknown: 'Something went wrong',
   },
@@ -370,12 +374,13 @@ const I18N = {
     handHidden: '你的手牌（已隐藏）', handDone: '你的手牌 — 所有牌都已摆好',
     handExpert: '你的手牌 — 点击一张牌，自动放入下一个空位', handNormal: '你的手牌 — 把牌拖到位置上（或先点牌，再点位置）',
     expert: '高手模式', expertTip: '点击手牌会放入下一个空位（从最上面一行开始）；点击已摆的牌会放回手牌。',
+    openAll: '全部翻开', closeAll: '全部盖上', openAllTip: '为所有玩家翻开这一行', closeAllTip: '为所有玩家盖上这一行',
     flipUp: '翻开', flipDown: '盖上', flipUpTip: '向所有人翻开这一行', flipDownTip: '盖上这一行', shared: '所有人可见',
     bannerK: '全员已准备 · 最后一位准备的是', secs: (v) => `${v.n} 秒`,
     roundK: '回合', toastJoin: (v) => `${v.name} 加入了牌桌`, toastLeft: (v) => `${v.name} 离开了牌桌`,
     roomGone: '房间已不存在',
     e_name: '请输入名字', e_full: (v) => '房间已满', e_taken: '这个名字已被使用', e_room: '找不到该房间', e_notin: '你不在这个房间里',
-    e_host: '只有房主可以发牌', e_nodeal: '还没有发牌', e_unready: '请先取消准备再移动牌', e_card: '这张牌不在你的手牌中', e_slot: '位置无效',
+    e_host: '只有房主可以这样做', e_nodeal: '还没有发牌', e_unready: '请先取消准备再移动牌', e_card: '这张牌不在你的手牌中', e_slot: '位置无效',
     e_nothing: '那里没有牌', e_fill: '请先把 7 张牌都摆好', e_wait: '请等待所有人准备好', e_game: '游戏进行中',
     e_busy: '服务器繁忙，请重试', e_server: '服务器错误', e_unknown: '出错了',
   },
@@ -405,12 +410,13 @@ const I18N = {
     handHidden: '你的手牌（已隱藏）', handDone: '你的手牌 — 所有牌都已擺好',
     handExpert: '你的手牌 — 點擊一張牌，自動放入下一個空位', handNormal: '你的手牌 — 把牌拖到位置上（或先點牌，再點位置）',
     expert: '高手模式', expertTip: '點擊手牌會放入下一個空位（從最上面一行開始）；點擊已擺的牌會放回手牌。',
+    openAll: '全部翻開', closeAll: '全部蓋上', openAllTip: '為所有玩家翻開這一行', closeAllTip: '為所有玩家蓋上這一行',
     flipUp: '翻開', flipDown: '蓋上', flipUpTip: '向所有人翻開這一行', flipDownTip: '蓋上這一行', shared: '所有人可見',
     bannerK: '全員已準備 · 最後一位準備的是', secs: (v) => `${v.n} 秒`,
     roundK: '回合', toastJoin: (v) => `${v.name} 加入了牌桌`, toastLeft: (v) => `${v.name} 離開了牌桌`,
     roomGone: '房間已不存在',
     e_name: '請輸入名字', e_full: (v) => '房間已滿', e_taken: '這個名字已被使用', e_room: '找不到該房間', e_notin: '你不在這個房間裡',
-    e_host: '只有房主可以發牌', e_nodeal: '還沒有發牌', e_unready: '請先取消準備再移動牌', e_card: '這張牌不在你的手牌中', e_slot: '位置無效',
+    e_host: '只有房主可以這樣做', e_nodeal: '還沒有發牌', e_unready: '請先取消準備再移動牌', e_card: '這張牌不在你的手牌中', e_slot: '位置無效',
     e_nothing: '那裡沒有牌', e_fill: '請先把 7 張牌都擺好', e_wait: '請等待所有人準備好', e_game: '遊戲進行中',
     e_busy: '伺服器忙碌，請重試', e_server: '伺服器錯誤', e_unknown: '發生錯誤',
   },
@@ -623,6 +629,12 @@ function boardEl(board, mine, pid) {
     if (mine && dealt && st.players.every((p) => p.ready)) {
       const cards = board.slice(i - n, i).filter(Boolean);
       const up = cards.length > 0 && cards.every((c) => c.up);   // already face up -> offer to flip back down
+      if (st.isHost) {   // host only: open / close this row for everyone, on the left
+        const start = i - n;
+        const everyoneUp = st.players.every((pl) => pl.board.slice(start, start + n).every((c) => c && c.up));
+        rw.append(el('button', { class: 'ghost rowbtn hostbtn', title: everyoneUp ? t('closeAllTip') : t('openAllTip'),
+          onclick: () => act('flipRowAll', { row: rowIdx, up: !everyoneUp }) }, everyoneUp ? t('closeAll') : t('openAll')));
+      }
       rw.append(el('button', { class: 'ghost rowbtn', title: up ? t('flipDownTip') : t('flipUpTip'), onclick: () => act('flipRow', { row: rowIdx, up: !up }) }, up ? t('flipDown') : t('flipUp')));
     }
     wrap.append(rw);
@@ -950,6 +962,12 @@ function predict(action, x) {
       if (!next.players.every((p) => p.ready)) return null;
       const start = ROWS.slice(0, x.row).reduce((a, n) => a + n, 0);
       for (let i = start; i < start + ROWS[x.row]; i++) if (me.board[i]) me.board[i].up = !!x.up;
+      return next;
+    }
+    case 'flipRowAll': {
+      if (!next.players.every((p) => p.ready)) return null;
+      const start = ROWS.slice(0, x.row).reduce((a, n) => a + n, 0);
+      for (const pl of next.players) for (let i = start; i < start + ROWS[x.row]; i++) if (pl.board[i]) pl.board[i].up = !!x.up;
       return next;
     }
     case 'ready':

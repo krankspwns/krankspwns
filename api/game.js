@@ -167,7 +167,7 @@ async function handle(action, b, query) {
       return view(room, pid);
 
     case 'deal': {
-      need(room.hostId === pid, 403, 'Only the host can deal');
+      need(room.hostId === pid, 403, 'Only the host can do that');
       // One deck covers up to 7 players (49 cards); more players add extra decks.
       const decks = Math.ceil((room.players.length * HAND_SIZE) / 52);
       const deck = shuffle(Array.from({ length: decks }, newDeck).flat());
@@ -233,6 +233,20 @@ async function handle(action, b, query) {
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
       const up = action === 'flipRowUp' ? true : !!b.up;
       for (let i = start; i < start + ROW_SIZES[row]; i++) if (me.board[i]) me.board[i].up = up;
+      break;
+    }
+
+    case 'flipRowAll': {
+      // Host reveals (or hides) one row for every player at once.
+      need(room.hostId === pid, 403, 'Only the host can do that');
+      need(room.phase === 'dealt', 409, 'No cards dealt');
+      need(room.players.every((p) => p.ready), 409, 'Wait until everyone is ready');
+      const row = Number(b.row);
+      need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
+      const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
+      for (const pl of room.players) {
+        for (let i = start; i < start + ROW_SIZES[row]; i++) if (pl.board[i]) pl.board[i].up = !!b.up;
+      }
       break;
     }
 
