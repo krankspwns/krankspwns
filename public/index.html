@@ -142,7 +142,7 @@
   /* centred vertically without transform, so hover/press styles can never move it */
   .rowbtn { position: absolute; right: 0; top: 0; bottom: 0; margin: auto 0; height: fit-content; padding: 5px 10px; font-size: 10px; }
   .rowbtn:hover, .rowbtn:active { transform: none; filter: none; }
-  .hand { display:flex; gap:10px; flex-wrap: wrap; min-height: 90px; justify-content:center; padding: 8px 0; }
+  .hand { display:grid; grid-template-columns: repeat(4, max-content); gap:10px; min-height: 90px; justify-content:center; padding: 8px 0; }   /* 4 cards on the first row, the rest below */
 
   .others { display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:16px; }
   .others .panel { margin-bottom: 0; padding: 12px; }
@@ -813,7 +813,7 @@
     .ownpanel .board { gap: 5px; padding: 2px 0; } .ownpanel .board .r { gap: 6px; }
     .ownpanel .hint, .handpanel .hint { display: none; } .readystrip { padding: 6px 10px; margin: 2px 0 6px; }
     .ownpanel .row .readybtn, .ownpanel .row .unreadybtn { padding: 9px 16px; }
-    .hand { min-height: 0; gap: 6px; justify-content: flex-start; padding: 2px 0; }
+    .hand { min-height: 0; gap: 6px; justify-content: start; padding: 2px 0; }
     .others { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
     .observer { padding: 12px; } .obs-eye { font-size: 30px; }
     /* waiting room: code and buttons on the left, seats on the right */
