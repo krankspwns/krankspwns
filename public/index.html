@@ -1316,9 +1316,11 @@ function avatarEl(key, size = 40, cls = '', acc = '', bd = '') {
     document.querySelector('.avbig')?.remove();
     const W = Math.min(Math.round(window.innerWidth * 0.8), 520);
     const box = a.closest('.prow, .seat, .pd, .hrow, .tname, .chatmsg, .emofloat, .avbox, .shopitem, .invth');
-    const nm = box && box.querySelector('.pname, .sname, .pd-n, .tn, small b, b');
+    const nmEl = box && box.querySelector('.pname, .sname, .pd-n, .tn, small b, b');
+    // only the name itself: the HOST tag and status pills live inside the same element
+    const nmText = nmEl ? [...nmEl.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim() : '';
     const ov = el('div', { class: 'avbig', role: 'dialog', 'aria-modal': 'true', onclick: () => ov.remove() },
-      el('div', { class: 'avbigbox' }, avatarEl(a.dataset.k, W, '', a.dataset.acc, a.dataset.bd), nm && nm.textContent.trim() ? el('div', { class: 'avbigname' }, nm.textContent.trim().slice(0, 24)) : ''));
+      el('div', { class: 'avbigbox' }, avatarEl(a.dataset.k, W, '', a.dataset.acc, a.dataset.bd), nmText ? el('div', { class: 'avbigname' }, nmText.slice(0, 24)) : ''));
     document.body.append(ov);
     SND.play('boing'); buzz(20);
   };
