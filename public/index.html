@@ -2060,27 +2060,45 @@ function playGift(g) {
     fly(fromX, fromY, tx, ty, { size: 70, dur: 640, spin: 520, grow: toMe ? 2.6 : 1.6 }, () => { splat('#e8352e', '#a81818', 'SPLAT!', { seeds: true }); });
   } else if (kind === 'splat' && g.item === 'pie') {
     fly(fromX, fromY, tx, ty, { size: 76, dur: 700, spin: 300, grow: toMe ? 2.6 : 1.6 }, () => { splat('#fff1d0', '#e0b872', 'PLOP!', { cherry: true }); });
-  } else if (g.item === 'snowball') {   // a packed snowball: powdery impact, ice shards, sparkles, drifting flakes
-    // a trail of snow puffs behind it as it flies
-    for (let i = 0; i < 9; i++) { const k = i / 9; later(k * 600, () => { const px = fromX + (tx - fromX) * k, py = fromY + (ty - fromY) * k - Math.sin(k * 3.14) * H * 0.2; part(px, py, { ang: rnd(0, 6.28), spd: rnd(20, 90), g: 80, life: rnd(500, 800), size: rnd(8, 16), color: 'rgba(240,248,255,.8)', end: 1.8 }); }); }
+  } else if (g.item === 'snowball') {   // a packed snowball: powdery hit, then the spot freezes over in ice, shivers, and shatters
+    // sparkly comet trail while it flies
+    for (let i = 0; i < 12; i++) { const k = i / 12; later(k * 600, () => { const px = fromX + (tx - fromX) * k, py = fromY + (ty - fromY) * k - Math.sin(k * 3.14) * H * 0.2; part(px, py, { ang: rnd(0, 6.28), spd: rnd(30, 110), g: 60, life: rnd(500, 850), size: rnd(7, 15), color: 'rgba(240,248,255,.85)', end: 1.8 }); part(px, py, { ang: rnd(0, 6.28), spd: rnd(60, 160), g: 100, life: rnd(500, 900), size: rnd(3, 6), color: '#bfe4ff', end: 0.2, glow: true }); }); }
+    // one block of ice: jagged crystal with facets and a shine; it grows, shivers, then bursts into shards
+    const iceBlock = (cx, cy, R, delay = 0, hold = 900) => {
+      const sz = R * 2.6, c = sz / 2, N = 11, pts = Array.from({ length: N }, (_, i) => { const a = (i / N) * 6.2832 - 1.5708, r = R * (i % 2 ? rnd(0.62, 0.78) : rnd(0.95, 1.12)); return [c + Math.cos(a) * r, c + Math.sin(a) * r]; });
+      const poly = pts.map((q) => q.join(',')).join(' '), uid = 'ic' + Math.floor(Math.random() * 1e6);
+      const facets = pts.map((q, i) => (i % 2 === 0 ? `<line x1="${c}" y1="${c}" x2="${q[0]}" y2="${q[1]}" stroke="#fff" stroke-opacity=".55" stroke-width="${R * 0.03}"/>` : '')).join('');
+      const blk = node(`left:${cx - c}px;top:${cy - c}px;width:${sz}px;height:${sz}px;opacity:0;transform-origin:50% 50%;filter:drop-shadow(0 4px 8px rgba(40,110,170,.45))`, 'giftbit', `<svg viewBox="0 0 ${sz} ${sz}" width="100%" height="100%"><defs><linearGradient id="${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4fcff"/><stop offset=".5" stop-color="#a9dcf7"/><stop offset="1" stop-color="#5fb2ec"/></linearGradient></defs><polygon points="${poly}" fill="url(#${uid})" fill-opacity=".92" stroke="#fff" stroke-width="${R * 0.05}" stroke-linejoin="round"/>${facets}<polygon points="${pts[0].join(',')} ${pts[2].join(',')} ${c},${c}" fill="#fff" opacity=".45"/><ellipse cx="${c - R * 0.35}" cy="${c - R * 0.4}" rx="${R * 0.18}" ry="${R * 0.07}" fill="#fff" opacity=".85" transform="rotate(-35 ${c - R * 0.35} ${c - R * 0.4})"/></svg>`);
+      anim(blk, [{ opacity: 0, transform: 'scale(.15) rotate(-12deg)' }, { opacity: 1, transform: 'scale(1.18) rotate(3deg)', offset: 0.5 }, { opacity: 1, transform: 'scale(1) rotate(0deg)' }], { duration: 380, delay, easing: 'cubic-bezier(.2,1.3,.4,1)', fill: 'forwards' });
+      later(delay, () => SND.play('chime'));
+      // chattering shiver while it holds
+      const sh = Array.from({ length: 12 }, (_, i) => ({ transform: `translate(${i % 2 ? 3 : -3}px,${i % 3 ? 1 : -1}px) scale(1)` }));
+      later(delay + 380, () => anim(blk, sh, { duration: hold, easing: 'linear' }));
+      later(delay + 380 + hold, () => {
+        blk.remove(); SND.play('boom'); SND.play('crackle'); ring(cx, cy, '#e8f6ff', R * 1.5, 600, 5);
+        glowAt(cx, cy, '#ffffff', R * 3, 500);
+        for (let i = 0; i < 20; i++) part(cx, cy, { ang: rnd(0, 6.28), spd: rnd(300, 760), g: 1100, life: rnd(800, 1300), w: R * rnd(0.1, 0.2), h: R * rnd(0.22, 0.4), color: pick(['#e8f6ff', '#a9dcf7', '#ffffff', '#7ec4f0']), round: false, spin: rnd(-900, 900), end: 0.5, glow: true });
+        for (let i = 0; i < 16; i++) part(cx, cy, { ang: rnd(0, 6.28), spd: rnd(120, 420), g: 400, life: rnd(1000, 1600), size: rnd(3, 7), color: '#fff', end: 0.2, glow: true });
+        for (let i = 0; i < 5; i++) { const a2 = rnd(0, 6.28), rr = rnd(0.5, 1.3) * R, sx = cx + Math.cos(a2) * rr, sy = cy + Math.sin(a2) * rr, sz2 = rnd(16, 28); const st = node(`left:${sx - sz2 / 2}px;top:${sy - sz2 / 2}px;width:${sz2}px;height:${sz2}px;opacity:0`, 'giftbit', '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M12 1l2.600 8.400L23 12l-8.400 2.600L12 23l-2.600-8.400L1 12l8.400-2.600z" fill="#fff"/></svg>'); anim(st, [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.1) rotate(45deg)', opacity: 1, offset: 0.35 }, { transform: 'scale(0)', opacity: 0 }], { duration: 800, delay: i * 70, fill: 'forwards' }); }
+      });
+      keepFor(delay + 380 + hold + 1800);
+    };
     fly(fromX, fromY, tx, ty, { size: 64, dur: 620, spin: 700, grow: toMe ? 2.2 : 1.5, ghosts: 3 }, () => {
-      SND.play('splat'); if (toMe) shake(240);
-      // the powder puff: soft white clouds blooming from the impact
-      for (let i = 0; i < 6; i++) { const sz = (toMe ? 160 : 120) * rnd(0.6, 1), ox = rnd(-30, 30), oy = rnd(-24, 24); const pf = node(`left:${tx + ox - sz / 2}px;top:${ty + oy - sz / 2}px;width:${sz}px;height:${sz}px;border-radius:50%;background:radial-gradient(circle, #fff 0, rgba(255,255,255,.9) 40%, rgba(220,240,255,0) 70%);opacity:0`, 'giftbit'); anim(pf, [{ transform: 'scale(.2)', opacity: 0 }, { transform: 'scale(.9)', opacity: 1, offset: 0.25 }, { transform: `translate(${ox * 0.5}px,${-20 - i * 6}px) scale(1.4)`, opacity: 0 }], { duration: 1300 + i * 80, delay: i * 40, easing: 'ease-out', fill: 'forwards' }); }
-      ring(tx, ty, '#dff3ff', toMe ? 170 : 140, 700, 5); ring(tx, ty, '#bfe4ff', toMe ? 110 : 90, 600, 3, 80);
-      // ice shards: little diamonds that tumble out
-      for (let i = 0; i < 14; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(240, 640), g: 900, life: rnd(800, 1300), w: 7, h: 15, color: pick(['#d6f0ff', '#9fd8ff', '#ffffff']), round: false, spin: rnd(-720, 720), end: 0.4, glow: true });
-      for (let i = 0; i < 20; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(120, 420), g: 400, life: rnd(1000, 1600), size: rnd(4, 9), color: '#fff', end: 0.2, glow: true });
-      // sparkle stars twinkling around the hit
-      for (let i = 0; i < 6; i++) { const a2 = rnd(0, 6.28), rr = rnd(40, 110), sx = tx + Math.cos(a2) * rr, sy = ty + Math.sin(a2) * rr, sz = rnd(16, 30); const st = node(`left:${sx - sz / 2}px;top:${sy - sz / 2}px;width:${sz}px;height:${sz}px;opacity:0`, 'giftbit', '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M12 1l2.600 8.400L23 12l-8.400 2.600L12 23l-2.600-8.400L1 12l8.400-2.600z" fill="#fff"/></svg>'); anim(st, [{ transform: 'scale(0) rotate(0deg)', opacity: 0 }, { transform: 'scale(1.1) rotate(45deg)', opacity: 1, offset: 0.35 }, { transform: 'scale(0) rotate(90deg)', opacity: 0 }], { duration: 900, delay: 120 + i * 90, fill: 'forwards' }); }
-      // BRRR! that shivers
-      const w = node(`left:${tx}px;top:${ty - 90}px;font:900 ${toMe ? 56 : 42}px/1 Inter,system-ui,sans-serif;color:#7fc8ff;-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.25);opacity:0;white-space:nowrap`, 'giftbit'); w.textContent = 'BRRR!';
-      anim(w, [{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1, offset: 0.15 }, ...Array.from({ length: 10 }, (_, i) => ({ transform: `translate(calc(-50% + ${i % 2 ? 4 : -4}px),-50%) scale(1)`, opacity: 1, offset: 0.2 + i * 0.05 })), { transform: 'translate(-50%,-90%) scale(1)', opacity: 0 }], { duration: 1700, fill: 'forwards' });
-      // a light frost on the screen edges that melts away, and real snowflakes drifting down
-      const fr = node('left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;box-shadow:inset 0 0 50px 16px rgba(225,245,255,.85), inset 0 0 120px 40px rgba(150,205,255,.4)', 'giftbit');
-      anim(fr, [{ opacity: 0 }, { opacity: toMe ? 0.45 : 0.28, offset: 0.2 }, { opacity: toMe ? 0.35 : 0.2, offset: 0.6 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' });
-      for (let i = 0; i < 22; i++) { const x = rnd(0, W), sz = rnd(14, 26), sw = rnd(20, 60); const f = node(`width:${sz}px;height:${sz}px;opacity:0`, 'giftbit', SNOWFLAKE); anim(f, [{ transform: `translate(${x}px,-30px) rotate(0deg)`, opacity: 0.95 }, { transform: `translate(${x + sw}px,${H * 0.35}px) rotate(120deg)`, opacity: 0.95, offset: 0.4 }, { transform: `translate(${x - sw}px,${H * 0.7}px) rotate(240deg)`, opacity: 0.9, offset: 0.75 }, { transform: `translate(${x + sw / 2}px,${H + 20}px) rotate(360deg)`, opacity: 0 }], { duration: rnd(2400, 3400), delay: rnd(0, 500), fill: 'forwards' }); }
-      keepFor(3800);
+      SND.play('splat'); if (toMe) shake(220);
+      // the powder puff
+      for (let i = 0; i < 5; i++) { const sz = (toMe ? 150 : 120) * rnd(0.6, 1), ox = rnd(-26, 26), oy = rnd(-20, 20); const pf = node(`left:${tx + ox - sz / 2}px;top:${ty + oy - sz / 2}px;width:${sz}px;height:${sz}px;border-radius:50%;background:radial-gradient(circle, #fff 0, rgba(255,255,255,.9) 40%, rgba(220,240,255,0) 70%);opacity:0`, 'giftbit'); anim(pf, [{ transform: 'scale(.2)', opacity: 0 }, { transform: 'scale(.9)', opacity: 1, offset: 0.25 }, { transform: `translate(${ox * 0.5}px,${-18 - i * 6}px) scale(1.3)`, opacity: 0 }], { duration: 1000 + i * 80, delay: i * 40, easing: 'ease-out', fill: 'forwards' }); }
+      for (let i = 0; i < 18; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(160, 520), g: 500, life: rnd(800, 1300), size: rnd(4, 9), color: '#fff', end: 0.2, glow: true });
+      // ice: aimed at you it freezes a few spots around the screen edges (middle stays clear); at someone else, one big block on them
+      if (toMe) { const R = Math.min(W, H) * 0.12; [[0.17, 0.2], [0.83, 0.38], [0.2, 0.74]].forEach(([fx0, fy0], i) => iceBlock(W * fx0, H * fy0, R * rnd(0.9, 1.1), 250 + i * 110, 800)); }
+      else iceBlock(tx, ty, 60, 250, 900);
+      // BRRR! that shivers, then the cold fades
+      const w = node(`left:${tx}px;top:${toMe ? H * 0.12 : ty - 100}px;font:900 ${toMe ? 56 : 42}px/1 Inter,system-ui,sans-serif;color:#7fc8ff;-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.25);opacity:0;white-space:nowrap`, 'giftbit'); w.textContent = 'BRRR!';
+      if (toMe) w.style.left = W / 2 + 'px';
+      anim(w, [{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1, offset: 0.12 }, ...Array.from({ length: 12 }, (_, i) => ({ transform: `translate(calc(-50% + ${i % 2 ? 4 : -4}px),-50%) scale(1)`, opacity: 1, offset: 0.18 + i * 0.05 })), { transform: 'translate(-50%,-90%) scale(1)', opacity: 0 }], { duration: 1900, delay: 150, fill: 'forwards' });
+      const fr = node('left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;box-shadow:inset 0 0 50px 16px rgba(225,245,255,.8), inset 0 0 120px 40px rgba(150,205,255,.38)', 'giftbit');
+      anim(fr, [{ opacity: 0 }, { opacity: toMe ? 0.45 : 0.28, offset: 0.2 }, { opacity: toMe ? 0.35 : 0.2, offset: 0.65 }, { opacity: 0 }], { duration: 2700, fill: 'forwards' });
+      for (let i = 0; i < 20; i++) { const x = rnd(0, W), sz = rnd(14, 26), sw = rnd(20, 60); const f = node(`width:${sz}px;height:${sz}px;opacity:0`, 'giftbit', SNOWFLAKE); anim(f, [{ transform: `translate(${x}px,-30px) rotate(0deg)`, opacity: 0.95 }, { transform: `translate(${x + sw}px,${H * 0.35}px) rotate(120deg)`, opacity: 0.95, offset: 0.4 }, { transform: `translate(${x - sw}px,${H * 0.7}px) rotate(240deg)`, opacity: 0.9, offset: 0.75 }, { transform: `translate(${x + sw / 2}px,${H + 20}px) rotate(360deg)`, opacity: 0 }], { duration: rnd(2400, 3400), delay: 800 + rnd(0, 700), fill: 'forwards' }); }
+      keepFor(3900);
     });
   } else if (kind === 'petals') {   // a bouquet fountain: roses shoot up, burst into petals, hearts float up
     SND.play('chime');
