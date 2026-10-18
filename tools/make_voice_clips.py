@@ -12,10 +12,11 @@ tts=sherpa_onnx.OfflineTts(cfg)
 clips={'faster':[('Faster leh!',45,1.12)],'aiyo':[('爱',45,1.2),('Yo!',45,1.25)],'steady':[('Steady lah!',45,1.05)],'oof':[('Ooph!',2,1.0)]}
 OVERLAP=0.055   # seconds two parts overlap, so a clip made of several parts runs together instead of sounding like separate words
 out=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','public','audio'); os.makedirs(out,exist_ok=True)
-def say(text,sid,speed):
-    a=tts.generate(text,sid=sid,speed=speed); x=np.array(a.samples,dtype=np.float32)
-    idx=np.where(np.abs(x)>0.12*np.abs(x).max())[0]   # cut the quiet lead-in and the long fade-out
-    return x[max(0,idx[0]-int(.005*a.sample_rate)):idx[-1]+int(.01*a.sample_rate)], a.sample_rate
+def say(text,sid,speed,last=True):
+    a=tts.generate(text,sid=sid,speed=speed); x=np.array(a.samples,dtype=np.float32); m=np.abs(x).max()
+    lo=np.where(np.abs(x)>0.03*m)[0][0]                              # keep the soft first consonant (the F in Faster)
+    hi=np.where(np.abs(x)>(0.04 if last else 0.12)*m)[0][-1]        # cut the long fade-out only where another part follows
+    return x[max(0,lo-int(.005*a.sample_rate)):hi+int(.01*a.sample_rate)], a.sample_rate
 def join(pieces,sr):
     n=int(OVERLAP*sr); x=pieces[0]
     for q in pieces[1:]:
@@ -24,8 +25,8 @@ def join(pieces,sr):
     return x
 for k,parts in clips.items():
     pieces=[]; 
-    for (text,sid,speed) in parts:
-        x,sr=say(text,sid,speed); pieces.append(x)
+    for i,(text,sid,speed) in enumerate(parts):
+        x,sr=say(text,sid,speed,last=(i==len(parts)-1)); pieces.append(x)
     x=join(pieces,sr)
     f=int(.012*sr); x[:f]*=np.linspace(0,1,f); x[-f:]*=np.linspace(1,0,f)
     x=x/np.abs(x).max()*0.9
