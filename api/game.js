@@ -21,7 +21,7 @@ const WP_PER_WIN = 10;
 const ACC_PRICE = { hat: 10, shades: 20, mustache: 20, flower: 20, headphones: 30, horns: 30, crown: 40, halo: 50 };
 const PREMIUM = { dragon: 30, robot: 30, alien: 30, ghost: 30, wizard: 40, ninja: 40, phoenix: 150, shadowphoenix: 200, moonwolf: 150, samurai: 150, thundertiger: 150, goldlion: 200, reaper: 200 };   // the last six are the legendary ones
 const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, pie: 15, rocket: 20, bomb: 20, fireworks: 25 };
-const BORDER_PRICE = { inferno: 80, silver: 15, gold: 20, emerald: 20, ice: 25, neon: 30, royal: 30, fire: 40, rainbow: 50 };
+const BORDER_PRICE = { silver: 15, gold: 20, emerald: 20, ice: 25, neon: 30, royal: 30, fire: 40, rainbow: 50 };
 const GIFT_USES = 3;   // one purchase = three throws
 // the tester (a player called Benny) gets 1000 WP to try the shop, and may throw gifts at themselves
 const TESTER_NAME = 'benny', TESTER_WP = 1000;
