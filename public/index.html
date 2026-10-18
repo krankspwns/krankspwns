@@ -549,7 +549,7 @@
   .cmsg { display: flex; align-items: flex-end; gap: 8px; max-width: 88%; } .cmsg.mine { align-self: flex-end; flex-direction: row-reverse; } .cmsg.pending { opacity: .6; }
   .cbub { display: grid; gap: 1px; padding: 7px 12px; border-radius: 16px 16px 16px 4px; background: rgba(255,255,255,.09); word-break: break-word; line-height: 1.35; font-size: 14.5px; } .cbub b { font-size: 11.5px; color: var(--gold-hi); } .cmsg.mine .cbub { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-radius: 16px 16px 4px 16px; } .cmsg.mine .cbub b { color: #5c4513; }
   .qrow { display: flex; gap: 6px; padding: 6px 14px 0; overflow-x: auto; } .qchip { flex: none; padding: 6px 12px !important; font-size: 12.5px !important; border-radius: 99px !important; }
-  .chat-in { display: flex; gap: 8px; padding: 10px 14px 14px; } .chat-in input { flex: 1; min-width: 0; } .sendbtn { flex: none; width: 46px; padding: 0 !important; display: grid; place-items: center; border-radius: 14px !important; line-height: 0; } .sendbtn .ic { color: inherit; }
+  .chat-in { display: flex; gap: 8px; padding: 10px 14px 14px; } .chat-in input { flex: 1; min-width: 0; } .sendbtn { background: rgba(var(--gold-rgb), .16) !important; border: 1px solid var(--gold-lo) !important; } .sendbtn { flex: none; width: 46px; padding: 0 !important; display: grid; place-items: center; border-radius: 14px !important; line-height: 0; } .sendbtn .ic { color: inherit; }
   .podium { display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin: 4px 0 14px; padding: 10px 6px 0; border-radius: 16px; background: radial-gradient(ellipse at 50% 100%, rgba(255,207,64,.16), transparent 70%); }
   .pd { flex: 1; max-width: 118px; min-width: 0; display: grid; justify-items: center; gap: 3px; text-align: center; } .pd-n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; } .pd-p { font-size: 12px; color: var(--gold-hi); font-weight: 700; } .pd-w { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; min-height: 18px; }
   .pd-b { width: 100%; border-radius: 10px 10px 0 0; display: grid; place-items: center; font-weight: 900; font-size: 26px; color: #1a1407; text-shadow: 0 1px 0 rgba(255,255,255,.4); transform-origin: 50% 100%; animation: pdrise .8s cubic-bezier(.2,.9,.3,1) backwards; box-shadow: inset 0 2px 0 rgba(255,255,255,.45); }
@@ -1575,7 +1575,7 @@ function renderChat(keepScroll) {
     el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', { class: 'colorful' }, colorIcon(CHAT_ICON, 22)), t('chatTitle')), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
     el('div', { class: 'chatlist' }, ...(msgs.length ? msgs : [el('p', { class: 'chatempty' }, t('chatEmpty'))])),
     el('div', { class: 'qrow' }, ...quick),
-    el('div', { class: 'chat-in' }, input, el('button', { type: 'button', class: 'sendbtn', 'aria-label': t('chatSend'), onclick: () => { const v = input.value; input.value = ''; sendChat(v); input.focus(); } }, icon('send', 18)))));
+    el('div', { class: 'chat-in' }, input, el('button', { type: 'button', class: 'sendbtn', 'aria-label': t('chatSend'), onclick: () => { const v = input.value; input.value = ''; sendChat(v); input.focus(); } }, colorIcon(SEND_ICON, 26)))));
   const nl = ov.querySelector('.chatlist');
   if (!keepScroll || atBottom) nl.scrollTop = nl.scrollHeight; else nl.scrollTop = list ? list.scrollTop : 0;
   if (hadFocus) { const ni = ov.querySelector('.chat-in input'); ni.focus(); try { ni.setSelectionRange(ni.value.length, ni.value.length); } catch {} }
@@ -1644,7 +1644,7 @@ function renderSettings() {
   }
   ov.dataset.chrome = chrome;
   ov.replaceChildren(el('div', { class: 'guide setbox' + (keep ? ' still' : ''), role: 'dialog', 'aria-modal': 'true' },
-    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('sliders', 15)), t('settings')), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
+    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', { class: 'colorful' }, colorIcon(SET_ICON, 22)), t('settings')), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
     el('div', { class: 'gscroll setscroll' }, ...sections),
     el('div', { class: 'gfoot' }, el('span'), el('button', { onclick: ov.close }, t('qrClose')))));
   ov.querySelector('.setscroll').scrollTop = top;
@@ -1766,7 +1766,9 @@ function guideIcon(size = 22) {
   w.innerHTML = `<svg viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true">${GUIDE_ICON}</svg>`;
   return w;
 }
+const SET_ICON = '<defs><linearGradient id="sg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff8a1f"/></linearGradient></defs><path d="M14 2.500h4l.8 3.300q1.300.4 2.500 1.200l3-1.700 2.800 2.800-1.700 3q.8 1.200 1.200 2.500l3.300.8v4l-3.300.8q-.4 1.300-1.200 2.500l1.700 3-2.800 2.800-3-1.700q-1.200.8-2.500 1.200L18 29.500h-4l-.8-3.300q-1.300-.4-2.500-1.200l-3 1.700-2.800-2.800 1.700-3q-.8-1.200-1.200-2.500L2.500 18v-4l3.300-.8q.4-1.300 1.200-2.500l-1.700-3 2.800-2.800 3 1.700q1.200-.8 2.500-1.200z" fill="url(#sg1)"/><path d="M9 8q3-3.500 7-3.500" stroke="#fff" stroke-width="1.400" stroke-linecap="round" fill="none" opacity=".6"/><circle cx="16" cy="16" r="5.500" fill="#2a3a8a"/><circle cx="16" cy="16" r="3" fill="#6bd6ff"/><circle cx="14.800" cy="14.800" r="1" fill="#fff"/>';
 // full-colour icons for the chat and gift buttons
+const SEND_ICON = '<defs><linearGradient id="snd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6bd6ff"/><stop offset="1" stop-color="#3a6bff"/></linearGradient></defs><path d="M3.500 15.500L28 4.500l-6 23-6.200-7.300z" fill="url(#snd)"/><path d="M28 4.500L15.800 20.200l-2.300 6.500-1.800-8.200z" fill="#fff" opacity=".92"/><path d="M13.500 26.700l2.300-6.500 3.400 4z" fill="#b6c8ff"/>';
 const CHAT_ICON = '<defs><linearGradient id="chc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff8a1f"/></linearGradient></defs><path d="M7.500 4h17q4.500 0 4.500 4.500v10q0 4.500-4.500 4.500H15l-6.500 5.500V23H7.500Q3 23 3 18.500v-10Q3 4 7.500 4z" fill="url(#chc)"/><path d="M7 9q2-2.500 6-2.500" fill="none" stroke="#fff" stroke-width="1.500" stroke-linecap="round" opacity=".55"/><rect x="8" y="10" width="16" height="2.200" rx="1.100" fill="#fff"/><rect x="8" y="14.500" width="11" height="2.200" rx="1.100" fill="#fff" opacity=".85"/>', GIFT_ICON = '<defs><linearGradient id="gfb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f6bff"/><stop offset="1" stop-color="#3a7bff"/></linearGradient></defs><ellipse cx="16" cy="29.500" rx="11" ry="1.400" fill="#000" opacity=".18"/><rect x="5" y="14" width="22" height="15" rx="2" fill="url(#gfb)"/><rect x="3.500" y="10" width="25" height="6" rx="2" fill="#a68bff"/><rect x="14" y="10" width="4" height="19" fill="#ff8fc0"/><path d="M16 4.200l1.400 3 3.200.4-2.400 2.200.7 3.200-2.900-1.700-2.900 1.700.7-3.200-2.400-2.200 3.200-.4z" fill="#ffd23f" stroke="#e0a21a" stroke-width=".6" stroke-linejoin="round"/><circle cx="25" cy="5" r="1.200" fill="#6bd6ff"/><circle cx="6" cy="7" r="1" fill="#7be08f"/>';
 const colorIcon = (svg, size) => { const w = el('span', { class: 'cico' }); w.style.cssText = `display:inline-block;width:${size}px;height:${size}px;line-height:0`; w.innerHTML = `<svg viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true">${svg}</svg>`; return w; };
 // the shop's full-colour icon: a little storefront
@@ -1938,21 +1940,30 @@ function playGift(g) {
   };
   const fromX = Math.random() < 0.5 ? -50 : W + 50, fromY = H * 0.88;
 
-  // a juicy splat on the target: irregular blob, flying droplets, drips and a comic word
-  const splat = (color, dark, word, { seeds = false, cherry = false } = {}) => {
-    const R = toMe ? Math.min(W, H) * 0.62 : 120, cx = toMe ? W / 2 : tx, cy = toMe ? H * 0.44 : ty;
-    SND.play('splat'); if (toMe) shake(380);
-    const pts = []; const N = 16;
-    for (let i = 0; i < N; i++) { const a = (i / N) * Math.PI * 2, rr = R * (i % 2 ? rnd(0.62, 0.82) : rnd(0.95, 1.25)); pts.push([R * 1.3 + Math.cos(a) * rr, R * 1.3 + Math.sin(a) * rr]); }
-    let d = `M${pts[0][0]} ${pts[0][1]}`; for (let i = 0; i < N; i++) { const p0 = pts[i], p1 = pts[(i + 1) % N]; d += ` Q${p0[0]} ${p0[1]} ${(p0[0] + p1[0]) / 2} ${(p0[1] + p1[1]) / 2}`; }
-    const sz = R * 2.6;
-    const blob = node(`left:${cx - sz / 2}px;top:${cy - sz / 2}px;width:${sz}px;height:${sz}px;opacity:0;transform-origin:50% 40%`, 'giftbit', `<svg viewBox="0 0 ${sz} ${sz}" width="100%" height="100%"><path d="${d}Z" fill="${color}"/><path d="${d}Z" fill="none" stroke="${dark}" stroke-width="${R * 0.07}" opacity=".55"/><ellipse cx="${sz * 0.4}" cy="${sz * 0.38}" rx="${R * 0.3}" ry="${R * 0.16}" fill="#fff" opacity=".35" transform="rotate(-25 ${sz * 0.4} ${sz * 0.38})"/>${seeds ? Array.from({ length: 9 }, () => `<ellipse cx="${sz / 2 + rnd(-R * 0.7, R * 0.7)}" cy="${sz / 2 + rnd(-R * 0.6, R * 0.6)}" rx="${R * 0.045}" ry="${R * 0.07}" fill="#ffe9a0" transform="rotate(${rnd(0, 180)} ${sz / 2} ${sz / 2})"/>`).join('') : ''}${cherry ? `<circle cx="${sz / 2}" cy="${sz * 0.42}" r="${R * 0.16}" fill="#e8352e"/><circle cx="${sz / 2 - R * 0.05}" cy="${sz * 0.42 - R * 0.06}" r="${R * 0.045}" fill="#fff" opacity=".7"/>` : ''}</svg>`);
-    anim(blob, [{ opacity: 0, transform: 'scale(.15)' }, { opacity: 1, transform: 'scale(1.18)', offset: 0.14 }, { opacity: 1, transform: 'scale(1)', offset: 0.24 }, { opacity: 1, transform: `translateY(${toMe ? H * 0.06 : 24}px) scale(1.02)`, offset: 0.78 }, { opacity: 0, transform: `translateY(${toMe ? H * 0.16 : 60}px) scale(1.05)` }], { duration: 3000, fill: 'forwards' });
-    for (let i = 0; i < (toMe ? 34 : 22); i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(260, 760), g: 1500, life: rnd(700, 1300), size: rnd(6, 16), color: i % 4 ? color : dark, end: 0.6 });
-    // drips sliding down from the splat
-    for (let i = 0; i < (toMe ? 6 : 3); i++) { const dx = cx + rnd(-R * 0.7, R * 0.7), hh = rnd(R * 0.5, R * 0.9), dw = rnd(10, 18); const dr = node(`left:${dx - dw / 2}px;top:${cy + R * 0.15}px;width:${dw}px;height:${hh}px;background:${color};border-radius:0 0 ${dw}px ${dw}px;transform-origin:50% 0;opacity:0`, 'giftbit'); anim(dr, [{ transform: 'scaleY(0)', opacity: 1 }, { transform: 'scaleY(1)', opacity: 1, offset: 0.55 }, { transform: 'scaleY(1) translateY(10px)', opacity: 0 }], { duration: 2400, delay: 300 + i * 120, easing: 'ease-in', fill: 'forwards' }); }
-    pop(cx, cy - R * 0.1, word, color === '#fff1d0' ? '#e0a04a' : color, toMe ? 64 : 44);
-    keepFor(3400);
+  // a splat is one self-contained picture (blob + drips + shine), so it fades as a whole and nothing is left behind.
+  // Aimed at you it lands as a few splats around the edges of the screen, keeping the middle clear to play.
+  const splatOne = (cx, cy, R, color, dark, { seeds = false, cherry = false, delay = 0 } = {}) => {
+    const sw = R * 2.9, sh = R * 3.9, bx = sw / 2, by = R * 1.45, N = 16, pts = [];
+    for (let i = 0; i < N; i++) { const a = (i / N) * Math.PI * 2, rr = R * (i % 2 ? rnd(0.66, 0.84) : rnd(0.96, 1.22)); pts.push([bx + Math.cos(a) * rr, by + Math.sin(a) * rr]); }
+    let d = `M${(pts[0][0] + pts[N - 1][0]) / 2} ${(pts[0][1] + pts[N - 1][1]) / 2}`; for (let i = 0; i < N; i++) { const p0 = pts[i], p1 = pts[(i + 1) % N]; d += ` Q${p0[0]} ${p0[1]} ${(p0[0] + p1[0]) / 2} ${(p0[1] + p1[1]) / 2}`; }
+    let drips = ''; const nd = 3 + Math.floor(rnd(0, 2));
+    for (let k = 0; k < nd; k++) { const x = bx + (k - (nd - 1) / 2) * R * 0.5 + rnd(-R * 0.1, R * 0.1), w = rnd(R * 0.14, R * 0.22), y0 = by + R * 0.45, len = rnd(R * 0.45, R * 0.95); drips += `<path d="M${x - w / 2} ${y0} h${w} v${len} a${w / 2} ${w / 2} 0 0 1 ${-w} 0z" fill="${color}"/><circle cx="${x}" cy="${y0 + len}" r="${w * 0.72}" fill="${color}"/>`; }
+    const extra = (seeds ? Array.from({ length: 8 }, () => `<ellipse cx="${bx + rnd(-R * 0.6, R * 0.6)}" cy="${by + rnd(-R * 0.5, R * 0.5)}" rx="${R * 0.04}" ry="${R * 0.065}" fill="#ffe9a0" transform="rotate(${rnd(0, 180)} ${bx} ${by})"/>`).join('') : '') + (cherry ? `<circle cx="${bx}" cy="${by - R * 0.05}" r="${R * 0.17}" fill="#e8352e"/><circle cx="${bx - R * 0.05}" cy="${by - R * 0.1}" r="${R * 0.05}" fill="#fff" opacity=".7"/>` : '');
+    const n = node(`left:${cx - bx}px;top:${cy - by}px;width:${sw}px;height:${sh}px;opacity:0;transform-origin:${bx}px ${by}px`, 'giftbit', `<svg viewBox="0 0 ${sw} ${sh}" width="100%" height="100%">${drips}<path d="${d}Z" fill="${color}"/><path d="${d}Z" fill="none" stroke="${dark}" stroke-width="${R * 0.06}" opacity=".5"/><ellipse cx="${bx - R * 0.3}" cy="${by - R * 0.3}" rx="${R * 0.28}" ry="${R * 0.14}" fill="#fff" opacity=".38" transform="rotate(-28 ${bx - R * 0.3} ${by - R * 0.3})"/>${extra}</svg>`);
+    anim(n, [{ opacity: 0, transform: 'scale(.15)' }, { opacity: 1, transform: 'scale(1.15)', offset: 0.12 }, { opacity: 1, transform: 'scale(1)', offset: 0.2 }, { opacity: 1, transform: `translateY(${R * 0.12}px) scale(1.02)`, offset: 0.7 }, { opacity: 0, transform: `translateY(${R * 0.35}px) scale(1.03)` }], { duration: 2600, delay, fill: 'forwards' });
+    for (let i = 0; i < 12; i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(220, 620), g: 1400, life: rnd(600, 1100), size: rnd(5, 12), color: i % 4 ? color : dark, end: 0.6, delay });
+    keepFor(2800 + delay);
+  };
+  const splat = (color, dark, word, opts = {}) => {
+    SND.play('splat'); if (toMe) shake(300);
+    if (toMe) {
+      const R = Math.min(W, H) * 0.17;
+      [[0.17, 0.19], [0.84, 0.36], [0.2, 0.74]].forEach(([fx0, fy0], i) => splatOne(W * fx0 + rnd(-10, 10), H * fy0 + rnd(-14, 14), R * rnd(0.9, 1.1), color, dark, { ...opts, delay: i * 90 }));
+      pop(W / 2, H * 0.14, word, color === '#fff1d0' ? '#e0a04a' : color, 46);
+    } else {
+      splatOne(tx, ty, 64, color, dark, opts);
+      pop(tx, ty - 80, word, color === '#fff1d0' ? '#e0a04a' : color, 34);
+    }
   };
 
   if (kind === 'splat' && g.item === 'tomato') {
@@ -1962,13 +1973,13 @@ function playGift(g) {
   } else if (g.item === 'snowball') {
     fly(fromX, fromY, tx, ty, { size: 64, dur: 620, spin: 700, grow: toMe ? 2.4 : 1.5, ghosts: 3 }, () => {
       SND.play('splat'); if (toMe) shake(260);
-      glowAt(tx, ty, '#ffffff', toMe ? 520 : 260, 900); ring(tx, ty, '#dff3ff', toMe ? 300 : 150, 800, 6);
+      glowAt(tx, ty, '#ffffff', toMe ? 300 : 240, 800); ring(tx, ty, '#dff3ff', toMe ? 170 : 140, 700, 5);
       for (let i = 0; i < 26; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(160, 560), g: 600, life: rnd(900, 1500), size: rnd(6, 14), color: pick(['#fff', '#eaf6ff', '#bfe4ff']), end: 0.3 });
       for (let i = 0; i < 9; i++) part(tx, ty, { ang: rnd(-Math.PI, 0), spd: rnd(220, 520), g: 1100, life: 1100, w: 8, h: 18, color: '#9fd8ff', round: false, spin: rnd(-400, 400) });
       pop(tx, ty - 20, 'BRRR!', '#4fa8ff', toMe ? 64 : 46, 6);
       // frost creeping in from the edges, then melting away
-      const fr = node('left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 36px rgba(225,245,255,.95), inset 0 0 220px 90px rgba(150,205,255,.55)', 'giftbit');
-      anim(fr, [{ opacity: 0 }, { opacity: toMe ? 1 : 0.55, offset: 0.2 }, { opacity: toMe ? 0.9 : 0.4, offset: 0.65 }, { opacity: 0 }], { duration: 3000, fill: 'forwards' });
+      const fr = node('left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;box-shadow:inset 0 0 60px 20px rgba(225,245,255,.9), inset 0 0 140px 50px rgba(150,205,255,.45)', 'giftbit');
+      anim(fr, [{ opacity: 0 }, { opacity: toMe ? 0.5 : 0.3, offset: 0.2 }, { opacity: toMe ? 0.4 : 0.22, offset: 0.6 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' });
       for (let i = 0; i < 28; i++) { const x = rnd(0, W), sz = rnd(5, 12), sw = rnd(20, 60); const f = node(`width:${sz}px;height:${sz}px;border-radius:50%;background:#fff;opacity:0;box-shadow:0 0 6px #cfeaff`, 'giftbit'); anim(f, [{ transform: `translate(${x}px,-20px)`, opacity: 0.95 }, { transform: `translate(${x + sw}px,${H * 0.35}px)`, opacity: 0.95, offset: 0.4 }, { transform: `translate(${x - sw}px,${H * 0.7}px)`, opacity: 0.9, offset: 0.75 }, { transform: `translate(${x + sw / 2}px,${H + 20}px)`, opacity: 0 }], { duration: rnd(2200, 3200), delay: rnd(0, 500), fill: 'forwards' }); }
       keepFor(3800);
     });
@@ -2350,7 +2361,7 @@ function applyStatic() {
   document.title = t('title');
   updateSndBtn();
   document.getElementById('h1').textContent = t('title');
-  { const sb = document.getElementById('setBtn'); sb.replaceChildren(icon('sliders', 18)); sb.title = sb.ariaLabel = t('settings'); }
+  { const sb = document.getElementById('setBtn'); sb.replaceChildren(colorIcon(SET_ICON, 24)); sb.title = sb.ariaLabel = t('settings'); }
   { const hb = document.getElementById('shopBtn'); hb.replaceChildren(shopIcon(24)); hb.title = hb.ariaLabel = t('shopTitle'); }
   { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', { class: 'colorful' }, guideIcon(26)), el('span', { class: 'glabel' }, t('guideBtn'))); }
   if (document.querySelector('.guide-ov.g-guide')) renderGuide();
