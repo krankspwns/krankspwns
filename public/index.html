@@ -1015,6 +1015,10 @@ const SND = (() => {
     emo_steady: () => [0, 0.2].forEach((at, i) => tone({ f: i ? 330 : 247, at, dur: 0.2, vol: 0.11, type: 'triangle', lp: 1400 })),
     pop: () => { tone({ f: 600, f2: 1100, dur: 0.09, vol: 0.09, type: 'sine' }); tone({ f: 1500, at: 0.07, dur: 0.07, vol: 0.05 }); },
     tick: () => tone({ f: 1250, dur: 0.05, vol: 0.07, type: 'square', lp: 2500 }),
+    whistle: () => { tone({ f: 500, f2: 2600, dur: 0.7, vol: 0.07, type: 'triangle' }); },
+    crackle: () => { for (let i = 0; i < 9; i++) noise({ at: i * 0.045 + Math.random() * 0.03, dur: 0.04, vol: 0.12, type: 'highpass', f: 3000 + Math.random() * 3000 }); },
+    sizzle: () => { noise({ dur: 0.9, vol: 0.1, type: 'highpass', f: 5000, f2: 9000 }); tone({ f: 2200, f2: 3400, dur: 0.9, vol: 0.025, type: 'sawtooth' }); },
+    beep: () => tone({ f: 880, dur: 0.1, vol: 0.12, type: 'square', lp: 2200 }),
     throw: () => noise({ dur: 0.3, vol: 0.12, type: 'bandpass', f: 500, f2: 2600, q: 1.2 }),
     splat: () => { noise({ dur: 0.2, vol: 0.22, type: 'lowpass', f: 1800, f2: 300 }); tone({ f: 170, f2: 60, dur: 0.2, vol: 0.2 }); },
     boom: () => { noise({ dur: 0.8, vol: 0.3, type: 'lowpass', f: 900, f2: 70 }); tone({ f: 95, f2: 32, dur: 0.7, vol: 0.32 }); },
@@ -1240,6 +1244,7 @@ const GIFT_SVG = {
   rocket: '<path d="M18 36q-3 6 0 10 4-3 6-6zM30 36q3 6 0 10-4-3-6-6z" fill="#ff9d2e"/><path d="M20.500 37q3.500 8 3.500 9 0-1 3.500-9z" fill="#ffd23f"/><path d="M24 3c7 5 10 13 9 25l-3 7h-12l-3-7C14 16 17 8 24 3z" fill="#f4f6ff"/><path d="M24 3c7 5 10 13 9 25h-9z" fill="#dfe5f2"/><path d="M24 3c3 2.200 5.200 5 6.600 8.500H17.400C18.800 8 21 5.200 24 3z" fill="#e8352e"/><circle cx="24" cy="20" r="4.600" fill="#4fa8ff" stroke="#8a96ab" stroke-width="1.800"/><circle cx="22.600" cy="18.600" r="1.300" fill="#fff" opacity=".8"/><path d="M15 27l-6 9 7-2zM33 27l6 9-7-2z" fill="#e8352e"/>',
   bomb: '<ellipse cx="22" cy="44.500" rx="13" ry="2" fill="#000" opacity=".18"/><circle cx="22" cy="28" r="15" fill="#2b2f3f"/><ellipse cx="16" cy="22" rx="4.200" ry="6" fill="#fff" opacity=".22" transform="rotate(30 16 22)"/><rect x="18" y="9.500" width="9" height="6" rx="1.600" fill="#5a6075" transform="rotate(20 22 12)"/><path d="M28 10q6-5 9-1" fill="none" stroke="#c9a96a" stroke-width="2.400" stroke-linecap="round"/><path d="M38 8.500l1.600-4M38 8.500l4 1M38 8.500l2.600 3M38 8.500l-1-4.500" stroke="#ffd23f" stroke-width="1.800" stroke-linecap="round"/><circle cx="38" cy="8.500" r="2.600" fill="#ff7a1f"/>',
   fireworks: '<g stroke-linecap="round" stroke-width="2.800"><path d="M24 4v9M24 35v9M4 24h9M35 24h9M10 10l6.500 6.500M31.500 31.500L38 38M38 10l-6.500 6.500M16.500 31.500L10 38" stroke="#ffd23f"/><path d="M24 7v3.500M24 37.500V41M7 24h3.500M37.500 24H41" stroke="#fff"/></g><circle cx="24" cy="24" r="4.200" fill="#ff5a8a"/><circle cx="11" cy="9" r="2.200" fill="#4fc3ff"/><circle cx="38" cy="9" r="2.200" fill="#7be08f"/><circle cx="9" cy="39" r="2.200" fill="#b77bff"/><circle cx="39" cy="39" r="2.200" fill="#ff7a1f"/>',
+  heart: '<path d="M24 43C8 31 5 22 5 16 5 9.500 10 5.500 15.500 5.500c3.600 0 6.800 1.800 8.500 5.500 1.700-3.700 4.900-5.500 8.500-5.500C38 5.500 43 9.500 43 16c0 6-3 15-19 27z" fill="#ff4d8d"/><path d="M11 14q2.500-4 7-2.500" fill="none" stroke="#fff" stroke-width="2.200" stroke-linecap="round" opacity=".6"/>',
   petal: '<path d="M24 4c10 6 14 16 10 26-3 8-10 12-10 14C24 42 17 38 14 30 10 20 14 10 24 4z" fill="#e8365a"/><path d="M24 4c-4 8-4 22 0 40" stroke="#b81d3d" stroke-width="2" fill="none"/>',
   burst: '<path d="M24 2l5 12 11-7-4 13 12 3-11 6 7 10-13-2-2 13-5-11-9 9 1-13-13 2 9-9L4 19l13-3-3-12 10 7z" fill="#ffb02e"/><path d="M24 11l3.500 8 8-4.500-3 8.500 8 3-8.500 3 4.500 8-9-1.500L25 44l-3.500-8.500-7 5.500 1.500-9L7 30l8-3.500-4-7.500 9 2z" fill="#ff5a3c"/><circle cx="24" cy="26" r="7" fill="#ffe27a"/>',
 };
@@ -1758,7 +1763,7 @@ function handleGifts(j) {
 }
 function playGift(g) {
   if (!st) return;
-  const art = GIFT_ART[g.item] || GIFT_ART.tomato, [, kind, col] = art;
+  const art = GIFT_ART[g.item] || GIFT_ART.tomato, kind = art[1];
   const from = st.players.find((p) => p.id === g.from), to = st.players.find((p) => p.id === g.to);
   const toMe = g.to === st.meId;
   // the banner: who sent what to whom
@@ -1767,51 +1772,175 @@ function playGift(g) {
   while (lane.children.length >= 3) lane.firstChild.remove();
   const ban = el('div', { class: 'giftbanner' + (toMe ? ' tome' : '') }, from ? avatarEl(from.avatar, 30, '', from.acc, from.bd) : '', el('span', {}, t('giftBanner', { from: from ? from.name : '?', to: to ? (toMe ? t('giftYou') : to.name) : '?' })), el('em', { class: 'gg' }, giftEl(g.item, 28)));
   lane.append(ban);
-  setTimeout(() => { ban.classList.add('out'); setTimeout(() => { ban.remove(); if (!lane.children.length) lane.remove(); }, 450); }, 3400);
+  setTimeout(() => { ban.classList.add('out'); setTimeout(() => { ban.remove(); if (!lane.children.length) lane.remove(); }, 450); }, 3600);
   SND.play('throw');
   if (toMe) buzz([40, 30, 80]);
   if (ui.calm) { setTimeout(() => SND.play(kind === 'boom' ? 'boom' : kind === 'petals' ? 'chime' : kind === 'splat' ? 'splat' : 'pop'), 450); return; }
+
   const W = window.innerWidth, H = window.innerHeight, fx = el('div', { class: 'giftfx' });
   document.body.append(fx);
-  const end = () => setTimeout(() => fx.remove(), 3400);
-  const tx = W * (0.3 + Math.random() * 0.4), ty = H * (0.32 + Math.random() * 0.2);
-  const fly = el('span', { class: 'giftfly' }, giftEl(g.item, 64)); fx.append(fly);
-  const fromLeft = Math.random() < 0.5, sx = fromLeft ? -60 : W + 10, sy = H * 0.85;
+  const rnd = (a, b) => a + Math.random() * (b - a), pick = (a) => a[Math.floor(Math.random() * a.length)];
   const anim = (node, frames, opt) => { try { return node.animate(frames, opt); } catch { return null; } };
-  const burst = (x, y, colors, n = 14, dist = 90) => { for (let i = 0; i < n; i++) { const d = el('i', { class: 'giftbit' }); d.style.cssText = `width:8px;height:8px;border-radius:50%;background:${colors[i % colors.length]}`; fx.append(d); const a = (i / n) * Math.PI * 2, dd = dist * (0.6 + Math.random() * 0.6); anim(d, [{ transform: `translate(${x}px,${y}px) scale(1)`, opacity: 1 }, { transform: `translate(${x + Math.cos(a) * dd}px,${y + Math.sin(a) * dd}px) scale(.3)`, opacity: 0 }], { duration: 900 + Math.random() * 300, easing: 'cubic-bezier(.1,.7,.3,1)', fill: 'forwards' }); } };
-  if (kind === 'rocket') {
-    const x = W * (0.25 + Math.random() * 0.5);
-    const a = anim(fly, [{ transform: `translate(${x}px,${H}px) rotate(0deg) scale(1)` }, { transform: `translate(${x}px,${-90}px) rotate(0deg) scale(1.3)` }], { duration: 1100, easing: 'cubic-bezier(.5,0,.9,.4)', fill: 'forwards' });
-    SND.play('boom');
-    setTimeout(() => { burst(x, H * 0.18, ['#ffd23f', '#ff7a3c', '#fff'], 20, 120); SND.play('pop'); burstConfetti(); }, 800); end(); return;
-  }
-  const a = anim(fly, [{ transform: `translate(${sx}px,${sy}px) rotate(0deg) scale(.7)` }, { transform: `translate(${(sx + tx) / 2}px,${Math.min(sy, ty) - H * 0.18}px) rotate(200deg) scale(1.2)`, offset: 0.55 }, { transform: `translate(${tx}px,${ty}px) rotate(380deg) scale(1.5)` }], { duration: 720, easing: 'cubic-bezier(.35,.6,.5,1)', fill: 'forwards' });
-  const impact = () => {
-    fly.remove();
-    if (kind === 'splat') {
-      SND.play('splat');
-      const big = toMe, size = big ? Math.max(W, H) * 1.15 : 200;
-      const blob = el('div', { class: 'giftsplat' }); blob.style.cssText = `left:${big ? W / 2 : tx}px;top:${big ? H * 0.45 : ty}px;width:${size}px;height:${size}px;background:radial-gradient(circle, ${col}e6 0 28%, ${col}b3 44%, ${col}00 68%)`;
-      fx.append(blob);
-      for (let i = 0; i < (big ? 7 : 4); i++) { const d = el('div', { class: 'giftsplat' }); const ds = (big ? 70 : 30) + Math.random() * (big ? 90 : 40); d.style.cssText = `left:${(big ? W / 2 : tx) + (Math.random() - 0.5) * size * 0.7}px;top:${(big ? H * 0.45 : ty) + (Math.random() - 0.5) * size * 0.7}px;width:${ds}px;height:${ds}px;background:${col}`; fx.append(d); anim(d, [{ opacity: 1, transform: 'translate(-50%,-50%) scale(.2)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: 0.15 }, { opacity: 0, transform: 'translate(-50%,40%) scale(1)' }], { duration: 2600, fill: 'forwards' }); }
-      anim(blob, [{ opacity: 0, transform: 'translate(-50%,-50%) scale(.2)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: 0.12 }, { opacity: 1, transform: 'translate(-50%,-46%) scale(1.03)', offset: 0.7 }, { opacity: 0, transform: 'translate(-50%,-30%) scale(1.06)' }], { duration: 2800, fill: 'forwards' });
-    } else if (kind === 'petals') {
-      SND.play('chime');
-      for (let i = 0; i < 22; i++) { const d = el('span', { class: 'giftbit' }, giftEl('petal', 16 + Math.random() * 16)); fx.append(d); const x = Math.random() * W; anim(d, [{ transform: `translate(${x}px,-40px) rotate(0deg)`, opacity: 1 }, { transform: `translate(${x + (Math.random() - 0.5) * 140}px,${H + 40}px) rotate(${Math.random() * 720 - 360}deg)`, opacity: 0.9 }], { duration: 2200 + Math.random() * 1400, delay: Math.random() * 600, easing: 'ease-in', fill: 'both' }); }
-    } else if (kind === 'confetti') {
-      SND.play('pop'); burstConfetti(); burst(tx, ty, ['#ffd23f', '#ff6fb0', '#6bd6ff', '#7be08f'], 18, 110);
-    } else if (kind === 'fireworks') {
-      SND.play('pop');
-      [0, 280, 560].forEach((dl, i) => setTimeout(() => { const x = W * (0.2 + Math.random() * 0.6), y = H * (0.2 + Math.random() * 0.3); burst(x, y, [['#ff5a5a', '#ffd23f'], ['#6bd6ff', '#fff'], ['#b77bff', '#ff8fc0']][i], 22, 130); SND.play(i ? 'pop' : 'chime'); }, dl));
-    } else if (kind === 'boom') {
-      SND.play('boom'); document.body.classList.add('shake'); setTimeout(() => document.body.classList.remove('shake'), 550);
-      const fl = el('div', { class: 'giftflash' }); fx.append(fl); anim(fl, [{ opacity: 0.9 }, { opacity: 0 }], { duration: 600, fill: 'forwards' });
-      const b = el('span', { class: 'giftbit' }, giftEl('burst', 110)); fx.append(b); anim(b, [{ transform: `translate(${tx - 55}px,${ty - 55}px) scale(.2)`, opacity: 1 }, { transform: `translate(${tx - 55}px,${ty - 55}px) scale(1.5)`, opacity: 1, offset: 0.4 }, { transform: `translate(${tx - 55}px,${ty - 55}px) scale(1.8)`, opacity: 0 }], { duration: 1000, fill: 'forwards' });
-      burst(tx, ty, ['#ffb02e', '#ff5a3c', '#555'], 18, 150);
+  const later = (ms, fn) => setTimeout(fn, ms);
+  let deadline = Date.now() + 3600; const keepFor = (ms) => { deadline = Math.max(deadline, Date.now() + ms); };
+  const tx = toMe ? W / 2 : W * rnd(0.3, 0.7), ty = toMe ? H * 0.42 : H * rnd(0.3, 0.5);
+
+  // --- toolkit ---
+  const node = (css, cls = 'giftbit', html = '') => { const d = el('i', { class: cls }); d.style.cssText = css; if (html) d.innerHTML = html; fx.append(d); return d; };
+  // a particle thrown from (x,y) that arcs and falls
+  const part = (x, y, o) => {
+    const { ang = 0, spd = 400, g = 900, life: lf = 1200, size = 8, color = '#fff', round = true, spin = 0, delay = 0, w, h, end = 0.4, glow = false } = o;
+    const d = node(`width:${w || size}px;height:${h || size}px;background:${color};border-radius:${round ? '50%' : '2px'};margin:${-(h || size) / 2}px 0 0 ${-(w || size) / 2}px;${glow ? `box-shadow:0 0 ${size * 1.6}px ${color};` : ''}${delay ? 'opacity:0;' : ''}`);
+    const T = lf / 1000, vx = Math.cos(ang) * spd, vy = Math.sin(ang) * spd, fr = [];
+    for (let i = 0; i <= 8; i++) { const k = i / 8, tt = k * T; fr.push({ transform: `translate(${x + vx * tt}px,${y + vy * tt + 0.5 * g * tt * tt}px) rotate(${spin * k}deg) scale(${1 - (1 - end) * k})`, opacity: i < 6 ? 1 : 1 - (i - 5) / 3 }); }
+    anim(d, fr, { duration: lf, delay, easing: 'linear', fill: 'forwards' }); keepFor(lf + delay + 200);
+  };
+  const ring = (x, y, color, maxR, dur = 700, width = 5, delay = 0) => { const d = node(`left:${x - maxR}px;top:${y - maxR}px;width:${maxR * 2}px;height:${maxR * 2}px;border-radius:50%;border:${width}px solid ${color};opacity:0`, 'giftbit'); anim(d, [{ transform: 'scale(.05)', opacity: 0.9 }, { transform: 'scale(1)', opacity: 0 }], { duration: dur, delay, easing: 'cubic-bezier(.1,.7,.3,1)', fill: 'forwards' }); keepFor(dur + delay + 200); };
+  const flash = (color = '#fff', peak = 0.85, dur = 600, delay = 0) => { const d = node(`inset:0;left:0;top:0;width:100%;height:100%;background:${color};opacity:0`, 'giftflash'); anim(d, [{ opacity: peak }, { opacity: 0 }], { duration: dur, delay, fill: 'forwards' }); keepFor(dur + delay + 100); };
+  const glowAt = (x, y, color, size, dur = 700, delay = 0) => { const d = node(`left:${x - size / 2}px;top:${y - size / 2}px;width:${size}px;height:${size}px;border-radius:50%;background:radial-gradient(circle, ${color} 0, ${color}00 70%);opacity:0`, 'giftbit'); anim(d, [{ transform: 'scale(.3)', opacity: 0.95 }, { transform: 'scale(1.25)', opacity: 0 }], { duration: dur, delay, fill: 'forwards' }); keepFor(dur + delay + 100); };
+  const pop = (x, y, text, color, size = 54, rot = -8, delay = 0) => { const d = node(`left:${x}px;top:${y}px;font:900 ${size}px/1 Inter,system-ui,sans-serif;color:${color};-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.25);white-space:nowrap;opacity:0`, 'giftbit'); d.textContent = text; anim(d, [{ transform: `translate(-50%,-50%) rotate(${rot}deg) scale(.1)`, opacity: 0 }, { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(1.25)`, opacity: 1, offset: 0.25 }, { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(1)`, opacity: 1, offset: 0.7 }, { transform: `translate(-50%,-70%) rotate(${rot}deg) scale(1)`, opacity: 0 }], { duration: 1500, delay, fill: 'forwards' }); keepFor(1700 + delay); };
+  const shake = (ms = 500) => { document.body.classList.add('shake'); later(ms, () => document.body.classList.remove('shake')); };
+  // the gift itself flying in on an arc, with a fading trail of copies behind it
+  const fly = (x0, y0, x1, y1, { size = 64, dur = 700, spin = 380, arc = 0.2, grow = 1.5, ghosts = 4 } = {}, done) => {
+    const trail = [];
+    for (let i = ghosts; i >= 0; i--) {
+      const s0 = el('span', { class: 'giftfly' }, giftEl(g.item, size)); s0.style.opacity = i ? String(0.32 - i * 0.05) : '1'; fx.append(s0); trail.push(s0);
+      const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - H * arc;
+      const a = anim(s0, [{ transform: `translate(${x0 - size / 2}px,${y0 - size / 2}px) rotate(0deg) scale(.7)` }, { transform: `translate(${mx - size / 2}px,${my - size / 2}px) rotate(${spin * 0.55}deg) scale(${(1 + grow) / 2})`, offset: 0.55 }, { transform: `translate(${x1 - size / 2}px,${y1 - size / 2}px) rotate(${spin}deg) scale(${grow})` }], { duration: dur, delay: i * 38, easing: 'cubic-bezier(.35,.6,.5,1)', fill: 'forwards' });
+      if (i === 0) { if (a) a.onfinish = () => { trail.forEach((x) => x.remove()); done && done(); }; else { trail.forEach((x) => x.remove()); done && done(); } }
     }
   };
-  if (a) a.onfinish = impact; else impact();
-  end();
+  const fromX = Math.random() < 0.5 ? -50 : W + 50, fromY = H * 0.88;
+
+  // a juicy splat on the target: irregular blob, flying droplets, drips and a comic word
+  const splat = (color, dark, word, { seeds = false, cherry = false } = {}) => {
+    const R = toMe ? Math.min(W, H) * 0.62 : 120, cx = toMe ? W / 2 : tx, cy = toMe ? H * 0.44 : ty;
+    SND.play('splat'); if (toMe) shake(380);
+    const pts = []; const N = 16;
+    for (let i = 0; i < N; i++) { const a = (i / N) * Math.PI * 2, rr = R * (i % 2 ? rnd(0.62, 0.82) : rnd(0.95, 1.25)); pts.push([R * 1.3 + Math.cos(a) * rr, R * 1.3 + Math.sin(a) * rr]); }
+    let d = `M${pts[0][0]} ${pts[0][1]}`; for (let i = 0; i < N; i++) { const p0 = pts[i], p1 = pts[(i + 1) % N]; d += ` Q${p0[0]} ${p0[1]} ${(p0[0] + p1[0]) / 2} ${(p0[1] + p1[1]) / 2}`; }
+    const sz = R * 2.6;
+    const blob = node(`left:${cx - sz / 2}px;top:${cy - sz / 2}px;width:${sz}px;height:${sz}px;opacity:0;transform-origin:50% 40%`, 'giftbit', `<svg viewBox="0 0 ${sz} ${sz}" width="100%" height="100%"><path d="${d}Z" fill="${color}"/><path d="${d}Z" fill="none" stroke="${dark}" stroke-width="${R * 0.07}" opacity=".55"/><ellipse cx="${sz * 0.4}" cy="${sz * 0.38}" rx="${R * 0.3}" ry="${R * 0.16}" fill="#fff" opacity=".35" transform="rotate(-25 ${sz * 0.4} ${sz * 0.38})"/>${seeds ? Array.from({ length: 9 }, () => `<ellipse cx="${sz / 2 + rnd(-R * 0.7, R * 0.7)}" cy="${sz / 2 + rnd(-R * 0.6, R * 0.6)}" rx="${R * 0.045}" ry="${R * 0.07}" fill="#ffe9a0" transform="rotate(${rnd(0, 180)} ${sz / 2} ${sz / 2})"/>`).join('') : ''}${cherry ? `<circle cx="${sz / 2}" cy="${sz * 0.42}" r="${R * 0.16}" fill="#e8352e"/><circle cx="${sz / 2 - R * 0.05}" cy="${sz * 0.42 - R * 0.06}" r="${R * 0.045}" fill="#fff" opacity=".7"/>` : ''}</svg>`);
+    anim(blob, [{ opacity: 0, transform: 'scale(.15)' }, { opacity: 1, transform: 'scale(1.18)', offset: 0.14 }, { opacity: 1, transform: 'scale(1)', offset: 0.24 }, { opacity: 1, transform: `translateY(${toMe ? H * 0.06 : 24}px) scale(1.02)`, offset: 0.78 }, { opacity: 0, transform: `translateY(${toMe ? H * 0.16 : 60}px) scale(1.05)` }], { duration: 3000, fill: 'forwards' });
+    for (let i = 0; i < (toMe ? 34 : 22); i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(260, 760), g: 1500, life: rnd(700, 1300), size: rnd(6, 16), color: i % 4 ? color : dark, end: 0.6 });
+    // drips sliding down from the splat
+    for (let i = 0; i < (toMe ? 6 : 3); i++) { const dx = cx + rnd(-R * 0.7, R * 0.7), hh = rnd(R * 0.5, R * 0.9), dw = rnd(10, 18); const dr = node(`left:${dx - dw / 2}px;top:${cy + R * 0.15}px;width:${dw}px;height:${hh}px;background:${color};border-radius:0 0 ${dw}px ${dw}px;transform-origin:50% 0;opacity:0`, 'giftbit'); anim(dr, [{ transform: 'scaleY(0)', opacity: 1 }, { transform: 'scaleY(1)', opacity: 1, offset: 0.55 }, { transform: 'scaleY(1) translateY(10px)', opacity: 0 }], { duration: 2400, delay: 300 + i * 120, easing: 'ease-in', fill: 'forwards' }); }
+    pop(cx, cy - R * 0.1, word, color === '#fff1d0' ? '#e0a04a' : color, toMe ? 64 : 44);
+    keepFor(3400);
+  };
+
+  if (kind === 'splat' && g.item === 'tomato') {
+    fly(fromX, fromY, tx, ty, { size: 70, dur: 640, spin: 520, grow: toMe ? 2.6 : 1.6 }, () => { splat('#e8352e', '#a81818', 'SPLAT!', { seeds: true }); });
+  } else if (kind === 'splat' && g.item === 'pie') {
+    fly(fromX, fromY, tx, ty, { size: 76, dur: 700, spin: 300, grow: toMe ? 2.6 : 1.6 }, () => { splat('#fff1d0', '#e0b872', 'PLOP!', { cherry: true }); });
+  } else if (g.item === 'snowball') {
+    fly(fromX, fromY, tx, ty, { size: 64, dur: 620, spin: 700, grow: toMe ? 2.4 : 1.5, ghosts: 3 }, () => {
+      SND.play('splat'); if (toMe) shake(260);
+      glowAt(tx, ty, '#ffffff', toMe ? 520 : 260, 900); ring(tx, ty, '#dff3ff', toMe ? 300 : 150, 800, 6);
+      for (let i = 0; i < 26; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(160, 560), g: 600, life: rnd(900, 1500), size: rnd(6, 14), color: pick(['#fff', '#eaf6ff', '#bfe4ff']), end: 0.3 });
+      for (let i = 0; i < 9; i++) part(tx, ty, { ang: rnd(-Math.PI, 0), spd: rnd(220, 520), g: 1100, life: 1100, w: 8, h: 18, color: '#9fd8ff', round: false, spin: rnd(-400, 400) });
+      pop(tx, ty - 20, 'BRRR!', '#4fa8ff', toMe ? 64 : 46, 6);
+      // frost creeping in from the edges, then melting away
+      const fr = node('left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 36px rgba(225,245,255,.95), inset 0 0 220px 90px rgba(150,205,255,.55)', 'giftbit');
+      anim(fr, [{ opacity: 0 }, { opacity: toMe ? 1 : 0.55, offset: 0.2 }, { opacity: toMe ? 0.9 : 0.4, offset: 0.65 }, { opacity: 0 }], { duration: 3000, fill: 'forwards' });
+      for (let i = 0; i < 28; i++) { const x = rnd(0, W), sz = rnd(5, 12), sw = rnd(20, 60); const f = node(`width:${sz}px;height:${sz}px;border-radius:50%;background:#fff;opacity:0;box-shadow:0 0 6px #cfeaff`, 'giftbit'); anim(f, [{ transform: `translate(${x}px,-20px)`, opacity: 0.95 }, { transform: `translate(${x + sw}px,${H * 0.35}px)`, opacity: 0.95, offset: 0.4 }, { transform: `translate(${x - sw}px,${H * 0.7}px)`, opacity: 0.9, offset: 0.75 }, { transform: `translate(${x + sw / 2}px,${H + 20}px)`, opacity: 0 }], { duration: rnd(2200, 3200), delay: rnd(0, 500), fill: 'forwards' }); }
+      keepFor(3800);
+    });
+  } else if (kind === 'petals') {   // a bouquet fountain: roses shoot up, burst into petals, hearts float up
+    SND.play('chime');
+    const n = 7;
+    for (let i = 0; i < n; i++) {
+      const x = W * (0.12 + (0.76 * i) / (n - 1)) + rnd(-18, 18), peak = H * rnd(0.18, 0.5), delay = i * 110, s0 = el('span', { class: 'giftfly' }, giftEl('rose', rnd(46, 66))); s0.style.opacity = '0'; fx.append(s0);
+      anim(s0, [{ transform: `translate(${x}px,${H + 40}px) rotate(${rnd(-30, 30)}deg) scale(.7)`, opacity: 1 }, { transform: `translate(${x + rnd(-30, 30)}px,${peak}px) rotate(${rnd(-90, 90)}deg) scale(1.25)`, opacity: 1, offset: 0.62 }, { transform: `translate(${x + rnd(-60, 60)}px,${peak + 40}px) rotate(${rnd(-160, 160)}deg) scale(.2)`, opacity: 0 }], { duration: 1500, delay, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' });
+      later(delay + 920, () => {
+        glowAt(x, peak, '#ff6b8f', 150, 700);
+        for (let k = 0; k < 7; k++) { const pt = el('span', { class: 'giftbit' }, giftEl('petal', rnd(14, 26))); fx.append(pt); const dx = rnd(-110, 110), sw = rnd(25, 60); anim(pt, [{ transform: `translate(${x}px,${peak}px) rotate(0deg) scale(.4)`, opacity: 1 }, { transform: `translate(${x + dx}px,${peak + H * 0.18}px) rotate(${rnd(90, 240)}deg) scale(1)`, opacity: 1, offset: 0.3 }, { transform: `translate(${x + dx + sw}px,${peak + H * 0.4}px) rotate(${rnd(240, 420)}deg) scale(1)`, opacity: 1, offset: 0.65 }, { transform: `translate(${x + dx - sw}px,${H + 40}px) rotate(${rnd(420, 700)}deg) scale(.9)`, opacity: 0.2 }], { duration: rnd(2000, 3000), fill: 'forwards' }); }
+        if (i % 2 === 0) SND.play('chime');
+      });
+    }
+    for (let i = 0; i < 12; i++) { const x = rnd(0.05, 0.95) * W, sz = rnd(22, 40), hh = el('span', { class: 'giftbit' }, giftEl('heart', sz)); fx.append(hh); anim(hh, [{ transform: `translate(${x}px,${H + 30}px) scale(.5)`, opacity: 0 }, { transform: `translate(${x + 30}px,${H * 0.7}px) scale(1)`, opacity: 1, offset: 0.2 }, { transform: `translate(${x - 30}px,${H * 0.35}px) scale(1.05)`, opacity: 1, offset: 0.6 }, { transform: `translate(${x + 20}px,${-40}px) scale(1.1)`, opacity: 0 }], { duration: rnd(2200, 3200), delay: 500 + i * 130, fill: 'forwards' }); }
+    if (toMe) { const big = node(`left:${W / 2 - 80}px;top:${H * 0.38 - 80}px;width:160px;height:160px;opacity:0`, 'giftbit'); big.append(giftEl('heart', 160)); anim(big, [{ transform: 'scale(.1)', opacity: 0 }, { transform: 'scale(1.2)', opacity: 1, offset: 0.3 }, { transform: 'scale(1)', opacity: 1, offset: 0.55 }, { transform: 'scale(1.4)', opacity: 0 }], { duration: 1600, delay: 700, fill: 'forwards' }); }
+    keepFor(4600);
+  } else if (kind === 'confetti') {   // party cannons from both bottom corners, ribbons, and a confetti rain
+    const cols = ['#ffd23f', '#ff5a8a', '#4fc3ff', '#7be08f', '#b77bff', '#ff7a1f'];
+    fly(fromX, fromY, tx, H * 0.55, { size: 58, dur: 520, spin: 200, grow: 1.2, ghosts: 2 }, () => {
+      SND.play('pop');
+      [[0, H, -Math.PI * 0.32], [W, H, -Math.PI * 0.68]].forEach(([cx, cy, ang0], side) => {
+        glowAt(cx, cy, '#fff7c2', 240, 500); pop(side ? W * 0.82 : W * 0.18, H * 0.78, 'POP!', pick(cols), 44, side ? 8 : -8);
+        for (let i = 0; i < 34; i++) part(cx, cy, { ang: ang0 + rnd(-0.55, 0.55), spd: rnd(700, 1500), g: 1100, life: rnd(1500, 2400), w: rnd(6, 11), h: rnd(10, 18), color: pick(cols), round: false, spin: rnd(-900, 900), end: 0.9 });
+        for (let i = 0; i < 8; i++) part(cx, cy, { ang: ang0 + rnd(-0.35, 0.35), spd: rnd(600, 1200), g: 700, life: rnd(1600, 2400), w: 5, h: rnd(60, 110), color: pick(cols), round: false, spin: rnd(-500, 500), end: 0.9 });
+      });
+      later(260, () => { SND.play('pop'); burstConfetti(); });
+      later(560, () => SND.play('chime'));
+      keepFor(3600);
+    });
+  } else if (kind === 'rocket') {
+    const x = toMe ? W / 2 : W * rnd(0.22, 0.78);
+    SND.play('whistle');
+    const rk = el('span', { class: 'giftfly' }, giftEl('rocket', 72)); fx.append(rk);
+    if (toMe) {   // it comes straight at you
+      anim(rk, [{ transform: `translate(${x - 36}px,${H * 0.9}px) scale(.3) rotate(0deg)` }, { transform: `translate(${x - 36}px,${H * 0.42}px) scale(3.8) rotate(0deg)`, offset: 0.85 }, { transform: `translate(${x - 36}px,${H * 0.36}px) scale(6) rotate(0deg)`, opacity: 0 }], { duration: 1050, easing: 'cubic-bezier(.5,0,.8,.5)', fill: 'forwards' });
+      later(980, () => { SND.play('boom'); shake(650); flash('#ffe9a0', 0.95, 900); ring(W / 2, H * 0.42, '#ffb02e', Math.max(W, H) * 0.6, 900, 14); for (let i = 0; i < 70; i++) part(W / 2, H * 0.42, { ang: rnd(0, Math.PI * 2), spd: rnd(300, 1100), g: 700, life: rnd(900, 1800), size: rnd(6, 14), color: pick(['#ffd23f', '#ff7a1f', '#ff4d4d', '#fff']), end: 0.2 }); pop(W / 2, H * 0.42, 'BOOM!', '#ff7a1f', 76, -6); });
+    } else {
+      anim(rk, [{ transform: `translate(${x - 36}px,${H + 20}px) rotate(${rnd(-6, 6)}deg) scale(1)` }, { transform: `translate(${x + rnd(-40, 40) - 36}px,${H * 0.14}px) rotate(${rnd(-6, 6)}deg) scale(1.15)` }], { duration: 1050, easing: 'cubic-bezier(.5,0,.9,.45)', fill: 'forwards' });
+      for (let i = 0; i < 26; i++) { const k = i / 26, yy = H + 20 - (H * 0.86) * k; later(k * 1000, () => { part(x + rnd(-8, 8), yy + 30, { ang: Math.PI / 2 + rnd(-0.4, 0.4), spd: rnd(80, 260), g: 200, life: rnd(500, 900), size: rnd(8, 18), color: pick(['#ffd23f', '#ff9d2e', '#ff5a3c']), end: 0.1 }); if (i % 3 === 0) part(x + rnd(-10, 10), yy + 50, { ang: Math.PI / 2, spd: 40, g: -60, life: 1600, size: rnd(18, 34), color: 'rgba(210,215,225,.28)', end: 2.2 }); }); }
+      later(1000, () => {
+        rk.remove(); SND.play('boom'); shake(260); flash('#fff3c2', 0.55, 600);
+        const bx = x, by = H * 0.14; glowAt(bx, by, '#ffd23f', 420, 900); ring(bx, by, '#ffd23f', 200, 900, 6); ring(bx, by, '#ff7a1f', 130, 700, 4, 100);
+        for (let i = 0; i < 64; i++) part(bx, by, { ang: (i / 64) * Math.PI * 2 + rnd(-0.05, 0.05), spd: rnd(240, 560), g: 520, life: rnd(1100, 1900), size: rnd(6, 11), color: pick(['#ffd23f', '#ff7a1f', '#ff4d4d', '#fff', '#4fc3ff']), end: 0.2, glow: true });
+        pop(bx, by + 90, 'WHOOSH!', '#ff7a1f', 40, 6); later(250, () => SND.play('crackle')); keepFor(3000);
+      });
+    }
+  } else if (kind === 'boom') {   // a bomb lands, its fuse hisses, 3-2-1, then everything blows up
+    const bs = toMe ? 150 : 92;
+    const b = el('span', { class: 'giftfly' }, giftEl('bomb', bs)); b.style.filter = 'drop-shadow(0 0 7px rgba(255,255,255,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.4))'; fx.append(b);
+    SND.play('throw');
+    anim(b, [{ transform: `translate(${fromX - bs / 2}px,${fromY}px) rotate(0deg) scale(.6)` }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2 - H * 0.2}px) rotate(300deg) scale(1.1)`, offset: 0.45 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2}px) rotate(380deg) scale(1)`, offset: 0.62 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2 - 70}px) rotate(380deg) scale(1)`, offset: 0.75 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2}px) rotate(380deg) scale(1)`, offset: 0.86 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2 - 24}px) rotate(380deg) scale(1)`, offset: 0.93 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2}px) rotate(380deg) scale(1)` }], { duration: 900, fill: 'forwards' });
+    later(900, () => {
+      SND.play('sizzle');
+      const fuseX = tx + bs * 0.26, fuseY = ty - bs * 0.38;
+      for (let i = 0; i < 18; i++) later(i * 50, () => part(fuseX, fuseY, { ang: rnd(-Math.PI, 0), spd: rnd(80, 260), g: 500, life: rnd(300, 600), size: rnd(3, 7), color: pick(['#ffd23f', '#ff7a1f', '#fff']), end: 0.2 }));
+      anim(b, [{ filter: 'brightness(1)' }, { filter: 'brightness(1.8) sepia(1) hue-rotate(-30deg) saturate(4)' }, { filter: 'brightness(1)' }, { filter: 'brightness(1.8) sepia(1) hue-rotate(-30deg) saturate(4)' }, { filter: 'brightness(1)' }], { duration: 900, iterations: 1 });
+      [3, 2, 1].forEach((n, i) => later(i * 300, () => { SND.play('beep'); pop(tx, ty - bs * 0.95, String(n), '#ff4d4d', 62, 0); }));
+    });
+    later(1850, () => {
+      b.remove(); SND.play('boom'); shake(700); flash('#fff', 1, 500); flash('#ff9d2e', 0.5, 900, 120);
+      const R = toMe ? Math.max(W, H) * 0.7 : 230;
+      ring(tx, ty, '#fff', R, 700, 10); ring(tx, ty, '#ffb02e', R * 0.75, 900, 8, 80); ring(tx, ty, '#ff5a3c', R * 0.5, 1000, 6, 160);
+      const bb = node(`left:${tx - R * 0.55}px;top:${ty - R * 0.55}px;width:${R * 1.1}px;height:${R * 1.1}px;opacity:0`, 'giftbit'); bb.append(giftEl('burst', R * 1.1)); anim(bb, [{ transform: 'scale(.2) rotate(-10deg)', opacity: 1 }, { transform: 'scale(1.15) rotate(6deg)', opacity: 1, offset: 0.35 }, { transform: 'scale(1.3) rotate(10deg)', opacity: 0 }], { duration: 1100, fill: 'forwards' });
+      for (let i = 0; i < 56; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(300, 1200), g: 1000, life: rnd(900, 1800), size: rnd(5, 15), color: pick(['#2b2f3f', '#ff7a1f', '#ffd23f', '#555']), spin: rnd(-720, 720), end: 0.3 });
+      for (let i = 0; i < 9; i++) part(tx + rnd(-60, 60), ty + rnd(-40, 40), { ang: rnd(-Math.PI, 0), spd: rnd(40, 140), g: -90, life: rnd(1500, 2400), size: rnd(70, 150), color: 'rgba(90,94,110,.55)', end: 1.8, delay: i * 40 });
+      pop(tx, ty, 'BOOM!', '#ff5a3c', toMe ? 84 : 58, -7, 60);
+      if (toMe) { const cr = node('left:0;top:0;width:100%;height:100%;opacity:0', 'giftbit', `<svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%"><g stroke="#fff" stroke-width=".5" fill="none" opacity=".9"><path d="M50 40L38 18 30 4M50 40L66 22l10-18M50 40L82 44l16-4M50 40L74 62l12 18M50 40L52 70l-4 28M50 40L28 56 8 62M50 40L22 36 4 24"/><path d="M38 18l-8 4M66 22l6 6M74 62l-8 8M28 56l4 8"/></g></svg>`); anim(cr, [{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], { duration: 2600, fill: 'forwards' }); }
+      later(300, () => SND.play('crackle')); keepFor(3600);
+    });
+    keepFor(5200);
+  } else if (kind === 'fireworks') {   // a volley of shells with different bursts
+    const cols = [['#ff5a5a', '#ffd23f'], ['#4fc3ff', '#ffffff'], ['#b77bff', '#ff8fc0'], ['#7be08f', '#ffd23f'], ['#ffd23f', '#ff7a1f']];
+    const shells = 6;
+    for (let i = 0; i < shells; i++) {
+      const delay = i * 380, x = W * (0.12 + (0.76 * (i % 3)) / 2) + rnd(-30, 30) + (i > 2 ? W * 0.08 : 0), by = H * rnd(0.14, 0.42), [c1, c2] = cols[i % cols.length], style = ['peony', 'ring', 'willow', 'double', 'peony', 'ring'][i];
+      later(delay, () => {
+        SND.play('whistle');
+        const sh = node(`width:9px;height:9px;border-radius:50%;background:#fff3c2;box-shadow:0 0 12px 4px #ffd23f;opacity:0;margin:-4px 0 0 -4px`, 'giftbit');
+        anim(sh, [{ transform: `translate(${x}px,${H + 10}px)`, opacity: 1 }, { transform: `translate(${x + rnd(-20, 20)}px,${by}px)`, opacity: 1 }], { duration: 640, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' });
+        for (let k = 0; k < 10; k++) later(k * 58, () => part(x, H - (H - by) * (k / 10), { ang: Math.PI / 2, spd: 30, g: 200, life: 500, size: 4, color: '#ffd23f', end: 0.1 }));
+        later(640, () => {
+          sh.remove(); SND.play('pop'); if (i % 2) SND.play('crackle');
+          flash(c1, 0.18, 400); glowAt(x, by, c1, 360, 800); ring(x, by, c2, 150, 800, 3);
+          if (style === 'ring' || style === 'double') for (let k = 0; k < 32; k++) part(x, by, { ang: (k / 32) * Math.PI * 2, spd: 340, g: 260, life: 1600, size: 9, color: c1, end: 0.2, glow: true });
+          if (style === 'double') for (let k = 0; k < 22; k++) part(x, by, { ang: (k / 22) * Math.PI * 2 + 0.2, spd: 190, g: 260, life: 1600, size: 8, color: c2, end: 0.2, glow: true });
+          if (style === 'peony') for (let k = 0; k < 44; k++) part(x, by, { ang: rnd(0, Math.PI * 2), spd: rnd(120, 440), g: 340, life: rnd(1200, 1900), size: rnd(6, 11), color: k % 3 ? c1 : c2, end: 0.2, glow: true });
+          if (style === 'willow') for (let k = 0; k < 36; k++) part(x, by, { ang: rnd(0, Math.PI * 2), spd: rnd(120, 360), g: 760, life: rnd(1900, 2700), size: rnd(5, 8), color: '#ffd98a', end: 0.25, glow: true });
+        });
+      });
+    }
+    keepFor(shells * 380 + 3000);
+  } else {
+    fly(fromX, fromY, tx, ty, { size: 64 }, () => { SND.play('pop'); burstConfetti(); });
+  }
+  const reap = () => { if (Date.now() < deadline) setTimeout(reap, 300); else fx.remove(); };
+  setTimeout(reap, 300);
 }
 
 // ---- translations (English / 简体中文) ----
