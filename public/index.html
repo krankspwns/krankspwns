@@ -462,6 +462,9 @@
   .timerbar.urgent { background: rgba(255,90,80,.16); border-color: #ff6b5e; animation: urgent .6s ease-in-out infinite; } .timerbar.urgent b { color: #ff9c8f; } .timerbar.urgent .tm-bar i { background: linear-gradient(90deg, #ff6b5e, #ff9a6a); } @keyframes urgent { 50% { box-shadow: 0 0 18px rgba(255,90,80,.5); } }
   .setchips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 0 0 12px; } .setchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,.07); border: 1px solid var(--line); } .setedit { padding: 4px 12px !important; font-size: 12px !important; display: inline-flex; align-items: center; gap: 5px; }
   .swatches { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; } .swatch { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: conic-gradient(var(--sw) 0 50%, var(--sb) 50% 100%); border: 2px solid rgba(255,255,255,.25); box-shadow: none; } .swatch.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(var(--gold-rgb), .55); transform: scale(1.08); }
+  .avbig { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; background: rgba(4,6,14,.82); animation: lbin .2s ease both; -webkit-tap-highlight-color: transparent; }
+  .avbigbox { display: grid; justify-items: center; gap: 14px; animation: boxpop .3s cubic-bezier(.2,1.2,.4,1) backwards; } .avbigbox .av { box-shadow: 0 0 0 4px rgba(255,255,255,.2), 0 20px 60px rgba(0,0,0,.6); cursor: default; } .avbigbox .av.bd { box-shadow: 0 0 22px var(--bdglow, transparent), 0 20px 60px rgba(0,0,0,.6); }
+  .avbigname { font-size: 22px; font-weight: 800; color: var(--gold-hi); text-shadow: 0 2px 10px rgba(0,0,0,.6); max-width: 90vw; text-align: center; }
   /* avatar borders: a gradient ring made by padding the circle (no extra elements, no animation) */
   .av.bd { background: var(--bdg) !important; box-shadow: 0 0 9px var(--bdglow, transparent); } .av.bd svg { border-radius: 50%; }
   .av.legend { position: relative; } .av.legend:not(.bd) { box-shadow: 0 0 12px rgba(183,123,255,.6); }
@@ -1296,13 +1299,41 @@ const avBg = (k) => (AVATARS[k] || AVATARS.cat)[0];
 function avatarEl(key, size = 40, cls = '', acc = '', bd = '') {
   const [bg, body] = AVATARS[key] || AVATARS.cat;
   const w = el('span', { class: 'av avatar ' + cls + (BORDERS.includes(bd) ? ' bd bd-' + bd : '') + (LEGEND_KEYS.includes(key) ? ' legend' + (size >= 36 ? ' live' : '') : '') });
-  if (BORDERS.includes(bd)) w.style.padding = Math.max(1.5, size * 0.075) + 'px';
+  if (BORDERS.includes(bd)) w.style.padding = Math.min(10, Math.max(1.5, size * 0.075)) + 'px';
   w.style.width = w.style.height = size + 'px';
+  w.dataset.k = key; w.dataset.acc = acc || ''; w.dataset.bd = bd || '';   // what a long press needs to draw it large
   w.onclick = () => {};   // a real click target, so a touch lands on the animal rather than being pulled to the badge beside it
   w.style.setProperty('--d', (-Math.random() * 6).toFixed(2) + 's');   // every avatar breathes and blinks on its own rhythm
   w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${body}${ACC[acc] ? accFit(key, acc) : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
   return w;
 }
+// hold any avatar to see it big (about 80% of the screen width)
+(function () {
+  let t = null, sx = 0, sy = 0, held = false;
+  const cancel = () => { clearTimeout(t); t = null; };
+  const show = (a) => {
+    document.querySelector('.avbig')?.remove();
+    const W = Math.min(Math.round(window.innerWidth * 0.8), 520);
+    const box = a.closest('.prow, .seat, .pd, .hrow, .tname, .chatmsg, .emofloat, .avbox, .shopitem, .invth');
+    const nm = box && box.querySelector('.pname, .sname, .pd-n, .tn, small b, b');
+    const ov = el('div', { class: 'avbig', role: 'dialog', 'aria-modal': 'true', onclick: () => ov.remove() },
+      el('div', { class: 'avbigbox' }, avatarEl(a.dataset.k, W, '', a.dataset.acc, a.dataset.bd), nm && nm.textContent.trim() ? el('div', { class: 'avbigname' }, nm.textContent.trim().slice(0, 24)) : ''));
+    document.body.append(ov);
+    SND.play('boing'); buzz(20);
+  };
+  document.addEventListener('pointerdown', (e) => {
+    const a = e.target.closest && e.target.closest('.av');
+    if (!a || !a.dataset.k || a.closest('.avbig')) return;
+    held = false; sx = e.clientX; sy = e.clientY;
+    cancel(); t = setTimeout(() => { held = true; t = null; show(a); }, 480);
+  }, true);
+  document.addEventListener('pointermove', (e) => { if (t && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) cancel(); }, true);
+  ['pointerup', 'pointercancel', 'scroll'].forEach((ev) => document.addEventListener(ev, cancel, true));
+  // the release after a long press must not also count as a tap on whatever sits under the finger
+  document.addEventListener('click', (e) => { if (held) { held = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('.av')) e.preventDefault(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelector('.avbig')?.remove(); });
+})();
 // tap or hover any animal and it reacts
 document.addEventListener('pointerdown', (e) => {
   const a = e.target.closest && e.target.closest('.av');
