@@ -490,6 +490,8 @@
   .connbar button { padding: 5px 12px; font-size: 12px; border-radius: 99px; background: #ff9b6a; color: #2a0f05; border: 0; box-shadow: none; } .spin.sm { width: 14px; height: 14px; border-width: 2px; }
   .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(201,169,106,.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
   .qrbox { text-align: center; } .qrimg { width: min(64vw, 240px); aspect-ratio: 1; margin: 0 auto 10px; border-radius: 14px; overflow: hidden; background: #fff; display: grid; place-items: center; box-shadow: 0 0 0 6px #fff; } .qrimg svg { width: 100%; height: 100%; display: block; } .qrimg.fail { color: #14182b; font-size: 12px; padding: 10px; word-break: break-all; }
+  .qrbox .leaverow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; } .qrbox .leaverow button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 14px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+  .qrbox .leaverow button:not(.ghost) { box-shadow: 0 6px 16px rgba(201,169,106,.25); } .qrbox .leaverow button:not(.ghost) .ic { color: currentColor !important; stroke-width: 2.3; }
   .qrcode { font-size: 28px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; color: var(--gold-hi); margin: 14px 0 4px; }
   .gamehead { position: relative; z-index: 30; }
   .invwrap { position: relative; display: inline-flex; } .invwrap > button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .invwrap .caret { flex: none; display: block; } .invwrap .caret { margin-left: 0; transition: transform .2s; } .invwrap .caret.up { transform: rotate(180deg); }
@@ -1487,7 +1489,7 @@ async function openQR() {
     el('div', { class: 'qrimg' }, el('i', { class: 'spin' })),
     el('div', { class: 'qrcode' }, st.code),
     el('p', { class: 'leavep' }, t('qrHint')),
-    el('div', { class: 'leaverow' }, el('button', { type: 'button', class: 'ghost', onclick: close }, t('qrClose')), (() => { const b = el('button', { type: 'button', onclick: () => copyText(link, b) }, withIcon('link', t('qrCopy'))); return b; })()));
+    el('div', { class: 'leaverow' }, el('button', { type: 'button', class: 'ghost', onclick: close }, t('qrClose')), (() => { const b = el('button', { type: 'button', onclick: () => copyText(link, b) }, withIcon('copy', t('qrCopy'))); return b; })()));
   const ov = el('div', { class: 'guide-ov qr-ov', onclick: (e) => { if (e.target === ov) close(); } }, box);
   document.body.append(ov); document.body.classList.add('noscroll');
   try { await loadQR(); box.querySelector('.qrimg').innerHTML = qrSvg(link); }
