@@ -1,4 +1,3 @@
-process.env.START_WP = '0';   // the real economy, not the testing allowance
 const assert = require('assert');
 const h = require('./api/game.js');
 async function call(method, body, query) {
@@ -252,6 +251,14 @@ const post = (b) => call('POST', b, {});
   assert.equal((await wal(loserId)).gifts.pop().to, 'all', 'everyone sees it');
   assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'av', key: 'dragon' })).j.wallet.owned.av[0], 'dragon');
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, avatar: 'dragon' })).j.players.find((p) => p.id === winner.id).avatar, 'dragon', 'a bought avatar can be used');
+  // only a player called Benny gets the 1000 WP testing allowance, and may throw at themselves
+  const bn = (await post({ action: 'create', name: ' benny ' })).j;
+  assert.equal(bn.wallet.pts, 1000, 'Benny starts with 1000 WP'); assert.equal(bn.prices.test, true);
+  const nb = (await post({ action: 'join', code: bn.code, name: 'Bennyx' })).j;
+  assert.equal(nb.wallet.pts, 0, 'everyone else starts with nothing'); assert.equal(nb.prices.test, false);
+  assert.equal((await post({ action: 'buy', code: bn.code, pid: nb.meId, kind: 'acc', key: 'hat' })).s, 402);
+  assert.equal((await post({ action: 'buy', code: bn.code, pid: bn.meId, kind: 'gift', key: 'rose' })).j.wallet.pts, 990);
+  assert.equal((await post({ action: 'throw', code: bn.code, pid: bn.meId, item: 'rose', target: bn.meId })).s, 200, 'the tester may throw at themselves');
   // chat: cleaned, limited, only new messages sent back, and the host can switch it off
   const cr = (await post({ action: 'create', name: 'CA' })).j;
   const cb2 = (await post({ action: 'join', code: cr.code, name: 'CB' })).j;

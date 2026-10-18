@@ -23,9 +23,10 @@ const PREMIUM = { dragon: 30, robot: 30, alien: 30, ghost: 30, wizard: 40, ninja
 const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, pie: 15, rocket: 20, bomb: 20, fireworks: 25 };
 const BORDER_PRICE = { silver: 15, gold: 20, emerald: 20, ice: 25, neon: 30, royal: 30, fire: 40, rainbow: 50 };
 const GIFT_USES = 3;   // one purchase = three throws
-// everyone starts with a testing allowance while the shop is being tried out (set START_WP=0 for the real thing)
-const START_WP = process.env.START_WP !== undefined ? Number(process.env.START_WP) : 1000;
-const balanceOf = (room, pid) => START_WP + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
+// the tester (a player called Benny) gets 1000 WP to try the shop, and may throw gifts at themselves
+const TESTER_NAME = 'benny', TESTER_WP = 1000;
+const isTester = (p) => !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
+const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
 const MAX_PLAYERS = 12;
@@ -356,7 +357,7 @@ function view(room, pid, seen, cn) {
     gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
     giftN: room.giftN || 0,
     wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
-    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES, test: START_WP > 0 },
+    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES, test: isTester(me) },
     chatN: room.chatN || 0,
     winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,   // who won the round that just finished ([] = a full tie, null = not finished)
     // chat: only what this phone hasn't got yet (its last seen number comes with every request)
@@ -657,8 +658,8 @@ async function handle(action, b, query) {
       need(me.gifts[key] > 0, 403, 'You have none left');
       const all = String(b.target) === 'all';   // everyone at once costs every throw of the pack
       const target = all ? null : room.players.find((q) => q.id === String(b.target));
-      if (all) { need(room.players.length > 1 || START_WP > 0, 400, 'Nobody to throw at'); need(me.gifts[key] >= GIFT_USES, 403, `Throwing at everyone needs all ${GIFT_USES} throws`); }
-      else need(target && (target.id !== pid || START_WP > 0), 400, 'Pick another player');   // while testing (START_WP > 0) you may throw at yourself
+      if (all) { need(room.players.length > 1 || isTester(me), 400, 'Nobody to throw at'); need(me.gifts[key] >= GIFT_USES, 403, `Throwing at everyone needs all ${GIFT_USES} throws`); }
+      else need(target && (target.id !== pid || isTester(me)), 400, 'Pick another player');   // only the tester may throw at themselves
       const now = Date.now();
       room.giftAt = room.giftAt || {};
       if (now - (room.giftAt[pid] || 0) < 1500) return viewFor(room, pid, cnOf);   // one throw at a time

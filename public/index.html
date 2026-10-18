@@ -468,6 +468,7 @@
   .bd-emerald { --bdg: linear-gradient(135deg, #c4f8cf, #2f8f4e 60%, #7be08f); --bdglow: rgba(80,200,120,.45); } .bd-ice { --bdg: linear-gradient(135deg, #f0fcff, #4fa8ff 60%, #bdf0ff); --bdglow: rgba(100,190,255,.5); }
   .bd-neon { --bdg: linear-gradient(135deg, #ff3df2, #3dfcff); --bdglow: rgba(255,61,242,.5); } .bd-royal { --bdg: linear-gradient(135deg, #e0d3ff, #6a4be0 60%, #b99cff); --bdglow: rgba(150,110,255,.5); }
   .bd-fire { --bdg: linear-gradient(180deg, #ffe27a, #ff7a1f 50%, #e8352e); --bdglow: rgba(255,110,40,.55); } .bd-rainbow { --bdg: conic-gradient(#ff5a5a, #ffd23f, #7be08f, #4fc3ff, #b77bff, #ff5a5a); --bdglow: rgba(255,255,255,.25); }
+  #shopBtn[hidden] { display: none !important; } #shopBtn { background: linear-gradient(135deg, rgba(255,176,46,.22), rgba(255,77,141,.22)) !important; border-color: rgba(255,150,110,.55) !important; flex: none; }
   /* shop + gifts */
   .shopbox { max-height: min(88vh, 720px); } .shophead { display: flex; align-items: center; gap: 10px; } .shophead .gtitle { flex: 1; }
   .wpchip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 99px; font-weight: 800; font-size: 14px; color: var(--gold-hi); background: rgba(var(--gold-rgb), .14); border: 1px solid var(--gold-lo); white-space: nowrap; }
@@ -826,7 +827,7 @@
 <body>
 <div class="bg" id="bg"></div>
 <main>
-  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><button type="button" class="iconbtn" id="setBtn"></button><button type="button" class="iconbtn" id="shopBtn" hidden></button><div class="topright"><div class="sndsw" id="sndSw" role="group"><button type="button" data-m="0"></button><button type="button" data-m="1"></button><button type="button" data-m="2"></button></div><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div></div>
+  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><button type="button" class="iconbtn" id="setBtn"></button><div class="topright"><div class="sndsw" id="sndSw" role="group"><button type="button" data-m="0"></button><button type="button" data-m="1"></button><button type="button" data-m="2"></button></div><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div><button type="button" class="iconbtn shopbtn" id="shopBtn" hidden></button></div>
   <h1 id="h1">Row of Reckoning</h1>
   <div id="app"></div>
 </main>
@@ -1659,6 +1660,12 @@ function setMyAcc(k) {
   act('avatar', { acc: k });
 }
 
+// the shop's own full-colour icon (a bag with a star), used instead of the one-colour line icons
+function shopIcon(size = 24) {
+  const w = el('span', { class: 'shopico' }); w.style.cssText = `display:inline-block;width:${size}px;height:${size}px;line-height:0`;
+  w.innerHTML = '<svg viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="shg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb02e"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient></defs><path d="M10.500 11V9a5.500 5.500 0 0111 0v2" fill="none" stroke="#ffd23f" stroke-width="2.400" stroke-linecap="round"/><path d="M5 11h22l-1.800 15.200q-.2 2-2.200 2H9q-2 0-2.200-2z" fill="url(#shg)"/><path d="M5 11h22l-.3 2.600H5.300z" fill="#fff" opacity=".22"/><path d="M16 15.200l1.700 3.600 3.900.5-2.900 2.700.8 3.900-3.500-2-3.500 2 .8-3.900-2.900-2.700 3.900-.5z" fill="#fff"/><circle cx="25.500" cy="6" r="1.600" fill="#6bd6ff"/><circle cx="6.500" cy="5" r="1.200" fill="#7be08f"/></svg>';
+  return w;
+}
 // ---- the shop: spend win points on accessories, special avatars and throwable gifts ----
 let shopTab = 'acc', shopBusy = null, shopBusyT = null, shopFlash = null;
 function openShop(tab) {
@@ -1724,7 +1731,7 @@ function renderShop() {
   }
   const tabs = el('div', { class: 'shoptabs', role: 'tablist' }, ...[['acc', t('shopTabAcc')], ['av', t('shopTabAv')], ['bd', t('shopTabBd')], ['gift', t('shopTabGift')]].map(([k, label]) => el('button', { type: 'button', role: 'tab', class: k === shopTab ? 'on' : '', 'aria-selected': String(k === shopTab), onclick: () => { shopTab = k; renderShop(); } }, label)));
   ov.replaceChildren(el('div', { class: 'guide setbox shopbox' + (keep ? ' still' : ''), role: 'dialog', 'aria-modal': 'true' },
-    el('div', { class: 'ghead shophead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('bag', 15)), t('shopTitle')), el('span', { class: 'wpchip', title: t('shopPtsHint') }, icon('trophy', 14), t('wpN', { n: w.pts })), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
+    el('div', { class: 'ghead shophead' }, el('div', { class: 'gtitle' }, el('b', {}, shopIcon(18)), t('shopTitle')), el('span', { class: 'wpchip', title: t('shopPtsHint') }, icon('trophy', 14), t('wpN', { n: w.pts })), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
     el('div', { class: 'gscroll shopscroll' }, tabs, el('p', { class: 'shopnote' }, note), el('div', { class: 'shopgrid' }, ...items)),
     el('div', { class: 'gfoot' }, el('span'), el('button', { onclick: ov.close }, t('qrClose')))));
   ov.querySelector('.shopscroll').scrollTop = top;
@@ -2230,7 +2237,7 @@ function applyStatic() {
   updateSndBtn();
   document.getElementById('h1').textContent = t('title');
   { const sb = document.getElementById('setBtn'); sb.replaceChildren(icon('sliders', 18)); sb.title = sb.ariaLabel = t('settings'); }
-  { const hb = document.getElementById('shopBtn'); hb.replaceChildren(icon('bag', 18)); hb.title = hb.ariaLabel = t('shopTitle'); }
+  { const hb = document.getElementById('shopBtn'); hb.replaceChildren(shopIcon(24)); hb.title = hb.ariaLabel = t('shopTitle'); }
   { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', {}, icon('book', 16)), el('span', { class: 'glabel' }, t('guideBtn'))); }
   if (document.querySelector('.guide-ov.g-guide')) renderGuide();
   document.querySelectorAll('.langsw button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
