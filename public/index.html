@@ -1414,7 +1414,7 @@ function applyUi() {
   const pct = [100, 118, 135][ui.text] || 100;
   document.documentElement.style.setProperty('-webkit-text-size-adjust', pct + '%'); document.documentElement.style.setProperty('text-size-adjust', pct + '%');
 }
-function setUi(k, v) { ui[k] = v; try { localStorage.setItem('sct-ui', JSON.stringify(ui)); } catch {} applyUi(); if (st || session) safeRender(); renderSettings(); }
+function setUi(k, v) { ui[k] = v; try { localStorage.setItem('sct-ui', JSON.stringify(ui)); } catch {} applyUi(); if ((st || session) && (k === 'fourcolor' || k === 'calm' || k === 'text')) safeRender(); renderSettings(); }   // colour scheme, vibration and voice are applied without rebuilding the screen behind
 const buzz = (pat) => { if (ui.haptics) { try { navigator.vibrate && navigator.vibrate(pat); } catch {} } };
 
 // ---- settings screen: host game rules (everyone sees them) + this phone's display options ----
@@ -1454,6 +1454,15 @@ function renderSettings() {
     row(t('setVoice'), t('setVoiceHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.voice, (v) => setUi('voice', v))),
     row(t('setCalm'), t('setCalmHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.calm, (v) => setUi('calm', v)))));
   if (inRoom) sections.push(el('div', { class: 'setsec' }, el('button', { type: 'button', class: 'ghost setsync', onclick: () => { resync(); toast(t('setSynced'), 'low'); } }, icon('swap', 16), t('setSync'))));
+  // nothing in the panel changed (a poll or push rebuilt the screen behind it): leave it alone so touch scrolling is never interrupted
+  const sig = JSON.stringify([lang, inRoom, canEdit, gs, ui, inRoom && st.isHost]);
+  if (keep && ov.dataset.sig === sig) return;
+  ov.dataset.sig = sig;
+  const chrome = JSON.stringify([lang, inRoom, canEdit]);
+  if (keep && ov.dataset.chrome === chrome) {   // same header and footer: swap only the rows inside the scroller, which keeps the scroller itself (and its momentum)
+    keep.replaceChildren(...sections); keep.scrollTop = top; return;
+  }
+  ov.dataset.chrome = chrome;
   ov.replaceChildren(el('div', { class: 'guide setbox' + (keep ? ' still' : ''), role: 'dialog', 'aria-modal': 'true' },
     el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('sliders', 15)), t('settings')), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
     el('div', { class: 'gscroll setscroll' }, ...sections),
