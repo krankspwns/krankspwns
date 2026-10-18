@@ -1915,9 +1915,11 @@ function playGift(g) {
       const fuseX = tx + bs * 0.26, fuseY = ty - bs * 0.38;
       for (let i = 0; i < 18; i++) later(i * 50, () => part(fuseX, fuseY, { ang: rnd(-Math.PI, 0), spd: rnd(80, 260), g: 500, life: rnd(300, 600), size: rnd(3, 7), color: pick(['#ffd23f', '#ff7a1f', '#fff']), end: 0.2 }));
       anim(b, [{ filter: 'brightness(1)' }, { filter: 'brightness(1.8) sepia(1) hue-rotate(-30deg) saturate(4)' }, { filter: 'brightness(1)' }, { filter: 'brightness(1.8) sepia(1) hue-rotate(-30deg) saturate(4)' }, { filter: 'brightness(1)' }], { duration: 900, iterations: 1 });
-      [3, 2, 1].forEach((n, i) => later(i * 300, () => { SND.play('beep'); pop(tx, ty - bs * 0.95, String(n), '#ff4d4d', 62, 0); }));
+      // one number at a time, in the same spot: each replaces the last instead of stacking up
+      const cd = node(`left:${tx}px;top:${ty - bs * 0.95}px;font:900 70px/1 Inter,system-ui,sans-serif;color:#ff4d4d;-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.25);opacity:0`, 'giftbit');
+      [3, 2, 1].forEach((n, i) => later(i * 330, () => { SND.play('beep'); cd.textContent = String(n); anim(cd, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.3)', opacity: 1, offset: 0.25 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%,-50%) scale(.9)', opacity: i === 2 ? 0 : 0.9 }], { duration: 320, fill: 'forwards' }); }));
     });
-    later(1850, () => {
+    later(1950, () => {
       b.remove(); SND.play('boom'); shake(700); flash('#fff', 1, 500); flash('#ff9d2e', 0.5, 900, 120);
       const R = toMe ? Math.max(W, H) * 0.7 : 230;
       ring(tx, ty, '#fff', R, 700, 10); ring(tx, ty, '#ffb02e', R * 0.75, 900, 8, 80); ring(tx, ty, '#ff5a3c', R * 0.5, 1000, 6, 160);
