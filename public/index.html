@@ -1977,13 +1977,14 @@ function playGift(g) {
     let d = `M${(pts[0][0] + pts[N - 1][0]) / 2} ${(pts[0][1] + pts[N - 1][1]) / 2}`; for (let i = 0; i < N; i++) { const p0 = pts[i], p1 = pts[(i + 1) % N]; d += ` Q${p0[0]} ${p0[1]} ${(p0[0] + p1[0]) / 2} ${(p0[1] + p1[1]) / 2}`; }
     let dripBack = '', dripFront = ''; const nd = 3 + Math.floor(rnd(0, 2));
     for (let k = 0; k < nd; k++) {
-      const x = bx + (k - (nd - 1) / 2) * R * 0.5 + rnd(-R * 0.1, R * 0.1), w = rnd(R * 0.16, R * 0.24), y0 = by + R * 0.3, len = rnd(R * 0.55, R * 1.0);
-      const shape = `<path d="M${x - w / 2} ${y0} h${w} v${len} a${w / 2} ${w / 2} 0 0 1 ${-w} 0z"/><circle cx="${x}" cy="${y0 + len}" r="${w * 0.75}"/>`;
-      dripBack += `<g fill="${dark}" stroke="${dark}" stroke-width="${R * 0.12}" stroke-linejoin="round" opacity=".55">${shape}</g>`;
+      // drips start well inside the blob (so their tops are hidden) and hang below its edge
+      const x = bx + (k - (nd - 1) / 2) * R * 0.42 + rnd(-R * 0.06, R * 0.06), w = rnd(R * 0.15, R * 0.22), y0 = by + R * 0.1, len = R * (0.62 + rnd(0.3, 0.75) * (1 - Math.abs(x - bx) / R * 0.6));
+      const shape = `<path d="M${x - w / 2} ${y0} h${w} v${len} a${w / 2} ${w / 2} 0 0 1 ${-w} 0z"/><circle cx="${x}" cy="${y0 + len}" r="${w * 0.78}"/>`;
+      dripBack += `<g fill="${dark}" stroke="${dark}" stroke-width="${R * 0.1}" stroke-linejoin="round" opacity=".55">${shape}</g>`;
       dripFront += `<g fill="${color}">${shape}</g>`;
     }
     const extra = (seeds ? Array.from({ length: 8 }, () => `<ellipse cx="${bx + rnd(-R * 0.6, R * 0.6)}" cy="${by + rnd(-R * 0.5, R * 0.5)}" rx="${R * 0.04}" ry="${R * 0.065}" fill="#ffe9a0" transform="rotate(${rnd(0, 180)} ${bx} ${by})"/>`).join('') : '') + (cherry ? `<circle cx="${bx}" cy="${by - R * 0.05}" r="${R * 0.17}" fill="#e8352e"/><circle cx="${bx - R * 0.05}" cy="${by - R * 0.1}" r="${R * 0.05}" fill="#fff" opacity=".7"/>` : '');
-    const n = node(`left:${cx - bx}px;top:${cy - by}px;width:${sw}px;height:${sh}px;opacity:0;transform-origin:${bx}px ${by}px`, 'giftbit', `<svg viewBox="0 0 ${sw} ${sh}" width="100%" height="100%">${dripBack}<path d="${d}Z" fill="${dark}" stroke="${dark}" stroke-width="${R * 0.12}" stroke-linejoin="round" opacity=".55"/><path d="${d}Z" fill="${color}"/>${dripFront}<ellipse cx="${bx - R * 0.3}" cy="${by - R * 0.3}" rx="${R * 0.28}" ry="${R * 0.14}" fill="#fff" opacity=".38" transform="rotate(-28 ${bx - R * 0.3} ${by - R * 0.3})"/>${extra}</svg>`);
+    const n = node(`left:${cx - bx}px;top:${cy - by}px;width:${sw}px;height:${sh}px;opacity:0;transform-origin:${bx}px ${by}px`, 'giftbit', `<svg viewBox="0 0 ${sw} ${sh}" width="100%" height="100%">${dripBack}<path d="${d}Z" fill="${dark}" stroke="${dark}" stroke-width="${R * 0.1}" stroke-linejoin="round" opacity=".55"/>${dripFront}<path d="${d}Z" fill="${color}"/><ellipse cx="${bx - R * 0.3}" cy="${by - R * 0.3}" rx="${R * 0.28}" ry="${R * 0.14}" fill="#fff" opacity=".38" transform="rotate(-28 ${bx - R * 0.3} ${by - R * 0.3})"/>${extra}</svg>`);
     anim(n, [{ opacity: 0, transform: 'scale(.15)' }, { opacity: 1, transform: 'scale(1.15)', offset: 0.12 }, { opacity: 1, transform: 'scale(1)', offset: 0.2 }, { opacity: 1, transform: `translateY(${R * 0.12}px) scale(1.02)`, offset: 0.7 }, { opacity: 0, transform: `translateY(${R * 0.35}px) scale(1.03)` }], { duration: 2600, delay, fill: 'forwards' });
     for (let i = 0; i < 12; i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(220, 620), g: 1400, life: rnd(600, 1100), size: rnd(5, 12), color: i % 4 ? color : dark, end: 0.6, delay });
     keepFor(2800 + delay);
