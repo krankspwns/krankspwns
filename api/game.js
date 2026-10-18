@@ -286,12 +286,13 @@ function enforceTimer(room) {
   room.deadline = null;
   const active = activeOf(room);
   let last = null;
+  const late = [];   // everyone who ran out of time
   for (const p of active) {
     if (p.ready) continue;
     for (let i = 0; i < p.board.length && p.hand.length; i++) if (!p.board[i]) p.board[i] = { c: p.hand.shift(), up: false };
-    if (p.board.every(Boolean)) { for (const c of p.board) c.up = false; p.ready = true; last = p; }
+    if (p.board.every(Boolean)) { for (const c of p.board) c.up = false; p.ready = true; last = p; late.push(p.name); }
   }
-  if (last && active.length > 1 && active.every((p) => p.ready)) room.allReady = { id: last.id, name: last.name, at: Date.now(), timer: true };
+  if (last && active.length > 1 && active.every((p) => p.ready)) room.allReady = { id: last.id, name: last.name, names: late, at: Date.now(), timer: true };
   return true;
 }
 

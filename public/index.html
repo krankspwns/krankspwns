@@ -1595,7 +1595,7 @@ const I18N = {
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
-    h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush (same suit)', h_triple: 'Triple', h_sflush: 'Straight flush', h_royal: 'Royal flush', lastReady: 'Last to be ready',
+    h_none: 'No pattern', h_pair: 'Pair', h_straight: 'Straight', h_flush: 'Flush (same suit)', h_triple: 'Triple', h_sflush: 'Straight flush', h_royal: 'Royal flush', lastReady: 'Last to be ready', andMore: (v) => ` +${v.n} more`,
     openAll: 'Open all', closeAll: 'Close all', openAllTip: 'Open this row for every player', closeAllTip: 'Close this row for every player',
     flipUp: 'Flip up', flipDown: 'Flip down', flipUpTip: 'Turn this row face up for everyone', flipDownTip: 'Turn this row face down', shared: 'Face up for everyone',
     bannerK: 'Everyone is ready · last to be ready', secs: (v) => `${v.n}s`,
@@ -1667,7 +1667,7 @@ const I18N = {
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
-    h_none: '散牌', h_pair: '对子', h_straight: '顺子', h_flush: '同花', h_triple: '三条', h_sflush: '同花顺', h_royal: '皇家同花顺', lastReady: '最后一位准备的是',
+    h_none: '散牌', h_pair: '对子', h_straight: '顺子', h_flush: '同花', h_triple: '三条', h_sflush: '同花顺', h_royal: '皇家同花顺', lastReady: '最后一位准备的是', andMore: (v) => ` 等另外 ${v.n} 人`,
     openAll: '全部翻开', closeAll: '全部盖上', openAllTip: '为所有玩家翻开这一行', closeAllTip: '为所有玩家盖上这一行',
     flipUp: '翻开', flipDown: '盖上', flipUpTip: '向所有人翻开这一行', flipDownTip: '盖上这一行', shared: '所有人可见',
     bannerK: '全员已准备 · 最后一位准备的是', secs: (v) => `${v.n} 秒`,
@@ -1739,7 +1739,7 @@ const I18N = {
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
-    h_none: '散牌', h_pair: '對子', h_straight: '順子', h_flush: '同花', h_triple: '三條', h_sflush: '同花順', h_royal: '皇家同花順', lastReady: '最後一位準備的是',
+    h_none: '散牌', h_pair: '對子', h_straight: '順子', h_flush: '同花', h_triple: '三條', h_sflush: '同花順', h_royal: '皇家同花順', lastReady: '最後一位準備的是', andMore: (v) => ` 等另外 ${v.n} 人`,
     openAll: '全部翻開', closeAll: '全部蓋上', openAllTip: '為所有玩家翻開這一行', closeAllTip: '為所有玩家蓋上這一行',
     flipUp: '翻開', flipDown: '蓋上', flipUpTip: '向所有人翻開這一行', flipDownTip: '蓋上這一行', shared: '所有人可見',
     bannerK: '全員已準備 · 最後一位準備的是', secs: (v) => `${v.n} 秒`,
@@ -2170,13 +2170,21 @@ function settingChips() {
   return el('div', { class: 'setchips' }, ...bits.map(([ic, txt]) => el('span', { class: 'setchip' }, ic, txt)));
 }
 
+// who was last: one name normally, or everyone the clock caught (a long list is shortened)
+function lastNames() {
+  const a = st.allReady;
+  if (!a.timer) return a.name;
+  const n = a.names && a.names.length ? a.names : null;
+  if (!n) return t('timesUp');
+  return n.length <= 3 ? n.join(', ') : n.slice(0, 2).join(', ') + t('andMore', { n: n.length - 2 });
+}
 function lastBanner() {
   const left = bannerRemaining();
   if (left <= 0) return null;
   if (confettiAt !== st.allReady.at) { confettiAt = st.allReady.at; if (left > BANNER_SECONDS - 6) burstConfetti(); }
   return el('div', { class: 'lastbanner', id: 'lastbanner' },
     el('div', { class: 'lb-k' }, t(st.allReady.timer ? 'timesUpK' : 'bannerK')),
-    el('div', { class: 'lb-name' }, st.allReady.timer ? t('timesUp') : st.allReady.name),
+    el('div', { class: 'lb-name' }, lastNames()),
     el('div', { class: 'lb-s', id: 'lb-sec' }, t('secs', { n: Math.ceil(left) })),
     el('div', { class: 'lb-bar' }, el('i', { id: 'lb-fill', style: `width:${(left / BANNER_SECONDS) * 100}%` })));
 }
@@ -2738,7 +2746,7 @@ function resultsPanel() {
   const byRow = Object.fromEntries(list.map((r) => [r.row, r]));
   const box = el('div', { class: 'panel results' }, el('div', { class: 'name' }, t('resTitle')));
   if (st.allReady) {   // stays visible after the banner is gone
-    box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, st.allReady.timer ? t('timesUp') : st.allReady.name)));
+    box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, lastNames())));
   }
   const board = el('div', { class: 'rlist' });
   for (let row = 0; row < 4; row++) {

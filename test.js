@@ -177,6 +177,7 @@ const post = (b) => call('POST', b, {});
   const after = (await post({ action: 'state', code: hs.code, pid: hs.meId })).j;
   assert.ok(after.players.every(p => p.ready), 'everyone is made ready when the time is up');
   assert.ok(after.allReady && after.allReady.timer, 'timer flag on the all-ready banner');
+  assert.deepEqual(after.allReady.names, ['Hst', 'Pl'], 'every straggler is named');
   assert.equal(after.deadline, null);
   assert.equal(after.hand.length, 0, 'the host\'s hand was placed on the board');
   // round wins unlock avatar accessories
