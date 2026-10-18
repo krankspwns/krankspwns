@@ -142,7 +142,7 @@
   /* centred vertically without transform, so hover/press styles can never move it */
   .rowbtn { position: absolute; right: 0; top: 0; bottom: 0; margin: auto 0; height: fit-content; padding: 5px 10px; font-size: 10px; }
   .rowbtn:hover, .rowbtn:active { transform: none; filter: none; }
-  .hand { display:grid; grid-template-columns: repeat(4, max-content); gap:10px; min-height: 90px; justify-content:center; padding: 8px 0; }   /* 4 cards on the first row, the rest below */
+  .hand { display:flex; flex-direction:column; align-items:center; gap:10px; min-height: 90px; padding: 8px 0; } .hand .hcards { display:flex; gap:10px; justify-content:center; }   /* 4 cards on the first row, the rest centred below */
 
   .others { display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap:16px; }
   .others .panel { margin-bottom: 0; padding: 12px; }
@@ -813,7 +813,7 @@
     .ownpanel .board { gap: 5px; padding: 2px 0; } .ownpanel .board .r { gap: 6px; }
     .ownpanel .hint, .handpanel .hint { display: none; } .readystrip { padding: 6px 10px; margin: 2px 0 6px; }
     .ownpanel .row .readybtn, .ownpanel .row .unreadybtn { padding: 9px 16px; }
-    .hand { min-height: 0; gap: 6px; justify-content: start; padding: 2px 0; }
+    .hand { min-height: 0; gap: 6px; padding: 2px 0; } .hand .hcards { gap: 6px; }
     .others { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
     .observer { padding: 12px; } .obs-eye { font-size: 30px; }
     /* waiting room: code and buttons on the left, seats on the right */
@@ -3276,7 +3276,7 @@ function hallPanel() {
   const rows = el('div', { class: 'hall' });
   rest.forEach((h, i) => {
     const me = h.id === st.meId;
-    rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (h.rank === 1 ? ' top' : ''), style: anim ? `animation-delay:${i * 70}ms` : 'animation:none' },
+    rows.append(el('div', { class: 'hcards' + (me ? ' me' : '') + (h.rank === 1 ? ' top' : ''), style: anim ? `animation-delay:${i * 70}ms` : 'animation:none' },
       el('span', { class: 'hrank', style: h.rank <= 3 ? `background:${medals[h.rank - 1]};color:#1a1407` : '' }, h.rank === 1 ? icon('trophy', 16) : String(h.rank)),
       el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, mood(h), accOf(h.id), bdOf(h.id))),
       el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
@@ -3364,7 +3364,7 @@ function renderGame() {
   const results = resultsPanel();   // below your own board, so opening rows never pushes the controls down
   if (results) app.append(results);
 
-  const hand = el('div', { class: 'hand' });
+  const hand = el('div', { class: 'hand' }), row1 = el('div', { class: 'hcards' }), row2 = el('div', { class: 'hcards' });
   st.hand.forEach((c, i) => {
     const d = dealAnim ? ' fx-deal' : '';
     const node = me.ready
@@ -3374,8 +3374,9 @@ function renderGame() {
           if (slot >= 0) act('place', { card: c, slot });
         } });
     if (dealAnim) node.style.animationDelay = i * 90 + 150 + 'ms';
-    hand.append(node);
+    (i < 4 ? row1 : row2).append(node);
   });
+  hand.append(row1); if (row2.children.length) hand.append(row2);
   const handTitle = me.ready ? t('handHidden')
     : !st.hand.length ? t('handDone')
     : t('handTap');
