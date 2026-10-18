@@ -33,6 +33,16 @@ async function redis(cmd) {
   return j.result;
 }
 
+// Many phones poll the same room: share one Redis read between polls that land on the same server within a moment.
+const roomCache = (globalThis.__roomCache = globalThis.__roomCache || new Map());
+async function loadRoomCached(code, maxAge = 350) {
+  const c = roomCache.get(code);
+  if (c && Date.now() - c.at < maxAge) return JSON.parse(c.json);
+  const room = await loadRoom(code);
+  if (room) roomCache.set(code, { at: Date.now(), json: JSON.stringify(room) });
+  return room;
+}
+
 async function loadRoom(code) {
   if (!REDIS_URL) return mem.has(code) ? JSON.parse(JSON.stringify(mem.get(code))) : null;
   const raw = await redis(['GET', `room:${code}`]);
@@ -55,6 +65,7 @@ return 1`;
 async function saveRoom(room) {
   const expected = room.version || 0;
   room.version = expected + 1;
+  roomCache.delete(room.code);
   if (!REDIS_URL) return void mem.set(room.code, room);
   const ok = await redis(['EVAL', CAS_LUA, '1', `room:${room.code}`, JSON.stringify(room), String(expected), String(TTL_SECONDS)]);
   if (ok !== 1) throw new Conflict();
@@ -206,7 +217,7 @@ function rowResults(room) {
 // Results are kept for the whole round once a row has been scored, even if the cards are turned back over.
 function storeResults(room) {
   room.results = room.results || {};
-  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = r;
+  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, at: Date.now() };   // `at` lets every phone advance to the next row at the same moment
 }
 // The game goes top to bottom: the current row is the first one that has not been scored yet (4 = all done).
 function currentRowOf(room) {
@@ -301,7 +312,7 @@ async function handle(action, b, query) {
   }
 
   const code = String(b.code || query.code || '').toUpperCase();
-  const room = await loadRoom(code);
+  const room = action === 'state' ? await loadRoomCached(code) : await loadRoom(code);
   need(room, 404, 'Room not found');
 
   if (action === 'join') {
@@ -345,6 +356,8 @@ async function handle(action, b, query) {
 
   switch (action) {
     case 'state':
+      // nothing new for a non-host: a tiny reply keeps slow connections quick
+      if (query.v && Number(query.v) === room.version && room.hostId !== pid) return { same: true, version: room.version, now: Date.now() };
       return viewFor(room, pid);
 
     case 'deal': {

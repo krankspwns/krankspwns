@@ -446,6 +446,8 @@
   .dangerbtn { background: linear-gradient(180deg, #ff8d80, #e0513f) !important; color: #2a0805 !important; border: 0 !important; font-weight: 700; } .dangerbtn .ic { color: inherit; }
   .joincard { position: relative; } .loadbanner { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border-radius: inherit; background: rgba(12,16,32,.82); backdrop-filter: blur(3px); font-weight: 600; animation: lbin .25s ease both; }
   .loadbanner.full { position: fixed; z-index: 200; background: rgba(8,11,24,.85); border-radius: 0; }
+  .connbar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(60,28,20,.96); border: 1px solid #ff9b6a; color: #ffd9c4; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: boxpop .25s ease backwards; white-space: nowrap; }
+  .connbar button { padding: 5px 12px; font-size: 12px; border-radius: 99px; background: #ff9b6a; color: #2a0f05; border: 0; box-shadow: none; } .spin.sm { width: 14px; height: 14px; border-width: 2px; }
   .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(201,169,106,.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
   .qrbox { text-align: center; } .qrimg { width: min(64vw, 240px); aspect-ratio: 1; margin: 0 auto 10px; border-radius: 14px; overflow: hidden; background: #fff; display: grid; place-items: center; box-shadow: 0 0 0 6px #fff; } .qrimg svg { width: 100%; height: 100%; display: block; } .qrimg.fail { color: #14182b; font-size: 12px; padding: 10px; word-break: break-all; }
   .qrcode { font-size: 28px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; color: var(--gold-hi); margin: 14px 0 4px; }
@@ -1100,7 +1102,7 @@ const I18N = {
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
     host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
-    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', leaveRoom: 'Leave room',
+    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
@@ -1172,7 +1174,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
-    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', leaveRoom: '离开房间',
+    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `请摆满所有牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -1244,7 +1246,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
-    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', leaveRoom: '離開房間',
+    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -1392,7 +1394,17 @@ let confettiAt = 0;
 function load() { for (const store of [() => localStorage, () => sessionStorage]) { try { const v = JSON.parse(store().getItem('sct') || 'null'); if (v) return v; } catch {} } return null; }
 function save() { for (const store of [() => localStorage, () => sessionStorage]) { try { session ? store().setItem('sct', JSON.stringify(session)) : store().removeItem('sct'); } catch {} } }
 
+// every phone works out how far its clock is from the server's, so countdowns and row changes happen at the same moment for everyone
+let clockSkew = 0, clockRtt = Infinity, clockAt = 0;
+function noteClock(serverNow, t0, t1) {
+  if (!serverNow) return;
+  const rtt = t1 - t0;
+  if (rtt <= clockRtt * 1.25 || t1 - clockAt > 45000) { clockSkew = serverNow - (t0 + t1) / 2; clockRtt = rtt; clockAt = t1; }
+}
+const serverNow = () => Date.now() + clockSkew;
+
 async function api(action, extra = {}) {
+  const t0 = Date.now();
   const r = await fetch('/api/game', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1400,6 +1412,7 @@ async function api(action, extra = {}) {
   });
   const j = await r.json();
   if (!r.ok) throw Object.assign(new Error(j.error || 'Error'), { status: r.status });
+  noteClock(j.now, t0, Date.now());
   return j;
 }
 
@@ -1632,7 +1645,7 @@ function pill(p) {
 
 function bannerRemaining() {
   if (!st || !st.allReady) return 0;
-  const elapsed = (st.now - st.allReady.at + (Date.now() - st.recvAt)) / 1000;
+  const elapsed = (serverNow() - st.allReady.at) / 1000;
   return BANNER_SECONDS - elapsed;
 }
 
@@ -1686,9 +1699,12 @@ function screenName() {
 // So updates that arrive from the network wait until the finger has been still for a moment.
 let lastTouch = 0, renderTimer = null, renderQueued = false, stageScroll = false;
 ['touchstart', 'touchmove', 'touchend', 'wheel', 'scroll'].forEach((ev) => window.addEventListener(ev, () => { lastTouch = Date.now(); }, { passive: true, capture: true }));
+let renderSince = 0;
 function safeRender() {
   const idle = Date.now() - lastTouch;
-  if (idle >= 400 && !dragging) { renderQueued = false; return render(); }
+  if (!renderSince) renderSince = Date.now();
+  // a screen waiting on a finger for more than ~2s is drawn anyway, so one phone can't fall far behind the table
+  if ((idle >= 400 && !dragging) || (!dragging && Date.now() - renderSince > 2200)) { renderQueued = false; renderSince = 0; return render(); }
   renderQueued = true;
   clearTimeout(renderTimer);
   renderTimer = setTimeout(() => { if (renderQueued) safeRender(); }, Math.max(60, 420 - idle));
@@ -2083,6 +2099,25 @@ function advanceStage() {
   }
 }
 
+// Which row is on stage follows the server's clock: a scored row stays up until its stamp + HOLD_MS, then everyone moves on together.
+function planStage(j, prev) {
+  const target = Math.min(j.currentRow ?? 0, 4);
+  const last = (j.rowResults || []).reduce((a, r) => (!a || (r.at || 0) > (a.at || 0) ? r : a), null);
+  const left = last && last.at ? last.at + HOLD_MS - serverNow() : -1;
+  clearTimeout(holdTimer); holdTimer = null;
+  if (left > 0 && last.row < target) {
+    stageRow = last.row;
+    holdTimer = setTimeout(advanceStage, left);
+  } else if (left > 0 && last.row >= target) {   // the final row (4) is on show
+    stageRow = last.row;
+    holdTimer = setTimeout(advanceStage, left);
+  } else if (stageRow !== target) {
+    const had = stageRow != null && prev;
+    stageRow = target;
+    if (had) { stageEnter = true; showNext(target); stageScroll = true; }
+  }
+}
+
 function adopt(j) {
   if (st && st.code === j.code && j.version < st.version) return false;
   const prev = st && st.code === j.code ? st : null;
@@ -2092,18 +2127,17 @@ function adopt(j) {
   if (prev && !prev.allReady && j.allReady) setTimeout(() => SND.play('allready'), 150);
   const target = j.currentRow ?? 0;
   if (!prev || prev.round !== j.round) { stageRow = Math.min(target, 4); clearTimeout(holdTimer); holdTimer = null; }
+  st = j;   // planStage and the pop-up read the new state
   if (prev) {   // announce a row the moment it is scored; results persist, so reopening a row is never re-announced
     const had = new Set((prev.rowResults || []).map((r) => r.row));
     const fresh = (j.rowResults || []).filter((r) => !had.has(r.row));
     if (fresh.length) {
       const r = fresh[fresh.length - 1];
-      showResult(r, j);
-      tearRows.add(r.row);
-      stageRow = r.row;                       // keep the scored row on stage while the result sinks in
-      clearTimeout(holdTimer); holdTimer = setTimeout(advanceStage, HOLD_MS);
+      const elapsed = r.at ? Math.max(0, serverNow() - r.at) : 0;   // a phone that hears late joins part-way through
+      if (elapsed < 4500) { showResult(r, j, elapsed); tearRows.add(r.row); }
     }
   }
-  if (stageRow == null || (!holdTimer && stageRow !== target)) stageRow = Math.min(target, 4);
+  planStage(j, prev);
   const key = (x) => x.phase + ':' + x.round;
   if (!prev || key(prev) !== key(j)) { screenAnim = true; dealAnim = j.phase === 'dealt'; }
   st = j; lastKey = j.version;
@@ -2175,16 +2209,17 @@ function resultsPanel() {
   return box;
 }
 
-function showResult(r, view) {
+function showResult(r, view, elapsed = 0) {
   // the row turns over and the cards tear first; the verdict then eases in over them
-  SND.play('flip');
-  if (r.entries.some((e) => e.as)) setTimeout(() => SND.play('morph'), 520);
-  if (r.tie) setTimeout(() => SND.play('tie'), 380);
-  else setTimeout(() => SND.play('tear'), 520);
-  setTimeout(() => buildResult(r, view), 950);
+  const at = (ms) => Math.max(0, ms - elapsed);
+  if (elapsed < 300) SND.play('flip');
+  if (r.entries.some((e) => e.as)) setTimeout(() => SND.play('morph'), at(520));
+  if (r.tie) setTimeout(() => SND.play('tie'), at(380));
+  else setTimeout(() => SND.play('tear'), at(520));
+  setTimeout(() => buildResult(r, view, Math.max(0, elapsed - 950)), at(950));
 }
 
-function buildResult(r, view) {
+function buildResult(r, view, late = 0) {
   document.querySelector('.resfx')?.remove();
   const meId = (view || st).meId;
   const names = loserNames(r);
@@ -2226,7 +2261,7 @@ function buildResult(r, view) {
     else { setTimeout(() => SND.play('names'), 250); setTimeout(() => SND.play('safe'), 700); }
   }
   if (iLose) { try { navigator.vibrate && navigator.vibrate([220, 90, 220, 90, 360]); } catch {} }
-  setTimeout(() => o.remove(), 5100);
+  setTimeout(() => o.remove(), Math.max(900, 5100 - late));
 }
 
 function showNext(row) {
@@ -2559,33 +2594,52 @@ async function leave() {
   ov.remove();
 }
 
-async function poll() {
+let connFails = 0;
+function setConn(down) {
+  const has = document.getElementById('connbar');
+  if (down && !has) {
+    const bar = el('div', { id: 'connbar', class: 'connbar', role: 'status' }, el('i', { class: 'spin sm' }), el('span', {}, t('reconnecting')), el('button', { type: 'button', onclick: () => resync() }, t('retryNow')));
+    document.body.append(bar);
+  } else if (!down && has) has.remove();
+}
+async function poll(force = false) {
   if (!session) return;
+  const t0 = Date.now();
   try {
     const mine = session;
-    const r = await fetch(`/api/game?code=${mine.code}&pid=${mine.pid}`);
+    const r = await fetch(`/api/game?code=${mine.code}&pid=${mine.pid}${!force && st && st.version ? '&v=' + st.version : ''}`);
     const j = await r.json();
     if (session !== mine) return;   // we left (or switched rooms) while this was in flight
     if (r.status === 404) return dropSession(/not in this room/i.test(j.error || '') ? 'You were removed from the room by the host' : 'Room no longer available');
-    if (!r.ok || dragging || pending > 0) return;
+    if (!r.ok) throw new Error('bad');
+    noteClock(j.now, t0, Date.now());
+    if (connFails) { connFails = 0; setConn(false); }
+    if (j.same) return;
+    if (dragging || pending > 0) return;
     // the host's online/offline dots change without the room itself changing, so look for those too
     const presenceSig = (v) => v.players.map((q) => q.id + (q.online === false ? 'x' : '')).join();
-    if (j.version <= (st?.version ?? 0) && !(st?.isHost && (document.querySelector('.pl-ov') || presenceSig(j) !== presenceSig(st)))) return;
+    if (!force && j.version <= (st?.version ?? 0) && !(st?.isHost && (document.querySelector('.pl-ov') || presenceSig(j) !== presenceSig(st)))) return;
     adopt(j);
     err = '';
     safeRender();
-  } catch {}
+  } catch { if (++connFails >= 2 || !navigator.onLine) setConn(true); }
 }
+// pull the newest state right now (used by the reconnect banner and the settings screen)
+function resync() { clearTimeout(timer); poll(true).then(() => { if (session) startPolling(); }); }
+window.addEventListener('online', () => { if (session) resync(); });
+window.addEventListener('offline', () => { if (session) setConn(true); });
+window.addEventListener('focus', () => { if (session && !document.hidden) resync(); });
+window.addEventListener('pageshow', () => { if (session) resync(); });
 
 // adaptive polling keeps the free Redis quota alive: fast while cards are in play, slower in the lobby, slowest when the tab is hidden
-const pollDelay = () => document.hidden ? 12000 : st && st.phase === 'lobby' ? 4000 : POLL_MS;
+const pollDelay = () => document.hidden ? 12000 : connFails ? 2000 : st && st.phase === 'lobby' ? 3000 : st && st.allReady ? 1000 : 1200;
 function startPolling() {
   clearTimeout(timer);
   const tick = async () => { await poll(); if (session) timer = setTimeout(tick, pollDelay()); };
   timer = setTimeout(tick, pollDelay());
 }
 // coming back to the app (unlocking the phone, switching back from WhatsApp) catches up straight away
-document.addEventListener('visibilitychange', () => { if (!document.hidden && session) { clearTimeout(timer); poll().then(() => { if (session) startPolling(); }); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && session) resync(); });
 
 // a phone's address bar sliding away fires height-only resizes while scrolling: only a real width change (rotation) needs a rebuild
 let resizeT, lastW = window.innerWidth;
