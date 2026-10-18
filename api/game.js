@@ -356,7 +356,7 @@ function view(room, pid, seen, cn) {
     gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
     giftN: room.giftN || 0,
     wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
-    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES },
+    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES, test: START_WP > 0 },
     chatN: room.chatN || 0,
     winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,   // who won the round that just finished ([] = a full tie, null = not finished)
     // chat: only what this phone hasn't got yet (its last seen number comes with every request)
@@ -656,7 +656,7 @@ async function handle(action, b, query) {
       need(GIFTS[key] !== undefined, 400, 'Unknown item');
       need(me.gifts[key] > 0, 403, 'You have none left');
       const target = room.players.find((q) => q.id === String(b.target));
-      need(target && target.id !== pid, 400, 'Pick another player');
+      need(target && (target.id !== pid || START_WP > 0), 400, 'Pick another player');   // while testing (START_WP > 0) you may throw at yourself
       const now = Date.now();
       room.giftAt = room.giftAt || {};
       if (now - (room.giftAt[pid] || 0) < 1500) return viewFor(room, pid, cnOf);   // one throw at a time

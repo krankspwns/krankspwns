@@ -1706,7 +1706,7 @@ const myGifts = () => (st && st.wallet && st.wallet.gifts) || {};
 const giftTotal = () => Object.values(myGifts()).reduce((a, n) => a + (n > 0 ? n : 0), 0);
 function openGiftTray(item) { giftTrayOpen = true; giftPick = item || null; syncEmoteUi(); }
 function syncGiftUi() {
-  const show = !!(session && st) && giftTotal() > 0 && st.players.length > 1;
+  const show = !!(session && st) && giftTotal() > 0 && (st.players.length > 1 || (st.prices && st.prices.test));   // alone? only while the shop is in testing mode
   let fab = document.getElementById('giftFab');
   if (!show) { fab?.remove(); document.getElementById('giftTray')?.remove(); giftTrayOpen = false; giftPick = null; return; }
   if (!fab) { fab = el('button', { id: 'giftFab', type: 'button', class: 'emotefab giftfab', 'aria-label': t('giftTitle'), title: t('giftTitle'), onclick: (e) => { e.stopPropagation(); giftTrayOpen = !giftTrayOpen; giftPick = null; syncEmoteUi(); } }, icon('gift', 24), el('i', { class: 'cbadge' })); document.body.append(fab); }
@@ -1717,7 +1717,7 @@ function syncGiftUi() {
   if (giftPick && !owned.includes(giftPick)) giftPick = null;
   const body = giftPick
     ? [el('h5', {}, el('button', { type: 'button', class: 'ghost', onclick: () => { giftPick = null; syncEmoteUi(); } }, '‹'),  giftEl(giftPick, 22), t('giftWho', { name: t('gift_' + giftPick) })),
-       el('div', { class: 'giftwho' }, ...st.players.filter((p) => p.id !== st.meId).map((p) => el('button', { type: 'button', onclick: () => sendGift(giftPick, p.id) }, avatarEl(p.avatar, 30, '', p.acc, p.bd), el('span', {}, p.name))))]
+       el('div', { class: 'giftwho' }, ...st.players.filter((p) => p.id !== st.meId || (st.prices && st.prices.test)).map((p) => el('button', { type: 'button', onclick: () => sendGift(giftPick, p.id) }, avatarEl(p.avatar, 30, '', p.acc, p.bd), el('span', {}, p.name + (p.id === st.meId ? t('you') : '')))))]
     : [el('h5', {}, t('giftTitle')), el('div', { class: 'giftgrid' }, ...owned.map((k) => el('button', { type: 'button', onclick: () => { giftPick = k; syncEmoteUi(); } }, giftEl(k, 36), el('small', {}, t('gift_' + k) + ' ×' + myGifts()[k]))))];
   document.body.append(el('div', { id: 'giftTray', class: 'gifttray', role: 'menu', onclick: (e) => e.stopPropagation() }, ...body));
 }
