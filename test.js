@@ -216,5 +216,17 @@ const post = (b) => call('POST', b, {});
   assert.deepEqual(since.chat.map((m) => m.n), [2], 'only messages newer than the last seen number');
   await post({ action: 'settings', code: cr.code, pid: cr.meId, chat: false });
   assert.equal((await post({ action: 'chat', code: cr.code, pid: cb2.meId, text: 'hello?' })).s, 403, 'chat off');
+  // half penalties are rounded up
+  const hr = (await post({ action: 'create', name: 'HA' })).j;
+  const hb = (await post({ action: 'join', code: hr.code, name: 'HB' })).j;
+  assert.equal((await post({ action: 'settings', code: hr.code, pid: hr.meId, mult: 0.5 })).j.settings.mult, 0.5);
+  assert.equal((await post({ action: 'settings', code: hr.code, pid: hr.meId, mult: 0.75 })).s, 400, 'only listed multipliers');
+  await post({ action: 'deal', code: hr.code, pid: hr.meId });
+  for (const pid of [hr.meId, hb.meId]) { for (let i = 0; i < 7; i++) await post({ action: 'place', code: hr.code, pid, card: (await call('GET', null, { code: hr.code, pid })).j.hand[0], slot: i }); await post({ action: 'ready', code: hr.code, pid, ready: true }); }
+  const hroom = globalThis.__rooms.get(hr.code);
+  hroom.players[0].board.forEach((c, i) => (c.c = ['3S', '4S', '10S', 'QH', '2S', '3S', '4S'][i])); hroom.players[1].board.forEach((c, i) => (c.c = ['KH', 'KD', '3C', '4D', '7H', '7C', '7D'][i]));
+  for (let row = 0; row < 4; row++) await post({ action: 'flipRowAll', code: hr.code, pid: hr.meId, row, up: true });
+  const hv = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
+  assert.deepEqual(hv.rowResults.map((r) => r.penalty), [1, 1, 1, 2], 'x0.5: a penalty of 1 stays 1 and 3 becomes 2 (rounded up)');
   console.log('all ok');
 })().catch(e => { console.error(e); process.exit(1); });

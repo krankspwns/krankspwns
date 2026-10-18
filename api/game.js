@@ -76,7 +76,7 @@ async function saveRoom(room) {
 
 // host-controlled game settings
 const TIMERS = [0, 30, 45, 60, 90, 120];   // seconds to arrange; 0 = no timer
-const MULTS = [1, 2, 3];
+const MULTS = [0.5, 1, 2, 3];   // penalty multiplier; a fractional result is rounded up (1 x 0.5 = 1, 3 x 0.5 = 2)
 const settingsOf = (room) => ({ timer: 0, jokers: true, mult: 1, chat: true, ...(room.settings || {}) });
 
 function newDeck(joker = true) {
@@ -246,7 +246,7 @@ function tallyWins(room) {
 // Results are kept for the whole round once a row has been scored, even if the cards are turned back over.
 function storeResults(room) {
   room.results = room.results || {};
-  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, penalty: r.penalty * settingsOf(room).mult, at: Date.now() };
+  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, penalty: Math.ceil(r.penalty * settingsOf(room).mult), at: Date.now() };
   tallyWins(room);   // `at` lets every phone advance to the next row at the same moment
 }
 // When the arranging time runs out, anyone who is not ready gets their cards placed in order and is marked ready.
