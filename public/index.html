@@ -2023,7 +2023,7 @@ const I18N = {
     sndMode0: 'Sound off', sndMode1: 'Sound effects on', sndMode2: 'Effects + music on',
     playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
     kickHint: 'Players who lost their connection show as offline. Kicked players can rejoin with the room code.', hostOnlyHint: 'Only the host can remove players.',
-    e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
+    e_moved: 'You joined another room in another tab, so you left this one.', e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
     invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
     tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: nothing < pair < straight < flush < three of a kind < straight flush < royal flush.', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
@@ -2103,7 +2103,7 @@ const I18N = {
     playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
     kickHint: '断线的玩家会显示为离线。被移出的玩家可以用房间代码重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '声音已关闭', sndMode1: '音效已开启', sndMode2: '音效 + 音乐已开启',
-    e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
+    e_moved: '你在另一个标签页加入了其他房间，因此已离开这个房间。', e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
     invitedTo: (v) => `你被邀请加入房间 ${v.code}`, leftOld: '你已离开之前的房间。', joinRoomN: (v) => `加入房间 ${v.code}`, otherCode: '使用其他代码', createOwn: '或创建自己的房间',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
     tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
@@ -2183,7 +2183,7 @@ const I18N = {
     playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
     kickHint: '斷線的玩家會顯示為離線。被移出的玩家可以用房間代碼重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '聲音已關閉', sndMode1: '音效已開啟', sndMode2: '音效 + 音樂已開啟',
-    e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
+    e_moved: '你在另一個分頁加入了其他房間，因此已離開這個房間。', e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
     invitedTo: (v) => `你被邀請加入房間 ${v.code}`, leftOld: '你已離開之前的房間。', joinRoomN: (v) => `加入房間 ${v.code}`, otherCode: '使用其他代碼', createOwn: '或建立自己的房間',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
     tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
@@ -2219,7 +2219,7 @@ const ERR_MAP = [
   ['Enter a name', 'e_name'], ['Room is full', 'e_full'], ['Name already taken', 'e_taken'], ['Room not found', 'e_room'],
   ['You are not in this room', 'e_notin'], ['Only the host', 'e_host'], ['No cards dealt', 'e_nodeal'], ['Unready to move', 'e_unready'],
   ['Card not in', 'e_card'], ['Bad ', 'e_slot'], ['Nothing there', 'e_nothing'], ['Place all 7', 'e_fill'], ['Wait until everyone', 'e_wait'],
-  ['You were removed', 'e_removed'], ['Player not found', 'e_nop'], ['You can’t remove yourself', 'e_self'], ['Wait for the next round', 'e_spec'], ['Game in progress', 'e_game'], ['Busy', 'e_busy'], ['Server error', 'e_server'],
+  ['You were removed', 'e_removed'], ['You joined another room', 'e_moved'], ['Player not found', 'e_nop'], ['You can’t remove yourself', 'e_self'], ['Wait for the next round', 'e_spec'], ['Game in progress', 'e_game'], ['Busy', 'e_busy'], ['Server error', 'e_server'],
 ];
 function tErr(msg) {
   if (!msg) return '';
@@ -3596,6 +3596,18 @@ function dropSession(message) {
   if (/removed/i.test(message)) SND.play('kick');
   session = null; st = null; save(); clearInterval(timer); closePlayers(); err = message; render();
 }
+
+// joining a different room in another tab of this browser means leaving this one (the browser shares one saved seat between its tabs)
+window.addEventListener('storage', (e) => {
+  if (e.key !== 'sct' || !e.newValue || !session) return;
+  let n; try { n = JSON.parse(e.newValue); } catch { return; }
+  if (!n || !n.code || n.code === session.code) return;
+  const old = session;
+  try { fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', code: old.code, pid: old.pid }), keepalive: true }); } catch {}
+  emoteSeen = null; giftSeen = null; chatLog = []; chatHave = undefined;
+  clearTimeout(timer); rtClose(); session = null; st = null; closePlayers();   // not save(): that would erase the other tab's new seat
+  err = 'You joined another room in another tab'; render();
+});
 
 // leaving asks first; the poller is stopped before the request so a late reply can never be mistaken for being kicked
 function confirmLeave() {
