@@ -464,7 +464,7 @@
   .swatches { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; } .swatch { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: conic-gradient(var(--sw) 0 50%, var(--sb) 50% 100%); border: 2px solid rgba(255,255,255,.25); box-shadow: none; } .swatch.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(var(--gold-rgb), .55); transform: scale(1.08); }
   /* avatar borders: a gradient ring made by padding the circle (no extra elements, no animation) */
   .av.bd { background: var(--bdg) !important; box-shadow: 0 0 9px var(--bdglow, transparent); } .av.bd svg { border-radius: 50%; }
-  .av.legend { box-shadow: 0 0 12px rgba(183,123,255,.6); position: relative; }
+  .av.legend { position: relative; } .av.legend:not(.bd) { box-shadow: 0 0 12px rgba(183,123,255,.6); }
   /* painted portraits catch a moving glint at any size, and drift slowly when big enough to see; both off in calm / low-battery mode */
   .av.legend.live:not(.happy):not(.sad) .avb { transform-box: fill-box; transform-origin: 50% 60%; animation: lgfloat 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
   @keyframes lgfloat { 0%, 100% { transform: scale(1) translate(0, 0) rotate(0); } 50% { transform: scale(1.075) translate(.6%, -1.4%) rotate(.7deg); } }
@@ -1284,12 +1284,12 @@ const giftEl = (k, size = 40) => { const w = el('span', { class: 'giftart' }); w
 const avBg = (k) => (AVATARS[k] || AVATARS.cat)[0];
 function avatarEl(key, size = 40, cls = '', acc = '', bd = '') {
   const [bg, body] = AVATARS[key] || AVATARS.cat;
-  const w = el('span', { class: 'av avatar ' + cls + (BORDERS.includes(bd) ? ' bd bd-' + bd : LEGEND_KEYS.includes(key) ? ' legend' + (size >= 36 ? ' live' : '') : '') });
+  const w = el('span', { class: 'av avatar ' + cls + (BORDERS.includes(bd) ? ' bd bd-' + bd : '') + (LEGEND_KEYS.includes(key) ? ' legend' + (size >= 36 ? ' live' : '') : '') });
   if (BORDERS.includes(bd)) w.style.padding = Math.max(1.5, size * 0.075) + 'px';
   w.style.width = w.style.height = size + 'px';
   w.onclick = () => {};   // a real click target, so a touch lands on the animal rather than being pulled to the badge beside it
   w.style.setProperty('--d', (-Math.random() * 6).toFixed(2) + 's');   // every avatar breathes and blinks on its own rhythm
-  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${ACC[acc] && LEGEND_EYES[key] ? `<defs><filter id="lgBl" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><g filter="url(#lgBl)" opacity=".55">${body}</g><g transform="translate(${(24 - LEGEND_FIT * LEGEND_EYES[key][0]).toFixed(2)} ${(26 - LEGEND_FIT * LEGEND_EYES[key][1]).toFixed(2)}) scale(${LEGEND_FIT})">${body}</g>` : body}${ACC[acc] ? ACC[acc][1] : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
+  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${ACC[acc] && LEGEND_EYES[key] ? `<defs><filter id="lgBl" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.6"/></filter><radialGradient id="lgMg" gradientUnits="userSpaceOnUse" cx="24" cy="24" r="24"><stop offset=".74" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient><mask id="lgMk" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="url(#lgMg)"/></mask></defs><g filter="url(#lgBl)" opacity=".8"><g transform="translate(-4.8 -4.8) scale(1.2)">${body}</g></g><g transform="translate(${(24 - LEGEND_FIT * LEGEND_EYES[key][0]).toFixed(2)} ${(26 - LEGEND_FIT * LEGEND_EYES[key][1]).toFixed(2)}) scale(${LEGEND_FIT})"><g mask="url(#lgMk)">${body}</g></g>` : body}${ACC[acc] ? ACC[acc][1] : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
   return w;
 }
 // tap or hover any animal and it reacts
