@@ -476,6 +476,8 @@
   .shopgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-bottom: 6px; }
   .shopitem { display: grid; justify-items: center; align-content: start; gap: 6px; padding: 12px 8px 10px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); text-align: center; } .shopitem.own { border-color: var(--gold-lo); background: rgba(var(--gold-rgb), .08); }
   .shoppre { height: 62px; display: grid; place-items: center; font-size: 42px; line-height: 1; } .shopitem b { font-size: 14px; } .shopitem small { font-size: 11.5px; opacity: .65; margin-top: -3px; }
+  .shopitem.flash { animation: shopflash .9s ease; } @keyframes shopflash { 0% { transform: scale(1); } 30% { transform: scale(1.06); box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(var(--gold-rgb), .6); } 100% { transform: scale(1); } }
+  .shopitem button.busy { display: inline-flex; align-items: center; justify-content: center; gap: 7px; opacity: 1; } .shopitem button .spin { width: 14px; height: 14px; border-width: 2px; border-color: rgba(26,20,7,.25); border-top-color: #1a1407; }
   .shopitem button { width: 100%; padding: 9px 6px; font-size: 13px; } .shopitem button.ghost { color: var(--text); }
   .emotefab.giftfab { right: calc(14px + 116px); } .giftfab .cbadge { display: grid; background: var(--gold); color: #1a1407; border-color: rgb(var(--panel)); }
   .gifttray { position: fixed; right: 14px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 91; width: min(290px, calc(100vw - 28px)); padding: 10px; border-radius: 18px; background: rgba(var(--panel), 1); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.55); animation: boxpop .2s ease backwards; }
@@ -1628,7 +1630,7 @@ function setMyAcc(k) {
 }
 
 // ---- the shop: spend win points on accessories, special avatars and throwable gifts ----
-let shopTab = 'acc';
+let shopTab = 'acc', shopBusy = null, shopBusyT = null, shopFlash = null;
 function openShop(tab) {
   if (!session || !st) return;
   if (tab) shopTab = tab;
@@ -1643,41 +1645,51 @@ function renderShop() {
   const ov = document.querySelector('.shop-ov'); if (!ov) return;
   const me = st && session ? st.players.find((q) => q.id === st.meId) : null, w = st && st.wallet;
   if (!me || !w) return ov.close();
-  const sig = JSON.stringify([lang, shopTab, w, me.avatar, me.acc, me.bd]);
+  if (shopBusy) {   // the purchase has landed (or failed to): stop the spinner, and give a bought item a little pop
+    const [bk, bkey] = shopBusy.split(':');
+    const got = bk === 'gift' ? (w.gifts[bkey] || 0) > 0 : (w.owned[bk] || []).includes(bkey);
+    if (got) { shopFlash = shopBusy; shopBusy = null; clearTimeout(shopBusyT); setTimeout(() => { shopFlash = null; renderShop(); }, 900); SND.play('safe'); }
+  }
+  const sig = JSON.stringify([lang, shopTab, w, me.avatar, me.acc, me.bd, shopBusy, shopFlash]);
   if (ov.dataset.sig === sig) return;
   const keep = ov.querySelector('.shopscroll'), top = keep ? keep.scrollTop : 0;
   ov.dataset.sig = sig;
   const pr = st.prices;
-  const buy = (kind, key, price) => el('button', { type: 'button', disabled: w.pts < price, title: w.pts < price ? t('shopNeed', { n: price - w.pts }) : '', onclick: (e) => { e.currentTarget.disabled = true; SND.play('ready'); act('buy', { kind, key }); } }, t('shopBuy', { n: price }));
-  const card = (own, pre, name, sub, btn) => el('div', { class: 'shopitem' + (own ? ' own' : '') }, el('div', { class: 'shoppre' }, pre), el('b', {}, name), sub ? el('small', {}, sub) : '', btn);
+  const buy = (kind, key, price) => {
+    const busy = shopBusy === kind + ':' + key;
+    return el('button', { type: 'button', class: busy ? 'busy' : '', 'aria-busy': String(busy), disabled: busy || !!shopBusy || w.pts < price, title: w.pts < price ? t('shopNeed', { n: price - w.pts }) : '',
+      onclick: () => { shopBusy = kind + ':' + key; clearTimeout(shopBusyT); shopBusyT = setTimeout(() => { shopBusy = null; renderShop(); }, 6000); SND.play('ready'); renderShop(); act('buy', { kind, key }); } },
+      ...(busy ? [el('i', { class: 'spin sm' }), t('shopBuying')] : [t('shopBuy', { n: price })]));
+  };
+  const card = (own, pre, name, sub, btn, fk) => el('div', { class: 'shopitem' + (own ? ' own' : '') + (fk && shopFlash === fk ? ' flash' : '') }, el('div', { class: 'shoppre' }, pre), el('b', {}, name), sub ? el('small', {}, sub) : '', btn);
   let items = [], note = '';
   if (shopTab === 'acc') {
     note = t('shopAccNote');
     items = Object.keys(pr.acc).sort((a, b) => pr.acc[a] - pr.acc[b]).map((k) => {
       const own = w.owned.acc.includes(k), worn = me.acc === k;
       return card(own, avatarEl(me.avatar, 54, '', k, me.bd), t('acc_' + k), own ? (worn ? t('shopWearing') : t('shopOwned')) : t('wpN', { n: pr.acc[k] }),
-        own ? el('button', { type: 'button', class: 'ghost', onclick: () => setMyAcc(worn ? '' : k) }, worn ? t('shopTakeOff') : t('shopWear')) : buy('acc', k, pr.acc[k]));
+        own ? el('button', { type: 'button', class: 'ghost', onclick: () => setMyAcc(worn ? '' : k) }, worn ? t('shopTakeOff') : t('shopWear')) : buy('acc', k, pr.acc[k]), 'acc:' + k);
     });
   } else if (shopTab === 'bd') {
     note = t('shopBdNote');
     items = [...BORDERS].sort((a, b) => pr.bd[a] - pr.bd[b]).map((k) => {
       const own = w.owned.bd.includes(k), worn = me.bd === k;
       return card(own, avatarEl(me.avatar, 54, '', me.acc, k), t('bd_' + k), own ? (worn ? t('shopWearing') : t('shopOwned')) : t('wpN', { n: pr.bd[k] }),
-        own ? el('button', { type: 'button', class: 'ghost', onclick: () => setMyBd(worn ? '' : k) }, worn ? t('shopTakeOff') : t('shopWear')) : buy('bd', k, pr.bd[k]));
+        own ? el('button', { type: 'button', class: 'ghost', onclick: () => setMyBd(worn ? '' : k) }, worn ? t('shopTakeOff') : t('shopWear')) : buy('bd', k, pr.bd[k]), 'bd:' + k);
     });
   } else if (shopTab === 'av') {
     note = t('shopAvNote');
     items = PREMIUM_KEYS.map((k) => {
       const own = w.owned.av.includes(k), using = me.avatar === k;
       return card(own, avatarEl(k, 58, '', me.acc, me.bd), t('av_' + k), own ? (using ? t('shopInUse') : t('shopOwned')) : t('wpN', { n: pr.av[k] }),
-        own ? el('button', { type: 'button', class: 'ghost', disabled: using, onclick: () => setMyAvatar(k) }, using ? t('shopInUse') : t('shopUse')) : buy('av', k, pr.av[k]));
+        own ? el('button', { type: 'button', class: 'ghost', disabled: using, onclick: () => setMyAvatar(k) }, using ? t('shopInUse') : t('shopUse')) : buy('av', k, pr.av[k]), 'av:' + k);
     });
   } else {
     note = t('shopGiftNote', { n: pr.uses });
     items = GIFT_KEYS.map((k) => {
       const left = w.gifts[k] || 0;
       return card(left > 0, giftEl(k, 60), t('gift_' + k), left > 0 ? t('giftLeft', { n: left }) : t('shopUses', { n: pr.uses, p: pr.gift[k] }),
-        left > 0 ? el('button', { type: 'button', class: 'ghost', onclick: () => { ov.close(); openGiftTray(k); } }, t('giftThrowNow')) : buy('gift', k, pr.gift[k]));
+        left > 0 ? el('button', { type: 'button', class: 'ghost', onclick: () => { ov.close(); openGiftTray(k); } }, t('giftThrowNow')) : buy('gift', k, pr.gift[k]), 'gift:' + k);
     });
   }
   const tabs = el('div', { class: 'shoptabs', role: 'tablist' }, ...[['acc', t('shopTabAcc')], ['av', t('shopTabAv')], ['bd', t('shopTabBd')], ['gift', t('shopTabGift')]].map(([k, label]) => el('button', { type: 'button', role: 'tab', class: k === shopTab ? 'on' : '', 'aria-selected': String(k === shopTab), onclick: () => { shopTab = k; renderShop(); } }, label)));
@@ -1800,7 +1812,7 @@ const I18N = {
     host: 'host', joined: 'joined', you: ' (You)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
     waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row (a fraction is rounded up)', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', shopTabBd: 'Borders', shopBdNote: 'Colourful rings around your avatar, visible to everyone in this room.', bd_silver: 'Silver', bd_gold: 'Gold', bd_emerald: 'Emerald', bd_ice: 'Ice', bd_neon: 'Neon', bd_royal: 'Royal', bd_fire: 'Fire', bd_rainbow: 'Rainbow',
-    shopTitle: 'Shop', shopTabAcc: 'Accessories', shopTabAv: 'Avatars', shopTabGift: 'Gifts', shopPtsHint: 'Win points: 10 for every round you win',
+    shopBuying: 'Buying…', shopTitle: 'Shop', shopTabAcc: 'Accessories', shopTabAv: 'Avatars', shopTabGift: 'Gifts', shopPtsHint: 'Win points: 10 for every round you win',
     shopAccNote: 'Accessories are yours for the rest of this room. Wear one at a time.', shopAvNote: 'Special characters you can use as your avatar in this room.', shopGiftNote: (v) => `Throw gifts at other players during the game. Every purchase gives ${v.n} throws.`,
     shopBuy: (v) => `Buy · ${v.n}`, shopNeed: (v) => `${v.n} more win points needed`, shopWearing: 'Wearing', shopOwned: 'Owned', shopWear: 'Wear', shopTakeOff: 'Take off', shopInUse: 'In use', shopUse: 'Use', shopUses: (v) => `${v.n} throws · ${v.p} WP`, giftLeft: (v) => `${v.n} throw${v.n === 1 ? '' : 's'} left`, giftThrowNow: 'Throw it', wpN: (v) => `${v.n} WP`,
     shopOpen: 'Open the shop', accHint2: (v) => `Buy accessories in the shop with your win points. You have ${v.n} WP.`, wpEarned: (v) => `+${v.n} win points · ${v.pts} to spend`,
@@ -1880,7 +1892,7 @@ const I18N = {
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
     waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数（有小数则进位）', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', shopTabBd: '头像框', shopBdNote: '头像外的彩色边框，房间里所有人都能看到。', bd_silver: '银色', bd_gold: '金色', bd_emerald: '翡翠', bd_ice: '冰蓝', bd_neon: '霓虹', bd_royal: '皇家', bd_fire: '烈焰', bd_rainbow: '彩虹',
-    shopTitle: '商店', shopTabAcc: '配饰', shopTabAv: '头像', shopTabGift: '礼物', shopPtsHint: '每赢一个回合得 10 胜分',
+    shopBuying: '购买中…', shopTitle: '商店', shopTabAcc: '配饰', shopTabAv: '头像', shopTabGift: '礼物', shopPtsHint: '每赢一个回合得 10 胜分',
     shopAccNote: '配饰在这个房间内永久属于你，一次只能戴一件。', shopAvNote: '可在这个房间里当作头像的特别角色。', shopGiftNote: (v) => `游戏中可以向其他玩家投掷礼物。每次购买可投掷 ${v.n} 次。`,
     shopBuy: (v) => `购买 · ${v.n}`, shopNeed: (v) => `还差 ${v.n} 胜分`, shopWearing: '佩戴中', shopOwned: '已拥有', shopWear: '佩戴', shopTakeOff: '摘下', shopInUse: '使用中', shopUse: '使用', shopUses: (v) => `${v.n} 次 · ${v.p} 胜分`, giftLeft: (v) => `还剩 ${v.n} 次`, giftThrowNow: '去投掷', wpN: (v) => `${v.n} 分`,
     shopOpen: '打开商店', accHint2: (v) => `用胜分在商店购买配饰。你现在有 ${v.n} 分。`, wpEarned: (v) => `+${v.n} 胜分 · 可用 ${v.pts} 分`,
@@ -1960,7 +1972,7 @@ const I18N = {
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
     waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數（有小數則進位）', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', shopTabBd: '頭像框', shopBdNote: '頭像外的彩色邊框，房間裡所有人都能看到。', bd_silver: '銀色', bd_gold: '金色', bd_emerald: '翡翠', bd_ice: '冰藍', bd_neon: '霓虹', bd_royal: '皇家', bd_fire: '烈焰', bd_rainbow: '彩虹',
-    shopTitle: '商店', shopTabAcc: '配飾', shopTabAv: '頭像', shopTabGift: '禮物', shopPtsHint: '每贏一個回合得 10 勝分',
+    shopBuying: '購買中…', shopTitle: '商店', shopTabAcc: '配飾', shopTabAv: '頭像', shopTabGift: '禮物', shopPtsHint: '每贏一個回合得 10 勝分',
     shopAccNote: '配飾在這個房間內永久屬於你，一次只能戴一件。', shopAvNote: '可在這個房間裡當作頭像的特別角色。', shopGiftNote: (v) => `遊戲中可以向其他玩家投擲禮物。每次購買可投擲 ${v.n} 次。`,
     shopBuy: (v) => `購買 · ${v.n}`, shopNeed: (v) => `還差 ${v.n} 勝分`, shopWearing: '佩戴中', shopOwned: '已擁有', shopWear: '佩戴', shopTakeOff: '摘下', shopInUse: '使用中', shopUse: '使用', shopUses: (v) => `${v.n} 次 · ${v.p} 勝分`, giftLeft: (v) => `還剩 ${v.n} 次`, giftThrowNow: '去投擲', wpN: (v) => `${v.n} 分`,
     shopOpen: '打開商店', accHint2: (v) => `用勝分在商店購買配飾。你現在有 ${v.n} 分。`, wpEarned: (v) => `+${v.n} 勝分 · 可用 ${v.pts} 分`,
