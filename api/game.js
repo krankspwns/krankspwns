@@ -77,7 +77,7 @@ async function saveRoom(room) {
 // host-controlled game settings
 const TIMERS = [0, 30, 45, 60, 90, 120];   // seconds to arrange; 0 = no timer
 const MULTS = [1, 2, 3];
-const settingsOf = (room) => ({ timer: 0, jokers: true, mult: 1, ...(room.settings || {}) });
+const settingsOf = (room) => ({ timer: 0, jokers: true, mult: 1, chat: true, ...(room.settings || {}) });
 
 function newDeck(joker = true) {
   const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -290,12 +290,12 @@ async function readPresence(code) {
 }
 const OFFLINE_AFTER_MS = 45000;
 // only the host gets the presence info (it is what the kick button is for)
-async function viewFor(room, pid) {
+async function viewFor(room, pid, cn) {
   const seen = room.hostId === pid ? await readPresence(room.code) : null;
-  return view(room, pid, seen);
+  return view(room, pid, seen, cn);
 }
 
-function view(room, pid, seen) {
+function view(room, pid, seen, cn) {
   const me = room.players.find((p) => p.id === pid);
   if (!me) throw new HttpError(404, 'You are not in this room');
   return {
@@ -309,6 +309,9 @@ function view(room, pid, seen) {
     settings: settingsOf(room),
     emotes: (room.emotes || []).filter((x) => Date.now() - x.at < 8000),
     emoteN: room.emoteN || 0,
+    chatN: room.chatN || 0,
+    // chat: only what this phone hasn't got yet (its last seen number comes with every request)
+    chat: (room.chat || []).filter((m) => m.n > (Number.isFinite(cn) ? cn : (room.chatN || 0) - 30)),
     deadline: room.deadline || null,
     rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
     currentRow: currentRowOf(room),
@@ -400,6 +403,8 @@ async function handle(action, b, query) {
   }
 
   const pid = String(b.pid || query.pid || '');
+  const cnRaw = query.cn !== undefined ? query.cn : b.cn;
+  const cnOf = cnRaw === undefined || cnRaw === '' ? undefined : Number(cnRaw);
   const me = room.players.find((p) => p.id === pid);
   need(me, 404, 'You are not in this room');
   await touchPresence(code, pid);
@@ -411,7 +416,7 @@ async function handle(action, b, query) {
     case 'state':
       // nothing new for a non-host: a tiny reply keeps slow connections quick
       if (query.v && Number(query.v) === room.version && room.hostId !== pid) return { same: true, version: room.version, now: Date.now() };
-      return viewFor(room, pid);
+      return viewFor(room, pid, cnOf);
 
     case 'deal': {
       need(room.hostId === pid, 403, 'Only the host can do that');
@@ -527,6 +532,7 @@ async function handle(action, b, query) {
       const next = { ...cur };
       if (b.timer !== undefined) { need(TIMERS.includes(Number(b.timer)), 400, 'Pick a time from the list'); next.timer = Number(b.timer); }
       if (b.jokers !== undefined) next.jokers = !!b.jokers;
+      if (b.chat !== undefined) next.chat = !!b.chat;
       if (b.mult !== undefined) { need(MULTS.includes(Number(b.mult)), 400, 'Pick a multiplier from the list'); next.mult = Number(b.mult); }
       room.settings = next;
       break;
@@ -538,9 +544,22 @@ async function handle(action, b, query) {
       room.emoteN = (room.emoteN || 0) + 1;
       const recent = (room.emotes || []).filter((x) => now - x.at < 8000);
       // one reaction per player per second, so nobody can flood the table
-      if (recent.some((x) => x.id === pid && now - x.at < 900)) return viewFor(room, pid);
+      if (recent.some((x) => x.id === pid && now - x.at < 900)) return viewFor(room, pid, cnOf);
       recent.push({ id: pid, e: b.e, at: now, n: room.emoteN });
       room.emotes = recent.slice(-12);
+      break;
+    }
+
+    case 'chat': {
+      need(settingsOf(room).chat !== false, 403, 'Chat is turned off');
+      const text = Array.from(String(b.text || '').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, 140).join('');
+      need(text, 400, 'Write something first');
+      const now = Date.now();
+      room.chatAt = room.chatAt || {};
+      if (now - (room.chatAt[pid] || 0) < 600) return viewFor(room, pid, cnOf);   // one message at a time
+      room.chatAt[pid] = now;
+      room.chatN = (room.chatN || 0) + 1;
+      room.chat = [...(room.chat || []), { n: room.chatN, id: pid, name: me.name, avatar: me.avatar, acc: me.acc || '', text, at: now }].slice(-50);
       break;
     }
 
@@ -583,7 +602,7 @@ async function handle(action, b, query) {
   }
   storeResults(room);
   await saveRoom(room);
-  return viewFor(room, pid);
+  return viewFor(room, pid, cnOf);
 }
 
 module.exports = async (req, res) => {

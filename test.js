@@ -166,7 +166,7 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'settings', code: hs.code, pid: hp.meId, timer: 30 })).s, 403, 'only the host changes settings');
   assert.equal((await post({ action: 'settings', code: hs.code, pid: hs.meId, timer: 33 })).s, 400, 'unknown timer rejected');
   const st1 = (await post({ action: 'settings', code: hs.code, pid: hs.meId, timer: 30, jokers: false, mult: 2 })).j;
-  assert.deepEqual(st1.settings, { timer: 30, jokers: false, mult: 2 });
+  assert.deepEqual(st1.settings, { timer: 30, jokers: false, mult: 2, chat: true });
   const d1 = (await post({ action: 'deal', code: hs.code, pid: hs.meId })).j;
   assert.ok(d1.deadline > Date.now() + 25000 && d1.deadline <= Date.now() + 30500, 'deadline set from the timer');
   const rm = globalThis.__rooms.get(hs.code);
@@ -201,5 +201,19 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: loserId, acc: 'crown' })).s, 403, 'locked accessory refused');
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: 'shades' })).s, 403, 'needs 2 wins');
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: '' })).j.players.find((p) => p.id === winner.id).acc, '', 'can take it off');
+  // chat: cleaned, limited, only new messages sent back, and the host can switch it off
+  const cr = (await post({ action: 'create', name: 'CA' })).j;
+  const cb2 = (await post({ action: 'join', code: cr.code, name: 'CB' })).j;
+  const m1 = (await post({ action: 'chat', code: cr.code, pid: cr.meId, text: '  hi\u0000   there\u202e  ' })).j;
+  assert.equal(m1.chat.length, 1); assert.equal(m1.chat[0].text, 'hi there'); assert.equal(m1.chat[0].name, 'CA');
+  assert.equal((await post({ action: 'chat', code: cr.code, pid: cr.meId, text: '   ' })).s, 400, 'blank message refused');
+  await post({ action: 'chat', code: cr.code, pid: cr.meId, text: 'too fast' });   // inside the 600ms window: ignored
+  assert.equal(globalThis.__rooms.get(cr.code).chatN, 1, 'rate limit: one message at a time per player');
+  const m2 = (await post({ action: 'chat', code: cr.code, pid: cb2.meId, text: 'x'.repeat(400) })).j;
+  assert.equal(m2.chat.find((m) => m.name === 'CB').text.length, 140, 'messages are cut at 140 characters');
+  const since = (await call('GET', null, { code: cr.code, pid: cr.meId, cn: '1' })).j;
+  assert.deepEqual(since.chat.map((m) => m.n), [2], 'only messages newer than the last seen number');
+  await post({ action: 'settings', code: cr.code, pid: cr.meId, chat: false });
+  assert.equal((await post({ action: 'chat', code: cr.code, pid: cb2.meId, text: 'hello?' })).s, 403, 'chat off');
   console.log('all ok');
 })().catch(e => { console.error(e); process.exit(1); });
