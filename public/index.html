@@ -457,6 +457,11 @@
   .setsync { display: inline-flex; align-items: center; gap: 8px; }
   body.fourcolor .card.s-D { color: #1f5fd6; } body.fourcolor .card.s-C { color: #12803a; } body.fourcolor .card.s-H { color: #d12b3d; }
   body.calm .av .avb, body.calm .av .eye, body.calm .av.happy .avb, body.calm .av.sad .avb, body.calm .av-empty .ring, body.calm .seat.empty { animation: none !important; }
+  .emo { display: inline-block; flex: none; line-height: 0; } .emo svg { display: block; }
+  .emotefab { position: fixed; right: 14px; bottom: 76px; z-index: 90; width: 48px; height: 48px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(24,30,54,.94) !important; border: 1px solid var(--gold-lo) !important; box-shadow: 0 8px 24px rgba(0,0,0,.5) !important; line-height: 0; } .emotefab:hover { transform: scale(1.06); filter: none; }
+  .emotetray { position: fixed; right: 14px; bottom: 132px; z-index: 91; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; border-radius: 18px; background: rgb(24,30,54); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .2s ease backwards; } .emotetray button { padding: 5px !important; border-radius: 12px !important; background: rgba(255,255,255,.06) !important; border: 0 !important; box-shadow: none !important; line-height: 0; } .emotetray button:hover { background: rgba(255,255,255,.14) !important; transform: scale(1.08); filter: none; }
+  .emofloat { position: fixed; z-index: 92; left: calc(10px + var(--lane, 0) * 62px); bottom: 90px; display: grid; justify-items: center; gap: 2px; pointer-events: none; animation: emofly 2.7s ease-out forwards; } .emofloat small { font-size: 10px; font-weight: 700; background: rgba(0,0,0,.55); border-radius: 99px; padding: 1px 7px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @keyframes emofly { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.15); } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-190px) scale(1); } }
   .connbar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(60,28,20,.96); border: 1px solid #ff9b6a; color: #ffd9c4; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: boxpop .25s ease backwards; white-space: nowrap; }
   .connbar button { padding: 5px 12px; font-size: 12px; border-radius: 99px; background: #ff9b6a; color: #2a0f05; border: 0; box-shadow: none; } .spin.sm { width: 14px; height: 14px; border-width: 2px; }
   .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(201,169,106,.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
@@ -893,6 +898,7 @@ const SND = (() => {
       for (let i = 0; i < 9; i++) noise({ at: 0.03 + i * 0.055 + rnd(0, 0.02), dur: 0.03, vol: 0.14, type: 'bandpass', f: rnd(1500, 5000), q: 3 });
       tone({ f: 90, f2: 55, at: 0.05, dur: 0.35, vol: 0.18, type: 'sawtooth', lp: 400 });
     },
+    pop: () => { tone({ f: 600, f2: 1100, dur: 0.09, vol: 0.09, type: 'sine' }); tone({ f: 1500, at: 0.07, dur: 0.07, vol: 0.05 }); },
     tick: () => tone({ f: 1250, dur: 0.05, vol: 0.07, type: 'square', lp: 2500 }),
     boing: () => { tone({ f: 300, f2: 700, dur: 0.14, vol: 0.09, type: 'triangle' }); tone({ f: 700, f2: 420, at: 0.12, dur: 0.12, vol: 0.06, type: 'triangle' }); },
     morph: () => {   // a rising sparkle as the joker turns into its card
@@ -1046,6 +1052,65 @@ function setMyAvatar(k) {
   act('avatar', { avatar: k });
 }
 
+
+// ---- quick reactions: little drawn faces that float up for everyone ----
+const FACE = '<circle cx="24" cy="24" r="21" fill="#ffd23f" stroke="#e0a51a" stroke-width="2"/>';
+const EMOTE_ART = {
+  laugh: FACE + '<path d="M13 21q4-5 8 0M27 21q4-5 8 0" fill="none" stroke="#5a3b0a" stroke-width="2.6" stroke-linecap="round"/><path d="M12 28h24q-1 11-12 11T12 28z" fill="#7a2a1a"/><path d="M16 35q8 4 16 0" fill="#ff8a8a"/>',
+  wow: FACE + '<circle cx="17" cy="20" r="4.2" fill="#fff"/><circle cx="31" cy="20" r="4.2" fill="#fff"/><circle cx="17" cy="20.5" r="2" fill="#3a2a10"/><circle cx="31" cy="20.5" r="2" fill="#3a2a10"/><path d="M11 11q5-4 10-1M27 10q5-3 10 1" fill="none" stroke="#5a3b0a" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="24" cy="34" rx="4.5" ry="5.5" fill="#7a2a1a"/>',
+  cry: FACE + '<path d="M13 20q4 3 8 0M27 20q4 3 8 0" fill="none" stroke="#5a3b0a" stroke-width="2.6" stroke-linecap="round"/><path d="M16 36q8-7 16 0" fill="none" stroke="#5a3b0a" stroke-width="2.6" stroke-linecap="round"/><path d="M15 24c-3 5-3 8 0 8s3-3 0-8zM33 24c3 5 3 8 0 8s-3-3 0-8z" fill="#5ec8ff"/>',
+  cool: FACE + '<path d="M8 19h32v3q0 8-7 8t-6-6h-4q1 6-6 6t-9-8z" fill="#1d2233"/><path d="M13 22l5-2" stroke="#7fb2ff" stroke-width="1.6" stroke-linecap="round"/><path d="M16 35q8 6 16 0" fill="none" stroke="#5a3b0a" stroke-width="2.6" stroke-linecap="round"/>',
+  fire: '<path d="M24 4c3 8 12 11 12 23a12 12 0 01-24 0c0-5 3-8 5-11 1 3 2 4 4 4 0-7-1-11 3-16z" fill="#ff7a1a"/><path d="M24 22c2 5 7 6 7 12a7 7 0 01-14 0c0-4 3-6 4-9 1 2 2 3 3 3z" fill="#ffd23f"/>',
+  gg: '<rect x="3" y="9" width="42" height="30" rx="10" fill="#4fdc8a"/><text x="24" y="31" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="19" fill="#06361b">GG</text>',
+};
+const EMOTE_KEYS = Object.keys(EMOTE_ART);
+function emoteEl(key, size = 34) {
+  const w = el('span', { class: 'emo' });
+  w.style.width = w.style.height = size + 'px';
+  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true">${EMOTE_ART[key] || ''}</svg>`;
+  return w;
+}
+let emoteSeen = null, emoteLast = 0, emoteTrayOpen = false;
+function sendEmote(k) {
+  if (Date.now() - emoteLast < 900) return;
+  emoteLast = Date.now();
+  floatEmote(st && st.meId, k);
+  SND.play('pop');
+  api('emote', { e: k }).catch(() => {});
+  emoteTrayOpen = false; syncEmoteUi();
+}
+function floatEmote(pid, key) {
+  if (document.hidden) return;
+  const pl = st && st.players.find((q) => q.id === pid);
+  const lane = document.querySelectorAll('.emofloat').length % 4;
+  const b = el('div', { class: 'emofloat' }, pl ? avatarEl(pl.avatar, 28) : '', emoteEl(key, 38), pl ? el('small', {}, pl.name) : '');
+  b.style.setProperty('--lane', lane);
+  document.body.append(b);
+  setTimeout(() => b.remove(), 2800);
+}
+// reactions other players sent since we last looked
+function handleEmotes(j) {
+  const list = j.emotes || [];
+  if (emoteSeen === null) { emoteSeen = j.emoteN || 0; return; }   // first look at this room: don't replay old ones
+  for (const x of list) if (x.n > emoteSeen && x.id !== j.meId && serverNow() - x.at < 6000) { floatEmote(x.id, x.e); SND.play('pop'); }
+  emoteSeen = Math.max(emoteSeen, j.emoteN || 0);
+}
+function syncEmoteUi() {
+  let fab = document.getElementById('emoteFab');
+  const show = !!(session && st);
+  if (!show) { fab?.remove(); document.getElementById('emoteTray')?.remove(); return; }
+  if (!fab) {
+    fab = el('button', { id: 'emoteFab', type: 'button', class: 'emotefab', 'aria-label': t('emoteTitle'), title: t('emoteTitle'), onclick: (e) => { e.stopPropagation(); emoteTrayOpen = !emoteTrayOpen; syncEmoteUi(); } }, emoteEl('laugh', 30));
+    document.body.append(fab);
+  }
+  let tray = document.getElementById('emoteTray');
+  if (emoteTrayOpen && !tray) {
+    tray = el('div', { id: 'emoteTray', class: 'emotetray', role: 'menu', onclick: (e) => e.stopPropagation() }, ...EMOTE_KEYS.map((k) => el('button', { type: 'button', role: 'menuitem', 'aria-label': k, onclick: () => sendEmote(k) }, emoteEl(k, 36))));
+    document.body.append(tray);
+  } else if (!emoteTrayOpen && tray) tray.remove();
+}
+document.addEventListener('click', (e) => { if (emoteTrayOpen && !(e.target.closest && e.target.closest('#emoteTray, #emoteFab'))) { emoteTrayOpen = false; syncEmoteUi(); } });
+
 // ---- display & accessibility (kept on this phone only) ----
 const UI_DEFAULT = { fourcolor: false, text: 0, haptics: true, calm: false };
 let ui = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('sct-ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
@@ -1169,7 +1234,7 @@ const I18N = {
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
     host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
-    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', leaveRoom: 'Leave room',
+    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
@@ -1241,7 +1306,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
-    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', leaveRoom: '离开房间',
+    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `请摆满所有牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -1313,7 +1378,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
-    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', leaveRoom: '離開房間',
+    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -1829,6 +1894,7 @@ function render() {
   fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false; tearRows.clear(); stageEnter = false;
   renderPlayers();   // keep an open player list in step with the room
   renderSettings();
+  syncEmoteUi();
   // measuring the half-built page can clamp the scroll position; put it back
   if (Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY);
   if (stageScroll) {   // moving on to the next row: bring it into view, but never while the player is scrolling
@@ -2241,6 +2307,7 @@ function adopt(j) {
   const target = j.currentRow ?? 0;
   if (!prev || prev.round !== j.round) { stageRow = Math.min(target, 4); clearTimeout(holdTimer); holdTimer = null; }
   st = j;   // planStage and the pop-up read the new state
+  handleEmotes(j);
   if (prev) {   // announce a row the moment it is scored; results persist, so reopening a row is never re-announced
     const had = new Set((prev.rowResults || []).map((r) => r.row));
     const fresh = (j.rowResults || []).filter((r) => !had.has(r.row));
@@ -2676,6 +2743,7 @@ function hideBusy() {
 }
 
 function dropSession(message) {
+  emoteSeen = null;
   if (/removed/i.test(message)) SND.play('kick');
   session = null; st = null; save(); clearInterval(timer); closePlayers(); err = message; render();
 }
@@ -2696,6 +2764,7 @@ function confirmLeave() {
 
 async function leave() {
   const s = session;
+  emoteSeen = null;
   clearTimeout(timer); session = null;   // stop polling at once
   closePlayers();
   const ov = el('div', { class: 'loadbanner full', role: 'status' }, el('i', { class: 'spin' }), el('span', {}, t('leaving')));

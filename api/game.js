@@ -15,6 +15,7 @@ function pickAvatar(want, taken = []) {
   const pool = free.length ? free : AVATARS;
   return pool[crypto.randomInt(pool.length)];
 }
+const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg'];
 const MAX_PLAYERS = 15;
 const HAND_SIZE = 7;
 const ROW_SIZES = [1, 1, 2, 3];
@@ -285,6 +286,8 @@ function view(room, pid, seen) {
     now: Date.now(),
     allReady: room.allReady || null,
     settings: settingsOf(room),
+    emotes: (room.emotes || []).filter((x) => Date.now() - x.at < 8000),
+    emoteN: room.emoteN || 0,
     deadline: room.deadline || null,
     rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
     currentRow: currentRowOf(room),
@@ -503,6 +506,18 @@ async function handle(action, b, query) {
       if (b.jokers !== undefined) next.jokers = !!b.jokers;
       if (b.mult !== undefined) { need(MULTS.includes(Number(b.mult)), 400, 'Pick a multiplier from the list'); next.mult = Number(b.mult); }
       room.settings = next;
+      break;
+    }
+
+    case 'emote': {
+      need(EMOTES.includes(b.e), 400, 'Unknown reaction');
+      const now = Date.now();
+      room.emoteN = (room.emoteN || 0) + 1;
+      const recent = (room.emotes || []).filter((x) => now - x.at < 8000);
+      // one reaction per player per second, so nobody can flood the table
+      if (recent.some((x) => x.id === pid && now - x.at < 900)) return viewFor(room, pid);
+      recent.push({ id: pid, e: b.e, at: now, n: room.emoteN });
+      room.emotes = recent.slice(-12);
       break;
     }
 
