@@ -911,6 +911,25 @@ const SND = (() => {
       for (let i = 0; i < 9; i++) noise({ at: 0.03 + i * 0.055 + rnd(0, 0.02), dur: 0.03, vol: 0.14, type: 'bandpass', f: rnd(1500, 5000), q: 3 });
       tone({ f: 90, f2: 55, at: 0.05, dur: 0.35, vol: 0.18, type: 'sawtooth', lp: 400 });
     },
+    // one little sound for every reaction
+    emo_laugh: () => [0, 0.13, 0.26, 0.39].forEach((at, i) => tone({ f: 520 - i * 35, f2: 420 - i * 30, at, dur: 0.1, vol: 0.09, type: 'square', lp: 1600 })),
+    emo_wow: () => { tone({ f: 260, f2: 980, dur: 0.38, vol: 0.2, type: 'sine' }); tone({ f: 520, f2: 1960, at: 0.02, dur: 0.34, vol: 0.08, type: 'triangle' }); },
+    emo_cry: () => [[620, 480], [540, 360]].forEach(([a, b], i) => { tone({ f: a, f2: b, at: i * 0.32, dur: 0.3, vol: 0.09, type: 'sine' }); tone({ f: a * 1.01, f2: b * 1.01, at: i * 0.32 + 0.02, dur: 0.3, vol: 0.05, type: 'sine' }); }),
+    emo_cool: () => { tone({ f: 330, f2: 392, dur: 0.18, vol: 0.1, type: 'triangle', lp: 1500 }); tone({ f: 494, at: 0.18, dur: 0.38, vol: 0.1, type: 'triangle', lp: 1500 }); },
+    emo_fire: () => { noise({ dur: 0.6, vol: 0.14, type: 'bandpass', f: 600, f2: 3500, q: 0.7 }); for (let i = 0; i < 8; i++) noise({ at: 0.05 + i * 0.06 + rnd(0, 0.02), dur: 0.03, vol: 0.12, type: 'highpass', f: 4500 }); tone({ f: 110, f2: 70, dur: 0.4, vol: 0.12, type: 'sawtooth', lp: 400 }); },
+    emo_gg: () => [523, 784, 1047].forEach((f, i) => tone({ f, at: i * 0.1, dur: 0.3, vol: 0.09, type: 'triangle' })),
+    emo_ez: () => [392, 523, 659, 784].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.16, vol: 0.09, type: 'sawtooth', lp: 1800 })),
+    emo_gl: () => [784, 988, 1175, 1568].forEach((f, i) => { tone({ f, at: i * 0.08, dur: 0.28, vol: 0.07, type: 'sine' }); tone({ f: f * 2, at: i * 0.08, dur: 0.2, vol: 0.025, type: 'sine' }); }),
+    emo_wp: () => { for (let i = 0; i < 11; i++) noise({ at: i * 0.045 + rnd(0, 0.02), dur: 0.05, vol: 0.22, type: 'bandpass', f: rnd(1200, 3200), q: 1.2 }); },
+    emo_rip: () => { [196, 185, 175, 147].forEach((f, i) => tone({ f, f2: f * (i === 3 ? 0.9 : 1), at: i * 0.2, dur: i === 3 ? 0.5 : 0.18, vol: 0.1, type: 'sawtooth', lp: 700 })); },
+    emo_angry: () => { tone({ f: 95, f2: 70, dur: 0.5, vol: 0.22, type: 'sawtooth', lp: 500 }); noise({ dur: 0.45, vol: 0.16, type: 'lowpass', f: 700 }); for (let i = 0; i < 6; i++) tone({ f: 190, at: i * 0.07, dur: 0.05, vol: 0.09, type: 'square', lp: 500 }); },
+    emo_think: () => { tone({ f: 220, f2: 232, dur: 0.5, vol: 0.14, type: 'sine' }); tone({ f: 330, f2: 392, at: 0.5, dur: 0.22, vol: 0.13, type: 'triangle' }); },
+    emo_heart: () => [0, 0.17].forEach((at) => { tone({ f: 120, f2: 60, at, dur: 0.14, vol: 0.2, type: 'sine' }); tone({ f: 880, at: at + 0.02, dur: 0.1, vol: 0.03 }); }),
+    emo_trophy: () => [523, 659, 784, 1047].forEach((f, i) => tone({ f, at: i * 0.11, dur: i === 3 ? 0.5 : 0.14, vol: 0.09, type: 'square', lp: 2200 })),
+    emo_oof: () => { tone({ f: 220, f2: 70, dur: 0.22, vol: 0.32, type: 'triangle' }); noise({ dur: 0.1, vol: 0.22, type: 'lowpass', f: 600 }); },
+    emo_faster: () => [0, 0.16, 0.3, 0.41, 0.5, 0.58, 0.65].forEach((at) => tone({ f: 1500, at, dur: 0.04, vol: 0.07, type: 'square', lp: 2600 })),
+    emo_aiyo: () => { tone({ f: 720, f2: 520, dur: 0.2, vol: 0.1, type: 'sine' }); tone({ f: 460, f2: 330, at: 0.22, dur: 0.32, vol: 0.1, type: 'sine' }); },
+    emo_steady: () => [0, 0.2].forEach((at, i) => tone({ f: i ? 330 : 247, at, dur: 0.2, vol: 0.11, type: 'triangle', lp: 1400 })),
     pop: () => { tone({ f: 600, f2: 1100, dur: 0.09, vol: 0.09, type: 'sine' }); tone({ f: 1500, at: 0.07, dur: 0.07, vol: 0.05 }); },
     tick: () => tone({ f: 1250, dur: 0.05, vol: 0.07, type: 'square', lp: 2500 }),
     boing: () => { tone({ f: 300, f2: 700, dur: 0.14, vol: 0.09, type: 'triangle' }); tone({ f: 700, f2: 420, at: 0.12, dur: 0.12, vol: 0.06, type: 'triangle' }); },
@@ -1109,7 +1128,7 @@ function sendEmote(k) {
   if (Date.now() - emoteLast < 900) return;
   emoteLast = Date.now();
   floatEmote(st && st.meId, k);
-  SND.play('pop');
+  SND.play('emo_' + k);
   api('emote', { e: k }).catch(() => {});
   emoteTrayOpen = false; syncEmoteUi();
 }
@@ -1130,7 +1149,7 @@ function floatEmote(pid, key) {
 function handleEmotes(j) {
   const list = j.emotes || [];
   if (emoteSeen === null) { emoteSeen = j.emoteN || 0; return; }   // first look at this room: don't replay old ones
-  for (const x of list) if (x.n > emoteSeen && x.id !== j.meId && serverNow() - x.at < 6000) { floatEmote(x.id, x.e); SND.play('pop'); }
+  for (const x of list) if (x.n > emoteSeen && x.id !== j.meId && serverNow() - x.at < 6000) { floatEmote(x.id, x.e); SND.play('emo_' + x.e); }
   emoteSeen = Math.max(emoteSeen, j.emoteN || 0);
 }
 function syncEmoteUi() {
