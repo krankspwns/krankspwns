@@ -467,7 +467,7 @@
   .timerbar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; margin-bottom: 12px; border-radius: 14px; background: rgba(255,210,63,.1); border: 1px solid rgba(255,210,63,.45); } .timerbar b { font-size: 18px; min-width: 54px; font-variant-numeric: tabular-nums; color: #ffe27a; } .tm-bar { flex: 1; height: 8px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; } .tm-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd23f, #ffb347); transition: width .3s linear; }
   .timerbar.urgent { background: rgba(255,90,80,.16); border-color: #ff6b5e; animation: urgent .6s ease-in-out infinite; } .timerbar.urgent b { color: #ff9c8f; } .timerbar.urgent .tm-bar i { background: linear-gradient(90deg, #ff6b5e, #ff9a6a); } @keyframes urgent { 50% { box-shadow: 0 0 18px rgba(255,90,80,.5); } }
   .setchips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 0 0 12px; } .setchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,.07); border: 1px solid var(--line); } .setedit { padding: 4px 12px !important; font-size: 12px !important; display: inline-flex; align-items: center; gap: 5px; }
-  .swatches { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; } .swatch { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: conic-gradient(var(--sw) 0 50%, var(--sb) 50% 100%); border: 2px solid rgba(255,255,255,.25); box-shadow: none; } .swatch.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(var(--gold-rgb), .55); transform: scale(1.08); }
+  .swatches { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; } .swatch { width: 46px; height: 46px; padding: 0; border-radius: 50%; background: none; border: 2px solid transparent; box-shadow: none; display: grid; place-items: center; } .swatch:hover { transform: none; filter: brightness(1.12); } .swatch.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(var(--gold-rgb), .55); transform: scale(1.08); }
   .avbig { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; background: rgba(4,6,14,.82); animation: lbin .2s ease both; -webkit-tap-highlight-color: transparent; }
   .avbigbox { display: grid; justify-items: center; gap: 14px; animation: boxpop .3s cubic-bezier(.2,1.2,.4,1) backwards; } .avbigbox .av { box-shadow: 0 0 0 4px rgba(255,255,255,.2), 0 20px 60px rgba(0,0,0,.6); cursor: default; } .avbigbox .av.bd { box-shadow: 0 0 22px var(--bdglow, transparent), 0 20px 60px rgba(0,0,0,.6); }
   .avbigname { font-size: 22px; font-weight: 800; color: var(--gold-hi); text-shadow: 0 2px 10px rgba(0,0,0,.6); max-width: 90vw; text-align: center; }
@@ -1615,6 +1615,14 @@ function renderChat(keepScroll) {
 
 // ---- display & accessibility (kept on this phone only) ----
 const UI_DEFAULT = { fourcolor: false, text: 0, haptics: true, calm: false, voice: true, theme: 'gold' };
+// each colour scheme's picker icon: a little jewel on that scheme's own background
+const THEME_ART = { gold: ['#18213b', '#080c18', '#e8d3a2', '#c9a96a', '#8d7442'], emerald: ['#15402f', '#06150e', '#f3dca0', '#e0b45a', '#9a7a35'], royal: ['#34215f', '#0d0820', '#ffc6dc', '#ff8fb8', '#b55a80'], crimson: ['#45182a', '#130609', '#ffdcc8', '#f2b49a', '#b5705a'], ocean: ['#0f3b54', '#040f18', '#c6f0fa', '#7fd6ec', '#3f93a8'] };
+function themeIcon(k, size = 40) {
+  const [b1, b3, hi, mid, lo] = THEME_ART[k] || THEME_ART.gold, w = el('span', { class: 'themeico' });
+  w.style.cssText = `display:inline-block;width:${size}px;height:${size}px;line-height:0`;
+  w.innerHTML = `<svg viewBox="0 0 40 40" width="100%" height="100%" aria-hidden="true"><defs><radialGradient id="tb${k}" cx=".5" cy=".35" r=".8"><stop offset="0" stop-color="${b1}"/><stop offset="1" stop-color="${b3}"/></radialGradient><linearGradient id="tg${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hi}"/><stop offset=".55" stop-color="${mid}"/><stop offset="1" stop-color="${lo}"/></linearGradient></defs><circle cx="20" cy="20" r="19" fill="url(#tb${k})"/><circle cx="20" cy="20" r="18" fill="none" stroke="${mid}" stroke-opacity=".55" stroke-width="1.200"/><path d="M20 7.500l9 9-9 16-9-16z" fill="url(#tg${k})"/><path d="M11 16.500h18L20 7.500z" fill="#fff" opacity=".3"/><path d="M20 7.500l-2.600 9L20 32.500z" fill="#fff" opacity=".16"/><path d="M11 16.500h18" stroke="${hi}" stroke-width=".8" opacity=".8"/><path d="M31.500 8l.8 1.900 1.900.8-1.900.8-.8 1.900-.8-1.900-1.900-.8 1.900-.8z" fill="${hi}"/><circle cx="8.500" cy="30" r="1.100" fill="${mid}"/></svg>`;
+  return w;
+}
 const THEMES = [['gold', '#c9a96a', '#18213b'], ['emerald', '#e0b45a', '#15402f'], ['royal', '#ff8fb8', '#34215f'], ['crimson', '#f2b49a', '#45182a'], ['ocean', '#7fd6ec', '#0f3b54']];
 let ui = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('sct-ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
 function applyUi() {
@@ -1658,7 +1666,7 @@ function renderSettings() {
     row(t('setChat'), t('setChatHint'), sw(gs.chat !== false, (v) => change({ chat: v }), !canEdit)),
     row(t('setJokers'), t('setJokersHint'), sw(gs.jokers, (v) => change({ jokers: v }), !canEdit))));
   sections.push(card('look', 'eye', t('setDisplay'), t('setPhone'),
-    row(t('setTheme'), '', el('div', { class: 'swatches', role: 'radiogroup', 'aria-label': t('setTheme') }, ...THEMES.map(([k, c, bg]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String((ui.theme || 'gold') === k), 'aria-label': t('theme_' + k), title: t('theme_' + k), class: 'swatch' + ((ui.theme || 'gold') === k ? ' on' : ''), style: `--sw:${c};--sb:${bg}`, onclick: () => setUi('theme', k) }))), true),
+    row(t('setTheme'), '', el('div', { class: 'swatches', role: 'radiogroup', 'aria-label': t('setTheme') }, ...THEMES.map(([k, c, bg]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String((ui.theme || 'gold') === k), 'aria-label': t('theme_' + k), title: t('theme_' + k), class: 'swatch' + ((ui.theme || 'gold') === k ? ' on' : ''), onclick: () => setUi('theme', k) }, themeIcon(k, 38)))), true),
     row(t('setText'), '', seg([[0, 'A'], [1, 'A+'], [2, 'A++']], ui.text, (v) => setUi('text', v)), true),
     row(t('setFour'), t('setFourHint'), sw(!!ui.fourcolor, (v) => setUi('fourcolor', v))),
     row(t('setCalm'), t('setCalmHint'), sw(!!ui.calm, (v) => setUi('calm', v)))));
