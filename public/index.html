@@ -2087,23 +2087,35 @@ function playGift(g) {
       later(560, () => SND.play('chime'));
       keepFor(3600);
     });
-  } else if (kind === 'rocket') {
-    const x = toMe ? W / 2 : W * rnd(0.22, 0.78);
+  } else if (kind === 'rocket') {   // ignition on the pad, a wobbling climb with flame and smoke, then a firework finale
+    const x0 = toMe ? W / 2 : W * rnd(0.25, 0.75), padY = H - 40, apexY = H * rnd(0.16, 0.24), x1 = x0 + rnd(-W * 0.12, W * 0.12), RS = 64;
+    const smoke = (x, y, size, delay = 0, life = 1100) => { const d = node(`left:${x - size / 2}px;top:${y - size / 2}px;width:${size}px;height:${size}px;border-radius:50%;background:radial-gradient(circle, rgba(235,238,245,.9), rgba(170,176,196,.55) 60%, rgba(120,126,150,0) 72%);opacity:0`, 'giftbit'); anim(d, [{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1)', opacity: 0.85, offset: 0.2 }, { transform: 'scale(2.1)', opacity: 0 }], { duration: life, delay, fill: 'forwards' }); keepFor(life + delay + 100); };
+    // 1) ignition: smoke rolls out sideways on the pad, sparks, a small rumble
+    SND.play('sizzle'); shake(260);
+    for (let i = 0; i < 9; i++) { const sx = x0 + rnd(-50, 50); smoke(sx, padY + rnd(-6, 8), rnd(40, 78), i * 45, 1300); }
+    for (let i = 0; i < 14; i++) part(x0, padY, { ang: -Math.PI / 2 + rnd(-1.3, 1.3), spd: rnd(120, 380), g: 900, life: rnd(500, 900), size: rnd(3, 7), color: pick(['#ffd23f', '#ff9a1f', '#fff']), end: 0.2, glow: true });
+    // 2) the rocket: a flame that flickers, a wobbling climb along a curve
+    const wrap = el('span', { class: 'giftfly' }); wrap.style.cssText = 'width:' + RS + 'px;height:' + (RS * 1.9) + 'px;transform-origin:50% 40%'; fx.append(wrap);
+    const art = giftEl('rocket', RS); art.style.cssText += ';position:absolute;left:0;top:0'; wrap.append(art);
+    const flame = el('i', { class: 'giftbit' }); flame.style.cssText = `position:absolute;left:${RS * 0.28}px;top:${RS * 0.88}px;width:${RS * 0.44}px;height:${RS * 1.0}px;border-radius:50% 50% 60% 60%/30% 30% 70% 70%;background:linear-gradient(180deg,#fff7c0 0,#ffd23f 28%,#ff7a1f 65%,rgba(255,60,20,0) 100%);transform-origin:50% 0;filter:blur(.4px)`; wrap.append(flame);
+    anim(flame, [{ transform: 'scaleY(.8) scaleX(.9)' }, { transform: 'scaleY(1.25) scaleX(1.05)' }, { transform: 'scaleY(.9) scaleX(.95)' }, { transform: 'scaleY(1.3) scaleX(1)' }], { duration: 160, iterations: Infinity, direction: 'alternate' });
     SND.play('whistle');
-    const rk = el('span', { class: 'giftfly' }, giftEl('rocket', 72)); fx.append(rk);
-    if (toMe) {   // it comes straight at you
-      anim(rk, [{ transform: `translate(${x - 36}px,${H * 0.9}px) scale(.3) rotate(0deg)` }, { transform: `translate(${x - 36}px,${H * 0.42}px) scale(2.4) rotate(0deg)`, offset: 0.85 }, { transform: `translate(${x - 36}px,${H * 0.38}px) scale(3.2) rotate(0deg)`, opacity: 0 }], { duration: 1050, easing: 'cubic-bezier(.5,0,.8,.5)', fill: 'forwards' });
-      later(980, () => { SND.play('boom'); shake(650); flash('#ffe9a0', 0.4, 450); ring(W / 2, H * 0.42, '#ffb02e', W * 0.42, 800, 10); for (let i = 0; i < 46; i++) part(W / 2, H * 0.42, { ang: rnd(0, Math.PI * 2), spd: rnd(300, 1100), g: 700, life: rnd(900, 1800), size: rnd(6, 14), color: pick(['#ffd23f', '#ff7a1f', '#ff4d4d', '#fff']), end: 0.2 }); pop(W / 2, H * 0.3, 'BOOM!', '#ff7a1f', 56, -6); });
-    } else {
-      anim(rk, [{ transform: `translate(${x - 36}px,${H + 20}px) rotate(${rnd(-6, 6)}deg) scale(1)` }, { transform: `translate(${x + rnd(-40, 40) - 36}px,${H * 0.14}px) rotate(${rnd(-6, 6)}deg) scale(1.15)` }], { duration: 1050, easing: 'cubic-bezier(.5,0,.9,.45)', fill: 'forwards' });
-      for (let i = 0; i < 26; i++) { const k = i / 26, yy = H + 20 - (H * 0.86) * k; later(k * 1000, () => { part(x + rnd(-8, 8), yy + 30, { ang: Math.PI / 2 + rnd(-0.4, 0.4), spd: rnd(80, 260), g: 200, life: rnd(500, 900), size: rnd(8, 18), color: pick(['#ffd23f', '#ff9d2e', '#ff5a3c']), end: 0.1 }); if (i % 3 === 0) part(x + rnd(-10, 10), yy + 50, { ang: Math.PI / 2, spd: 40, g: -60, life: 1600, size: rnd(18, 34), color: 'rgba(210,215,225,.28)', end: 2.2 }); }); }
-      later(1000, () => {
-        rk.remove(); SND.play('boom'); shake(260); flash('#fff3c2', 0.55, 600);
-        const bx = x, by = H * 0.14; glowAt(bx, by, '#ffd23f', 420, 900); ring(bx, by, '#ffd23f', 200, 900, 6); ring(bx, by, '#ff7a1f', 130, 700, 4, 100);
-        for (let i = 0; i < 64; i++) part(bx, by, { ang: (i / 64) * Math.PI * 2 + rnd(-0.05, 0.05), spd: rnd(240, 560), g: 520, life: rnd(1100, 1900), size: rnd(6, 11), color: pick(['#ffd23f', '#ff7a1f', '#ff4d4d', '#fff', '#4fc3ff']), end: 0.2, glow: true });
-        pop(bx, by + 90, 'WHOOSH!', '#ff7a1f', 40, 6); later(250, () => SND.play('crackle')); keepFor(3000);
-      });
-    }
+    const climbStart = 420, climbMs = 1150, N = 16, frames = [];
+    const pos = (k) => { const e = k * k * (3 - 2 * k) * 0.35 + k * k * 0.65; return [x0 + (x1 - x0) * e + Math.sin(k * 11) * 9 * Math.min(1, k * 3), padY - (padY - apexY) * e]; };
+    for (let i = 0; i <= N; i++) { const k = i / N, [px, py] = pos(k), [qx, qy] = pos(Math.min(1, k + 0.04)), ang = Math.atan2(qx - px, py - qy) * 57.3; frames.push({ transform: `translate(${px - RS / 2}px,${py - RS * 0.5}px) rotate(${ang}deg) scale(${0.8 + k * 0.45})`, offset: k }); }
+    anim(wrap, frames, { duration: climbMs, delay: climbStart, easing: 'linear', fill: 'forwards' }); keepFor(climbStart + climbMs + 3600);
+    const hold = anim(wrap, [{ transform: `translate(${x0 - RS / 2}px,${padY - RS * 0.5}px) rotate(0deg) scale(.8)` }, { transform: `translate(${x0 - RS / 2 + 3}px,${padY - RS * 0.5 - 2}px) rotate(1.5deg) scale(.8)` }, { transform: `translate(${x0 - RS / 2 - 3}px,${padY - RS * 0.5 - 1}px) rotate(-1.5deg) scale(.8)` }], { duration: 90, iterations: Math.ceil(climbStart / 90), direction: 'alternate' });
+    for (let i = 0; i < 26; i++) { const k = i / 26, [px, py] = pos(k); later(climbStart + k * climbMs, () => { smoke(px + rnd(-6, 6), py + RS * 0.75, rnd(26, 52), 0, 1100); part(px, py + RS * 0.7, { ang: Math.PI / 2 + rnd(-0.5, 0.5), spd: rnd(120, 300), g: 300, life: rnd(400, 800), size: rnd(3, 7), color: pick(['#ffd23f', '#ff9a1f', '#fff3c0']), end: 0.1, glow: true }); }); }
+    // 3) the finale
+    later(climbStart + climbMs, () => {
+      wrap.remove(); const bx = x1, by = apexY;
+      SND.play('boom'); shake(toMe ? 260 : 220); flash('#fff3c2', 0.28, 380);
+      glowAt(bx, by, '#ffd23f', 380, 900); ring(bx, by, '#fff', 170, 700, 5); ring(bx, by, '#ffb02e', 120, 800, 4, 90);
+      for (let i = 0; i < 56; i++) part(bx, by, { ang: (i / 56) * Math.PI * 2 + rnd(-0.04, 0.04), spd: rnd(260, 560), g: 480, life: rnd(1200, 2000), size: rnd(6, 10), color: pick(['#ffd23f', '#ff9a1f', '#fff3c0', '#ff5a3c']), end: 0.15, glow: true });
+      for (let i = 0; i < 18; i++) part(bx, by, { ang: rnd(0, Math.PI * 2), spd: rnd(120, 260), g: 700, life: rnd(2000, 2800), size: rnd(4, 6), color: '#ffe9a0', end: 0.2, glow: true });
+      [['#ff4d6d', -150, 40], ['#4fe0ff', 150, 70], ['#b77bff', 0, 110]].forEach(([col, dx, dy], i) => later(260 + i * 170, () => { SND.play('pop'); glowAt(bx + dx, by + dy, col, 200, 700); ring(bx + dx, by + dy, col, 90, 700, 3); for (let k = 0; k < 28; k++) part(bx + dx, by + dy, { ang: (k / 28) * Math.PI * 2, spd: rnd(140, 260), g: 380, life: rnd(1100, 1700), size: rnd(5, 8), color: col, end: 0.15, glow: true }); }));
+      pop(bx, by + 150, 'WHOOSH!', '#ff7a1f', toMe ? 50 : 40, 6); later(300, () => SND.play('crackle')); later(900, () => SND.play('crackle')); keepFor(3400);
+    });
   } else if (kind === 'boom') {   // a bomb lands, its fuse hisses, 3-2-1, then everything blows up
     const bs = toMe ? 150 : 92;
     const b = el('span', { class: 'giftfly' }, giftEl('bomb', bs)); b.style.filter = 'drop-shadow(0 0 7px rgba(255,255,255,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.4))'; fx.append(b);
