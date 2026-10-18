@@ -1544,10 +1544,10 @@ const I18N = {
     s4t: 'Reveal', s4d: 'Flip cards face up when you’re ready to show the table.',
     copyCode: 'Copy code', copyLink: 'Copy invite link', copied: 'Copied ✓',
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
-    host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
+    host: 'host', joined: 'joined', you: ' (You)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
     waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row (a fraction is rounded up)', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: 'GG', chatQ2: 'Nice one!', chatQ3: 'Hurry up!', chatQ4: 'Oops!', setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
-    room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
+    room: 'Room', playersN: (v) => `${v.n}/${v.max} Players`, readyN: (v) => `${v.r}/${v.n} Ready`, roundN: (v) => `Round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
     youReady: "You're ready", waitMore: (v) => `Waiting for ${v.n} more player${v.n > 1 ? 's' : ''}`,
@@ -1561,7 +1561,7 @@ const I18N = {
     obsText: 'You joined while a game was in progress. You can follow along below — the host will deal you in when the next round starts.',
     obsWait: 'Waiting for the next round…', e_spec: 'Wait for the next round',
     stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `Open row ${v.n} for everyone`, stageWaitHost: 'Waiting for the host to open this row…',
-    openedN: (v) => `${v.n}/${v.total} opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
+    openedN: (v) => `${v.n}/${v.total} Opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
     youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
     finalTitle: 'Final board', hallTitle: 'Hall of Fame', hallSub: (v) => `Round ${v.n} · lowest penalty wins`, hallPts: (v) => `${v.n} pts`, hallLast: (v) => `+${v.n} this round`, hallLost: (v) => `${v.n} row${v.n === 1 ? '' : 's'} lost`, hallRounds: (v) => `${v.n} rd`, showBoard: 'Show final board', hideBoard: 'Hide final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
     guideBtn: 'How to play', guideTitle: 'How to play', gClose: 'Close', gBack: 'Back', gNext: 'Next', gDone: 'Got it!', gStep: (v) => `${v.i} / ${v.n}`,
@@ -2215,6 +2215,15 @@ function safeRender() {
   renderTimer = setTimeout(() => { if (renderQueued) safeRender(); }, Math.max(60, 420 - idle));
 }
 
+// a rebuilt screen would restart every endless animation (the room code's shimmer jumped back to the start): line new ones up with the page clock instead
+function keepLoopsInStep() {
+  try {
+    for (const a of document.getAnimations()) {
+      const ti = a.effect && a.effect.getComputedTiming();
+      if (ti && ti.iterations === Infinity && ti.duration > 0 && a.currentTime < 80) a.currentTime = (document.timeline.currentTime % ti.duration);
+    }
+  } catch {}
+}
 function render() {
   const keepY = window.scrollY;
   app.dataset.screen = screenName();
@@ -2225,6 +2234,7 @@ function render() {
   renderPlayers();   // keep an open player list in step with the room
   renderSettings();
   syncEmoteUi();
+  keepLoopsInStep();
   // measuring the half-built page can clamp the scroll position; put it back
   if (Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY);
   if (stageScroll) {   // moving on to the next row: bring it into view, but never while the player is scrolling
