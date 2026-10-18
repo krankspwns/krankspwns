@@ -225,7 +225,8 @@ const post = (b) => call('POST', b, {});
   const wroom2 = globalThis.__rooms.get(wr.code); wroom2.wins[winner.id] = 14;   // 140 points to play with
   assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).s, 403, 'nothing bought yet');
   assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).j.wallet.gifts.tomato, 3);
-  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).s, 409, 'use them up before buying again');
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).j.wallet.gifts.tomato, 6, 'buying again adds another pack');
+  globalThis.__rooms.get(wr.code).players.find((q) => q.id === winner.id).gifts.tomato = 3;   // back to one pack for the throw checks below
   assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: winner.id })).s, 400, 'not at yourself');
   const th = (await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).j;
   assert.equal(th.wallet.gifts.tomato, 2); assert.equal(th.gifts.length, 1); assert.equal(th.gifts[0].to, loserId);

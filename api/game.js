@@ -642,14 +642,14 @@ async function handle(action, b, query) {
       if (kind === 'acc') need(!me.owned.acc.includes(key), 409, 'You already own that');
       if (kind === 'av') need(!me.owned.av.includes(key), 409, 'You already own that');
       if (kind === 'bd') need(!me.owned.bd.includes(key), 409, 'You already own that');
-      if (kind === 'gift') need(!(me.gifts[key] > 0), 409, 'Use up the ones you have first');
+      if (kind === 'gift') need((me.gifts[key] || 0) + GIFT_USES <= 99, 409, 'That is plenty already');
       need(balanceOf(room, pid) >= price, 402, 'Not enough win points');
       room.spent = room.spent || {};
       room.spent[pid] = (room.spent[pid] || 0) + price;   // the win count itself is untouched
       if (kind === 'acc') me.owned.acc.push(key);
       else if (kind === 'av') me.owned.av.push(key);
       else if (kind === 'bd') me.owned.bd.push(key);
-      else me.gifts[key] = GIFT_USES;
+      else me.gifts[key] = (me.gifts[key] || 0) + GIFT_USES;   // every purchase adds another pack of throws
       break;
     }
 
