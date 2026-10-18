@@ -1302,6 +1302,7 @@ function handleChat(j, prev) {
   }
   chatHave = Math.max(chatHave === undefined ? 0 : chatHave, j.chatN || 0, ...chatLog.map((m) => m.n));
   if (document.querySelector('.chat-ov')) renderChat(true);
+  syncEmoteUi();   // the unread badge follows chat even when nothing else on screen is rebuilt
 }
 function chatUnread() { return st ? Math.max(0, (st.chatN || 0) - chatSeen) : 0; }
 function chatPop(m) {
