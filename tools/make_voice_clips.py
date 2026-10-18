@@ -8,7 +8,7 @@ cfg=sherpa_onnx.OfflineTtsConfig(model=sherpa_onnx.OfflineTtsModelConfig(kokoro=
     model=f'{d}/model.onnx',voices=f'{d}/voices.bin',tokens=f'{d}/tokens.txt',data_dir=f'{d}/espeak-ng-data',dict_dir=f'{d}/dict',
     lexicon=f'{d}/lexicon-us-en.txt,{d}/lexicon-zh.txt'),num_threads=4,debug=False,provider='cpu'))
 tts=sherpa_onnx.OfflineTts(cfg)
-clips={'faster':('Faster leh!',45,1.12),'aiyo':('Ai yo!',45,1.05),'steady':('Steady lah!',45,1.05),'oof':('Ooph!',2,1.0)}
+clips={'faster':('Faster leh!',45,1.12),'aiyo':('爱哟！',45,1.0),'steady':('Steady lah!',45,1.05),'oof':('Ooph!',2,1.0)}
 out=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','public','audio'); os.makedirs(out,exist_ok=True)
 for k,(text,sid,speed) in clips.items():
     a=tts.generate(text,sid=sid,speed=speed); x=np.array(a.samples,dtype=np.float32); sr=a.sample_rate
