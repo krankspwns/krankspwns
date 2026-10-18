@@ -41,13 +41,19 @@ const ABLY_REST = process.env.ABLY_REST_HOST || 'https://rest.ably.io';
 const ABLY_RT = process.env.ABLY_RT_HOST || 'https://realtime.ably.io';
 const RT_TTL = 60 * 60 * 2;
 const rtChannel = (code) => 'room-' + code;
+// the announcement is just the version, plus any gift or reaction from the last few seconds so everyone can play it without waiting for a fetch
+function rtData(room) {
+  const now = Date.now();
+  const g = (room.gifts || []).filter((x) => now - x.at < 3000), e = (room.emotes || []).filter((x) => now - x.at < 3000);
+  return g.length || e.length ? JSON.stringify({ v: room.version, ...(g.length && { g }), ...(e.length && { e }) }) : String(room.version);
+}
 async function rtPublish(room) {
   if (!ABLY_KEY) return;
   try {
     await fetch(`${ABLY_REST}/channels/${rtChannel(room.code)}/messages`, {
       method: 'POST',
       headers: { Authorization: 'Basic ' + Buffer.from(ABLY_KEY).toString('base64'), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'v', data: String(room.version) }),
+      body: JSON.stringify({ name: 'v', data: rtData(room) }),
       signal: AbortSignal.timeout(1500),
     });
   } catch {}   // a missed push is covered by the slow fallback poll

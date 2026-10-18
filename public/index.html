@@ -4099,7 +4099,11 @@ async function rtOpen() {
     es.onopen = () => { rtLive = true; };
     es.onmessage = (e) => {
       if (!session) return rtClose();
-      let v = 0; try { const m = JSON.parse(e.data); v = Number(typeof m.data === 'string' && m.data[0] !== '{' ? m.data : m.data && m.data.v) || 0; } catch {}
+      let v = 0, d = null; try { const m = JSON.parse(e.data); d = typeof m.data === 'string' && m.data[0] === '{' ? JSON.parse(m.data) : m.data; v = Number(d && typeof d === 'object' ? d.v : d) || 0; } catch {}
+      if (d && typeof d === 'object' && st) {   // gifts and reactions ride along with the announcement, so they play straight away
+        if (d.g) handleGifts({ gifts: d.g, giftN: Math.max(...d.g.map((x) => x.n)), meId: st.meId });
+        if (d.e) handleEmotes({ emotes: d.e, emoteN: Math.max(...d.e.map((x) => x.n)), meId: st.meId });
+      }
       rtWant = Math.max(rtWant, v); rtFetch(0);
     };
     es.onerror = () => { rtLive = false; if (es.readyState === 2) { rtClose(); rtRetry = setTimeout(rtOpen, 15000); } };
