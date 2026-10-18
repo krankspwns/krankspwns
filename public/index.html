@@ -2000,6 +2000,16 @@ function playGift(g) {
     }
   };
   const fromX = Math.random() < 0.5 ? -50 : W + 50, fromY = H * 0.88;
+  // a burst of particles shaped like a heart (or a star) so a firework can draw a picture
+  const shapeBurst = (cx, cy, size, colors, kind2 = 'heart', n = 46, life = 1700) => {
+    for (let i = 0; i < n; i++) {
+      const t0 = (i / n) * Math.PI * 2; let vx, vy;
+      if (kind2 === 'heart') { vx = 16 * Math.pow(Math.sin(t0), 3); vy = -(13 * Math.cos(t0) - 5 * Math.cos(2 * t0) - 2 * Math.cos(3 * t0) - Math.cos(4 * t0)); }
+      else { const r2 = i % 2 ? 0.5 : 1; vx = Math.sin(t0) * 16 * r2; vy = -Math.cos(t0) * 16 * r2; }
+      part(cx, cy, { ang: Math.atan2(vy, vx), spd: Math.hypot(vx, vy) * size * 4.2, g: 110, life, size: rnd(6, 9), color: colors[i % colors.length], end: 0.2, glow: true });
+    }
+  };
+  const SNOWFLAKE = '<svg viewBox="0 0 24 24" width="100%" height="100%"><g stroke="#e8f6ff" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M3.300 7l17.400 10M3.300 17L20.700 7"/><path d="M9.500 3.800L12 6.500l2.500-2.700M9.500 20.200L12 17.500l2.500 2.700M4.200 10.200l3.500.8-.6-3.600M19.800 13.800l-3.500-.8.6 3.600M4.200 13.800l3.500-.8-.6 3.600M19.800 10.200l-3.500.8.6-3.600"/></g></svg>';
 
   // a splat is one self-contained picture (blob + drips + shine), so it fades as a whole and nothing is left behind.
   // Aimed at you it lands as a few splats around the edges of the screen, keeping the middle clear to play.
@@ -2028,7 +2038,9 @@ function playGift(g) {
     const seedArt = seeds ? Array.from({ length: 9 }, () => { const a = rnd(0, 6.28), r = R * rnd(0.12, 0.65), [sx, sy] = pt(a, r), rot = rnd(0, 180); return `<ellipse cx="${sx}" cy="${sy}" rx="${R * 0.14}" ry="${R * 0.09}" fill="#ffe3b0" opacity=".7" transform="rotate(${rot} ${sx} ${sy})"/><ellipse cx="${sx}" cy="${sy}" rx="${R * 0.08}" ry="${R * 0.05}" fill="#f4d35a" transform="rotate(${rot} ${sx} ${sy})"/><ellipse cx="${sx - R * 0.02}" cy="${sy - R * 0.015}" rx="${R * 0.025}" ry="${R * 0.015}" fill="#fff" opacity=".8" transform="rotate(${rot} ${sx} ${sy})"/>`; }).join('') : '';
     const cherryArt = cherry ? `<circle cx="${bx}" cy="${by - R * 0.05}" r="${R * 0.17}" fill="#e8352e"/><circle cx="${bx - R * 0.05}" cy="${by - R * 0.1}" r="${R * 0.05}" fill="#fff" opacity=".7"/>` : '';
     const n = node(`left:${cx - bx}px;top:${cy - by}px;width:${S}px;height:${S}px;opacity:0;transform-origin:${bx}px ${by}px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))`, 'giftbit', `<svg viewBox="0 0 ${S} ${S}" width="100%" height="100%"><defs><radialGradient id="${uid}" gradientUnits="userSpaceOnUse" cx="${bx}" cy="${by}" r="${R * 1.5}"><stop offset="0" stop-color="${lit}"/><stop offset=".55" stop-color="${color}"/><stop offset="1" stop-color="${dark}"/></radialGradient></defs><g fill="url(#${uid})"><path d="${d}Z"/>${arms}${drips}${drops}</g>${tom}${seedArt}<ellipse cx="${bx - R * 0.28}" cy="${by - R * 0.32}" rx="${R * 0.3}" ry="${R * 0.13}" fill="#fff" opacity=".4" transform="rotate(-30 ${bx - R * 0.28} ${by - R * 0.32})"/><ellipse cx="${bx + R * 0.34}" cy="${by + R * 0.12}" rx="${R * 0.1}" ry="${R * 0.05}" fill="#fff" opacity=".3" transform="rotate(-30 ${bx + R * 0.34} ${by + R * 0.12})"/>${cherryArt}</svg>`);
-    anim(n, [{ opacity: 0, transform: 'scale(.2)' }, { opacity: 1, transform: 'scale(1.12)', offset: 0.12 }, { opacity: 1, transform: 'scale(1)', offset: 0.2 }, { opacity: 1, transform: `translateY(${R * 0.1}px) scale(1.02)`, offset: 0.7 }, { opacity: 0, transform: `translateY(${R * 0.3}px) scale(1.03)` }], { duration: 2600, delay, fill: 'forwards' });
+    anim(n, [{ opacity: 0, transform: 'scale(1.5,.5)' }, { opacity: 1, transform: 'scale(1.3,.75)', offset: 0.05 }, { opacity: 1, transform: 'scale(.88,1.14)', offset: 0.13 }, { opacity: 1, transform: 'scale(1.06,.96)', offset: 0.2 }, { opacity: 1, transform: 'scale(.98,1.02)', offset: 0.27 }, { opacity: 1, transform: `translateY(${R * 0.12}px) scale(1)`, offset: 0.7 }, { opacity: 0, transform: `translateY(${R * 0.4}px) scale(1.02,1.06)` }], { duration: 2700, delay, fill: 'forwards' });
+    if (tomato) for (let i = 0; i < 7; i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(260, 560), g: 1100, life: rnd(700, 1200), w: R * 0.16, h: R * 0.09, color: pick(['#e8301f', '#ff5a47', '#b81c14']), round: false, spin: rnd(-600, 600), end: 0.5, delay });
+    else for (let i = 0; i < 8; i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(200, 480), g: 1100, life: rnd(700, 1200), size: R * rnd(0.1, 0.18), color: pick(['#fff1d0', '#ffffff', '#f6dcaa']), end: 0.7, delay });
     for (let i = 0; i < 12; i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(220, 620), g: 1400, life: rnd(600, 1100), size: rnd(4, 10), color: i % 4 ? color : dark, end: 0.6, delay });
     keepFor(2800 + delay);
   };
@@ -2048,17 +2060,26 @@ function playGift(g) {
     fly(fromX, fromY, tx, ty, { size: 70, dur: 640, spin: 520, grow: toMe ? 2.6 : 1.6 }, () => { splat('#e8352e', '#a81818', 'SPLAT!', { seeds: true }); });
   } else if (kind === 'splat' && g.item === 'pie') {
     fly(fromX, fromY, tx, ty, { size: 76, dur: 700, spin: 300, grow: toMe ? 2.6 : 1.6 }, () => { splat('#fff1d0', '#e0b872', 'PLOP!', { cherry: true }); });
-  } else if (g.item === 'snowball') {
-    fly(fromX, fromY, tx, ty, { size: 64, dur: 620, spin: 700, grow: toMe ? 2.4 : 1.5, ghosts: 3 }, () => {
-      SND.play('splat'); if (toMe) shake(260);
-      glowAt(tx, ty, '#ffffff', toMe ? 300 : 240, 800); ring(tx, ty, '#dff3ff', toMe ? 170 : 140, 700, 5);
-      for (let i = 0; i < 26; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(160, 560), g: 600, life: rnd(900, 1500), size: rnd(6, 14), color: pick(['#fff', '#eaf6ff', '#bfe4ff']), end: 0.3 });
-      for (let i = 0; i < 9; i++) part(tx, ty, { ang: rnd(-Math.PI, 0), spd: rnd(220, 520), g: 1100, life: 1100, w: 8, h: 18, color: '#9fd8ff', round: false, spin: rnd(-400, 400) });
-      pop(tx, ty - 20, 'BRRR!', '#4fa8ff', toMe ? 64 : 46, 6);
-      // frost creeping in from the edges, then melting away
-      const fr = node('left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;box-shadow:inset 0 0 60px 20px rgba(225,245,255,.9), inset 0 0 140px 50px rgba(150,205,255,.45)', 'giftbit');
-      anim(fr, [{ opacity: 0 }, { opacity: toMe ? 0.5 : 0.3, offset: 0.2 }, { opacity: toMe ? 0.4 : 0.22, offset: 0.6 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' });
-      for (let i = 0; i < 28; i++) { const x = rnd(0, W), sz = rnd(5, 12), sw = rnd(20, 60); const f = node(`width:${sz}px;height:${sz}px;border-radius:50%;background:#fff;opacity:0;box-shadow:0 0 6px #cfeaff`, 'giftbit'); anim(f, [{ transform: `translate(${x}px,-20px)`, opacity: 0.95 }, { transform: `translate(${x + sw}px,${H * 0.35}px)`, opacity: 0.95, offset: 0.4 }, { transform: `translate(${x - sw}px,${H * 0.7}px)`, opacity: 0.9, offset: 0.75 }, { transform: `translate(${x + sw / 2}px,${H + 20}px)`, opacity: 0 }], { duration: rnd(2200, 3200), delay: rnd(0, 500), fill: 'forwards' }); }
+  } else if (g.item === 'snowball') {   // a packed snowball: powdery impact, ice shards, sparkles, drifting flakes
+    // a trail of snow puffs behind it as it flies
+    for (let i = 0; i < 9; i++) { const k = i / 9; later(k * 600, () => { const px = fromX + (tx - fromX) * k, py = fromY + (ty - fromY) * k - Math.sin(k * 3.14) * H * 0.2; part(px, py, { ang: rnd(0, 6.28), spd: rnd(20, 90), g: 80, life: rnd(500, 800), size: rnd(8, 16), color: 'rgba(240,248,255,.8)', end: 1.8 }); }); }
+    fly(fromX, fromY, tx, ty, { size: 64, dur: 620, spin: 700, grow: toMe ? 2.2 : 1.5, ghosts: 3 }, () => {
+      SND.play('splat'); if (toMe) shake(240);
+      // the powder puff: soft white clouds blooming from the impact
+      for (let i = 0; i < 6; i++) { const sz = (toMe ? 160 : 120) * rnd(0.6, 1), ox = rnd(-30, 30), oy = rnd(-24, 24); const pf = node(`left:${tx + ox - sz / 2}px;top:${ty + oy - sz / 2}px;width:${sz}px;height:${sz}px;border-radius:50%;background:radial-gradient(circle, #fff 0, rgba(255,255,255,.9) 40%, rgba(220,240,255,0) 70%);opacity:0`, 'giftbit'); anim(pf, [{ transform: 'scale(.2)', opacity: 0 }, { transform: 'scale(.9)', opacity: 1, offset: 0.25 }, { transform: `translate(${ox * 0.5}px,${-20 - i * 6}px) scale(1.4)`, opacity: 0 }], { duration: 1300 + i * 80, delay: i * 40, easing: 'ease-out', fill: 'forwards' }); }
+      ring(tx, ty, '#dff3ff', toMe ? 170 : 140, 700, 5); ring(tx, ty, '#bfe4ff', toMe ? 110 : 90, 600, 3, 80);
+      // ice shards: little diamonds that tumble out
+      for (let i = 0; i < 14; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(240, 640), g: 900, life: rnd(800, 1300), w: 7, h: 15, color: pick(['#d6f0ff', '#9fd8ff', '#ffffff']), round: false, spin: rnd(-720, 720), end: 0.4, glow: true });
+      for (let i = 0; i < 20; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(120, 420), g: 400, life: rnd(1000, 1600), size: rnd(4, 9), color: '#fff', end: 0.2, glow: true });
+      // sparkle stars twinkling around the hit
+      for (let i = 0; i < 6; i++) { const a2 = rnd(0, 6.28), rr = rnd(40, 110), sx = tx + Math.cos(a2) * rr, sy = ty + Math.sin(a2) * rr, sz = rnd(16, 30); const st = node(`left:${sx - sz / 2}px;top:${sy - sz / 2}px;width:${sz}px;height:${sz}px;opacity:0`, 'giftbit', '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M12 1l2.600 8.400L23 12l-8.400 2.600L12 23l-2.600-8.400L1 12l8.400-2.600z" fill="#fff"/></svg>'); anim(st, [{ transform: 'scale(0) rotate(0deg)', opacity: 0 }, { transform: 'scale(1.1) rotate(45deg)', opacity: 1, offset: 0.35 }, { transform: 'scale(0) rotate(90deg)', opacity: 0 }], { duration: 900, delay: 120 + i * 90, fill: 'forwards' }); }
+      // BRRR! that shivers
+      const w = node(`left:${tx}px;top:${ty - 90}px;font:900 ${toMe ? 56 : 42}px/1 Inter,system-ui,sans-serif;color:#7fc8ff;-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.25);opacity:0;white-space:nowrap`, 'giftbit'); w.textContent = 'BRRR!';
+      anim(w, [{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1, offset: 0.15 }, ...Array.from({ length: 10 }, (_, i) => ({ transform: `translate(calc(-50% + ${i % 2 ? 4 : -4}px),-50%) scale(1)`, opacity: 1, offset: 0.2 + i * 0.05 })), { transform: 'translate(-50%,-90%) scale(1)', opacity: 0 }], { duration: 1700, fill: 'forwards' });
+      // a light frost on the screen edges that melts away, and real snowflakes drifting down
+      const fr = node('left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;box-shadow:inset 0 0 50px 16px rgba(225,245,255,.85), inset 0 0 120px 40px rgba(150,205,255,.4)', 'giftbit');
+      anim(fr, [{ opacity: 0 }, { opacity: toMe ? 0.45 : 0.28, offset: 0.2 }, { opacity: toMe ? 0.35 : 0.2, offset: 0.6 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' });
+      for (let i = 0; i < 22; i++) { const x = rnd(0, W), sz = rnd(14, 26), sw = rnd(20, 60); const f = node(`width:${sz}px;height:${sz}px;opacity:0`, 'giftbit', SNOWFLAKE); anim(f, [{ transform: `translate(${x}px,-30px) rotate(0deg)`, opacity: 0.95 }, { transform: `translate(${x + sw}px,${H * 0.35}px) rotate(120deg)`, opacity: 0.95, offset: 0.4 }, { transform: `translate(${x - sw}px,${H * 0.7}px) rotate(240deg)`, opacity: 0.9, offset: 0.75 }, { transform: `translate(${x + sw / 2}px,${H + 20}px) rotate(360deg)`, opacity: 0 }], { duration: rnd(2400, 3400), delay: rnd(0, 500), fill: 'forwards' }); }
       keepFor(3800);
     });
   } else if (kind === 'petals') {   // a bouquet fountain: roses shoot up, burst into petals, hearts float up
@@ -2074,6 +2095,8 @@ function playGift(g) {
       });
     }
     for (let i = 0; i < 12; i++) { const x = rnd(0.05, 0.95) * W, sz = rnd(22, 40), hh = el('span', { class: 'giftbit' }, giftEl('heart', sz)); fx.append(hh); anim(hh, [{ transform: `translate(${x}px,${H + 30}px) scale(.5)`, opacity: 0 }, { transform: `translate(${x + 30}px,${H * 0.7}px) scale(1)`, opacity: 1, offset: 0.2 }, { transform: `translate(${x - 30}px,${H * 0.35}px) scale(1.05)`, opacity: 1, offset: 0.6 }, { transform: `translate(${x + 20}px,${-40}px) scale(1.1)`, opacity: 0 }], { duration: rnd(2200, 3200), delay: 500 + i * 130, fill: 'forwards' }); }
+    later(900, () => { glowAt(W / 2, H * 0.4, '#ff6b9a', toMe ? 520 : 380, 1500); shapeBurst(W / 2, H * 0.36, toMe ? 1.1 : 0.9, ['#ff4d8d', '#ff8fb8', '#ffd0e0', '#fff'], 'heart', 44, 1900); SND.play('chime'); });
+    for (let i = 0; i < 14; i++) { const sx = rnd(0.05, 0.95) * W, sy = rnd(0.15, 0.85) * H, sz = rnd(12, 22); const st = node(`left:${sx - sz / 2}px;top:${sy - sz / 2}px;width:${sz}px;height:${sz}px;opacity:0`, 'giftbit', '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M12 1l2.600 8.400L23 12l-8.400 2.600L12 23l-2.600-8.400L1 12l8.400-2.600z" fill="#ffd0e8"/></svg>'); anim(st, [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1) rotate(30deg)', opacity: 1, offset: 0.4 }, { transform: 'scale(0)', opacity: 0 }], { duration: 1000, delay: 400 + i * 160, fill: 'forwards' }); }
     if (toMe) { const big = node(`left:${W / 2 - 80}px;top:${H * 0.38 - 80}px;width:160px;height:160px;opacity:0`, 'giftbit'); big.append(giftEl('heart', 160)); anim(big, [{ transform: 'scale(.1)', opacity: 0 }, { transform: 'scale(1.2)', opacity: 1, offset: 0.3 }, { transform: 'scale(1)', opacity: 1, offset: 0.55 }, { transform: 'scale(1.4)', opacity: 0 }], { duration: 1600, delay: 700, fill: 'forwards' }); }
     keepFor(4600);
   } else if (kind === 'confetti') {   // party cannons from both bottom corners, ribbons, and a confetti rain
@@ -2087,6 +2110,15 @@ function playGift(g) {
       });
       later(260, () => { SND.play('pop'); burstConfetti(); });
       later(560, () => SND.play('chime'));
+      // balloons floating up with a sway, each with a highlight and a string
+      const bcols = ['#ff5a8a', '#4fb4ff', '#ffd23f', '#7be08f', '#b77bff', '#ff8a1f'];
+      for (let i = 0; i < 8; i++) {
+        const bx2 = W * (0.08 + (0.84 * i) / 7) + rnd(-18, 18), bw = rnd(46, 64), c = bcols[i % bcols.length], dur = rnd(2800, 3800), sw = rnd(14, 28);
+        const bl = node(`left:0;top:0;width:${bw}px;height:${bw * 1.5}px;opacity:0`, 'giftbit', `<svg viewBox="0 0 40 60" width="100%" height="100%"><path d="M20 58q-3 0-1 -4h2q2 4-1 4z" fill="${c}"/><path d="M20 56q-4 4 0 8-4 4 0 8" stroke="#fff" stroke-width="1" fill="none" opacity=".7"/><ellipse cx="20" cy="22" rx="17" ry="21" fill="${c}"/><ellipse cx="13" cy="13" rx="4.500" ry="7" fill="#fff" opacity=".45" transform="rotate(25 13 13)"/><path d="M17 43l3 4 3-4z" fill="${c}"/></svg>`);
+        anim(bl, [{ transform: `translate(${bx2}px,${H + 60}px) rotate(-4deg)`, opacity: 1 }, { transform: `translate(${bx2 + sw}px,${H * 0.6}px) rotate(5deg)`, opacity: 1, offset: 0.35 }, { transform: `translate(${bx2 - sw}px,${H * 0.3}px) rotate(-5deg)`, opacity: 1, offset: 0.7 }, { transform: `translate(${bx2 + sw / 2}px,${-bw * 2}px) rotate(3deg)`, opacity: 1 }], { duration: dur, delay: 200 + i * 140, easing: 'ease-in-out', fill: 'forwards' }); keepFor(dur + 1600);
+      }
+      // glitter twinkles
+      for (let i = 0; i < 22; i++) { const gx = rnd(0, W), gy = rnd(0, H * 0.8), gs = rnd(8, 16); const gl = node(`left:${gx - gs / 2}px;top:${gy - gs / 2}px;width:${gs}px;height:${gs}px;opacity:0`, 'giftbit', `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M12 1l2.600 8.400L23 12l-8.400 2.600L12 23l-2.600-8.400L1 12l8.400-2.600z" fill="${pick(cols)}"/></svg>`); anim(gl, [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1) rotate(45deg)', opacity: 1, offset: 0.4 }, { transform: 'scale(0)', opacity: 0 }], { duration: 800, delay: 300 + rnd(0, 2200), fill: 'forwards' }); }
       keepFor(3600);
     });
   } else if (kind === 'rocket') {   // ignition on the pad, a wobbling climb with flame and smoke, then a firework finale
@@ -2180,7 +2212,11 @@ function playGift(g) {
         });
       });
     }
-    keepFor(shells * 380 + 3000);
+    // two picture shells to close: a heart, then a star, with a spark fountain at the bottom the whole time
+    later(shells * 380 + 150, () => { SND.play('whistle'); later(500, () => { SND.play('pop'); glowAt(W * 0.35, H * 0.3, '#ff4d8d', 320, 800); shapeBurst(W * 0.35, H * 0.3, 1.25, ['#ff4d8d', '#ff8fb8', '#fff'], 'heart', 52, 1900); }); });
+    later(shells * 380 + 700, () => { SND.play('whistle'); later(500, () => { SND.play('pop'); glowAt(W * 0.66, H * 0.26, '#ffd23f', 320, 800); shapeBurst(W * 0.66, H * 0.26, 1.25, ['#ffd23f', '#fff3c0', '#ff9a1f'], 'star', 50, 1900); }); });
+    for (let i = 0; i < 60; i++) later(i * 70, () => part(W / 2 + rnd(-30, 30), H - 10, { ang: -Math.PI / 2 + rnd(-0.5, 0.5), spd: rnd(380, 640), g: 900, life: rnd(700, 1100), size: rnd(3, 6), color: pick(['#ffd23f', '#ff9a1f', '#fff3c0']), end: 0.2, glow: true }));
+    keepFor(shells * 380 + 4200);
   } else {
     fly(fromX, fromY, tx, ty, { size: 64 }, () => { SND.play('pop'); burstConfetti(); });
   }
