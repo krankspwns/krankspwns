@@ -38,7 +38,7 @@ async function redis(cmd) {
 
 // Many phones poll the same room: share one Redis read between polls that land on the same server within a moment.
 const roomCache = (globalThis.__roomCache = globalThis.__roomCache || new Map());
-async function loadRoomCached(code, maxAge = 350) {
+async function loadRoomCached(code, maxAge = 700) {
   const c = roomCache.get(code);
   if (c && Date.now() - c.at < maxAge) return JSON.parse(c.json);
   const room = await loadRoom(code);
@@ -291,6 +291,7 @@ async function readPresence(code) {
     return o;
   } catch { return {}; }
 }
+const hostFull = (globalThis.__hostFull = globalThis.__hostFull || new Map());
 const OFFLINE_AFTER_MS = 45000;
 // only the host gets the presence info (it is what the kick button is for)
 async function viewFor(room, pid, cn) {
@@ -419,7 +420,13 @@ async function handle(action, b, query) {
   switch (action) {
     case 'state':
       // nothing new for a non-host: a tiny reply keeps slow connections quick
-      if (query.v && Number(query.v) === room.version && room.hostId !== pid) return { same: true, version: room.version, now: Date.now() };
+      if (query.v && Number(query.v) === room.version) {
+        // the host also needs fresh online/offline marks, so it gets the full view only every 10 s; in between it can take the tiny reply too
+        if (room.hostId !== pid) return { same: true, version: room.version, now: Date.now() };
+        const hk = code + ':host', last = hostFull.get(hk) || 0;
+        if (Date.now() - last < 10000) return { same: true, version: room.version, now: Date.now() };
+        hostFull.set(hk, Date.now());
+      }
       return viewFor(room, pid, cnOf);
 
     case 'deal': {
