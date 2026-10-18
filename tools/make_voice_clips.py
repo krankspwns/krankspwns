@@ -17,7 +17,7 @@ def say(text,sid,speed,last=True):
     lo=np.where(np.abs(x)>0.03*m)[0][0]                              # keep the soft first consonant (the F in Faster)
     hi=np.where(np.abs(x)>(0.04 if last else 0.12)*m)[0][-1]        # cut the long fade-out only where another part follows
     return x[max(0,lo-int(.005*a.sample_rate)):hi+int(.01*a.sample_rate)], a.sample_rate
-def dip(x,sr,start=262,low=205,end=335):
+def dip(x,sr,start=262,low=205,end=335,stretch=1.75):
     """Give a voiced sound the Mandarin third tone (falling-rising, 214): the pitch goes down to a low point, then climbs."""
     import parselmouth
     from parselmouth.praat import call
@@ -30,6 +30,9 @@ def dip(x,sr,start=262,low=205,end=335):
     call(tier,'Remove points between',t0-0.0001,t1+0.0001)
     call(tier,'Add point',t0,start); call(tier,'Add point',t0+0.42*(t1-t0),low); call(tier,'Add point',t1,end)
     call([manip,tier],'Replace pitch tier')
+    dur=call(manip,'Extract duration tier')
+    call(dur,'Add point',t0-0.001,1.0); call(dur,'Add point',t0,stretch); call(dur,'Add point',t1,stretch); call(dur,'Add point',t1+0.001,1.0)   # drag the vowel out: yoooo
+    call([manip,dur],'Replace duration tier')
     return np.array(call(manip,'Get resynthesis (overlap-add)').values[0],dtype=np.float32)
 def join(pieces,sr):
     n=int(OVERLAP*sr); x=pieces[0]

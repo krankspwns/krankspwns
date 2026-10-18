@@ -883,6 +883,18 @@ const SND = (() => {
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(fl); fl.connect(g); g.connect(bus); src.start(t, Math.random() * 1.5); src.stop(t + dur + 0.05);
   }
+  // a voice-like vowel: a buzzing source shaped by two resonances (formants)
+  function vowel({ f = 220, f2 = null, at = 0, dur = 0.12, vol = 0.2, a = 800, b = 1300, attack = 0.012, bus = sfxBus }) {
+    const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    [[a, 1], [b, 0.6]].forEach(([fc, gain]) => { const bp = ctx.createBiquadFilter(), gg = ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = fc; bp.Q.value = 6; gg.gain.value = gain; o.connect(bp); bp.connect(gg); gg.connect(g); });
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(bus); o.start(t); o.stop(t + dur + 0.05);
+  }
+  // a soft bell: the note plus two quieter overtones that die away faster
+  function bell({ f = 880, at = 0, dur = 0.6, vol = 0.1, bus = sfxBus }) {
+    tone({ f, at, dur, vol, type: 'sine', bus }); tone({ f: f * 2.01, at, dur: dur * 0.6, vol: vol * 0.35, type: 'sine', bus }); tone({ f: f * 3.02, at, dur: dur * 0.3, vol: vol * 0.15, type: 'sine', bus });
+  }
   const rnd = (a, b) => a + Math.random() * (b - a);
 
   // sound effects
@@ -912,7 +924,13 @@ const SND = (() => {
       tone({ f: 90, f2: 55, at: 0.05, dur: 0.35, vol: 0.18, type: 'sawtooth', lp: 400 });
     },
     // one little sound for every reaction
-    emo_laugh: () => [0, 0.13, 0.26, 0.39].forEach((at, i) => tone({ f: 520 - i * 35, f2: 420 - i * 30, at, dur: 0.1, vol: 0.09, type: 'square', lp: 1600 })),
+    emo_laugh: () => {   // ha-ha-ha-ha-ha: breathy bursts on an 'a' vowel that sag in pitch and fade
+      [0, 0.12, 0.24, 0.36, 0.48].forEach((at, i) => {
+        noise({ at, dur: 0.035, vol: 0.1, type: 'bandpass', f: 2600, q: 1.5 });
+        vowel({ f: 330 - i * 14, f2: 290 - i * 16, at: at + 0.012, dur: 0.1, vol: 1.1 - i * 0.14, a: 780, b: 1250 });
+      });
+      vowel({ f: 250, f2: 200, at: 0.62, dur: 0.22, vol: 0.3, a: 700, b: 1100, attack: 0.05 });
+    },
     emo_wow: () => { tone({ f: 260, f2: 980, dur: 0.38, vol: 0.2, type: 'sine' }); tone({ f: 520, f2: 1960, at: 0.02, dur: 0.34, vol: 0.08, type: 'triangle' }); },
     emo_cry: () => [[620, 480], [540, 360]].forEach(([a, b], i) => { tone({ f: a, f2: b, at: i * 0.32, dur: 0.3, vol: 0.09, type: 'sine' }); tone({ f: a * 1.01, f2: b * 1.01, at: i * 0.32 + 0.02, dur: 0.3, vol: 0.05, type: 'sine' }); }),
     emo_cool: () => { tone({ f: 330, f2: 392, dur: 0.18, vol: 0.1, type: 'triangle', lp: 1500 }); tone({ f: 494, at: 0.18, dur: 0.38, vol: 0.1, type: 'triangle', lp: 1500 }); },
@@ -924,7 +942,11 @@ const SND = (() => {
     emo_rip: () => { [196, 185, 175, 147].forEach((f, i) => tone({ f, f2: f * (i === 3 ? 0.9 : 1), at: i * 0.2, dur: i === 3 ? 0.5 : 0.18, vol: 0.1, type: 'sawtooth', lp: 700 })); },
     emo_angry: () => { tone({ f: 95, f2: 70, dur: 0.5, vol: 0.22, type: 'sawtooth', lp: 500 }); noise({ dur: 0.45, vol: 0.16, type: 'lowpass', f: 700 }); for (let i = 0; i < 6; i++) tone({ f: 190, at: i * 0.07, dur: 0.05, vol: 0.09, type: 'square', lp: 500 }); },
     emo_think: () => { tone({ f: 220, f2: 232, dur: 0.5, vol: 0.14, type: 'sine' }); tone({ f: 330, f2: 392, at: 0.5, dur: 0.22, vol: 0.13, type: 'triangle' }); },
-    emo_heart: () => [0, 0.17].forEach((at) => { tone({ f: 120, f2: 60, at, dur: 0.14, vol: 0.2, type: 'sine' }); tone({ f: 880, at: at + 0.02, dur: 0.1, vol: 0.03 }); }),
+    emo_heart: () => {   // lub-dub, then a warm little music-box phrase
+      [0, 0.15].forEach((at) => { tone({ f: 110, f2: 55, at, dur: 0.16, vol: 0.22, type: 'sine' }); });
+      [659, 784, 988, 1319].forEach((f, i) => bell({ f, at: 0.38 + i * 0.11, dur: i === 3 ? 0.9 : 0.5, vol: 0.075 }));
+      tone({ f: 330, at: 0.38, dur: 0.9, vol: 0.05, type: 'triangle', lp: 900 });
+    },
     emo_trophy: () => [523, 659, 784, 1047].forEach((f, i) => tone({ f, at: i * 0.11, dur: i === 3 ? 0.5 : 0.14, vol: 0.09, type: 'square', lp: 2200 })),
     emo_oof: () => { tone({ f: 220, f2: 70, dur: 0.22, vol: 0.32, type: 'triangle' }); noise({ dur: 0.1, vol: 0.22, type: 'lowpass', f: 600 }); },
     emo_faster: () => [0, 0.16, 0.3, 0.41, 0.5, 0.58, 0.65].forEach((at) => tone({ f: 1500, at, dur: 0.04, vol: 0.07, type: 'square', lp: 2600 })),
