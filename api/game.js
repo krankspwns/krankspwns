@@ -399,7 +399,7 @@ async function handle(action, b, query) {
   }
 
   const code = String(b.code || query.code || '').toUpperCase();
-  let room = action === 'state' ? await loadRoomCached(code) : await loadRoom(code);
+  let room = action === 'state' ? await loadRoomCached(code, query.f ? 0 : 700) : await loadRoom(code);
   need(room, 404, 'Room not found');
   if (room.deadline && Date.now() >= room.deadline && room.phase === 'dealt') {   // time is up: arrange the stragglers' cards
     if (action === 'state') room = await loadRoom(code);

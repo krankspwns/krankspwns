@@ -1026,8 +1026,24 @@ const SND = (() => {
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch {}
     try { navigator.audioSession && (navigator.audioSession.type = 'auto'); } catch {}
   };
+  // iOS/Android can leave a context stuck in 'suspended'/'interrupted' after another app had the speaker: if resume() doesn't take, build a fresh one
+  let reviveT = null;
+  function revive() {
+    if (mode === 0 || !ctx) return;
+    clearTimeout(reviveT);
+    try { ctx.resume().catch(() => {}); } catch {}
+    reviveT = setTimeout(() => {
+      if (!ctx || ctx.state === 'running' || document.hidden) return;
+      const old = ctx, wasMusic = !!musicTimer;
+      try { clearInterval(musicTimer); } catch {} musicTimer = null;
+      ctx = null;
+      try { old.close().catch(() => {}); } catch {}
+      if (ensure() && wasMusic) applyMode();
+    }, 350);
+  }
   const wake = () => {
     if (mode === 0) return;
+    revive();
     try { navigator.audioSession && (navigator.audioSession.type = 'playback'); } catch {}
     try { ctx && ctx.resume().catch(() => {}); } catch {}
     try { keepAlive && keepAlive.play().catch(() => {}); } catch {}
@@ -1036,7 +1052,7 @@ const SND = (() => {
   window.addEventListener('pagehide', quiet);
   window.addEventListener('pageshow', wake);
   // every tap is a chance to wake the engine again if the browser put it to sleep
-  ['touchend', 'click', 'pointerup'].forEach((ev) => window.addEventListener(ev, () => { if (mode > 0 && ctx && ctx.state !== 'running') ctx.resume().catch(() => {}); }, true));
+  ['touchend', 'click', 'pointerup'].forEach((ev) => window.addEventListener(ev, () => { if (mode > 0 && ctx && ctx.state !== 'running') revive(); }, true));
 
   return {
     play(name) {
@@ -3136,12 +3152,12 @@ function setConn(down) {
     document.body.append(bar);
   } else if (!down && has) has.remove();
 }
-async function poll(force = false) {
+async function poll(force = false, fresh = false) {
   if (!session) return;
   const t0 = Date.now();
   try {
     const mine = session;
-    const r = await fetch(`/api/game?code=${mine.code}&pid=${mine.pid}&cn=${chatHave}${!force && st && st.version ? '&v=' + st.version : ''}`);
+    const r = await fetch(`/api/game?code=${mine.code}&pid=${mine.pid}&cn=${chatHave}${!force && st && st.version ? '&v=' + st.version : ''}${fresh ? '&f=1' : ''}`);
     const j = await r.json();
     if (session !== mine) return;   // we left (or switched rooms) while this was in flight
     if (r.status === 404) return dropSession(/not in this room/i.test(j.error || '') ? 'You were removed from the room by the host' : 'Room no longer available');
@@ -3181,11 +3197,18 @@ window.addEventListener('pageshow', () => { if (session) resync(); });
 let seenVer = null, seenAt = Date.now();
 const idleFor = () => { if (st && st.version !== seenVer) { seenVer = st.version; seenAt = Date.now(); } return Date.now() - seenAt; };
 // nothing has changed for a while (everyone is thinking): ease off so the radio can sleep; any change snaps back to full speed
-const pollDelay = () => { if (rtLive && !document.hidden && !connFails) return st && st.phase === 'dealt' && !st.allReady ? 12000 : 20000; const base = document.hidden ? 15000 : connFails ? 2000 : document.querySelector('.chat-ov') ? 1000 : st && st.phase === 'lobby' ? 3000 : st && st.allReady ? 1000 : st && st.phase === 'dealt' ? 1800 : 1200; const idle = idleFor(); return document.hidden || connFails || st && st.allReady || document.querySelector('.chat-ov') ? base : idle > 60000 ? Math.max(base, 3500) : idle > 20000 ? Math.max(base, 2000) : base; };
+const pollDelay = () => { if (rtLive && !document.hidden && !connFails) return st && st.allReady ? 2500 : st && st.phase === 'dealt' ? 8000 : 15000; const base = document.hidden ? 15000 : connFails ? 2000 : document.querySelector('.chat-ov') ? 1000 : st && st.phase === 'lobby' ? 3000 : st && st.allReady ? 1000 : st && st.phase === 'dealt' ? 1800 : 1200; const idle = idleFor(); return document.hidden || connFails || st && st.allReady || document.querySelector('.chat-ov') ? base : idle > 60000 ? Math.max(base, 3500) : idle > 20000 ? Math.max(base, 2000) : base; };
 // low battery or Data Saver: quietly switch the decorative animations off
 try { const sv = () => document.body.classList.toggle('autocalm', !!(navigator.connection && navigator.connection.saveData)); sv(); if (navigator.getBattery) navigator.getBattery().then((b) => { const f = () => document.body.classList.toggle('autocalm', (!b.charging && b.level <= 0.2) || !!(navigator.connection && navigator.connection.saveData)); f(); b.addEventListener('levelchange', f); b.addEventListener('chargingchange', f); }); } catch (e) {}
 // push channel: the server announces each new room version, so the polling below only has to be a slow safety net while it is connected
-let rtES = null, rtLive = false, rtFor = '', rtRetry = null;
+let rtES = null, rtLive = false, rtFor = '', rtRetry = null, rtWant = 0, rtBusy = false;
+// fetch right now, skipping the server's short read cache, and ask again if what came back is older than what was announced
+async function rtFetch(n) {
+  if (rtBusy) return; rtBusy = true; clearTimeout(timer);
+  try { await poll(false, true); } finally { rtBusy = false; }
+  if (session && st && st.version < rtWant && n < 6) return void setTimeout(() => rtFetch(n + 1), 250 + n * 150);
+  if (session) startPolling();
+}
 function rtClose() { clearTimeout(rtRetry); if (rtES) { rtES.close(); rtES = null; } rtLive = false; }
 async function rtOpen() {
   if (!session || document.hidden || !window.EventSource || (rtES && rtFor === session.code)) return;
@@ -3197,7 +3220,11 @@ async function rtOpen() {
     rtFor = code;
     const es = rtES = new EventSource(j.rt.url);
     es.onopen = () => { rtLive = true; };
-    es.onmessage = () => { if (!session) return rtClose(); clearTimeout(timer); poll().then(() => { if (session) startPolling(); }); };
+    es.onmessage = (e) => {
+      if (!session) return rtClose();
+      let v = 0; try { const m = JSON.parse(e.data); v = Number(typeof m.data === 'string' && m.data[0] !== '{' ? m.data : m.data && m.data.v) || 0; } catch {}
+      rtWant = Math.max(rtWant, v); rtFetch(0);
+    };
     es.onerror = () => { rtLive = false; if (es.readyState === 2) { rtClose(); rtRetry = setTimeout(rtOpen, 15000); } };
   } catch { rtRetry = setTimeout(rtOpen, 30000); }
 }
