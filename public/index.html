@@ -1901,7 +1901,7 @@ function renderShop() {
     items = GIFT_KEYS.map((k) => {
       const left = w.gifts[k] || 0;
       return card(left > 0, giftEl(k, 60), t('gift_' + k), left > 0 ? t('giftLeft', { n: left }) : t('shopUses', { n: pr.uses, p: pr.gift[k] }),
-        left > 0 ? el('div', { class: 'btnrow' }, el('button', { type: 'button', class: 'ghost', onclick: () => { ov.close(); openGiftTray(k); } }, t('giftThrowNow')), buy('gift', k, pr.gift[k], t('shopBuyMore', { n: pr.gift[k] }))) : buy('gift', k, pr.gift[k]), 'gift:' + k);
+        left > 0 ? el('div', { class: 'btnrow' }, buy('gift', k, pr.gift[k], t('shopBuyMore', { n: pr.gift[k] })), el('button', { type: 'button', class: 'ghost', onclick: () => { ov.close(); openGiftTray(k); } }, t('giftThrowNow'))) : buy('gift', k, pr.gift[k]), 'gift:' + k);
     });
   }
   const tabs = el('div', { class: 'shoptabs', role: 'tablist' }, ...[['acc', t('shopTabAcc')], ['av', t('shopTabAv')], ['bd', t('shopTabBd')], ['gift', t('shopTabGift')]].map(([k, label]) => el('button', { type: 'button', role: 'tab', class: k === shopTab ? 'on' : '', 'aria-selected': String(k === shopTab), onclick: () => { shopTab = k; renderShop(); } }, label)));
