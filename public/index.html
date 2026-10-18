@@ -20,8 +20,8 @@
   /* colour schemes (chosen in Settings, kept on this phone) */
   html[data-theme=emerald] { --bg1:#15402f; --bg2:#0b261b; --bg3:#06150e; --text:#f4efd9; --gold:#e0b45a; --gold-hi:#f3dca0; --gold-lo:#9a7a35; --gold-rgb:224,180,90; --glow2:40,170,115; --panel:14,42,31; --panel-hi:22,60,45; --panel-lo:9,29,21; --deep:7,23,16; }
   html[data-theme=royal] { --bg1:#34215f; --bg2:#1c1238; --bg3:#0d0820; --text:#f8eef6; --gold:#ff8fb8; --gold-hi:#ffc6dc; --gold-lo:#b55a80; --gold-rgb:255,143,184; --glow2:130,90,235; --panel:34,22,66; --panel-hi:50,34,96; --panel-lo:22,14,46; --deep:15,10,36; }
-  html[data-theme=crimson] { --bg1:#45182a; --bg2:#270c17; --bg3:#130609; --text:#f8ecec; --gold:#5fd4c2; --gold-hi:#b5f0e6; --gold-lo:#348a7d; --gold-rgb:95,212,194; --glow2:225,60,95; --panel:48,18,30; --panel-hi:70,28,44; --panel-lo:31,11,19; --deep:23,8,14; }
-  html[data-theme=ocean] { --bg1:#0f3b54; --bg2:#082335; --bg3:#040f18; --text:#eef7fa; --gold:#ff9a6b; --gold-hi:#ffcab0; --gold-lo:#b85f38; --gold-rgb:255,154,107; --glow2:40,155,215; --panel:10,37,54; --panel-hi:18,55,78; --panel-lo:7,25,38; --deep:5,19,30; }
+  html[data-theme=crimson] { --bg1:#45182a; --bg2:#270c17; --bg3:#130609; --text:#faeeea; --gold:#f2b49a; --gold-hi:#ffdcc8; --gold-lo:#b5705a; --gold-rgb:242,180,154; --glow2:255,115,80; --panel:48,18,30; --panel-hi:70,28,44; --panel-lo:31,11,19; --deep:23,8,14; }
+  html[data-theme=ocean] { --bg1:#0f3b54; --bg2:#082335; --bg3:#040f18; --text:#eef7fa; --gold:#7fd6ec; --gold-hi:#c6f0fa; --gold-lo:#3f93a8; --gold-rgb:127,214,236; --glow2:60,120,230; --panel:10,37,54; --panel-hi:18,55,78; --panel-lo:7,25,38; --deep:5,19,30; }
   html { background: var(--bg3); overflow-x: clip; overflow-anchor: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }   /* no double-tap zoom, no text inflation on rotate */
   body { overflow-x: clip; overflow-anchor: none; }
   * { box-sizing: border-box; }
@@ -1404,7 +1404,7 @@ function renderChat(keepScroll) {
 
 // ---- display & accessibility (kept on this phone only) ----
 const UI_DEFAULT = { fourcolor: false, text: 0, haptics: true, calm: false, voice: true, theme: 'gold' };
-const THEMES = [['gold', '#c9a96a', '#18213b'], ['emerald', '#e0b45a', '#15402f'], ['royal', '#ff8fb8', '#34215f'], ['crimson', '#5fd4c2', '#45182a'], ['ocean', '#ff9a6b', '#0f3b54']];
+const THEMES = [['gold', '#c9a96a', '#18213b'], ['emerald', '#e0b45a', '#15402f'], ['royal', '#ff8fb8', '#34215f'], ['crimson', '#f2b49a', '#45182a'], ['ocean', '#7fd6ec', '#0f3b54']];
 let ui = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('sct-ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
 function applyUi() {
   if (ui.theme && ui.theme !== 'gold' && THEMES.some((x) => x[0] === ui.theme)) document.documentElement.dataset.theme = ui.theme; else delete document.documentElement.dataset.theme;
