@@ -197,12 +197,43 @@ const post = (b) => call('POST', b, {});
   assert.equal(wv.rowResults.length, 4);
   assert.equal(wv.players.reduce((a, p) => a + p.wins, 0), 1, 'exactly one round winner');
   const winner = wv.players.find((p) => p.wins === 1);
-  assert.equal(winner.acc, 'hat', 'first win unlocks the party hat');
+  assert.equal(winner.acc, '', 'nothing is handed out automatically any more: accessories are bought');
   assert.deepEqual(wv.winners, [winner.id], 'the view says who won the round');
+  // the shop: 1 win = 10 win points; spending lowers the points but never the win count
   const loserId = wv.players.find((p) => p.wins === 0).id;
-  assert.equal((await post({ action: 'avatar', code: wr.code, pid: loserId, acc: 'crown' })).s, 403, 'locked accessory refused');
-  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: 'shades' })).s, 403, 'needs 2 wins');
-  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: '' })).j.players.find((p) => p.id === winner.id).acc, '', 'can take it off');
+  const wal = async (pid) => (await call('GET', null, { code: wr.code, pid })).j;
+  assert.equal((await wal(winner.id)).wallet.pts, 10, 'a win is worth 10 points'); assert.equal((await wal(loserId)).wallet.pts, 0);
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: loserId, kind: 'acc', key: 'hat' })).s, 402, 'cannot afford it');
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'acc', key: 'crown' })).s, 402, 'crown costs more');
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'acc', key: 'nope' })).s, 400, 'unknown item');
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: 'hat' })).s, 403, 'cannot wear what is not owned');
+  const bought = (await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'acc', key: 'hat' })).j;
+  assert.equal(bought.wallet.pts, 0, 'points go down'); assert.equal(bought.players.find((p) => p.id === winner.id).wins, 1, 'the win count does not');
+  assert.deepEqual(bought.wallet.owned.acc, ['hat']);
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'acc', key: 'hat' })).s, 409, 'already owned');
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: 'hat' })).j.players.find((p) => p.id === winner.id).acc, 'hat', 'now it can be worn');
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: '' })).j.players.find((p) => p.id === winner.id).acc, '', 'and taken off');
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, avatar: 'dragon' })).s, 403, 'special avatars must be bought');
+  // gifts: three throws per purchase, throttled, only at another player
+  const wroom2 = globalThis.__rooms.get(wr.code); wroom2.wins[winner.id] = 8;   // 80 points to play with
+  assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).s, 403, 'nothing bought yet');
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).j.wallet.gifts.tomato, 3);
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).s, 409, 'use them up before buying again');
+  assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: winner.id })).s, 400, 'not at yourself');
+  const th = (await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).j;
+  assert.equal(th.wallet.gifts.tomato, 2); assert.equal(th.gifts.length, 1); assert.equal(th.gifts[0].to, loserId);
+  const seenByLoser = (await wal(loserId)); assert.equal(seenByLoser.gifts[0].item, 'tomato', 'everyone sees the throw');
+  await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId });   // inside the 1.5 s window: ignored
+  assert.equal((await wal(winner.id)).wallet.gifts.tomato, 2, 'throttled');
+  globalThis.__rooms.get(wr.code).giftAt[winner.id] = 0;
+  await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId });
+  globalThis.__rooms.get(wr.code).giftAt[winner.id] = 0;
+  assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).j.wallet.gifts.tomato, 0, 'three throws');
+  globalThis.__rooms.get(wr.code).giftAt[winner.id] = 0;
+  assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).s, 403, 'fourth is refused');
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).j.wallet.gifts.tomato, 3, 'can rebuy once empty');
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'av', key: 'dragon' })).j.wallet.owned.av[0], 'dragon');
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, avatar: 'dragon' })).j.players.find((p) => p.id === winner.id).avatar, 'dragon', 'a bought avatar can be used');
   // chat: cleaned, limited, only new messages sent back, and the host can switch it off
   const cr = (await post({ action: 'create', name: 'CA' })).j;
   const cb2 = (await post({ action: 'join', code: cr.code, name: 'CB' })).j;

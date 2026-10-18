@@ -15,8 +15,15 @@ function pickAvatar(want, taken = []) {
   const pool = free.length ? free : AVATARS;
   return pool[crypto.randomInt(pool.length)];
 }
-// avatar accessories are unlocked by winning rounds in this room (lowest total penalty)
-const ACC_WINS = { hat: 1, shades: 2, crown: 3, headphones: 4, halo: 5, mustache: 6, horns: 8, flower: 10 };
+// ---- the shop: every round won earns win points; points are spent on accessories, special avatars and throwable gifts ----
+// Spending lowers the points, never the win count. Everything lives with the player inside the room.
+const WP_PER_WIN = 10;
+const ACC_PRICE = { hat: 10, shades: 20, mustache: 20, flower: 20, headphones: 30, horns: 30, crown: 40, halo: 50 };
+const PREMIUM = { dragon: 30, robot: 30, alien: 30, ghost: 30, wizard: 40, ninja: 40 };
+const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, pie: 15, rocket: 20, bomb: 20, fireworks: 25 };
+const GIFT_USES = 3;   // one purchase = three throws
+const balanceOf = (room, pid) => ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
+const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [] }; p.gifts = p.gifts || {}; return p; };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
 const MAX_PLAYERS = 12;
 const HAND_SIZE = 7;
@@ -268,9 +275,7 @@ function tallyWins(room) {
   room.wins = room.wins || {};
   for (const p of act) if (tot[p.id] === best) {
     room.winners.push(p.id);
-    const w = (room.wins[p.id] = (room.wins[p.id] || 0) + 1);
-    const unlocked = Object.entries(ACC_WINS).find(([, need]) => need === w);
-    if (unlocked) p.acc = unlocked[0];   // a new accessory is worn straight away
+    room.wins[p.id] = (room.wins[p.id] || 0) + 1;
   }
 }
 
@@ -345,6 +350,10 @@ function view(room, pid, seen, cn) {
     settings: settingsOf(room),
     emotes: (room.emotes || []).filter((x) => Date.now() - x.at < 8000),
     emoteN: room.emoteN || 0,
+    gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
+    giftN: room.giftN || 0,
+    wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
+    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, gift: GIFTS, uses: GIFT_USES },
     chatN: room.chatN || 0,
     winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,   // who won the round that just finished ([] = a full tie, null = not finished)
     // chat: only what this phone hasn't got yet (its last seen number comes with every request)
@@ -610,12 +619,46 @@ async function handle(action, b, query) {
     }
 
     case 'avatar':
-      if (b.avatar !== undefined) { need(AVATARS.includes(b.avatar), 400, 'Pick an animal from the list'); me.avatar = b.avatar; }
+      if (b.avatar !== undefined) { need(AVATARS.includes(b.avatar) || inventoryOf(me).owned.av.includes(b.avatar), 403, 'Buy that avatar in the shop first'); me.avatar = b.avatar; }
       if (b.acc !== undefined) {
-        need(b.acc === '' || (ACC_WINS[b.acc] && ((room.wins && room.wins[pid]) || 0) >= ACC_WINS[b.acc]), 403, 'Win more rounds to unlock that');
+        need(b.acc === '' || inventoryOf(me).owned.acc.includes(b.acc), 403, 'Buy that in the shop first');
         me.acc = b.acc;
       }
       break;
+
+    case 'buy': {
+      inventoryOf(me);
+      const kind = String(b.kind), key = String(b.key);
+      const price = kind === 'acc' ? ACC_PRICE[key] : kind === 'av' ? PREMIUM[key] : kind === 'gift' ? GIFTS[key] : undefined;
+      need(price !== undefined, 400, 'Unknown item');
+      if (kind === 'acc') need(!me.owned.acc.includes(key), 409, 'You already own that');
+      if (kind === 'av') need(!me.owned.av.includes(key), 409, 'You already own that');
+      if (kind === 'gift') need(!(me.gifts[key] > 0), 409, 'Use up the ones you have first');
+      need(balanceOf(room, pid) >= price, 402, 'Not enough win points');
+      room.spent = room.spent || {};
+      room.spent[pid] = (room.spent[pid] || 0) + price;   // the win count itself is untouched
+      if (kind === 'acc') me.owned.acc.push(key);
+      else if (kind === 'av') me.owned.av.push(key);
+      else me.gifts[key] = GIFT_USES;
+      break;
+    }
+
+    case 'throw': {
+      inventoryOf(me);
+      const key = String(b.item);
+      need(GIFTS[key] !== undefined, 400, 'Unknown item');
+      need(me.gifts[key] > 0, 403, 'You have none left');
+      const target = room.players.find((q) => q.id === String(b.target));
+      need(target && target.id !== pid, 400, 'Pick another player');
+      const now = Date.now();
+      room.giftAt = room.giftAt || {};
+      if (now - (room.giftAt[pid] || 0) < 1500) return viewFor(room, pid, cnOf);   // one throw at a time
+      room.giftAt[pid] = now;
+      me.gifts[key] -= 1;
+      room.giftN = (room.giftN || 0) + 1;
+      room.gifts = [...(room.gifts || []).filter((x) => now - x.at < 10000), { n: room.giftN, from: pid, to: target.id, item: key, at: now }].slice(-10);
+      break;
+    }
 
     case 'kick': {
       // The host removes a player (for example someone who lost their connection and can't get back in).
