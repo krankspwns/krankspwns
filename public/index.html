@@ -1020,13 +1020,23 @@ const SND = (() => {
   }
   function applyMode() { if (mode >= 2) startMusic(); else stopMusic(); }
   // leaving the browser (home screen, another app, lock screen) must silence everything, including the silent clip that keeps iOS audio alive
+  let stale = false;   // set when the page was backgrounded: iOS can then report 'running' while the output is dead
   const quiet = () => {
+    stale = true;
     try { ctx && ctx.suspend().catch(() => {}); } catch {}
     try { keepAlive && keepAlive.pause(); } catch {}
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch {}
     try { navigator.audioSession && (navigator.audioSession.type = 'auto'); } catch {}
   };
   // iOS/Android can leave a context stuck in 'suspended'/'interrupted' after another app had the speaker: if resume() doesn't take, build a fresh one
+  // the first tap after coming back builds a brand-new engine (created inside the tap, which is the only time iOS allows it)
+  function rebuild() {
+    const old = ctx, wasMusic = !!musicTimer;
+    try { clearInterval(musicTimer); } catch {} musicTimer = null;
+    ctx = null;
+    try { old && old.close().catch(() => {}); } catch {}
+    if (ensure()) { try { navigator.audioSession && (navigator.audioSession.type = 'playback'); } catch {} try { keepAlive && keepAlive.play().catch(() => {}); } catch {} if (wasMusic) applyMode(); }
+  }
   let reviveT = null;
   function revive() {
     if (mode === 0 || !ctx) return;
@@ -1052,7 +1062,7 @@ const SND = (() => {
   window.addEventListener('pagehide', quiet);
   window.addEventListener('pageshow', wake);
   // every tap is a chance to wake the engine again if the browser put it to sleep
-  ['touchend', 'click', 'pointerup'].forEach((ev) => window.addEventListener(ev, () => { if (mode > 0 && ctx && ctx.state !== 'running') revive(); }, true));
+  ['touchend', 'click', 'pointerup'].forEach((ev) => window.addEventListener(ev, () => { if (mode === 0 || !ctx || document.hidden) return; if (stale) { stale = false; rebuild(); } else if (ctx.state !== 'running') revive(); }, true));
 
   return {
     play(name) {
