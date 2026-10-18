@@ -1983,31 +1983,33 @@ function playGift(g) {
   // a splat is one self-contained picture (blob + drips + shine), so it fades as a whole and nothing is left behind.
   // Aimed at you it lands as a few splats around the edges of the screen, keeping the middle clear to play.
   const splatOne = (cx, cy, R, color, dark, { seeds = false, cherry = false, delay = 0 } = {}) => {
-    const sw = R * 2.9, sh = R * 3.9, bx = sw / 2, by = R * 1.45, N = 16, pts = [];
-    for (let i = 0; i < N; i++) { const a = (i / N) * Math.PI * 2, rr = R * (i % 2 ? rnd(0.66, 0.84) : rnd(0.96, 1.22)); pts.push([bx + Math.cos(a) * rr, by + Math.sin(a) * rr]); }
-    let d = `M${(pts[0][0] + pts[N - 1][0]) / 2} ${(pts[0][1] + pts[N - 1][1]) / 2}`; for (let i = 0; i < N; i++) { const p0 = pts[i], p1 = pts[(i + 1) % N]; d += ` Q${p0[0]} ${p0[1]} ${(p0[0] + p1[0]) / 2} ${(p0[1] + p1[1]) / 2}`; }
-    let dripBack = '', dripFront = ''; const nd = 3 + Math.floor(rnd(0, 2));
-    for (let k = 0; k < nd; k++) {
-      // drips start well inside the blob (so their tops are hidden) and hang below its edge
-      const x = bx + (k - (nd - 1) / 2) * R * 0.42 + rnd(-R * 0.06, R * 0.06), w = rnd(R * 0.15, R * 0.22), y0 = by + R * 0.1, len = R * (0.62 + rnd(0.3, 0.75) * (1 - Math.abs(x - bx) / R * 0.6));
-      const shape = `<path d="M${x - w / 2} ${y0} h${w} v${len} a${w / 2} ${w / 2} 0 0 1 ${-w} 0z"/><circle cx="${x}" cy="${y0 + len}" r="${w * 0.78}"/>`;
-      dripBack += `<g fill="${dark}" stroke="${dark}" stroke-width="${R * 0.1}" stroke-linejoin="round" opacity=".55">${shape}</g>`;
-      dripFront += `<g fill="${color}">${shape}</g>`;
-    }
-    const extra = (seeds ? Array.from({ length: 8 }, () => `<ellipse cx="${bx + rnd(-R * 0.6, R * 0.6)}" cy="${by + rnd(-R * 0.5, R * 0.5)}" rx="${R * 0.04}" ry="${R * 0.065}" fill="#ffe9a0" transform="rotate(${rnd(0, 180)} ${bx} ${by})"/>`).join('') : '') + (cherry ? `<circle cx="${bx}" cy="${by - R * 0.05}" r="${R * 0.17}" fill="#e8352e"/><circle cx="${bx - R * 0.05}" cy="${by - R * 0.1}" r="${R * 0.05}" fill="#fff" opacity=".7"/>` : '');
-    const n = node(`left:${cx - bx}px;top:${cy - by}px;width:${sw}px;height:${sh}px;opacity:0;transform-origin:${bx}px ${by}px`, 'giftbit', `<svg viewBox="0 0 ${sw} ${sh}" width="100%" height="100%">${dripBack}<path d="${d}Z" fill="${dark}" stroke="${dark}" stroke-width="${R * 0.1}" stroke-linejoin="round" opacity=".55"/>${dripFront}<path d="${d}Z" fill="${color}"/><ellipse cx="${bx - R * 0.3}" cy="${by - R * 0.3}" rx="${R * 0.28}" ry="${R * 0.14}" fill="#fff" opacity=".38" transform="rotate(-28 ${bx - R * 0.3} ${by - R * 0.3})"/>${extra}</svg>`);
-    anim(n, [{ opacity: 0, transform: 'scale(.15)' }, { opacity: 1, transform: 'scale(1.15)', offset: 0.12 }, { opacity: 1, transform: 'scale(1)', offset: 0.2 }, { opacity: 1, transform: `translateY(${R * 0.12}px) scale(1.02)`, offset: 0.7 }, { opacity: 0, transform: `translateY(${R * 0.35}px) scale(1.03)` }], { duration: 2600, delay, fill: 'forwards' });
-    for (let i = 0; i < 12; i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(220, 620), g: 1400, life: rnd(600, 1100), size: rnd(5, 12), color: i % 4 ? color : dark, end: 0.6, delay });
+    const S = R * 4.6, bx = S / 2, by = S / 2, N = 12, uid = 'sp' + Math.floor(Math.random() * 1e6);
+    const lit = color === '#fff1d0' ? '#ffffff' : '#ff6f5e', pt = (a, r) => [bx + Math.cos(a) * r, by + Math.sin(a) * r];
+    // one smooth splat outline: a lumpy puddle with a few broad tongues of juice that taper outwards, plus loose drops beyond the tips
+    const f1 = rnd(0, 6.28), f2 = rnd(0, 6.28), nb = 6 + Math.floor(rnd(0, 3)), bumps = Array.from({ length: nb }, (_, i) => ({ a: (i / nb) * 6.2832 + rnd(-0.25, 0.25), h: rnd(0.35, 0.75), w: rnd(0.2, 0.34) }));
+    const rad = (th) => { let v = 0.8 + 0.09 * Math.sin(3 * th + f1) + 0.06 * Math.sin(5 * th + f2); for (const b of bumps) { let dd = Math.atan2(Math.sin(th - b.a), Math.cos(th - b.a)); v += b.h * Math.exp(-(dd / b.w) * (dd / b.w)); } return v; };
+    let d = ''; const M = 120;
+    for (let i = 0; i < M; i++) { const th = (i / M) * 6.2832, [x, y] = pt(th, R * rad(th)); d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
+    let arms = '', drops = '';
+    for (const b of bumps) { if (Math.random() < 0.7) { const [dx, dy] = pt(b.a + rnd(-0.08, 0.08), R * (0.8 + b.h + rnd(0.2, 0.4))); drops += `<circle cx="${dx}" cy="${dy}" r="${R * rnd(0.05, 0.1)}"/>`; } }
+    // smooth tapering drips hanging below
+    let drips = ''; const nd = 2 + Math.floor(rnd(0, 2));
+    for (let k = 0; k < nd; k++) { const x = bx + (k - (nd - 1) / 2) * R * 0.55 + rnd(-R * 0.08, R * 0.08), w = rnd(R * 0.18, R * 0.26), y0 = by + R * 0.3, len = R * rnd(0.9, 1.4); drips += `<path d="M${x - w} ${y0} Q${x - w * 0.3} ${y0 + len * 0.5} ${x - w * 0.34} ${y0 + len} h${w * 0.68} Q${x + w * 0.3} ${y0 + len * 0.5} ${x + w} ${y0}z"/><circle cx="${x}" cy="${y0 + len}" r="${w * 0.55}"/>`; }
+    const seedArt = seeds ? Array.from({ length: 7 }, () => { const a = rnd(0, 6.28), r = R * rnd(0.12, 0.65), [sx, sy] = pt(a, r), rot = rnd(0, 180); return `<ellipse cx="${sx}" cy="${sy}" rx="${R * 0.1}" ry="${R * 0.065}" fill="#ffd2c4" opacity=".55" transform="rotate(${rot} ${sx} ${sy})"/><ellipse cx="${sx}" cy="${sy}" rx="${R * 0.055}" ry="${R * 0.034}" fill="#fff0a8" transform="rotate(${rot} ${sx} ${sy})"/>`; }).join('') : '';
+    const cherryArt = cherry ? `<circle cx="${bx}" cy="${by - R * 0.05}" r="${R * 0.17}" fill="#e8352e"/><circle cx="${bx - R * 0.05}" cy="${by - R * 0.1}" r="${R * 0.05}" fill="#fff" opacity=".7"/>` : '';
+    const n = node(`left:${cx - bx}px;top:${cy - by}px;width:${S}px;height:${S}px;opacity:0;transform-origin:${bx}px ${by}px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))`, 'giftbit', `<svg viewBox="0 0 ${S} ${S}" width="100%" height="100%"><defs><radialGradient id="${uid}" gradientUnits="userSpaceOnUse" cx="${bx}" cy="${by}" r="${R * 1.5}"><stop offset="0" stop-color="${lit}"/><stop offset=".55" stop-color="${color}"/><stop offset="1" stop-color="${dark}"/></radialGradient></defs><g fill="url(#${uid})"><path d="${d}Z"/>${arms}${drips}${drops}</g>${seedArt}<ellipse cx="${bx - R * 0.28}" cy="${by - R * 0.32}" rx="${R * 0.3}" ry="${R * 0.13}" fill="#fff" opacity=".4" transform="rotate(-30 ${bx - R * 0.28} ${by - R * 0.32})"/><ellipse cx="${bx + R * 0.34}" cy="${by + R * 0.12}" rx="${R * 0.1}" ry="${R * 0.05}" fill="#fff" opacity=".3" transform="rotate(-30 ${bx + R * 0.34} ${by + R * 0.12})"/>${cherryArt}</svg>`);
+    anim(n, [{ opacity: 0, transform: 'scale(.2)' }, { opacity: 1, transform: 'scale(1.12)', offset: 0.12 }, { opacity: 1, transform: 'scale(1)', offset: 0.2 }, { opacity: 1, transform: `translateY(${R * 0.1}px) scale(1.02)`, offset: 0.7 }, { opacity: 0, transform: `translateY(${R * 0.3}px) scale(1.03)` }], { duration: 2600, delay, fill: 'forwards' });
+    for (let i = 0; i < 12; i++) part(cx, cy, { ang: rnd(0, Math.PI * 2), spd: rnd(220, 620), g: 1400, life: rnd(600, 1100), size: rnd(4, 10), color: i % 4 ? color : dark, end: 0.6, delay });
     keepFor(2800 + delay);
   };
   const splat = (color, dark, word, opts = {}) => {
     SND.play('splat'); if (toMe) shake(300);
     if (toMe) {
-      const R = Math.min(W, H) * 0.17;
+      const R = Math.min(W, H) * 0.12;
       [[0.17, 0.19], [0.84, 0.36], [0.2, 0.74]].forEach(([fx0, fy0], i) => splatOne(W * fx0 + rnd(-10, 10), H * fy0 + rnd(-14, 14), R * rnd(0.9, 1.1), color, dark, { ...opts, delay: i * 90 }));
       pop(W / 2, H * 0.14, word, color === '#fff1d0' ? '#e0a04a' : color, 46);
     } else {
-      splatOne(tx, ty, 64, color, dark, opts);
+      splatOne(tx, ty, 50, color, dark, opts);
       pop(tx, ty - 80, word, color === '#fff1d0' ? '#e0a04a' : color, 34);
     }
   };
