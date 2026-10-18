@@ -71,11 +71,16 @@ async function saveRoom(room) {
   if (ok !== 1) throw new Conflict();
 }
 
-function newDeck() {
+// host-controlled game settings
+const TIMERS = [0, 30, 45, 60, 90, 120];   // seconds to arrange; 0 = no timer
+const MULTS = [1, 2, 3];
+const settingsOf = (room) => ({ timer: 0, jokers: true, mult: 1, ...(room.settings || {}) });
+
+function newDeck(joker = true) {
   const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   const deck = [];
   for (const s of ['S', 'H', 'D', 'C']) for (const r of ranks) deck.push(r + s);
-  deck.push('JK');   // one joker per deck: a wild card that becomes whatever is best for its row
+  if (joker) deck.push('JK');   // one joker per deck: a wild card that becomes whatever is best for its row
   return deck;
 }
 
@@ -217,8 +222,23 @@ function rowResults(room) {
 // Results are kept for the whole round once a row has been scored, even if the cards are turned back over.
 function storeResults(room) {
   room.results = room.results || {};
-  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, at: Date.now() };   // `at` lets every phone advance to the next row at the same moment
+  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, penalty: r.penalty * settingsOf(room).mult, at: Date.now() };   // `at` lets every phone advance to the next row at the same moment
 }
+// When the arranging time runs out, anyone who is not ready gets their cards placed in order and is marked ready.
+function enforceTimer(room) {
+  if (room.phase !== 'dealt' || !room.deadline || Date.now() < room.deadline) return false;
+  room.deadline = null;
+  const active = activeOf(room);
+  let last = null;
+  for (const p of active) {
+    if (p.ready) continue;
+    for (let i = 0; i < p.board.length && p.hand.length; i++) if (!p.board[i]) p.board[i] = { c: p.hand.shift(), up: false };
+    if (p.board.every(Boolean)) { for (const c of p.board) c.up = false; p.ready = true; last = p; }
+  }
+  if (last && active.length > 1 && active.every((p) => p.ready)) room.allReady = { id: last.id, name: last.name, at: Date.now(), timer: true };
+  return true;
+}
+
 // The game goes top to bottom: the current row is the first one that has not been scored yet (4 = all done).
 function currentRowOf(room) {
   for (let r = 0; r < ROW_SIZES.length; r++) if (!(room.results && room.results[r])) return r;
@@ -264,6 +284,8 @@ function view(room, pid, seen) {
     maxPlayers: MAX_PLAYERS,
     now: Date.now(),
     allReady: room.allReady || null,
+    settings: settingsOf(room),
+    deadline: room.deadline || null,
     rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
     currentRow: currentRowOf(room),
     meId: me.id,
@@ -312,8 +334,13 @@ async function handle(action, b, query) {
   }
 
   const code = String(b.code || query.code || '').toUpperCase();
-  const room = action === 'state' ? await loadRoomCached(code) : await loadRoom(code);
+  let room = action === 'state' ? await loadRoomCached(code) : await loadRoom(code);
   need(room, 404, 'Room not found');
+  if (room.deadline && Date.now() >= room.deadline && room.phase === 'dealt') {   // time is up: arrange the stragglers' cards
+    if (action === 'state') room = await loadRoom(code);
+    if (room && enforceTimer(room)) { storeResults(room); await saveRoom(room); }
+    need(room, 404, 'Room not found');
+  }
 
   if (action === 'join') {
     const name = cleanName(b.name);
@@ -335,7 +362,7 @@ async function handle(action, b, query) {
         p.spectator = true;
       } else {
         // Still arranging: deal 7 cards from what's left (top up with a fresh deck if short).
-        if (!room.deck || room.deck.length < HAND_SIZE) room.deck = shuffle((room.deck || []).concat(newDeck()));
+        if (!room.deck || room.deck.length < HAND_SIZE) room.deck = shuffle((room.deck || []).concat(newDeck(settingsOf(room).jokers)));
         p.hand = room.deck.splice(0, HAND_SIZE);
         room.allReady = null;
       }
@@ -364,7 +391,8 @@ async function handle(action, b, query) {
       need(room.hostId === pid, 403, 'Only the host can do that');
       // One deck covers up to 7 players (49 cards); more players add extra decks.
       const decks = Math.ceil((room.players.length * HAND_SIZE) / 52);
-      const deck = shuffle(Array.from({ length: decks }, newDeck).flat());
+      const set = settingsOf(room);
+      const deck = shuffle(Array.from({ length: decks }, () => newDeck(set.jokers)).flat());
       for (const p of room.players) {
         p.spectator = false;
         p.hand = deck.splice(0, HAND_SIZE);
@@ -373,6 +401,7 @@ async function handle(action, b, query) {
       }
       room.deck = deck; // leftovers, for players who join mid-round
       room.results = {};
+      room.deadline = set.timer ? Date.now() + set.timer * 1000 : null;
       room.phase = 'dealt';
       room.allReady = null;
       room.round += 1;
@@ -463,7 +492,19 @@ async function handle(action, b, query) {
       room.allReady = me.ready && active.length > 1 && active.every((p) => p.ready)
         ? { id: me.id, name: me.name, at: Date.now() }
         : null;
+      if (room.allReady) room.deadline = null;
       break;
+
+    case 'settings': {
+      need(room.hostId === pid, 403, 'Only the host can do that');
+      const cur = settingsOf(room);
+      const next = { ...cur };
+      if (b.timer !== undefined) { need(TIMERS.includes(Number(b.timer)), 400, 'Pick a time from the list'); next.timer = Number(b.timer); }
+      if (b.jokers !== undefined) next.jokers = !!b.jokers;
+      if (b.mult !== undefined) { need(MULTS.includes(Number(b.mult)), 400, 'Pick a multiplier from the list'); next.mult = Number(b.mult); }
+      room.settings = next;
+      break;
+    }
 
     case 'avatar':
       need(AVATARS.includes(b.avatar), 400, 'Pick an animal from the list');
@@ -532,3 +573,4 @@ module.exports = async (req, res) => {
 module.exports.evaluateRow = evaluateRow;
 module.exports.handOf = handOf;
 module.exports.cleanName = cleanName;
+module.exports.enforceTimer = enforceTimer;

@@ -446,6 +446,17 @@
   .dangerbtn { background: linear-gradient(180deg, #ff8d80, #e0513f) !important; color: #2a0805 !important; border: 0 !important; font-weight: 700; } .dangerbtn .ic { color: inherit; }
   .joincard { position: relative; } .loadbanner { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border-radius: inherit; background: rgba(12,16,32,.82); backdrop-filter: blur(3px); font-weight: 600; animation: lbin .25s ease both; }
   .loadbanner.full { position: fixed; z-index: 200; background: rgba(8,11,24,.85); border-radius: 0; }
+  .iconbtn { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0 !important; border-radius: 50% !important; background: rgba(255,255,255,.06) !important; border: 1px solid var(--line) !important; box-shadow: none !important; line-height: 0; } .iconbtn:hover { background: rgba(255,255,255,.12) !important; transform: none; filter: none; }
+  .topbar { gap: 8px; }
+  .timerbar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; margin-bottom: 12px; border-radius: 14px; background: rgba(255,210,63,.1); border: 1px solid rgba(255,210,63,.45); } .timerbar b { font-size: 18px; min-width: 54px; font-variant-numeric: tabular-nums; color: #ffe27a; } .tm-bar { flex: 1; height: 8px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; } .tm-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd23f, #ffb347); transition: width .3s linear; }
+  .timerbar.urgent { background: rgba(255,90,80,.16); border-color: #ff6b5e; animation: urgent .6s ease-in-out infinite; } .timerbar.urgent b { color: #ff9c8f; } .timerbar.urgent .tm-bar i { background: linear-gradient(90deg, #ff6b5e, #ff9a6a); } @keyframes urgent { 50% { box-shadow: 0 0 18px rgba(255,90,80,.5); } }
+  .setchips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 0 0 12px; } .setchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,.07); border: 1px solid var(--line); } .setedit { padding: 4px 12px !important; font-size: 12px !important; display: inline-flex; align-items: center; gap: 5px; }
+  .setbox { max-height: min(86vh, 640px); } .setsec { margin-bottom: 18px; } .setsec h4 { margin: 0 0 8px; display: flex; align-items: center; gap: 7px; color: var(--gold-hi); font-size: 15px; } .setnote { margin: 0 0 8px; font-size: 12.5px; opacity: .65; }
+  .setrow { display: grid; gap: 8px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); } .setl { display: grid; } .setl small { opacity: .6; font-size: 12px; line-height: 1.35; margin-top: 2px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; } .seg button { padding: 7px 13px; border-radius: 99px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,.07); color: #e9e4d6; border: 1px solid var(--line); box-shadow: none; } .seg button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-color: transparent; } .seg button:hover { transform: none; filter: brightness(1.1); } .seg.ro { opacity: .7; } .seg.ro button { cursor: default; }
+  .setsync { display: inline-flex; align-items: center; gap: 8px; }
+  body.fourcolor .card.s-D { color: #1f5fd6; } body.fourcolor .card.s-C { color: #12803a; } body.fourcolor .card.s-H { color: #d12b3d; }
+  body.calm .av .avb, body.calm .av .eye, body.calm .av.happy .avb, body.calm .av.sad .avb, body.calm .av-empty .ring, body.calm .seat.empty { animation: none !important; }
   .connbar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(60,28,20,.96); border: 1px solid #ff9b6a; color: #ffd9c4; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: boxpop .25s ease backwards; white-space: nowrap; }
   .connbar button { padding: 5px 12px; font-size: 12px; border-radius: 99px; background: #ff9b6a; color: #2a0f05; border: 0; box-shadow: none; } .spin.sm { width: 14px; height: 14px; border-width: 2px; }
   .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(201,169,106,.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
@@ -606,7 +617,7 @@
   .ic-eye{color:#6fd3ff}.ic-eye-off{color:#ff7eb6}.ic-zap{color:#ffd23f}.ic-hand{color:#ffb86b}.ic-phone{color:#b69cff}.ic-ticket{color:#ff9f43}
   .ic-crown{color:#ffcf40}.ic-hourglass{color:#ffb347}.ic-wifi{color:#4fdc8a}.ic-wifi-off{color:#ff7a7a}.ic-help{color:#7fb2ff}.ic-user-x{color:#ff6b6b}
   .ic-link{color:#6fd3ff}.ic-copy{color:#9fb4ff}.ic-logout{color:#ff8a7a}.ic-shuffle{color:#c58bff}.ic-volume-x{color:#9aa7c7}.ic-volume-2{color:#5fe0c0}
-  .ic-music{color:#1f9d55}.ic-info{color:#6fd3ff}.ic-qr{color:#4fd1c5}.ic-trophy{color:#ffcf40}.ic-swap{color:#6fd3ff}
+  .ic-music{color:#1f9d55}.ic-info{color:#6fd3ff}.ic-qr{color:#4fd1c5}.ic-sliders{color:#ffb86b}.ic-clock{color:#ffd23f}.ic-trophy{color:#ffcf40}.ic-swap{color:#6fd3ff}
   button.big .ic, .big .ic, .guidebtn b .ic, .gtitle b .ic, .pill .ic, .tag .ic, .readystrip .tick .ic, .btn-solid .ic { color: inherit; }
   .ic { display: inline-block; flex: none; vertical-align: middle; }
   .iconlabel { display: inline-flex; align-items: center; gap: 7px; }
@@ -625,7 +636,7 @@
   @media (max-width: 440px) { .guidebtn { padding: 5px; gap: 0; } .guidebtn .glabel { display: none; } }
   .sndsw button { padding: 5px 10px; display: grid; place-items: center; height: 28px; } .sndsw .ic { color: inherit; }
   @media (max-width: 440px) { .topbar { gap: 8px; } .topright { flex: 1; min-width: 0; } .sndsw { flex: 1; } .langsw { flex: 1.5; } .sndsw button, .langsw button { flex: 1; justify-content: center; text-align: center; } .sndsw button { padding: 5px 8px; } .langsw button { padding: 5px 10px; } .topright { gap: 6px; } }
-  @media (max-width: 345px) { .sndsw button { padding: 5px 6px; } .langsw button { padding: 5px 7px; font-size: 11px; } }
+  @media (max-width: 345px) { .sndsw button { padding: 5px 5px; } .langsw button { padding: 5px 5px; font-size: 11px; } .iconbtn { width: 32px; height: 32px; } .guidebtn { padding: 3px; } .topbar, .topright { gap: 4px !important; } .langsw, .sndsw { padding: 2px; } }
   @media (max-width: 600px) {
     .gamehead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code leave" "stats stats" "actions actions"; gap: 8px 10px; padding: 14px; }
     .gamehead .roomcode { gap: 8px; }
@@ -738,7 +749,7 @@
 <body>
 <div class="bg" id="bg"></div>
 <main>
-  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><div class="topright"><div class="sndsw" id="sndSw" role="group"><button type="button" data-m="0"></button><button type="button" data-m="1"></button><button type="button" data-m="2"></button></div><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div></div>
+  <div class="topbar"><button type="button" class="guidebtn" id="guideBtn"></button><button type="button" class="iconbtn" id="setBtn"></button><div class="topright"><div class="sndsw" id="sndSw" role="group"><button type="button" data-m="0"></button><button type="button" data-m="1"></button><button type="button" data-m="2"></button></div><div class="langsw" role="group"><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简体</button><button type="button" data-l="zht">繁體</button></div></div></div>
   <h1 id="h1">Row of Reckoning</h1>
   <div id="app"></div>
 </main>
@@ -779,6 +790,8 @@ const ICONS = {
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.2"/><circle cx="12" cy="7.8" r=".9" fill="currentColor"/>',
   qr: '<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M14 14h3v3M20.5 14v.5M14 20.5h2.5M20.5 17v3.5M17.5 20.5h.5"/>',
   caret: '<path d="M6 9.5l6 6 6-6"/>',
+  sliders: '<path d="M4 7h8M18 7h2M4 17h2M12 17h8"/><circle cx="15" cy="7" r="2.4"/><circle cx="9" cy="17" r="2.4"/>',
+  clock: '<circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 2M9.5 3h5"/>',
   swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
 };
 function icon(name, size = 18, cls = '') {
@@ -880,6 +893,7 @@ const SND = (() => {
       for (let i = 0; i < 9; i++) noise({ at: 0.03 + i * 0.055 + rnd(0, 0.02), dur: 0.03, vol: 0.14, type: 'bandpass', f: rnd(1500, 5000), q: 3 });
       tone({ f: 90, f2: 55, at: 0.05, dur: 0.35, vol: 0.18, type: 'sawtooth', lp: 400 });
     },
+    tick: () => tone({ f: 1250, dur: 0.05, vol: 0.07, type: 'square', lp: 2500 }),
     boing: () => { tone({ f: 300, f2: 700, dur: 0.14, vol: 0.09, type: 'triangle' }); tone({ f: 700, f2: 420, at: 0.12, dur: 0.12, vol: 0.06, type: 'triangle' }); },
     morph: () => {   // a rising sparkle as the joker turns into its card
       [660, 830, 988, 1244, 1568, 1976].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.22, vol: 0.07, type: 'triangle' }));
@@ -1032,6 +1046,59 @@ function setMyAvatar(k) {
   act('avatar', { avatar: k });
 }
 
+// ---- display & accessibility (kept on this phone only) ----
+const UI_DEFAULT = { fourcolor: false, text: 0, haptics: true, calm: false };
+let ui = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('sct-ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
+function applyUi() {
+  document.body.classList.toggle('fourcolor', !!ui.fourcolor);
+  document.body.classList.toggle('calm', !!ui.calm);
+  const pct = [100, 118, 135][ui.text] || 100;
+  document.documentElement.style.setProperty('-webkit-text-size-adjust', pct + '%'); document.documentElement.style.setProperty('text-size-adjust', pct + '%');
+}
+function setUi(k, v) { ui[k] = v; try { localStorage.setItem('sct-ui', JSON.stringify(ui)); } catch {} applyUi(); if (st || session) safeRender(); renderSettings(); }
+const buzz = (pat) => { if (ui.haptics) { try { navigator.vibrate && navigator.vibrate(pat); } catch {} } };
+
+// ---- settings screen: host game rules (everyone sees them) + this phone's display options ----
+const TIMER_CHOICES = [0, 30, 45, 60, 90, 120];
+function openSettings() {
+  if (document.querySelector('.set-ov')) return;
+  const close = () => { ov.remove(); if (!document.querySelector('.guide-ov')) document.body.classList.remove('noscroll'); };
+  const ov = el('div', { class: 'guide-ov set-ov', onclick: (e) => { if (e.target === ov) close(); } });
+  ov.close = close;
+  document.body.append(ov); document.body.classList.add('noscroll');
+  renderSettings();
+}
+function renderSettings() {
+  const ov = document.querySelector('.set-ov'); if (!ov) return;
+  const keep = ov.querySelector('.setscroll');
+  const top = keep ? keep.scrollTop : 0;
+  const seg = (opts, cur, on, disabled) => el('div', { class: 'seg' + (disabled ? ' ro' : '') }, ...opts.map(([v, label]) => el('button', { type: 'button', class: v === cur ? 'on' : '', disabled: !!disabled, onclick: () => on(v) }, label)));
+  const row = (title, hint, ctl) => el('div', { class: 'setrow' }, el('div', { class: 'setl' }, el('b', {}, title), hint ? el('small', {}, hint) : ''), ctl);
+  const inRoom = !!(st && session);
+  const gs = (inRoom && st.settings) || { timer: 0, jokers: true, mult: 1 };
+  const canEdit = inRoom && st.isHost;
+  const change = (patch) => { if (!canEdit) return; st.settings = { ...gs, ...patch }; renderSettings(); act('settings', patch); };
+  const sections = [];
+  if (inRoom) sections.push(el('div', { class: 'setsec' },
+    el('h4', {}, icon('clock', 16), t('setGame')),
+    canEdit ? '' : el('p', { class: 'setnote' }, t('setHostOnly')),
+    row(t('setTimer'), t('setTimerHint'), seg(TIMER_CHOICES.map((v) => [v, v ? v + t('setSecs') : t('setNone')]), gs.timer, (v) => change({ timer: v }), !canEdit)),
+    row(t('setJokers'), t('setJokersHint'), seg([[true, t('setOn')], [false, t('setOff')]], gs.jokers, (v) => change({ jokers: v }), !canEdit)),
+    row(t('setMult'), t('setMultHint'), seg([[1, '×1'], [2, '×2'], [3, '×3']], gs.mult, (v) => change({ mult: v }), !canEdit))));
+  sections.push(el('div', { class: 'setsec' },
+    el('h4', {}, icon('eye', 16), t('setDisplay')),
+    row(t('setFour'), t('setFourHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.fourcolor, (v) => setUi('fourcolor', v))),
+    row(t('setText'), '', seg([[0, 'A'], [1, 'A+'], [2, 'A++']], ui.text, (v) => setUi('text', v))),
+    row(t('setHaptics'), t('setHapticsHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.haptics, (v) => setUi('haptics', v))),
+    row(t('setCalm'), t('setCalmHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.calm, (v) => setUi('calm', v)))));
+  if (inRoom) sections.push(el('div', { class: 'setsec' }, el('button', { type: 'button', class: 'ghost setsync', onclick: () => { resync(); toast(t('setSynced'), 'low'); } }, icon('swap', 16), t('setSync'))));
+  ov.replaceChildren(el('div', { class: 'guide setbox', role: 'dialog', 'aria-modal': 'true' },
+    el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('sliders', 15)), t('settings')), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
+    el('div', { class: 'gscroll setscroll' }, ...sections),
+    el('div', { class: 'gfoot' }, el('span'), el('button', { onclick: ov.close }, t('qrClose')))));
+  ov.querySelector('.setscroll').scrollTop = top;
+}
+
 // ---- QR code to join the room (the generator is loaded only when it is first needed) ----
 let qrLoading = null;
 function loadQR() {
@@ -1102,7 +1169,7 @@ const I18N = {
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
     host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
-    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', leaveRoom: 'Leave room',
+    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
@@ -1174,7 +1241,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
-    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', leaveRoom: '离开房间',
+    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `请摆满所有牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -1246,7 +1313,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
-    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', leaveRoom: '離開房間',
+    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -1341,6 +1408,7 @@ function applyStatic() {
   document.title = t('title');
   updateSndBtn();
   document.getElementById('h1').textContent = t('title');
+  { const sb = document.getElementById('setBtn'); sb.replaceChildren(icon('sliders', 18)); sb.title = sb.ariaLabel = t('settings'); }
   { const gb = document.getElementById('guideBtn'); gb.replaceChildren(el('b', {}, icon('book', 16)), el('span', { class: 'glabel' }, t('guideBtn'))); }
   if (document.querySelector('.guide-ov.g-guide')) renderGuide();
   document.querySelectorAll('.langsw button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
@@ -1436,7 +1504,7 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared 
   const suit = face.slice(-1), rank = face.slice(0, -1);
   const red = suit === 'H' || suit === 'D';
   const isJk = id === 'JK';
-  const cls = ['card', red && !(isJk && !as) ? 'red' : '', extra];
+  const cls = ['card', red && !(isJk && !as) ? 'red' : '', isJk && !as ? '' : 's-' + suit, extra];
   if (isJk) cls.push(as ? 'joker-as' : 'joker');
   if (as && morph) cls.push('morph');
   if (!up) cls.push('down');
@@ -1485,7 +1553,7 @@ function enableDrag(node, src, cardId, onTap) {
     };
     if (touch) holdT = setTimeout(() => {   // held still for a moment: the card is picked up
       armed = true; touchDrag = true; node.classList.add('lifted');
-      try { navigator.vibrate && navigator.vibrate(10); } catch {}
+      buzz(10);
     }, 50);
     const move = (e) => {
       if (!armed) {   // finger moved before the hold finished: it's a scroll, leave it to the browser
@@ -1594,6 +1662,13 @@ function copyText(text, btn) {
   else done();
 }
 
+function waitSettings() {
+  const g = st.settings || {};
+  const bits = [[icon('clock', 14), g.timer ? g.timer + t('setSecs') : t('setNoTimer')], [icon(g.jokers === false ? 'x' : 'tick', 14), g.jokers === false ? t('setNoJokers') : t('setJokersOn')]];
+  if (g.mult > 1) bits.push([icon('zap', 14), t('setMultN', { n: g.mult })]);
+  return el('div', { class: 'setchips' }, ...bits.map(([ic, txt]) => el('span', { class: 'setchip' }, ic, txt)),
+    st.isHost ? el('button', { type: 'button', class: 'ghost setedit', onclick: openSettings }, icon('sliders', 14), t('setEdit')) : '');
+}
 function renderWaitingRoom() {
   const link = `${location.origin}/?room=${st.code}`;
   const copyCode = el('button', { class: 'ghost', onclick: () => copyText(st.code, copyCode) }, withIcon('copy', t('copyCode')));
@@ -1624,6 +1699,7 @@ function renderWaitingRoom() {
     el('div', { class: 'bigcode' }, st.code),
     el('div', { class: 'row center' }, copyCode, copyLink, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), el('button', { class: 'ghost', onclick: openQR }, withIcon('qr', t('qrBtn')))),
     el('div', { class: 'count' }, t('joinedCount', { n: st.players.length, max: st.maxPlayers })),
+    waitSettings(),
     seats,
     action,
     el('div', { class: 'row center' }, el('button', { class: 'ghost', onclick: confirmLeave }, t('leaveRoom')))));
@@ -1665,13 +1741,47 @@ function burstConfetti() {
   setTimeout(() => box.remove(), 5500);
 }
 
+// the arranging countdown: the same server-time deadline on every phone
+function timerLeft() { return st && st.deadline && st.phase === 'dealt' && !st.allReady ? (st.deadline - serverNow()) / 1000 : null; }
+function timerBar() {
+  const left = timerLeft();
+  if (left === null) return null;
+  const total = (st.settings && st.settings.timer) || 60;
+  return el('div', { class: 'timerbar', id: 'timerbar' }, icon('clock', 18), el('b', { id: 'tm-t' }, fmtLeft(left)), el('div', { class: 'tm-bar' }, el('i', { id: 'tm-f', style: `width:${Math.max(0, Math.min(100, (left / total) * 100))}%` })));
+}
+const fmtLeft = (l) => { if (l <= 0) return t('timesUp'); const secs = Math.ceil(l); return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0'); };
+let lastTick = -1, timeUpPolled = false;
+setInterval(() => {
+  const left = timerLeft();
+  const bar = document.getElementById('timerbar');
+  if (left === null) { timeUpPolled = false; if (bar) bar.remove(); return; }
+  if (!bar) return;
+  const total = (st.settings && st.settings.timer) || 60;
+  const secs = Math.max(0, Math.ceil(left));
+  document.getElementById('tm-t').textContent = left <= 0 ? t('timesUp') : Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  document.getElementById('tm-f').style.width = Math.max(0, Math.min(100, (left / total) * 100)) + '%';
+  bar.classList.toggle('urgent', left <= 10);
+  if (left <= 5 && left > 0 && secs !== lastTick) { lastTick = secs; SND.play('tick'); buzz(15); }
+  if (left <= 0 && !timeUpPolled) { timeUpPolled = true; setTimeout(() => resync(), 250); }   // the first phone to ask makes the server arrange the stragglers
+}, 250);
+// what the host has switched on, visible to everyone
+function settingChips() {
+  const g = st.settings; if (!g) return null;
+  const bits = [];
+  if (g.timer) bits.push([icon('clock', 14), g.timer + t('setSecs')]);
+  if (g.jokers === false) bits.push([icon('x', 14), t('setNoJokers')]);
+  if (g.mult > 1) bits.push([icon('zap', 14), '×' + g.mult]);
+  if (!bits.length || st.phase !== 'dealt' || st.allReady) return null;
+  return el('div', { class: 'setchips' }, ...bits.map(([ic, txt]) => el('span', { class: 'setchip' }, ic, txt)));
+}
+
 function lastBanner() {
   const left = bannerRemaining();
   if (left <= 0) return null;
   if (confettiAt !== st.allReady.at) { confettiAt = st.allReady.at; if (left > BANNER_SECONDS - 6) burstConfetti(); }
   return el('div', { class: 'lastbanner', id: 'lastbanner' },
-    el('div', { class: 'lb-k' }, t('bannerK')),
-    el('div', { class: 'lb-name' }, st.allReady.name),
+    el('div', { class: 'lb-k' }, t(st.allReady.timer ? 'timesUpK' : 'bannerK')),
+    el('div', { class: 'lb-name' }, st.allReady.timer ? t('timesUp') : st.allReady.name),
     el('div', { class: 'lb-s', id: 'lb-sec' }, t('secs', { n: Math.ceil(left) })),
     el('div', { class: 'lb-bar' }, el('i', { id: 'lb-fill', style: `width:${(left / BANNER_SECONDS) * 100}%` })));
 }
@@ -1718,6 +1828,7 @@ function render() {
   else renderGame();
   fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false; tearRows.clear(); stageEnter = false;
   renderPlayers();   // keep an open player list in step with the room
+  renderSettings();
   // measuring the half-built page can clamp the scroll position; put it back
   if (Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY);
   if (stageScroll) {   // moving on to the next row: bring it into view, but never while the player is scrolling
@@ -1917,6 +2028,8 @@ function renderGame() {
     el('div', { class: 'hactions' + (st.isHost ? '' : ' even') }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
     el('button', { class: 'ghost leavebtn', onclick: confirmLeave }, withIcon('logout', t('leave'))));
   app.append(head);
+  const tbar = timerBar(); if (tbar) app.append(tbar);
+  const chips = settingChips(); if (chips) app.append(chips);
   const banner = lastBanner();
   if (banner) app.append(banner);
 
@@ -2171,7 +2284,7 @@ function resultsPanel() {
   const byRow = Object.fromEntries(list.map((r) => [r.row, r]));
   const box = el('div', { class: 'panel results' }, el('div', { class: 'name' }, t('resTitle')));
   if (st.allReady) {   // stays visible after the banner is gone
-    box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, st.allReady.name)));
+    box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, st.allReady.timer ? t('timesUp') : st.allReady.name)));
   }
   const board = el('div', { class: 'rlist' });
   for (let row = 0; row < 4; row++) {
@@ -2260,7 +2373,7 @@ function buildResult(r, view, late = 0) {
     if (iLose) setTimeout(() => SND.play('youlose'), 250);
     else { setTimeout(() => SND.play('names'), 250); setTimeout(() => SND.play('safe'), 700); }
   }
-  if (iLose) { try { navigator.vibrate && navigator.vibrate([220, 90, 220, 90, 360]); } catch {} }
+  if (iLose) buzz([220, 90, 220, 90, 360]);
   setTimeout(() => o.remove(), Math.max(900, 5100 - late));
 }
 
@@ -2646,7 +2759,9 @@ let resizeT, lastW = window.innerWidth;
 window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(resizeT); resizeT = setTimeout(() => { if (st && !dragging) safeRender(); }, 150); });
 document.querySelectorAll('.langsw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.l)));
 document.getElementById('guideBtn').addEventListener('click', () => openGuide(0));
+document.getElementById('setBtn').addEventListener('click', openSettings);
 document.querySelectorAll('#sndSw button').forEach((b) => b.addEventListener('click', () => { const m = +b.dataset.m; SND.setMode(m); updateSndBtn(); toast(t('sndMode' + m), 'low'); if (m > 0) setTimeout(() => SND.play('ready'), 60); }));
+applyUi();
 applyStatic();
 if (session) { poll().then(() => { if (session) startPolling(); }); } 
 render();

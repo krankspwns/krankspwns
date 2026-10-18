@@ -160,5 +160,24 @@ const post = (b) => call('POST', b, {});
   assert.equal(lj.phase, 'dealt'); assert.equal(lj.hand.length, 7); assert.equal(lj.players.length, 8);
   const lj2 = (await post({ action: 'join', code: late.code, name: 'Late9' })).j;
   assert.equal(lj2.hand.length, 7);
+  // host settings: only the host, timer auto-arranges stragglers, jokers off, multiplier
+  const hs = (await post({ action: 'create', name: 'Hst' })).j;
+  const hp = (await post({ action: 'join', code: hs.code, name: 'Pl' })).j;
+  assert.equal((await post({ action: 'settings', code: hs.code, pid: hp.meId, timer: 30 })).s, 403, 'only the host changes settings');
+  assert.equal((await post({ action: 'settings', code: hs.code, pid: hs.meId, timer: 33 })).s, 400, 'unknown timer rejected');
+  const st1 = (await post({ action: 'settings', code: hs.code, pid: hs.meId, timer: 30, jokers: false, mult: 2 })).j;
+  assert.deepEqual(st1.settings, { timer: 30, jokers: false, mult: 2 });
+  const d1 = (await post({ action: 'deal', code: hs.code, pid: hs.meId })).j;
+  assert.ok(d1.deadline > Date.now() + 25000 && d1.deadline <= Date.now() + 30500, 'deadline set from the timer');
+  const rm = globalThis.__rooms.get(hs.code);
+  assert.ok(![...rm.deck, ...rm.players.flatMap(p => p.hand)].includes('JK'), 'no joker when jokers are off');
+  // Pl is ready; the host never arranged: time runs out
+  await post({ action: 'place', code: hs.code, pid: hp.meId, card: rm.players[1].hand[0], slot: 0 });
+  globalThis.__rooms.get(hs.code).deadline = Date.now() - 1;
+  const after = (await post({ action: 'state', code: hs.code, pid: hs.meId })).j;
+  assert.ok(after.players.every(p => p.ready), 'everyone is made ready when the time is up');
+  assert.ok(after.allReady && after.allReady.timer, 'timer flag on the all-ready banner');
+  assert.equal(after.deadline, null);
+  assert.equal(after.hand.length, 0, 'the host\'s hand was placed on the board');
   console.log('all ok');
 })().catch(e => { console.error(e); process.exit(1); });
