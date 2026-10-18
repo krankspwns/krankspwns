@@ -543,6 +543,8 @@
   @keyframes emofly { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.15); } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-190px) scale(1); } }
   .invhead { text-align: center; } .invhead.sec { display: flex; align-items: center; justify-content: space-between; text-align: left; margin: 18px 0 8px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-hi); } .invhead em { font-style: normal; font-size: 11.5px; min-width: 22px; padding: 1px 8px; border-radius: 99px; text-align: center; background: rgba(var(--gold-rgb), .16); color: var(--gold-hi); letter-spacing: 0; }
   .invsub { display: flex; align-items: center; gap: 6px; margin: 14px 0 8px; font-size: 12px; font-weight: 700; color: #ffcf40; letter-spacing: .04em; } .invsub .ic { color: #ffcf40 !important; }
+  .wppop { position: fixed; z-index: 500; transform: translate(-50%, -50%); font-size: 20px; font-weight: 900; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,.6); animation: wppop 1.2s ease-out forwards; } .wppop.neg { color: #ff7a6e; } .wppop.pos { color: #7be8b0; } @keyframes wppop { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -80%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -260%) scale(1); } }
+  .wpbump { animation: wpbump .5s ease; } @keyframes wpbump { 30% { transform: scale(1.12); } }
   .wpchip.sm { padding: 1px 8px; font-size: 11.5px; gap: 4px; } .pinv { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; } .pinv.none { font-size: 11.5px; opacity: .5; } .invth { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 2px; border-radius: 10px; background: rgba(255,255,255,.06); border: 1px solid var(--line); } .invgift { display: inline-flex; align-items: center; gap: 2px; padding: 0 3px; } .invgift i { font-style: normal; font-size: 11px; font-weight: 800; }
   /* no scrollbars on the panels: they still scroll by touch or wheel */
   .invbox, .gscroll, .shopscroll, .setscroll { scrollbar-width: none; } .invbox::-webkit-scrollbar, .gscroll::-webkit-scrollbar { display: none; }
@@ -1541,7 +1543,7 @@ function syncEmoteUi() {
   let fab = document.getElementById('emoteFab');
   const show = !!(session && st);
   document.body.classList.toggle('hasfab', show);
-  { const sh = document.getElementById('shopBtn'); if (sh) { sh.hidden = !show; if (show && st.wallet) { let b = sh.querySelector('.shopwp'); if (!b) { b = el('b', { class: 'shopwp' }); sh.append(b); } const n = st.wallet.pts; b.textContent = n >= 10000 ? Math.round(n / 1000) + 'k' : String(n); sh.classList.add('haswp'); sh.title = sh.ariaLabel = t('shopTitle') + ' · ' + t('wpN', { n }); } } }
+  { if (show && st.wallet) wpTo(st.wallet.pts); const sh = document.getElementById('shopBtn'); if (sh) { sh.hidden = !show; if (show && st.wallet) { let b = sh.querySelector('.shopwp'); if (!b) { b = el('b', { class: 'shopwp' }); sh.append(b); } const n = st.wallet.pts; b.dataset.wpnum = 'badge'; b.textContent = wpFmt('badge', wpDisp === null ? n : wpDisp); sh.classList.add('haswp'); sh.title = sh.ariaLabel = t('shopTitle') + ' · ' + t('wpN', { n }); } } }
   syncGiftUi();
   if (!show) { fab?.remove(); document.getElementById('chatFab')?.remove(); document.getElementById('emoteTray')?.remove(); document.querySelector('.chatpop')?.remove(); return; }
   if (!fab) {
@@ -1843,6 +1845,26 @@ function shopIcon(size = 24) {
   w.innerHTML = `<svg viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true">${SHOP_ICON}</svg>`;
   return w;
 }
+// the win-point numbers (shop chip and header badge) count up or down to the new value, with a small floating +/- so a purchase is felt
+let wpDisp = null, wpAnim = 0, wpTarget = null;
+const wpFmt = (kind, v) => (kind === 'badge' ? (v >= 10000 ? Math.round(v / 1000) + 'k' : String(v)) : t('wpN', { n: v }));
+function wpPaint(v) { wpDisp = v; document.querySelectorAll('[data-wpnum]').forEach((e) => { e.textContent = wpFmt(e.dataset.wpnum, v); }); }
+function wpTo(target) {
+  if (target === wpTarget) return;   // already there, or already counting there
+  wpTarget = target;
+  if (wpDisp === null || ui.calm || document.hidden) { wpAnim++; wpPaint(target); return; }
+  if (wpDisp === target) { wpPaint(target); return; }
+  const from = wpDisp, id = ++wpAnim, t0 = performance.now(), dur = Math.min(900, 350 + Math.abs(target - from) * 6);
+  const diff = target - from;
+  const host = document.querySelector('.wpchip') || document.querySelector('#shopBtn');
+  if (host) {
+    const r0 = host.getBoundingClientRect(), pop = el('span', { class: 'wppop ' + (diff < 0 ? 'neg' : 'pos') }, (diff < 0 ? '−' : '+') + Math.abs(diff));
+    pop.style.left = r0.left + r0.width / 2 + 'px'; pop.style.top = r0.top + r0.height / 2 + 'px'; document.body.append(pop); setTimeout(() => pop.remove(), 1300);
+    host.classList.remove('wpbump'); void host.offsetWidth; host.classList.add('wpbump');
+  }
+  const step = (now) => { if (id !== wpAnim) return; const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); wpPaint(Math.round(from + diff * e)); if (k < 1) requestAnimationFrame(step); else wpPaint(target); };
+  requestAnimationFrame(step);
+}
 // ---- the shop: spend win points on accessories, special avatars and throwable gifts ----
 let shopTab = 'acc', shopBusy = null, shopBusyT = null, shopFlash = null, shopBusyN = 0;
 function openShop(tab) {
@@ -1864,6 +1886,7 @@ function renderShop() {
     const got = bk === 'gift' ? (w.gifts[bkey] || 0) > shopBusyN : (w.owned[bk] || []).includes(bkey);
     if (got) { shopFlash = shopBusy; shopBusy = null; clearTimeout(shopBusyT); setTimeout(() => { shopFlash = null; renderShop(); }, 900); SND.play('safe'); }
   }
+  wpTo(w.pts);
   const sig = JSON.stringify([lang, shopTab, w, me.avatar, me.acc, me.bd, shopBusy, shopFlash]);
   if (ov.dataset.sig === sig) return;
   const keep = ov.querySelector('.shopscroll'), top = keep ? keep.scrollTop : 0;
@@ -1909,7 +1932,7 @@ function renderShop() {
   }
   const tabs = el('div', { class: 'shoptabs', role: 'tablist' }, ...[['acc', t('shopTabAcc')], ['av', t('shopTabAv')], ['bd', t('shopTabBd')], ['gift', t('shopTabGift')]].map(([k, label]) => el('button', { type: 'button', role: 'tab', class: k === shopTab ? 'on' : '', 'aria-selected': String(k === shopTab), onclick: () => { shopTab = k; renderShop(); } }, label)));
   ov.replaceChildren(el('div', { class: 'guide setbox shopbox' + (keep ? ' still' : ''), role: 'dialog', 'aria-modal': 'true' },
-    el('div', { class: 'ghead shophead' }, el('div', { class: 'gtitle' }, el('b', {}, shopIcon(18)), t('shopTitle')), el('span', { class: 'wpchip', title: t('shopPtsHint') }, icon('trophy', 14), t('wpN', { n: w.pts })), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
+    el('div', { class: 'ghead shophead' }, el('div', { class: 'gtitle' }, el('b', {}, shopIcon(18)), t('shopTitle')), el('span', { class: 'wpchip', title: t('shopPtsHint') }, icon('trophy', 14), el('span', { 'data-wpnum': 'chip' }, wpFmt('chip', wpDisp === null ? w.pts : wpDisp))), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
     el('div', { class: 'gscroll shopscroll' }, tabs, el('p', { class: 'shopnote' }, note), el('div', { class: 'shopgrid' }, ...items)),
     el('div', { class: 'gfoot' }, el('span'), el('button', { onclick: ov.close }, t('qrClose')))));
   ov.querySelector('.shopscroll').scrollTop = top;
@@ -3904,7 +3927,7 @@ window.addEventListener('storage', (e) => {
   if (!n || !n.code || n.code === session.code) return;
   const old = session;
   try { fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', code: old.code, pid: old.pid }), keepalive: true }); } catch {}
-  emoteSeen = null; giftSeen = null; chatLog = []; chatHave = undefined;
+  emoteSeen = null; giftSeen = null; wpDisp = null; wpTarget = null; chatLog = []; chatHave = undefined;
   clearTimeout(timer); rtClose(); session = null; st = null; closePlayers();   // not save(): that would erase the other tab's new seat
   err = 'You joined another room in another tab'; render();
 });
@@ -3925,7 +3948,7 @@ function confirmLeave() {
 
 async function leave() {
   const s = session;
-  emoteSeen = null; giftSeen = null; chatLog = []; chatHave = undefined;
+  emoteSeen = null; giftSeen = null; wpDisp = null; wpTarget = null; chatLog = []; chatHave = undefined;
   clearTimeout(timer); session = null; rtClose();   // stop polling at once
   closePlayers();
   const ov = el('div', { class: 'loadbanner full', role: 'status' }, el('i', { class: 'spin' }), el('span', {}, t('leaving')));
