@@ -425,6 +425,8 @@
   .resbox.hasboard { width: min(92vw, 580px); padding: 16px 18px 18px; } .resboard { gap: 8px; margin-top: 12px; } .resboard .tile { animation: none; padding: 8px 6px; } .resboard .tcard { margin: 0 7px; } .resbox.hasboard { background: rgb(16,20,38); } .resbox.hasboard.youlose { background: rgb(38,6,9); }
   .resbox.hasboard .resnames { font-size: clamp(26px, 8vw, 44px); } .resbox.hasboard .respen.big { transform: scale(.82); margin: 2px auto 0; }
   /* animal avatars */
+  .av, .av *, .avedit, .avbadge, .emotefab, .emotetray button { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; outline: none; }
+  .av:focus, .av:active { outline: none; background: none; }
   .av { cursor: pointer; display: inline-block; flex: none; border-radius: 50%; overflow: hidden; line-height: 0; background: none !important; box-shadow: 0 0 0 2px rgba(255,255,255,.14); } .av svg { display: block; }
   /* living avatars: breathing, blinking, tap / hover reactions, happy and sad moods */
   .av .avb { transform-box: fill-box; transform-origin: 50% 100%; animation: avbreathe 3.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
