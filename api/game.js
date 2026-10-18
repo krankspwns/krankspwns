@@ -18,7 +18,7 @@ function pickAvatar(want, taken = []) {
 // avatar accessories are unlocked by winning rounds in this room (lowest total penalty)
 const ACC_WINS = { hat: 1, shades: 2, crown: 3, headphones: 4, halo: 5, mustache: 6, horns: 8, flower: 10 };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
-const MAX_PLAYERS = 15;
+const MAX_PLAYERS = 12;
 const HAND_SIZE = 7;
 const ROW_SIZES = [1, 1, 2, 3];
 const SLOTS = 7; // rows of 1, 1, 2, 3
