@@ -1256,9 +1256,20 @@ Object.assign(AVATARS, {
   goldlion: ['#0a0a14', `<image href="/avatars/goldlion.webp" x="0" y="0" width="48" height="48" preserveAspectRatio="xMidYMid slice"/>`],
   reaper: ['#0a0a14', `<image href="/avatars/reaper.webp" x="0" y="0" width="48" height="48" preserveAspectRatio="xMidYMid slice"/>`],
 });
-// where the eyes sit in each painted portrait (48-unit grid): with an accessory on, the portrait is scaled down so its eyes land where an animal's do and the accessory art lines up
+// where the eyes sit in each painted portrait (48-unit grid), used to place accessories
 const LEGEND_EYES = { phoenix: [31, 18.7], shadowphoenix: [29.3, 21.1], moonwolf: [30.9, 21.3], samurai: [22, 21.5], thundertiger: [28.2, 19.5], goldlion: [25.9, 20], reaper: [28, 20.6] };
-const LEGEND_FIT = 0.8;
+// accessories are drawn for small animal heads: on a painted portrait they are scaled to the face (eye-level items) or sat just above the eyes (hats, crowns, horns...)
+const ACC_ON_TOP = ['hat', 'crown', 'halo', 'horns', 'flower'];
+function accFit(key, acc) {
+  const art = ACC[acc][1], e = LEGEND_EYES[key];
+  if (!e) return art;
+  const mid = (e[0] + 24) / 2;   // portraits lean off-centre: head items follow the middle of the head, not the eyes
+  let sc, tx, ty;
+  if (ACC_ON_TOP.includes(acc)) { sc = 0.7; tx = mid - 24 * sc; ty = e[1] - 7 - 14.5 * sc; }
+  else if (acc === 'headphones') { sc = 1; tx = mid - 24; ty = e[1] - 26; }
+  else { sc = 1.15; tx = e[0] - 24 * sc; ty = e[1] - 26 * sc; }
+  return `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${sc})">${art}</g>`;
+}
 const LEGEND_KEYS = ['phoenix', 'shadowphoenix', 'moonwolf', 'samurai', 'thundertiger', 'goldlion', 'reaper'];
 // the gold frame every legendary avatar wears, plus its purple diamond badge
 const LEGEND_BADGE = '<defs><linearGradient id="lgFr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4b0"/><stop offset=".5" stop-color="#e8a82a"/><stop offset="1" stop-color="#fff0a0"/></linearGradient></defs><circle cx="24" cy="24" r="22.900" fill="none" stroke="url(#lgFr)" stroke-width="2"/><circle cx="24" cy="24" r="21.200" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width=".5"/><circle cx="38.500" cy="38.500" r="5.400" fill="#7b3fe4" stroke="#ffe27a" stroke-width="1.200"/><path d="M35.800 37.600h5.400l-2.700 3.800z" fill="#ffe27a"/><path d="M35.800 37.600l1.100-1.400h3.200l1.100 1.400z" fill="#fff6c8"/>';
@@ -1289,7 +1300,7 @@ function avatarEl(key, size = 40, cls = '', acc = '', bd = '') {
   w.style.width = w.style.height = size + 'px';
   w.onclick = () => {};   // a real click target, so a touch lands on the animal rather than being pulled to the badge beside it
   w.style.setProperty('--d', (-Math.random() * 6).toFixed(2) + 's');   // every avatar breathes and blinks on its own rhythm
-  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${ACC[acc] && LEGEND_EYES[key] ? `<defs><filter id="lgBl" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.6"/></filter><radialGradient id="lgMg" gradientUnits="userSpaceOnUse" cx="24" cy="24" r="24"><stop offset=".74" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient><mask id="lgMk" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="url(#lgMg)"/></mask></defs><g filter="url(#lgBl)" opacity=".8"><g transform="translate(-4.8 -4.8) scale(1.2)">${body}</g></g><g transform="translate(${(24 - LEGEND_FIT * LEGEND_EYES[key][0]).toFixed(2)} ${(26 - LEGEND_FIT * LEGEND_EYES[key][1]).toFixed(2)}) scale(${LEGEND_FIT})"><g mask="url(#lgMk)">${body}</g></g>` : body}${ACC[acc] ? ACC[acc][1] : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
+  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${body}${ACC[acc] ? accFit(key, acc) : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
   return w;
 }
 // tap or hover any animal and it reacts
