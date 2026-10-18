@@ -1257,18 +1257,18 @@ Object.assign(AVATARS, {
   reaper: ['#0a0a14', `<image href="/avatars/reaper.webp" x="0" y="0" width="48" height="48" preserveAspectRatio="xMidYMid slice"/>`],
 });
 // where the eyes sit in each painted portrait (48-unit grid), used to place accessories
-const LEGEND_EYES = { phoenix: [31, 18.7], shadowphoenix: [29.3, 21.1], moonwolf: [30.9, 21.3], samurai: [22, 21.5], thundertiger: [28.2, 19.5], goldlion: [25.9, 20], reaper: [28, 20.6] };
+const LEGEND_EYES = { phoenix: [24, 19.3, 8.8], shadowphoenix: [24, 19.3, 9.4], moonwolf: [24, 20.1, 8.9], samurai: [24, 21.6, 8.2], thundertiger: [24, 18.6, 8.7], goldlion: [24, 20.1, 7.7], reaper: [24, 18.9, 6.1] };   // eye midpoint x, eye line y, distance between the eyes
 // accessories are drawn for small animal heads: on a painted portrait they are scaled to the face (eye-level items) or sat just above the eyes (hats, crowns, horns...)
 const ACC_ON_TOP = ['hat', 'crown', 'halo', 'horns', 'flower'];
 function accFit(key, acc) {
   const art = ACC[acc][1], e = LEGEND_EYES[key];
   if (!e) return art;
-  const mid = (e[0] + 24) / 2;   // portraits lean off-centre: head items follow the middle of the head, not the eyes
+  const face = Math.max(0.8, e[2] / 12 * 1.3);   // the animal art has its eyes 12 apart: scale to this portrait's eyes
   let sc, tx, ty;
-  if (ACC_ON_TOP.includes(acc)) { sc = 0.7; tx = mid - 24 * sc; ty = e[1] - 7 - 14.5 * sc; }
-  else if (acc === 'headphones') { sc = 1; tx = mid - 24; ty = e[1] - 26; }
-  else { sc = 1.15; tx = e[0] - 24 * sc; ty = e[1] - 26 * sc; }
-  return `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${sc})">${art}</g>`;
+  if (ACC_ON_TOP.includes(acc)) { sc = 0.7; tx = e[0] - 24 * sc; ty = e[1] - 8 - 14.5 * sc; }
+  else if (acc === 'headphones') { sc = 1.02; tx = e[0] - 24 * sc; ty = e[1] - 26 * sc; }
+  else { sc = face; tx = e[0] - 24 * sc; ty = e[1] - 26 * sc; }
+  return `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${sc.toFixed(3)})">${art}</g>`;
 }
 const LEGEND_KEYS = ['phoenix', 'shadowphoenix', 'moonwolf', 'samurai', 'thundertiger', 'goldlion', 'reaper'];
 // the gold frame every legendary avatar wears, plus its purple diamond badge
