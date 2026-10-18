@@ -2,25 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="theme-color" content="#18213b">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Row of Reckoning</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg1:#18213b; --bg2:#0e1426; --bg3:#080c18;
-    --gold:#c9a96a; --gold-hi:#e8d3a2; --gold-lo:#8d7442;
+    --bg1:#18213b; --bg2:#0e1426; --bg3:#080c18; --text:#f4ead2;
+    --gold:#c9a96a; --gold-hi:#e8d3a2; --gold-lo:#8d7442; --gold-rgb:201,169,106;
+    --panel:24,30,54; --panel-hi:34,40,70; --panel-lo:16,20,40; --deep:12,16,32;
     --ivory:#fafaf7; --ink:#14161f; --red:#c23b4a;
     --glass:rgba(255,255,255,.045); --line:rgba(255,255,255,.1); --green:#6fcf97;
     --serif:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
     --display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   }
+  /* colour schemes (chosen in Settings, kept on this phone) */
+  html[data-theme=emerald] { --bg1:#14392c; --bg2:#0b2219; --bg3:#06140e; --text:#eaf3d9; --gold:#9fd37a; --gold-hi:#d6f0b8; --gold-lo:#5f8f46; --gold-rgb:159,211,122; --panel:14,40,30; --panel-hi:22,58,44; --panel-lo:9,28,21; --deep:7,22,16; }
+  html[data-theme=royal] { --bg1:#2d1f55; --bg2:#1a1135; --bg3:#0d0820; --text:#f1e8ff; --gold:#b99cff; --gold-hi:#e0d3ff; --gold-lo:#7a62c2; --gold-rgb:185,156,255; --panel:32,22,64; --panel-hi:46,33,90; --panel-lo:21,14,44; --deep:15,10,34; }
+  html[data-theme=crimson] { --bg1:#3d1622; --bg2:#240c14; --bg3:#12060a; --text:#ffe9e4; --gold:#f0a38e; --gold-hi:#ffd3c6; --gold-lo:#b0604f; --gold-rgb:240,163,142; --panel:46,18,28; --panel-hi:66,27,40; --panel-lo:30,11,18; --deep:22,8,13; }
+  html[data-theme=ocean] { --bg1:#123a50; --bg2:#0a2434; --bg3:#050f18; --text:#e3f4fb; --gold:#5fc9d6; --gold-hi:#b8eef4; --gold-lo:#38808c; --gold-rgb:95,201,214; --panel:12,38,54; --panel-hi:20,56,78; --panel-lo:8,26,38; --deep:6,20,30; }
   html { background: var(--bg3); overflow-x: clip; overflow-anchor: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }   /* no double-tap zoom, no text inflation on rotate */
   body { overflow-x: clip; overflow-anchor: none; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: var(--serif); font-size:15px; color:#f4ead2; min-height:100vh;
+  body { margin:0; font-family: var(--serif); font-size:15px; color:var(--text); min-height:100vh;
     background:
-      radial-gradient(ellipse at 50% -10%, rgba(201,169,106,.14), transparent 55%),
+      radial-gradient(ellipse at 50% -10%, rgba(var(--gold-rgb),.14), transparent 55%),
       radial-gradient(circle at 50% 40%, var(--bg1), var(--bg2) 60%, var(--bg3)); background-attachment: fixed; }
   main { max-width: 980px; margin: 0 auto; padding: 20px 16px 40px; }
   h1 { font-weight:600; font-size: 22px; letter-spacing: 6px; text-transform: uppercase; text-align:center; margin: 6px 0 22px; color: var(--gold-hi); }
@@ -36,7 +43,7 @@
   input { font-family: var(--serif); font-size: 16px; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--line); width: 100%;
     background: rgba(255,255,255,.07); color: #fff; outline: none; }
   input::placeholder { color: rgba(255,255,255,.45); }
-  input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,169,106,.25); }
+  input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.25); }
   input[type=checkbox] { accent-color: var(--gold); }
 
   .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px;
@@ -48,7 +55,7 @@
   .code { font-family: var(--display); font-size: 44px; line-height:1; letter-spacing: 8px; font-weight: 700; color: var(--gold-hi); }
   .name { font-weight: 600; font-size: 15px; color: #fff; margin-bottom: 10px; }
   .hint { font-size: 13px; opacity: .6; margin-top: 12px; text-align:center; }
-  .tag { font-size: 10px; font-weight:600; letter-spacing: .8px; text-transform: uppercase; background: rgba(201,169,106,.18); color: var(--gold-hi); border: 1px solid var(--gold-lo); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: middle; }
+  .tag { font-size: 10px; font-weight:600; letter-spacing: .8px; text-transform: uppercase; background: rgba(var(--gold-rgb),.18); color: var(--gold-hi); border: 1px solid var(--gold-lo); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: middle; }
   .tag.ok { background: rgba(111,207,151,.18); color: var(--green); border-color: rgba(111,207,151,.6); }
   .tag.joined { opacity:.7; }
   button.readybtn { background: linear-gradient(180deg,#8fe0ae,#52b97c); color:#06210f; padding: 12px 26px; font-size: 15px; }
@@ -60,11 +67,11 @@
 
   /* waiting room */
   .waitroom { text-align:center; padding: 44px 24px 36px; margin-top: 10px; display:grid; grid-template-columns: minmax(0,1fr); gap: 22px; justify-items:center; }
-  .bigcode { font-size: clamp(64px, 17vw, 140px); line-height: 1; font-weight: 700; letter-spacing: .14em; padding-left:.14em; color: var(--gold-hi); text-shadow: 0 0 40px rgba(201,169,106,.35); }
+  .bigcode { font-size: clamp(64px, 17vw, 140px); line-height: 1; font-weight: 700; letter-spacing: .14em; padding-left:.14em; color: var(--gold-hi); text-shadow: 0 0 40px rgba(var(--gold-rgb),.35); }
   .count { font-size: 16px; opacity:.75; }
   .seats { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; width: 100%; max-width: 900px; min-width: 0; }
   .seat { display:flex; flex-direction:column; align-items:center; gap: 8px; padding: 18px 10px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
-  .seat.me { border-color: var(--gold); background: rgba(201,169,106,.1); }
+  .seat.me { border-color: var(--gold); background: rgba(var(--gold-rgb),.1); }
   .seat.empty { background: transparent; border-style: dashed; opacity:.55; }
   .avatar { width: 54px; height: 54px; border-radius: 50%; display:grid; place-items:center; font-size: 22px; font-weight:700; color:#1a1407; background: linear-gradient(180deg,var(--gold-hi),var(--gold)); }
   .seat.empty .avatar { background: transparent; border: 1px dashed var(--gold-lo); color: var(--gold-lo); }
@@ -113,17 +120,17 @@
   .card.back, .card.down {
     color: transparent; cursor: default; border: 1px solid var(--gold-lo);
     background:
-      repeating-linear-gradient(45deg, rgba(201,169,106,.28) 0 1px, transparent 1px 8px),
-      repeating-linear-gradient(-45deg, rgba(201,169,106,.28) 0 1px, transparent 1px 8px),
+      repeating-linear-gradient(45deg, rgba(var(--gold-rgb),.28) 0 1px, transparent 1px 8px),
+      repeating-linear-gradient(-45deg, rgba(var(--gold-rgb),.28) 0 1px, transparent 1px 8px),
       linear-gradient(160deg, #26345c, #121a33);
-    box-shadow: 0 4px 12px rgba(0,0,0,.45), inset 0 0 0 4px #121a33, inset 0 0 0 5px rgba(201,169,106,.7);
+    box-shadow: 0 4px 12px rgba(0,0,0,.45), inset 0 0 0 4px #121a33, inset 0 0 0 5px rgba(var(--gold-rgb),.7);
   }
   .card.mine.down { cursor: grab; }
   .card.down .ix, .card.down .pip { opacity: 0; }
 
   .slot { width: 58px; height: 84px; border-radius: 9px; display:flex;
-    background: rgba(255,255,255,.04); border: 1px dashed rgba(201,169,106,.55); }
-  .slot.target { border-style: solid; border-color: var(--gold); background: rgba(201,169,106,.12); box-shadow: 0 0 14px rgba(201,169,106,.35); cursor: pointer; }
+    background: rgba(255,255,255,.04); border: 1px dashed rgba(var(--gold-rgb),.55); }
+  .slot.target { border-style: solid; border-color: var(--gold); background: rgba(var(--gold-rgb),.12); box-shadow: 0 0 14px rgba(var(--gold-rgb),.35); cursor: pointer; }
   .slot.over { border-style: solid; border-color: var(--green); background: rgba(111,207,151,.18); box-shadow: 0 0 14px rgba(111,207,151,.4); }
   .slot .card { width:100%; height:100%; margin:0; }
   .panel.over { outline: 2px dashed var(--green); outline-offset: 4px; }
@@ -177,7 +184,7 @@
 
   /* ---- last-to-ready banner ---- */
   .lastbanner { position: relative; text-align: center; padding: 16px 18px 14px; margin-bottom: 16px; border-radius: 16px; overflow: hidden;
-    background: linear-gradient(135deg, #3a2f12, #6b5420 45%, #3a2f12); border: 1px solid var(--gold); box-shadow: 0 12px 40px rgba(0,0,0,.55), 0 0 40px rgba(201,169,106,.35);
+    background: linear-gradient(135deg, #3a2f12, #6b5420 45%, #3a2f12); border: 1px solid var(--gold); box-shadow: 0 12px 40px rgba(0,0,0,.55), 0 0 40px rgba(var(--gold-rgb),.35);
     animation: bannerin .7s cubic-bezier(.2,1.3,.4,1) backwards; }
   @keyframes bannerin { from { transform: translateY(-40px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
   .lastbanner::before { content:''; position:absolute; inset:0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%); background-size: 250% 100%; animation: sheen 3s linear infinite; }
@@ -236,20 +243,20 @@
   .pill.wait { background: rgba(124,196,255,.14); color: #a9d8ff; border: 1px solid rgba(124,196,255,.45); }
   .toast.low { animation-duration: 1.6s; top: 64px; padding: 6px 14px; font-size: 12px; opacity: .95; }
   .toast { pointer-events: none; position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 70; padding: 10px 18px; border-radius: 99px; font-weight: 600; font-size: 14px;
-    background: rgba(20,26,46,.95); border: 1px solid var(--gold); color: var(--gold-hi); box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: toast 3.2s ease forwards; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+    background: rgba(var(--panel),.95); border: 1px solid var(--gold); color: var(--gold-hi); box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: toast 3.2s ease forwards; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
   @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -20px); } 10%, 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
 
   .roundfx { position: fixed; inset: 0; z-index: 80; display: grid; place-content: center; text-align: center; pointer-events: none;
     background: radial-gradient(circle at center, rgba(6,9,20,.72), rgba(6,9,20,0) 70%); animation: roundfx 4s ease forwards; overflow: hidden; }
   .roundfx .rf-box { animation: roundbox 4s ease forwards; }
   .roundfx .rf-k { font-size: clamp(18px, 5vw, 30px); letter-spacing: .5em; padding-left: .5em; text-transform: uppercase; color: var(--gold-hi); font-weight: 600; }
-  .roundfx .rf-n { font-size: clamp(90px, min(34vw, 38vh), 260px); line-height: 1; font-weight: 800; color: var(--gold-hi); text-shadow: 0 0 50px rgba(201,169,106,.65), 0 6px 30px rgba(0,0,0,.6); }
+  .roundfx .rf-n { font-size: clamp(90px, min(34vw, 38vh), 260px); line-height: 1; font-weight: 800; color: var(--gold-hi); text-shadow: 0 0 50px rgba(var(--gold-rgb),.65), 0 6px 30px rgba(0,0,0,.6); }
   /* pops in within ~0.3s, stays until 2s, then fades away over the last 2s */
   @keyframes roundfx { 0% { opacity: 0; } 8% { opacity: 1; } 50% { opacity: 1; } 100% { opacity: 0; } }
   @keyframes roundbox { 0% { transform: scale(.6); } 8% { transform: scale(1.08); } 12%, 100% { transform: scale(1); } }
 
 
-  .pill.live { margin-left: 0; padding: 9px 16px; font-size: 13px; background: rgba(201,169,106,.16); color: var(--gold-hi); border: 1px solid var(--gold); }
+  .pill.live { margin-left: 0; padding: 9px 16px; font-size: 13px; background: rgba(var(--gold-rgb),.16); color: var(--gold-hi); border: 1px solid var(--gold); }
   .livedot { width: 9px; height: 9px; border-radius: 50%; background: #6fcf97; box-shadow: 0 0 0 0 rgba(111,207,151,.7); animation: livepulse 1.5s infinite; }
   @keyframes livepulse { 70% { box-shadow: 0 0 0 9px rgba(111,207,151,0); } 100% { box-shadow: 0 0 0 0 rgba(111,207,151,0); } }
 
@@ -279,12 +286,12 @@
   html[lang^="zh"] h1 { letter-spacing: .3em; }
   html[lang^="zh"] .hero h2 { letter-spacing: 0; }
 
-  .rowbtn.hostbtn { right: auto; left: 0; border-color: var(--gold); color: var(--gold-hi); background: rgba(201,169,106,.12); }
-  .rowbtn.hostbtn:hover { background: rgba(201,169,106,.22); }
+  .rowbtn.hostbtn { right: auto; left: 0; border-color: var(--gold); color: var(--gold-hi); background: rgba(var(--gold-rgb),.12); }
+  .rowbtn.hostbtn:hover { background: rgba(var(--gold-rgb),.22); }
 
   /* row results */
   .results { border-color: rgba(255,155,148,.55); background: linear-gradient(180deg, rgba(255,155,148,.09), rgba(255,255,255,.03)); }
-  .lastready { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px; margin: 2px 0 10px; border-radius: 10px; background: rgba(201,169,106,.14); border: 1px solid rgba(201,169,106,.5); }
+  .lastready { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px; margin: 2px 0 10px; border-radius: 10px; background: rgba(var(--gold-rgb),.14); border: 1px solid rgba(var(--gold-rgb),.5); }
   .lrk { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .lrn { font-size: 17px; font-weight: 800; }
   /* row results scoreboard */
@@ -326,7 +333,7 @@
   .mc.red { color: var(--red); }
   /* announcement pop-up */
   .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 5s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; overflow: hidden; }
-  .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(18,22,40,.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
+  .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(var(--panel),.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
   .resbox .rf-k { font-size: clamp(16px, 4.5vw, 24px); letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .resbox .resk { margin-top: 10px; font-size: 13px; }
   .resnames { font-size: clamp(26px, min(9vw, 13vh), 60px); font-weight: 800; line-height: 1.15; margin: 4px 0 14px; word-break: break-word; animation: namepulse 1.2s ease-in-out infinite; }
@@ -358,7 +365,7 @@
   .stresult.tie { background: rgba(255,255,255,.06); border-color: var(--line); }
   .tiles { display: grid; gap: 10px; }
   .tile { padding: 10px 8px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); text-align: center; position: relative; min-width: 0; }
-  .tile.me { border-color: var(--gold); background: rgba(201,169,106,.08); }
+  .tile.me { border-color: var(--gold); background: rgba(var(--gold-rgb),.08); }
   .tile.safe { border-color: rgba(111,207,151,.6); background: rgba(111,207,151,.09); }
   .tile.lose { border-color: #ff6b5e; background: rgba(255,90,80,.16); box-shadow: 0 0 22px rgba(255,90,80,.35); animation: tileshake .6s .45s both; }
   @keyframes tileshake { 0%,100% { transform: none; } 15% { transform: translate(-7px, 2px) rotate(-1.2deg); } 35% { transform: translate(7px, -2px) rotate(1.2deg); } 55% { transform: translate(-5px, 1px); } 75% { transform: translate(4px, -1px); } }
@@ -399,9 +406,9 @@
   .resnames.youlose { color: #ff6b5e; font-size: clamp(34px, min(12vw, 20vh), 84px); letter-spacing: .02em; text-shadow: 0 0 30px rgba(255,70,60,.85), 0 4px 0 rgba(0,0,0,.4); animation: namepulse .8s ease-in-out infinite; }
   /* transition to the next row */
   .nextfx { position: fixed; inset: 0; z-index: 84; display: grid; place-items: center; pointer-events: none; overflow: hidden; animation: nextfade 1.9s ease forwards; }
-  .nx-box { text-align: center; padding: 22px 34px 24px; border-radius: 26px; background: linear-gradient(180deg, rgba(26,32,56,.96), rgba(12,16,32,.96)); border: 1px solid rgba(201,169,106,.45); box-shadow: 0 18px 60px rgba(0,0,0,.55), 0 0 40px rgba(201,169,106,.18); max-width: 86vw; animation: nxslide 1.9s cubic-bezier(.2,.9,.3,1) forwards; }
+  .nx-box { text-align: center; padding: 22px 34px 24px; border-radius: 26px; background: linear-gradient(180deg, rgba(var(--panel-hi),.96), rgba(var(--deep),.96)); border: 1px solid rgba(var(--gold-rgb),.45); box-shadow: 0 18px 60px rgba(0,0,0,.55), 0 0 40px rgba(var(--gold-rgb),.18); max-width: 86vw; animation: nxslide 1.9s cubic-bezier(.2,.9,.3,1) forwards; }
   .nx-k { font-size: 14px; letter-spacing: .4em; padding-left: .4em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
-  .nx-n { font-size: clamp(48px, min(16vw, 24vh), 120px); font-weight: 800; line-height: 1.05; color: #fff; text-shadow: 0 0 40px rgba(201,169,106,.6); }
+  .nx-n { font-size: clamp(48px, min(16vw, 24vh), 120px); font-weight: 800; line-height: 1.05; color: #fff; text-shadow: 0 0 40px rgba(var(--gold-rgb),.6); }
   .nx-r { font-size: 15px; opacity: .8; margin-top: 4px; }
   @keyframes nxslide { 0% { transform: translateX(105vw); } 24% { transform: translateX(0); } 76% { transform: translateX(0); } 100% { transform: translateX(-105vw); } }
   @keyframes nextfade { 0% { opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { opacity: 0; } }
@@ -411,7 +418,7 @@
   /* hall of fame + collapsible final board */
   .hallwrap { margin-bottom: 14px; } .hall { display: grid; gap: 8px; }
   .hrow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); animation: fadeup .4s ease both; }
-  .hrow.me { border-color: var(--gold); background: rgba(201,169,106,.1); } .hrow.top { background: linear-gradient(90deg, rgba(255,207,64,.16), rgba(255,255,255,.04)); border-color: rgba(255,207,64,.55); }
+  .hrow.me { border-color: var(--gold); background: rgba(var(--gold-rgb),.1); } .hrow.top { background: linear-gradient(90deg, rgba(255,207,64,.16), rgba(255,255,255,.04)); border-color: rgba(255,207,64,.55); }
   .hrank .ic { color: #1a1407; }
   .hrank { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: rgba(255,255,255,.1); }
   .hname { flex: 1; min-width: 0; display: grid; } .hname b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .hname small, .hpts small { opacity: .65; font-size: 12px; }
@@ -422,7 +429,7 @@
   /* the verdict pop-up also lists everyone's cards for the row (you first), so nothing is hidden behind it */
   .resfx { background: rgba(6,9,20,.9); }
   .resfx.lose { background: rgba(28,4,6,.92); }
-  .resbox.hasboard { width: min(92vw, 580px); padding: 16px 18px 18px; } .resboard { gap: 8px; margin-top: 12px; } .resboard .tile { animation: none; padding: 8px 6px; } .resboard .tcard { margin: 0 7px; } .resbox.hasboard { background: rgb(16,20,38); } .resbox.hasboard.youlose { background: rgb(38,6,9); }
+  .resbox.hasboard { width: min(92vw, 580px); padding: 16px 18px 18px; } .resboard { gap: 8px; margin-top: 12px; } .resboard .tile { animation: none; padding: 8px 6px; } .resboard .tcard { margin: 0 7px; } .resbox.hasboard { background: rgb(var(--panel-lo)); } .resbox.hasboard.youlose { background: rgb(38,6,9); }
   .resbox.hasboard .resnames { font-size: clamp(26px, 8vw, 44px); } .resbox.hasboard .respen.big { transform: scale(.82); margin: 2px auto 0; }
   /* animal avatars */
   .av, .av *, .avedit, .avbadge, .emotefab, .emotetray button { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; outline: none; }
@@ -444,15 +451,16 @@
   .avedit { position: relative; display: inline-block; flex: none; line-height: 0; border-radius: 50%; }
   .avbadge { position: absolute; right: -11px; bottom: -11px; width: 24px; height: 24px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: var(--gold) !important; color: #1a1407; border: 2px solid #1b2038 !important; box-shadow: none !important; line-height: 0; } .seat .avbadge, .prow .avbadge { width: 20px; height: 20px; right: -8px; bottom: -8px; } .avbadge:hover { transform: scale(1.1); filter: none; } .avbadge .ic { stroke-width: 2.6; color: #1a1407; width: 12px; height: 12px; }
   .namerow { display: flex; align-items: center; gap: 10px; } .namerow input { flex: 1; min-width: 0; }
-  .avbox { max-height: 90vh; overflow-y: auto; width: min(92vw, 380px); padding: 18px; border-radius: 20px; background: rgb(24,30,54); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: boxpop .3s ease backwards; }   .leavebox { text-align: center; } .leavep { margin: 0 0 16px; font-size: 14px; opacity: .8; line-height: 1.45; } .leaverow { display: flex; gap: 10px; } .leaverow button { flex: 1; padding: 12px; }
+  .avbox { max-height: 90vh; overflow-y: auto; width: min(92vw, 380px); padding: 18px; border-radius: 20px; background: rgba(var(--panel),1); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: boxpop .3s ease backwards; }   .leavebox { text-align: center; } .leavep { margin: 0 0 16px; font-size: 14px; opacity: .8; line-height: 1.45; } .leaverow { display: flex; gap: 10px; } .leaverow button { flex: 1; padding: 12px; }
   .dangerbtn { background: linear-gradient(180deg, #ff8d80, #e0513f) !important; color: #2a0805 !important; border: 0 !important; font-weight: 700; } .dangerbtn .ic { color: inherit; }
-  .joincard { position: relative; } .loadbanner { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border-radius: inherit; background: rgba(12,16,32,.88); font-weight: 600; animation: lbin .25s ease both; }
+  .joincard { position: relative; } .loadbanner { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border-radius: inherit; background: rgba(var(--deep),.88); font-weight: 600; animation: lbin .25s ease both; }
   .loadbanner.full { position: fixed; z-index: 200; background: rgba(8,11,24,.85); border-radius: 0; }
   .iconbtn { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0 !important; border-radius: 50% !important; background: rgba(255,255,255,.06) !important; border: 1px solid var(--line) !important; box-shadow: none !important; line-height: 0; } .iconbtn:hover { background: rgba(255,255,255,.12) !important; transform: none; filter: none; }
   .topbar { gap: 8px; }
   .timerbar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; margin-bottom: 12px; border-radius: 14px; background: rgba(255,210,63,.1); border: 1px solid rgba(255,210,63,.45); } .timerbar b { font-size: 18px; min-width: 54px; font-variant-numeric: tabular-nums; color: #ffe27a; } .tm-bar { flex: 1; height: 8px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; } .tm-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd23f, #ffb347); transition: width .3s linear; }
   .timerbar.urgent { background: rgba(255,90,80,.16); border-color: #ff6b5e; animation: urgent .6s ease-in-out infinite; } .timerbar.urgent b { color: #ff9c8f; } .timerbar.urgent .tm-bar i { background: linear-gradient(90deg, #ff6b5e, #ff9a6a); } @keyframes urgent { 50% { box-shadow: 0 0 18px rgba(255,90,80,.5); } }
   .setchips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 0 0 12px; } .setchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,.07); border: 1px solid var(--line); } .setedit { padding: 4px 12px !important; font-size: 12px !important; display: inline-flex; align-items: center; gap: 5px; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; } .swatch { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: conic-gradient(var(--sw) 0 50%, var(--sb) 50% 100%); border: 2px solid rgba(255,255,255,.25); box-shadow: none; } .swatch.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(var(--gold-rgb), .55); transform: scale(1.08); }
   .setbox { max-height: min(86vh, 640px); } .setsec { margin-bottom: 18px; } .setsec h4 { margin: 0 0 8px; display: flex; align-items: center; gap: 7px; color: var(--gold-hi); font-size: 15px; } .setnote { margin: 0 0 8px; font-size: 12.5px; opacity: .65; }
   .setrow { display: grid; gap: 8px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); } .setl { display: grid; } .setl small { opacity: .6; font-size: 12px; line-height: 1.35; margin-top: 2px; }
   .seg { display: flex; flex-wrap: wrap; gap: 6px; } .seg button { padding: 7px 13px; border-radius: 99px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,.07); color: #e9e4d6; border: 1px solid var(--line); box-shadow: none; } .seg button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-color: transparent; } .seg button:hover { transform: none; filter: brightness(1.1); } .seg.ro { opacity: .7; } .seg.ro button { cursor: default; }
@@ -463,15 +471,15 @@
   body.calm .av .avb, body.calm .av .eye, body.calm .av.happy .avb, body.calm .av.sad .avb, body.calm .av-empty .ring, body.calm .seat.empty { animation: none !important; }
   body.hasfab { padding-bottom: 76px; }
   .emo { display: inline-block; flex: none; line-height: 0; } .emo svg { display: block; }
-  .emotefab { position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 48px; height: 48px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(24,30,54,.94) !important; border: 1px solid var(--gold-lo) !important; box-shadow: 0 8px 24px rgba(0,0,0,.5) !important; line-height: 0; } .emotefab:hover { transform: scale(1.06); filter: none; }
-  .emotetray { position: fixed; right: 14px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 91; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; border-radius: 18px; background: rgb(24,30,54); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .2s ease backwards; } .emotetray button { padding: 5px !important; border-radius: 12px !important; background: rgba(255,255,255,.06) !important; border: 0 !important; box-shadow: none !important; line-height: 0; } .emotetray button:hover { background: rgba(255,255,255,.14) !important; transform: scale(1.08); filter: none; }
+  .emotefab { position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 48px; height: 48px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(var(--panel),.94) !important; border: 1px solid var(--gold-lo) !important; box-shadow: 0 8px 24px rgba(0,0,0,.5) !important; line-height: 0; } .emotefab:hover { transform: scale(1.06); filter: none; }
+  .emotetray { position: fixed; right: 14px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 91; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; border-radius: 18px; background: rgba(var(--panel),1); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .2s ease backwards; } .emotetray button { padding: 5px !important; border-radius: 12px !important; background: rgba(255,255,255,.06) !important; border: 0 !important; box-shadow: none !important; line-height: 0; } .emotetray button:hover { background: rgba(255,255,255,.14) !important; transform: scale(1.08); filter: none; }
   .emofloat { position: fixed; z-index: 92; left: calc(4% + var(--lane, 0) * 19%); width: 17%; bottom: 90px; display: grid; justify-items: center; gap: 3px; pointer-events: none; animation: emofly 2.7s ease-out forwards; } .emofloat small { font-size: 11px; font-weight: 700; background: rgba(0,0,0,.6); border-radius: 99px; padding: 1px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @keyframes emofly { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.15); } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-190px) scale(1); } }
-  .acctitle { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); } .accgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; } .accpick { display: grid; justify-items: center; gap: 3px; padding: 6px 2px !important; border-radius: 12px !important; background: rgba(255,255,255,.05) !important; border: 2px solid transparent !important; box-shadow: none !important; color: #e9e4d6; line-height: 1; } .accpick small { font-size: 10px; text-align: center; line-height: 1.15; } .accpick.on { border-color: var(--gold-hi) !important; background: rgba(201,169,106,.22) !important; } .accpick.locked { opacity: .4; } .accnone { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 2px dashed rgba(255,255,255,.35); }
+  .acctitle { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); } .accgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; } .accpick { display: grid; justify-items: center; gap: 3px; padding: 6px 2px !important; border-radius: 12px !important; background: rgba(255,255,255,.05) !important; border: 2px solid transparent !important; box-shadow: none !important; color: #e9e4d6; line-height: 1; } .accpick small { font-size: 10px; text-align: center; line-height: 1.15; } .accpick.on { border-color: var(--gold-hi) !important; background: rgba(var(--gold-rgb),.22) !important; } .accpick.locked { opacity: .4; } .accnone { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 2px dashed rgba(255,255,255,.35); }
   .recap { margin: 0 0 14px; display: grid; gap: 7px; } .recap .kicker { margin-bottom: 2px; }
   .rcp { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: rgba(182,120,255,.09); border: 1px solid rgba(182,120,255,.3); font-size: 14px; line-height: 1.35; } .rcp-i { flex: none; display: grid; place-items: center; width: 28px; }
   .chatfab { right: calc(14px + 58px); } .cbadge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; display: none; place-items: center; background: #ff5c7a; color: #fff; font-size: 11px; font-weight: 800; font-style: normal; border: 2px solid #1b2038; }
-  .chatpop { position: fixed; right: 14px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 93; display: flex; align-items: center; gap: 8px; max-width: min(78vw, 330px); padding: 8px 12px 8px 8px !important; border-radius: 16px !important; background: rgb(24,30,54) !important; border: 1px solid var(--gold-lo) !important; color: #f3ecda !important; text-align: left; font-size: 13px !important; font-weight: 500 !important; box-shadow: 0 10px 30px rgba(0,0,0,.55) !important; animation: boxpop .25s ease backwards; } .chatpop span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; } .chatpop b { color: var(--gold-hi); }
+  .chatpop { position: fixed; right: 14px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 93; display: flex; align-items: center; gap: 8px; max-width: min(78vw, 330px); padding: 8px 12px 8px 8px !important; border-radius: 16px !important; background: rgba(var(--panel),1) !important; border: 1px solid var(--gold-lo) !important; color: #f3ecda !important; text-align: left; font-size: 13px !important; font-weight: 500 !important; box-shadow: 0 10px 30px rgba(0,0,0,.55) !important; animation: boxpop .25s ease backwards; } .chatpop span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; } .chatpop b { color: var(--gold-hi); }
   .chatbox { display: flex; flex-direction: column; height: min(82vh, 620px); } .chatlist { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; -webkit-overflow-scrolling: touch; } .chatempty { margin: auto; opacity: .6; text-align: center; }
   .cmsg { display: flex; align-items: flex-end; gap: 8px; max-width: 88%; } .cmsg.mine { align-self: flex-end; flex-direction: row-reverse; } .cmsg.pending { opacity: .6; }
   .cbub { display: grid; gap: 1px; padding: 7px 12px; border-radius: 16px 16px 16px 4px; background: rgba(255,255,255,.09); word-break: break-word; line-height: 1.35; font-size: 14.5px; } .cbub b { font-size: 11.5px; color: var(--gold-hi); } .cmsg.mine .cbub { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-radius: 16px 16px 4px 16px; } .cmsg.mine .cbub b { color: #5c4513; }
@@ -484,24 +492,24 @@
   @keyframes pdrise { from { transform: scaleY(0); } } @keyframes pdbob { 50% { transform: translateY(-4px); } }
   .winbadge, .winscount { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 800; } .winbadge { background: linear-gradient(180deg, #ffe27a, #ffcf40); color: #3a2a05; } .winscount { background: rgba(255,207,64,.16); color: #ffe27a; border: 1px solid rgba(255,207,64,.45); } .hrow .winbadge, .hrow .winscount { flex: none; }
   .hallnote { margin: 6px 0 0; text-align: center; font-size: 12.5px; opacity: .65; }
-  .winfx { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; background: rgba(6,9,20,.72); animation: lbin .35s ease both; } .winbox { display: grid; justify-items: center; gap: 10px; padding: 24px 30px; border-radius: 24px; text-align: center; background: linear-gradient(180deg, rgb(34,40,70), rgb(16,20,40)); border: 2px solid #ffcf40; box-shadow: 0 0 70px rgba(255,207,64,.5), 0 20px 60px rgba(0,0,0,.6); animation: boxpop .6s cubic-bezier(.2,1.3,.4,1) backwards; max-width: 86vw; }
+  .winfx { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; background: rgba(6,9,20,.72); animation: lbin .35s ease both; } .winbox { display: grid; justify-items: center; gap: 10px; padding: 24px 30px; border-radius: 24px; text-align: center; background: linear-gradient(180deg, rgba(var(--panel-hi),1), rgba(var(--panel-lo),1)); border: 2px solid #ffcf40; box-shadow: 0 0 70px rgba(255,207,64,.5), 0 20px 60px rgba(0,0,0,.6); animation: boxpop .6s cubic-bezier(.2,1.3,.4,1) backwards; max-width: 86vw; }
   .wf-k { letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; font-weight: 800; color: #ffe27a; font-size: 14px; } .wf-t { font-size: 22px; font-weight: 800; } .wf-s { font-size: 13px; opacity: .7; }
   .connbar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(60,28,20,.96); border: 1px solid #ff9b6a; color: #ffd9c4; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: boxpop .25s ease backwards; white-space: nowrap; }
   .connbar button { padding: 5px 12px; font-size: 12px; border-radius: 99px; background: #ff9b6a; color: #2a0f05; border: 0; box-shadow: none; } .spin.sm { width: 14px; height: 14px; border-width: 2px; }
-  .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(201,169,106,.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
+  .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(var(--gold-rgb),.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
   .qrbox { text-align: center; } .qrimg { width: min(64vw, 240px); aspect-ratio: 1; margin: 0 auto 10px; border-radius: 14px; overflow: hidden; background: #fff; display: grid; place-items: center; box-shadow: 0 0 0 6px #fff; } .qrimg svg { width: 100%; height: 100%; display: block; } .qrimg.fail { color: #14182b; font-size: 12px; padding: 10px; word-break: break-all; }
   .qrbox .leaverow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; } .qrbox .leaverow button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 14px; font-size: 15px; font-weight: 700; white-space: nowrap; }
-  .qrbox .leaverow button:not(.ghost) { box-shadow: 0 6px 16px rgba(201,169,106,.25); } .qrbox .leaverow button:not(.ghost) .ic { color: currentColor !important; stroke-width: 2.3; }
+  .qrbox .leaverow button:not(.ghost) { box-shadow: 0 6px 16px rgba(var(--gold-rgb),.25); } .qrbox .leaverow button:not(.ghost) .ic { color: currentColor !important; stroke-width: 2.3; }
   .qrcode { font-size: 28px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; color: var(--gold-hi); margin: 14px 0 4px; }
   .gamehead { position: relative; z-index: 30; }
   .invwrap { position: relative; display: inline-flex; } .invwrap > button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .invwrap .caret { flex: none; display: block; } .invwrap .caret { margin-left: 0; transition: transform .2s; } .invwrap .caret.up { transform: rotate(180deg); }
-  .invmenu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 190px; z-index: 40; padding: 6px; border-radius: 14px; background: rgb(24,30,54); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); display: grid; gap: 4px; animation: boxpop .2s ease backwards; }
+  .invmenu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 190px; z-index: 40; padding: 6px; border-radius: 14px; background: rgba(var(--panel),1); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); display: grid; gap: 4px; animation: boxpop .2s ease backwards; }
   .invmenu button { color: #f3ecda !important; display: flex !important; align-items: center; gap: 8px; width: 100%; flex: none !important; justify-content: flex-start; padding: 11px 12px !important; font-size: 13px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 10px !important; } .invmenu button:hover { background: rgba(255,255,255,.08) !important; filter: none; transform: none; }
   .hactions.even .invwrap { flex: 1; }
-  .waitact { gap: 10px; } .waitact .invwrap > button { padding: 12px 22px; font-size: 15px; background: linear-gradient(180deg, rgba(201,169,106,.28), rgba(201,169,106,.12)) !important; border-color: var(--gold-lo) !important; } .waitact > button { padding: 12px 20px; font-size: 15px; }
+  .waitact { gap: 10px; } .waitact .invwrap > button { padding: 12px 22px; font-size: 15px; background: linear-gradient(180deg, rgba(var(--gold-rgb),.28), rgba(var(--gold-rgb),.12)) !important; border-color: var(--gold-lo) !important; } .waitact > button { padding: 12px 20px; font-size: 15px; }
   .waitroom .invmenu { min-width: 230px; }
   .avtitle { font-weight: 700; margin-bottom: 12px; text-align: center; }
-  .avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center; } .avpick { padding: 4px; border-radius: 50%; border: 2px solid transparent; background: none; box-shadow: none; line-height: 0; } .avpick:hover { transform: scale(1.06); filter: none; } .avpick.on { border-color: var(--gold-hi); background: rgba(201,169,106,.25); }
+  .avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center; } .avpick { padding: 4px; border-radius: 50%; border: 2px solid transparent; background: none; box-shadow: none; line-height: 0; } .avpick:hover { transform: scale(1.06); filter: none; } .avpick.on { border-color: var(--gold-hi); background: rgba(var(--gold-rgb),.25); }
   .avatar.av-empty { position: relative; display: grid; place-items: center; background: none; border: 0; color: var(--gold-lo); }
   .av-empty .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px dashed var(--gold-lo); } .av-empty .ic { stroke-width: 2.4; } .seat.live .av-empty .ring { animation: avspin 8s linear infinite; } .seat.live .av-empty .ic { animation: avpulse 1.8s ease-in-out infinite; }
   .wdots { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; } .wdots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: wdot 1.2s ease-in-out infinite; } .wdots i:nth-child(2) { animation-delay: .2s; } .wdots i:nth-child(3) { animation-delay: .4s; }
@@ -510,14 +518,14 @@
   @keyframes avspin { to { transform: rotate(360deg); } } @keyframes avpulse { 50% { transform: scale(1.25); opacity: .6; } } @keyframes wdot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } } @keyframes seatglow { 50% { opacity: .85; } }
   /* row criteria tip (beginner help) */
   .rowinfo { position: absolute; left: 0; top: 0; bottom: 0; margin: auto 0; height: 34px; width: 34px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(111,211,255,.12) !important; border: 1px solid rgba(111,211,255,.45) !important; box-shadow: none !important; line-height: 0; z-index: 2; } .rowinfo:hover { transform: none; filter: brightness(1.2); } .rowinfo.on { background: rgba(111,211,255,.35) !important; }
-  .rowtip { position: absolute; left: 0; right: 0; top: calc(50% + 24px); z-index: 30; padding: 12px 14px 12px; border-radius: 14px; text-align: left; background: rgb(22,30,56); border: 1px solid rgba(111,211,255,.6); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .25s ease backwards; }
-  .rowtip::before { content: ''; position: absolute; left: 13px; top: -7px; width: 12px; height: 12px; background: rgb(22,30,56); border-left: 1px solid rgba(111,211,255,.6); border-top: 1px solid rgba(111,211,255,.6); transform: rotate(45deg); }
+  .rowtip { position: absolute; left: 0; right: 0; top: calc(50% + 24px); z-index: 30; padding: 12px 14px 12px; border-radius: 14px; text-align: left; background: rgb(var(--panel)); border: 1px solid rgba(111,211,255,.6); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .25s ease backwards; }
+  .rowtip::before { content: ''; position: absolute; left: 13px; top: -7px; width: 12px; height: 12px; background: rgb(var(--panel)); border-left: 1px solid rgba(111,211,255,.6); border-top: 1px solid rgba(111,211,255,.6); transform: rotate(45deg); }
   .rowtip b { color: var(--gold-hi); font-size: 14px; } .rowtip p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; opacity: .9; } .rowtip .tj { color: #d9b8ff; } .rowtip button { margin-top: 10px; padding: 7px 16px; font-size: 13px; }
   /* final board */
   .final { --cw: 36px; }
   .ftiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
   .ftile { padding: 10px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); min-width: 0; }
-  .ftile.me { border-color: var(--gold); background: rgba(201,169,106,.08); }
+  .ftile.me { border-color: var(--gold); background: rgba(var(--gold-rgb),.08); }
   .ftile .tname { justify-content: flex-start; }
   .frows { display: grid; gap: 5px; }
   .frow { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 10px; border-left: 4px solid transparent; }
@@ -543,7 +551,7 @@
   body.noscroll { overflow: hidden; }
   .guide-ov { position: fixed; inset: 0; z-index: 95; background: rgba(5,8,18,.86); display: grid; place-items: center; padding: 12px; animation: gfade .25s ease; }
   @keyframes gfade { from { opacity: 0; } }
-  .guide { --cw: 46px; width: min(760px, 100%); max-height: min(92vh, 900px); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; border-radius: 20px; background: linear-gradient(180deg, #19223d, #0e1426); border: 1px solid var(--gold-lo); box-shadow: 0 30px 80px rgba(0,0,0,.7); overflow: hidden; animation: guidein .3s cubic-bezier(.2,1.2,.4,1) backwards; }
+  .guide { --cw: 46px; width: min(760px, 100%); max-height: min(92vh, 900px); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; border-radius: 20px; background: linear-gradient(180deg, var(--bg1), var(--bg2)); border: 1px solid var(--gold-lo); box-shadow: 0 30px 80px rgba(0,0,0,.7); overflow: hidden; animation: guidein .3s cubic-bezier(.2,1.2,.4,1) backwards; }
   @keyframes guidein { from { opacity: 0; transform: translateY(24px) scale(.97); } }
   .ghead { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
   .gtitle { flex: 1; display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; }
@@ -573,7 +581,7 @@
   .gl-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
   .gl-slots { display: flex; gap: 6px; justify-content: center; }
   .gl-t { display: grid; font-size: 13px; line-height: 1.3; } .gl-t small { opacity: .6; font-size: 11px; }
-  .gslot { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); background: rgba(255,255,255,.05); border: 1px dashed rgba(201,169,106,.65); display: flex; }
+  .gslot { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); background: rgba(255,255,255,.05); border: 1px dashed rgba(var(--gold-rgb),.65); display: flex; }
   .gslot.full { border-style: solid; background: none; } .gslot .card { width: 100%; height: 100%; }
   /* flow */
   .gflow { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; margin: 6px 0 16px; }
@@ -591,10 +599,10 @@
   /* examples */
   .gexs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0 14px; }
   .gex { display: grid; justify-items: center; gap: 6px; padding: 10px 6px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
-  .gex.lose { background: rgba(255,90,80,.14); border-color: #ff6b5e; } .gex.safe { background: rgba(111,207,151,.08); border-color: rgba(111,207,151,.5); } .gex.perfect { background: rgba(201,169,106,.14); border-color: var(--gold); }
+  .gex.lose { background: rgba(255,90,80,.14); border-color: #ff6b5e; } .gex.safe { background: rgba(111,207,151,.08); border-color: rgba(111,207,151,.5); } .gex.perfect { background: rgba(var(--gold-rgb),.14); border-color: var(--gold); }
   .gex-n { font-weight: 700; font-size: 13px; } .gex-v { font-size: 12px; opacity: .8; text-align: center; }
   .gex-t { font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; padding: 2px 9px; border-radius: 99px; }
-  .gex-t.lose { background: rgba(255,90,80,.3); color: #ffd2cd; } .gex-t.safe { background: rgba(111,207,151,.2); color: #b9f0cd; } .gex-t.perfect { background: rgba(201,169,106,.3); color: var(--gold-hi); }
+  .gex-t.lose { background: rgba(255,90,80,.3); color: #ffd2cd; } .gex-t.safe { background: rgba(111,207,151,.2); color: #b9f0cd; } .gex-t.perfect { background: rgba(var(--gold-rgb),.3); color: var(--gold-hi); }
   .gscale { margin: 0 0 6px; } .gscale-r { display: flex; gap: 3px; } .gr { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 5px 0; border-radius: 6px; background: rgba(255,255,255,.08); }
   .gr.hl { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
   .gscale-a { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 11px; opacity: .65; } .gscale-a i { flex: 1; height: 2px; background: linear-gradient(90deg, rgba(255,255,255,.2), var(--gold)); }
@@ -610,7 +618,7 @@
   .gl-side i { flex: 1; width: 2px; margin: 6px 0; background: linear-gradient(180deg, rgba(255,255,255,.2), var(--gold)); }
   .gladder { display: grid; gap: 6px; --cw: 32px; }
   .grung { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
-  .grung:nth-child(n+4) { background: rgba(201,169,106,.07); } .grung:last-child { background: rgba(201,169,106,.16); border-color: var(--gold); }
+  .grung:nth-child(n+4) { background: rgba(var(--gold-rgb),.07); } .grung:last-child { background: rgba(var(--gold-rgb),.16); border-color: var(--gold); }
   .grung-n { font-size: 12px; font-weight: 800; opacity: .6; } .grung-l { font-size: 12.5px; font-weight: 700; min-width: 0; }
   .gbonus { font-size: 13px; font-weight: 800; padding: 3px 9px; border-radius: 8px; background: linear-gradient(180deg, #ffb25e, #f0801f); color: #2b1300; min-width: 40px; text-align: center; } .gbonus.none { background: rgba(255,255,255,.08); color: rgba(255,255,255,.4); }
   .gtie { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -639,7 +647,7 @@
   .kickbtn.armed { background: linear-gradient(180deg, #ff7a6e, #e0483b); color: #fff; border-color: #ff5a4d; animation: readypulse 1s infinite; }
   .plhint { margin: 12px 0 6px; font-size: 13px; opacity: .65; text-align: center; }
   .tag.offl { background: rgba(255,90,80,.25); color: #ffd2cd; border-color: rgba(255,120,110,.6); }
-  .invitebanner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, rgba(201,169,106,.22), rgba(201,169,106,.08)); border: 1px solid var(--gold); }
+  .invitebanner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--gold-rgb),.22), rgba(var(--gold-rgb),.08)); border: 1px solid var(--gold); }
   .invitebanner .inv-i { font-size: 28px; } .invitebanner b { display: block; font-size: 17px; } .invitebanner small { opacity: .75; font-size: 12px; }
   @media (max-width: 800px) { .landing.invited .joincard { order: -1; } .landing.invited .fan, .landing.invited .chips { display: none; } .landing.invited .hero h2 { margin-top: 0; } }
   .joincard.invited .row { gap: 8px; flex-wrap: wrap; } .joincard.invited .row button { flex: 1; padding: 11px 12px; font-size: 12px; }
@@ -656,7 +664,7 @@
   .iconlabel { display: inline-flex; align-items: center; gap: 7px; }
   button .iconlabel { justify-content: center; }
   .chip { display: inline-flex; align-items: center; gap: 7px; } .chip .ic { stroke-width: 2; }
-  .gf-i { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(160deg, rgba(201,169,106,.28), rgba(201,169,106,.08)); border: 1px solid rgba(201,169,106,.55); color: var(--gold-hi); }
+  .gf-i { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(160deg, rgba(var(--gold-rgb),.28), rgba(var(--gold-rgb),.08)); border: 1px solid rgba(var(--gold-rgb),.55); color: var(--gold-hi); }
   .gf-i .ic { stroke-width: 1.7; }
   .guidebtn b, .gtitle b { color: #1a1407; } .guidebtn b .ic, .gtitle b .ic { stroke-width: 2.2; }
   .pill .ic, .tstat .ic, .tag .ic { stroke-width: 2.6; margin-right: 3px; vertical-align: -2px; } .tstat { display: inline-flex; align-items: center; }
@@ -1393,9 +1401,12 @@ function renderChat(keepScroll) {
 }
 
 // ---- display & accessibility (kept on this phone only) ----
-const UI_DEFAULT = { fourcolor: false, text: 0, haptics: true, calm: false, voice: true };
+const UI_DEFAULT = { fourcolor: false, text: 0, haptics: true, calm: false, voice: true, theme: 'gold' };
+const THEMES = [['gold', '#c9a96a', '#18213b'], ['emerald', '#9fd37a', '#14392c'], ['royal', '#b99cff', '#2d1f55'], ['crimson', '#f0a38e', '#3d1622'], ['ocean', '#5fc9d6', '#123a50']];
 let ui = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('sct-ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
 function applyUi() {
+  if (ui.theme && ui.theme !== 'gold' && THEMES.some((x) => x[0] === ui.theme)) document.documentElement.dataset.theme = ui.theme; else delete document.documentElement.dataset.theme;
+  const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = (THEMES.find((x) => x[0] === ui.theme) || THEMES[0])[2];
   document.body.classList.toggle('fourcolor', !!ui.fourcolor);
   document.body.classList.toggle('calm', !!ui.calm);
   const pct = [100, 118, 135][ui.text] || 100;
@@ -1434,6 +1445,7 @@ function renderSettings() {
     row(t('setMult'), t('setMultHint'), seg([[0.5, '×0.5'], [1, '×1'], [2, '×2'], [3, '×3']], gs.mult, (v) => change({ mult: v }), !canEdit))));
   sections.push(el('div', { class: 'setsec' },
     el('h4', {}, icon('eye', 16), t('setDisplay')),
+    row(t('setTheme'), '', el('div', { class: 'swatches', role: 'radiogroup', 'aria-label': t('setTheme') }, ...THEMES.map(([k, c, bg]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String((ui.theme || 'gold') === k), 'aria-label': t('theme_' + k), title: t('theme_' + k), class: 'swatch' + ((ui.theme || 'gold') === k ? ' on' : ''), style: `--sw:${c};--sb:${bg}`, onclick: () => setUi('theme', k) })))),
     row(t('setFour'), t('setFourHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.fourcolor, (v) => setUi('fourcolor', v))),
     row(t('setText'), '', seg([[0, 'A'], [1, 'A+'], [2, 'A++']], ui.text, (v) => setUi('text', v))),
     row(t('setHaptics'), t('setHapticsHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.haptics, (v) => setUi('haptics', v))),
@@ -1548,7 +1560,7 @@ const I18N = {
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
     host: 'host', joined: 'joined', you: ' (You)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
-    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row (a fraction is rounded up)', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: 'GG', chatQ2: 'Nice one!', chatQ3: 'Hurry up!', chatQ4: 'Oops!', setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
+    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row (a fraction is rounded up)', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setTheme: 'Colour scheme', theme_gold: 'Midnight gold', theme_emerald: 'Emerald table', theme_royal: 'Royal purple', theme_crimson: 'Crimson', theme_ocean: 'Ocean', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: 'GG', chatQ2: 'Nice one!', chatQ3: 'Hurry up!', chatQ4: 'Oops!', setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} Players`, readyN: (v) => `${v.r}/${v.n} Ready`, roundN: (v) => `Round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
@@ -1620,7 +1632,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
-    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数（有小数则进位）', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快点！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', hallWin: '胜', hallWins: (v) => `在此房间赢了 ${v.n} 回合`, hallTie: '大家打平，所以没有人获得回合胜利。', acc_headphones: '耳机', acc_mustache: '小胡子', acc_horns: '恶魔角', acc_flower: '小花', accUnlockedN: (v) => `解锁：${v.name}！`, winsN: (v) => `在此房间已赢 ${v.n} 回合`, accNextAt: (v) => `再赢 ${v.n} 回合解锁${v.name}`, accAll: '所有配饰都已解锁！', accHow: '回合胜利 = 第 4 行结束后总罚分最低（平分则共享；全员平局则无人获胜）。', leaveRoom: '离开房间',
+    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数（有小数则进位）', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '绯红', theme_ocean: '海洋蓝', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快点！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', hallWin: '胜', hallWins: (v) => `在此房间赢了 ${v.n} 回合`, hallTie: '大家打平，所以没有人获得回合胜利。', acc_headphones: '耳机', acc_mustache: '小胡子', acc_horns: '恶魔角', acc_flower: '小花', accUnlockedN: (v) => `解锁：${v.name}！`, winsN: (v) => `在此房间已赢 ${v.n} 回合`, accNextAt: (v) => `再赢 ${v.n} 回合解锁${v.name}`, accAll: '所有配饰都已解锁！', accHow: '回合胜利 = 第 4 行结束后总罚分最低（平分则共享；全员平局则无人获胜）。', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `请摆满所有牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -1692,7 +1704,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
-    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數（有小數則進位）', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快點！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', hallWin: '勝', hallWins: (v) => `在此房間贏了 ${v.n} 回合`, hallTie: '大家打平，所以沒有人獲得回合勝利。', acc_headphones: '耳機', acc_mustache: '小鬍子', acc_horns: '惡魔角', acc_flower: '小花', accUnlockedN: (v) => `解鎖：${v.name}！`, winsN: (v) => `在此房間已贏 ${v.n} 回合`, accNextAt: (v) => `再贏 ${v.n} 回合解鎖${v.name}`, accAll: '所有配飾都已解鎖！', accHow: '回合勝利 = 第 4 行結束後總罰分最低（平分則共享；全員平手則無人獲勝）。', leaveRoom: '離開房間',
+    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數（有小數則進位）', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '緋紅', theme_ocean: '海洋藍', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快點！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', hallWin: '勝', hallWins: (v) => `在此房間贏了 ${v.n} 回合`, hallTie: '大家打平，所以沒有人獲得回合勝利。', acc_headphones: '耳機', acc_mustache: '小鬍子', acc_horns: '惡魔角', acc_flower: '小花', accUnlockedN: (v) => `解鎖：${v.name}！`, winsN: (v) => `在此房間已贏 ${v.n} 回合`, accNextAt: (v) => `再贏 ${v.n} 回合解鎖${v.name}`, accAll: '所有配飾都已解鎖！', accHow: '回合勝利 = 第 4 行結束後總罰分最低（平分則共享；全員平手則無人獲勝）。', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
