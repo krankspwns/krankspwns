@@ -655,15 +655,17 @@ async function handle(action, b, query) {
       const key = String(b.item);
       need(GIFTS[key] !== undefined, 400, 'Unknown item');
       need(me.gifts[key] > 0, 403, 'You have none left');
-      const target = room.players.find((q) => q.id === String(b.target));
-      need(target && (target.id !== pid || START_WP > 0), 400, 'Pick another player');   // while testing (START_WP > 0) you may throw at yourself
+      const all = String(b.target) === 'all';   // everyone at once costs every throw of the pack
+      const target = all ? null : room.players.find((q) => q.id === String(b.target));
+      if (all) { need(room.players.length > 1 || START_WP > 0, 400, 'Nobody to throw at'); need(me.gifts[key] >= GIFT_USES, 403, `Throwing at everyone needs all ${GIFT_USES} throws`); }
+      else need(target && (target.id !== pid || START_WP > 0), 400, 'Pick another player');   // while testing (START_WP > 0) you may throw at yourself
       const now = Date.now();
       room.giftAt = room.giftAt || {};
       if (now - (room.giftAt[pid] || 0) < 1500) return viewFor(room, pid, cnOf);   // one throw at a time
       room.giftAt[pid] = now;
-      me.gifts[key] -= 1;
+      me.gifts[key] -= all ? GIFT_USES : 1;
       room.giftN = (room.giftN || 0) + 1;
-      room.gifts = [...(room.gifts || []).filter((x) => now - x.at < 10000), { n: room.giftN, from: pid, to: target.id, item: key, at: now }].slice(-10);
+      room.gifts = [...(room.gifts || []).filter((x) => now - x.at < 10000), { n: room.giftN, from: pid, to: all ? 'all' : target.id, item: key, at: now }].slice(-10);
       break;
     }
 
