@@ -179,5 +179,27 @@ const post = (b) => call('POST', b, {});
   assert.ok(after.allReady && after.allReady.timer, 'timer flag on the all-ready banner');
   assert.equal(after.deadline, null);
   assert.equal(after.hand.length, 0, 'the host\'s hand was placed on the board');
+  // round wins unlock avatar accessories
+  const wr = (await post({ action: 'create', name: 'WA' })).j;
+  const wb = (await post({ action: 'join', code: wr.code, name: 'WB' })).j;
+  await post({ action: 'deal', code: wr.code, pid: wr.meId });
+  for (const pid of [wr.meId, wb.meId]) {
+    let v = (await call('GET', null, { code: wr.code, pid })).j;
+    for (let i = 0; i < 7; i++) await post({ action: 'place', code: wr.code, pid, card: v.hand[i] === undefined ? (await call('GET', null, { code: wr.code, pid })).j.hand[0] : (await call('GET', null, { code: wr.code, pid })).j.hand[0], slot: i });
+    await post({ action: 'ready', code: wr.code, pid, ready: true });
+  }
+  const wroom = globalThis.__rooms.get(wr.code);
+  const rigW = (pl, cs) => cs.forEach((c, i) => (pl.board[i].c = c));
+  rigW(wroom.players[0], ['3S', '4S', '10S', 'QH', '2S', '3S', '4S']); rigW(wroom.players[1], ['KH', 'KD', '3C', '4D', '7H', '7C', '7D']);
+  for (let row = 0; row < 4; row++) await post({ action: 'flipRowAll', code: wr.code, pid: wr.meId, row, up: true });
+  const wv = (await call('GET', null, { code: wr.code, pid: wr.meId })).j;
+  assert.equal(wv.rowResults.length, 4);
+  assert.equal(wv.players.reduce((a, p) => a + p.wins, 0), 1, 'exactly one round winner');
+  const winner = wv.players.find((p) => p.wins === 1);
+  assert.equal(winner.acc, 'hat', 'first win unlocks the party hat');
+  const loserId = wv.players.find((p) => p.wins === 0).id;
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: loserId, acc: 'crown' })).s, 403, 'locked accessory refused');
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: 'shades' })).s, 403, 'needs 2 wins');
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: '' })).j.players.find((p) => p.id === winner.id).acc, '', 'can take it off');
   console.log('all ok');
 })().catch(e => { console.error(e); process.exit(1); });

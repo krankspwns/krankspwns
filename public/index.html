@@ -457,11 +457,15 @@
   .setsync { display: inline-flex; align-items: center; gap: 8px; }
   body.fourcolor .card.s-D { color: #1f5fd6; } body.fourcolor .card.s-C { color: #12803a; } body.fourcolor .card.s-H { color: #d12b3d; }
   body.calm .av .avb, body.calm .av .eye, body.calm .av.happy .avb, body.calm .av.sad .avb, body.calm .av-empty .ring, body.calm .seat.empty { animation: none !important; }
+  body.hasfab { padding-bottom: 76px; }
   .emo { display: inline-block; flex: none; line-height: 0; } .emo svg { display: block; }
-  .emotefab { position: fixed; right: 14px; bottom: 76px; z-index: 90; width: 48px; height: 48px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(24,30,54,.94) !important; border: 1px solid var(--gold-lo) !important; box-shadow: 0 8px 24px rgba(0,0,0,.5) !important; line-height: 0; } .emotefab:hover { transform: scale(1.06); filter: none; }
-  .emotetray { position: fixed; right: 14px; bottom: 132px; z-index: 91; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; border-radius: 18px; background: rgb(24,30,54); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .2s ease backwards; } .emotetray button { padding: 5px !important; border-radius: 12px !important; background: rgba(255,255,255,.06) !important; border: 0 !important; box-shadow: none !important; line-height: 0; } .emotetray button:hover { background: rgba(255,255,255,.14) !important; transform: scale(1.08); filter: none; }
+  .emotefab { position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 48px; height: 48px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(24,30,54,.94) !important; border: 1px solid var(--gold-lo) !important; box-shadow: 0 8px 24px rgba(0,0,0,.5) !important; line-height: 0; } .emotefab:hover { transform: scale(1.06); filter: none; }
+  .emotetray { position: fixed; right: 14px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 91; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; border-radius: 18px; background: rgb(24,30,54); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .2s ease backwards; } .emotetray button { padding: 5px !important; border-radius: 12px !important; background: rgba(255,255,255,.06) !important; border: 0 !important; box-shadow: none !important; line-height: 0; } .emotetray button:hover { background: rgba(255,255,255,.14) !important; transform: scale(1.08); filter: none; }
   .emofloat { position: fixed; z-index: 92; left: calc(10px + var(--lane, 0) * 62px); bottom: 90px; display: grid; justify-items: center; gap: 2px; pointer-events: none; animation: emofly 2.7s ease-out forwards; } .emofloat small { font-size: 10px; font-weight: 700; background: rgba(0,0,0,.55); border-radius: 99px; padding: 1px 7px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @keyframes emofly { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.15); } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-190px) scale(1); } }
+  .acctitle { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); } .accgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; } .accpick { display: grid; justify-items: center; gap: 3px; padding: 6px 2px !important; border-radius: 12px !important; background: rgba(255,255,255,.05) !important; border: 2px solid transparent !important; box-shadow: none !important; color: #e9e4d6; line-height: 1; } .accpick small { font-size: 10px; text-align: center; line-height: 1.15; } .accpick.on { border-color: var(--gold-hi) !important; background: rgba(201,169,106,.22) !important; } .accpick.locked { opacity: .4; } .accnone { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 2px dashed rgba(255,255,255,.35); }
+  .recap { margin: 0 0 14px; display: grid; gap: 7px; } .recap .kicker { margin-bottom: 2px; }
+  .rcp { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: rgba(182,120,255,.09); border: 1px solid rgba(182,120,255,.3); font-size: 14px; line-height: 1.35; } .rcp-i { flex: none; display: grid; place-items: center; width: 28px; }
   .connbar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(60,28,20,.96); border: 1px solid #ff9b6a; color: #ffd9c4; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: boxpop .25s ease backwards; white-space: nowrap; }
   .connbar button { padding: 5px 12px; font-size: 12px; border-radius: 99px; background: #ff9b6a; color: #2a0f05; border: 0; box-shadow: none; } .spin.sm { width: 14px; height: 14px; border-width: 2px; }
   .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(201,169,106,.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
@@ -1023,15 +1027,23 @@ const AVATARS = {
   tiger: ['#ffe3b8', `<circle cx="11.5" cy="14.5" r="5.4" fill="#ee9a2a"/><circle cx="36.5" cy="14.5" r="5.4" fill="#ee9a2a"/><circle cx="11.5" cy="14.5" r="2.4" fill="#fff1d6"/><circle cx="36.5" cy="14.5" r="2.4" fill="#fff1d6"/><ellipse cx="24" cy="27" rx="14.5" ry="13.2" fill="#f3a437"/><path d="M24 14.5v5.2M18.6 15.6l1.4 4.4M29.4 15.6L28 20M10.4 24l4.4 1M37.6 24l-4.4 1M11 30l4.2-.6M37 30l-4.2-.6" stroke="#3a2610" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="24" cy="32" rx="7.4" ry="5.4" fill="#fff4e0"/>${eyes(25, 6)}<path d="M22 29.4h4l-2 2.2z" fill="#3a2610"/><path d="M24 31.6v1.4M21.6 33.6q2.4 1.8 4.8 0" fill="none" stroke="#3a2610" stroke-width="1.1" stroke-linecap="round"/>`],
 };
 
+// accessories earned by winning rounds in a room: [wins needed, drawing]
+const ACC = {
+  hat: [1, '<path d="M17 13.5L24 1l7 12.5z" fill="#ff6fb0"/><path d="M17 13.5h14" stroke="#ffd23f" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="1.8" r="2.4" fill="#ffd23f"/><path d="M20.5 9.5l6.5-3.2M19.3 12l9.4-4.5" stroke="#fff" stroke-width="1" opacity=".7"/>'],
+  shades: [2, '<path d="M9.5 22h29v2.2q0 5.4-5.6 5.4t-5-4.5h-3.8q.6 4.5-5 4.5T9.5 24.2z" fill="#14182b"/><path d="M12.6 24.6l4-1.5M25.8 24.6l3.4-1.2" stroke="#7fb2ff" stroke-width="1.4" stroke-linecap="round"/>'],
+  crown: [3, '<path d="M13 14.5l1.8-9.5 5.2 5.2 4-7.2 4 7.2 5.2-5.2 1.8 9.5z" fill="#ffcf40" stroke="#c28a10" stroke-width="1" stroke-linejoin="round"/><circle cx="14.8" cy="5.2" r="1.5" fill="#ff6b6b"/><circle cx="24" cy="3.2" r="1.5" fill="#6bd6ff"/><circle cx="33.2" cy="5.2" r="1.5" fill="#ff6b6b"/>'],
+  halo: [5, '<ellipse cx="24" cy="5.2" rx="10.5" ry="3.2" fill="none" stroke="#ffe27a" stroke-width="2.8"/><ellipse cx="24" cy="5.2" rx="10.5" ry="3.2" fill="none" stroke="#fff6c9" stroke-width="1" opacity=".8"/>'],
+};
+const ACC_KEYS = Object.keys(ACC);
 const AVATAR_KEYS = Object.keys(AVATARS);
 const avBg = (k) => (AVATARS[k] || AVATARS.cat)[0];
-function avatarEl(key, size = 40, cls = '') {
+function avatarEl(key, size = 40, cls = '', acc = '') {
   const [bg, body] = AVATARS[key] || AVATARS.cat;
   const w = el('span', { class: 'av avatar ' + cls });
   w.style.width = w.style.height = size + 'px';
   w.onclick = () => {};   // a real click target, so a touch lands on the animal rather than being pulled to the badge beside it
   w.style.setProperty('--d', (-Math.random() * 6).toFixed(2) + 's');   // every avatar breathes and blinks on its own rhythm
-  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${body}</g></svg>`;
+  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${body}${ACC[acc] ? ACC[acc][1] : ''}</g></svg>`;
   return w;
 }
 // tap or hover any animal and it reacts
@@ -1043,6 +1055,7 @@ document.addEventListener('pointerdown', (e) => {
   SND.play('boing');
 }, true);
 const avOf = (id) => (st && st.players.find((q) => q.id === id) || {}).avatar;
+const accOf = (id) => (st && st.players.find((q) => q.id === id) || {}).acc || '';
 let formAvatar = (() => { try { const a = localStorage.getItem('sct-av'); if (AVATARS[a]) return a; } catch {} return AVATAR_KEYS[Math.floor(Math.random() * AVATAR_KEYS.length)]; })();
 
 function setMyAvatar(k) {
@@ -1083,7 +1096,7 @@ function floatEmote(pid, key) {
   if (document.hidden) return;
   const pl = st && st.players.find((q) => q.id === pid);
   const lane = document.querySelectorAll('.emofloat').length % 4;
-  const b = el('div', { class: 'emofloat' }, pl ? avatarEl(pl.avatar, 28) : '', emoteEl(key, 38), pl ? el('small', {}, pl.name) : '');
+  const b = el('div', { class: 'emofloat' }, pl ? avatarEl(pl.avatar, 28, '', pl.acc) : '', emoteEl(key, 38), pl ? el('small', {}, pl.name) : '');
   b.style.setProperty('--lane', lane);
   document.body.append(b);
   setTimeout(() => b.remove(), 2800);
@@ -1098,6 +1111,7 @@ function handleEmotes(j) {
 function syncEmoteUi() {
   let fab = document.getElementById('emoteFab');
   const show = !!(session && st);
+  document.body.classList.toggle('hasfab', show);
   if (!show) { fab?.remove(); document.getElementById('emoteTray')?.remove(); return; }
   if (!fab) {
     fab = el('button', { id: 'emoteFab', type: 'button', class: 'emotefab', 'aria-label': t('emoteTitle'), title: t('emoteTitle'), onclick: (e) => { e.stopPropagation(); emoteTrayOpen = !emoteTrayOpen; syncEmoteUi(); } }, emoteEl('laugh', 30));
@@ -1197,25 +1211,39 @@ async function openQR() {
 }
 
 // your own avatar: tapping the animal makes it hop; the little swap badge opens the picker
-function editableAvatar(key, size, onPick, cls = '') {
+function editableAvatar(key, size, onPick, acc = '') {
   const badge = el('button', { type: 'button', class: 'avbadge', title: t('changeAvatar'), 'aria-label': t('changeAvatar') }, icon('swap', 11));
-  const wrap = el('span', { class: 'avedit ' + cls }, avatarEl(key, size), badge);
-  badge.onclick = (e) => { e.stopPropagation(); openAvatarPicker(key, onPick); };
+  const wrap = el('span', { class: 'avedit' }, avatarEl(key, size, '', acc), badge);
+  badge.onclick = (e) => { e.stopPropagation(); openAvatarPicker(key, onPick, acc); };
   return wrap;
 }
 
 // a small picker: tap an animal to choose it
-function openAvatarPicker(current, onPick) {
+function openAvatarPicker(current, onPick, curAcc = '') {
   document.querySelector('.av-ov')?.remove();
   const close = () => { ov.remove(); if (!document.querySelector('.guide-ov')) document.body.classList.remove('noscroll'); };
-  const grid = el('div', { class: 'avgrid' }, ...AVATAR_KEYS.map((k) => {
-    const b = el('button', { type: 'button', class: 'avpick' + (k === current ? ' on' : ''), 'aria-label': k, onclick: () => { close(); onPick(k); } }, avatarEl(k, 64));
-    return b;
-  }));
-  const ov = el('div', { class: 'guide-ov av-ov', onclick: (e) => { if (e.target === ov) close(); } },
-    el('div', { class: 'avbox', role: 'dialog', 'aria-modal': 'true' }, el('div', { class: 'avtitle' }, t('pickAnimal')), grid));
+  const me = st && session ? st.players.find((q) => q.id === st.meId) : null;
+  const wins = me ? me.wins || 0 : 0;
+  const grid = el('div', { class: 'avgrid' }, ...AVATAR_KEYS.map((k) => el('button', { type: 'button', class: 'avpick' + (k === current ? ' on' : ''), 'aria-label': k, onclick: () => { close(); onPick(k); } }, avatarEl(k, 64, '', curAcc))));
+  const parts = [el('div', { class: 'avtitle' }, t('pickAnimal')), grid];
+  if (me) {   // accessories only make sense inside a room: they are earned there
+    parts.push(el('div', { class: 'avtitle acctitle' }, t('accTitle')), el('p', { class: 'leavep' }, t('accHint', { n: wins })));
+    const opts = [['', t('accNone'), 0], ...ACC_KEYS.map((k) => [k, t('acc_' + k), ACC[k][0]])];
+    parts.push(el('div', { class: 'accgrid' }, ...opts.map(([k, label, need]) => {
+      const locked = wins < need;
+      return el('button', { type: 'button', class: 'accpick' + (k === curAcc ? ' on' : '') + (locked ? ' locked' : ''), disabled: locked, onclick: () => { close(); setMyAcc(k); } },
+        k ? avatarEl(current, 44, '', k) : el('span', { class: 'accnone' }, icon('x', 18)),
+        el('small', {}, locked ? t('accNeed', { n: need }) : label));
+    })));
+  }
+  const ov = el('div', { class: 'guide-ov av-ov', onclick: (e) => { if (e.target === ov) close(); } }, el('div', { class: 'avbox', role: 'dialog', 'aria-modal': 'true' }, ...parts));
   document.body.append(ov);
   document.body.classList.add('noscroll');
+}
+function setMyAcc(k) {
+  const me = st && st.players.find((q) => q.id === st.meId);
+  if (me) { me.acc = k; render(); }
+  act('avatar', { acc: k });
 }
 
 // ---- translations (English / 简体中文) ----
@@ -1234,7 +1262,7 @@ const I18N = {
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
     host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
-    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', leaveRoom: 'Leave room',
+    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
@@ -1306,7 +1334,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
-    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', leaveRoom: '离开房间',
+    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `请摆满所有牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -1378,7 +1406,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
-    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', leaveRoom: '離開房間',
+    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -1746,8 +1774,8 @@ function renderWaitingRoom() {
     seats.append(p
       ? el('div', { class: 'seat' + (p.id === st.meId ? ' me' : '') + pop },
           p.id === st.meId
-            ? editableAvatar(p.avatar, 54, setMyAvatar)
-            : avatarEl(p.avatar, 54),
+            ? editableAvatar(p.avatar, 54, setMyAvatar, p.acc)
+            : avatarEl(p.avatar, 54, '', p.acc),
           el('div', { class: 'sname' }, p.name + (p.id === st.meId ? t('you') : '')),
           p.isHost ? el('span', { class: 'tag' }, t('host')) : p.online === false ? el('span', { class: 'tag offl' }, t('offlineTag')) : el('span', { class: 'tag joined' }, t('joined')))
       : el('div', { class: 'seat empty' },
@@ -2001,7 +2029,7 @@ function stagePanel(active) {
       ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : '')
       : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, ...(allUp ? [icon('tick', 12), t('openedState')] : [t('hiddenState')]));
     grid.append(el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 70}ms` : '' },
-      el('div', { class: 'tname' }, avatarEl(p.avatar, 20, lose ? 'sad' : safe ? 'happy' : ''), el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+      el('div', { class: 'tname' }, avatarEl(p.avatar, 20, lose ? 'sad' : safe ? 'happy' : '', p.acc), el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
       cards,
       el('div', { class: 'tfoot' }, status,
         mine && isCurrent && !res ? el('button', { class: 'ghost tflip', onclick: flipMine }, allUp ? t('flipDown') : t('flipUp')) : '')));
@@ -2033,19 +2061,40 @@ function finalPanel(active) {
         el('span', { class: 'fmark' }, lose ? el('b', { class: 'iconlabel' }, icon('x', 12), '×' + res.penalty) : res && !res.tie ? icon('tick', 14) : '')));
     }
     grid.append(el('div', { class: 'ftile' + (p.id === st.meId ? ' me' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 80}ms` : '' },
-      el('div', { class: 'tname' }, avatarEl(p.avatar, 20), el('span', { class: 'tn' }, p.name + (p.id === st.meId ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+      el('div', { class: 'tname' }, avatarEl(p.avatar, 20, '', p.acc), el('span', { class: 'tn' }, p.name + (p.id === st.meId ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
       rows,
       el('div', { class: 'fsum' + (lostCount ? ' bad' : '') }, t('lostRows', { n: lostCount }))));
   });
-  const hall = hallPanel();
+  const hall = hallPanel(), recap = recapPanel();
   const det = el('details', { class: 'fdrop' }, el('summary', {}, el('span', { class: 'fd-t' }, t('finalTitle')), el('span', { class: 'fd-h' }, t('showBoard')), el('span', { class: 'fd-c' }, '▾')),
     el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('allDone'))), legend), grid);
   det.open = finalOpen;
   det.addEventListener('toggle', () => { finalOpen = det.open; det.querySelector('.fd-h').textContent = t(det.open ? 'hideBoard' : 'showBoard'); });
   if (finalOpen) det.querySelector('.fd-h').textContent = t('hideBoard');
-  return el('div', { class: 'panel final' + (stageEnter ? ' stage-enter' : '') }, hall, det);
+  return el('div', { class: 'panel final' + (stageEnter ? ' stage-enter' : '') }, hall, recap, det);
 }
 let finalOpen = false;
+
+// a few story lines about the round that just finished
+function recapPanel() {
+  const res = st.rowResults || [], items = [];
+  const nameOf = (id) => (st.players.find((q) => q.id === id) || {}).name || '?';
+  const avatarOfId = (id) => avatarEl(avOf(id), 28, '', accOf(id));
+  const hits = [];
+  for (const r of res) if (!r.tie && r.penalty > 0) for (const id of r.losers) hits.push({ id, pen: r.penalty, row: r.row + 1 });
+  const top = hits.sort((a, b) => b.pen - a.pen)[0];
+  if (top && top.pen > 1) items.push([avatarOfId(top.id), t('rcHit', { name: nameOf(top.id), n: top.pen, row: top.row })]);
+  for (const r of res) { const e = r.entries.find((x) => x.as && x.cards.includes('JK')); if (e) { const ci = e.cards.indexOf('JK'); const c = e.as[ci]; items.push([avatarOfId(e.id), t('rcJoker', { name: e.name, card: c.slice(0, -1) + SUIT[c.slice(-1)], row: r.row + 1 })]); break; } }
+  const lostBy = new Set(res.flatMap((r) => (r.tie ? [] : r.losers)));
+  const clean = activePlayers().filter((p) => !lostBy.has(p.id));
+  if (clean.length && clean.length < activePlayers().length) items.push([avatarOfId(clean[0].id), t('rcClean', { names: clean.map((p) => p.name).join(', ') })]);
+  const perfect = res.flatMap((r) => (r.row === 2 ? r.entries.filter((e) => e.total === 10.5) : []));
+  if (perfect.length) items.push([avatarOfId(perfect[0].id), t('rcPerfect', { name: perfect.map((e) => e.name).join(', ') })]);
+  const ties = res.filter((r) => r.tie).length;
+  if (ties) items.push([icon('swap', 22), t('rcTies', { n: ties })]);
+  if (!items.length) return '';
+  return el('div', { class: 'recap' }, el('div', { class: 'kicker' }, t('recapTitle')), ...items.slice(0, 4).map(([ic, txt]) => el('div', { class: 'rcp' }, el('span', { class: 'rcp-i' }, ic), el('span', {}, txt))));
+}
 
 // this round's ranking: the lowest total penalty over the four rows is on top (nothing carries over between rounds)
 function hallPanel() {
@@ -2064,7 +2113,7 @@ function hallPanel() {
     const me = h.id === st.meId;
     rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
       el('span', { class: 'hrank', style: rank <= 3 ? `background:${medals[rank - 1]};color:#1a1407` : '' }, rank === 1 ? icon('trophy', 16) : String(rank)),
-      el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, rank === 1 ? 'happy' : i === list.length - 1 && list.length > 1 && h.penalty > list[0].penalty ? 'sad' : '')), el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
+      el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, rank === 1 ? 'happy' : i === list.length - 1 && list.length > 1 && h.penalty > list[0].penalty ? 'sad' : '', accOf(h.id))), el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
       el('span', { class: 'hpts' }, el('b', {}, t('hallPts', { n: h.penalty })))));
   });
   return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: st.round })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))), rows);
@@ -2308,6 +2357,7 @@ function adopt(j) {
   if (!prev || prev.round !== j.round) { stageRow = Math.min(target, 4); clearTimeout(holdTimer); holdTimer = null; }
   st = j;   // planStage and the pop-up read the new state
   handleEmotes(j);
+  if (prev) { const was = prev.players.find((q) => q.id === prev.meId), now = j.players.find((q) => q.id === j.meId); if (was && now && (now.wins || 0) > (was.wins || 0)) setTimeout(() => { toast(t(ACC_KEYS.some((k) => ACC[k][0] === now.wins) ? 'accUnlocked' : 'roundWon'), 'low'); SND.play('safe'); }, 1500); }
   if (prev) {   // announce a row the moment it is scored; results persist, so reopening a row is never re-announced
     const had = new Set((prev.rowResults || []).map((r) => r.row));
     const fresh = (j.rowResults || []).filter((r) => !had.has(r.row));
@@ -2419,7 +2469,7 @@ function buildResult(r, view, late = 0) {
     ...[...r.entries].sort((a, b) => (b.id === meId) - (a.id === meId)).map((e) => {
       const lose = !r.tie && r.losers.includes(e.id), safe = !r.tie && !lose, mine = e.id === meId;
       return el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') },
-        el('div', { class: 'tname' }, avatarEl(avOf(e.id), 18, lose ? 'sad' : safe ? 'happy' : ''), el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
+        el('div', { class: 'tname' }, avatarEl(avOf(e.id), 18, lose ? 'sad' : safe ? 'happy' : '', accOf(e.id)), el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
         el('div', { class: 'tcards' }, ...e.cards.map((c, ci) => lose ? tornCard(c, true, e.as ? e.as[ci] : null) : cardEl(c, { up: true, as: e.as ? e.as[ci] : null, morph: !!e.as }))),
         el('div', { class: 'tfoot' }, lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : ''));
     }));
@@ -2589,8 +2639,8 @@ function renderPlayers() {
       ? el('span', { class: 'pdot ' + (p.online ? 'on' : 'off') }, p.online ? t('online') : t('offlineAgo', { n: p.seenAgo ?? '?' })) : '';
     return el('div', { class: 'prow' + (p.online === false ? ' offline' : '') },
       me
-        ? editableAvatar(p.avatar, 40, setMyAvatar)
-        : avatarEl(p.avatar, 40),
+        ? editableAvatar(p.avatar, 40, setMyAvatar, p.acc)
+        : avatarEl(p.avatar, 40, '', p.acc),
       el('div', { class: 'pinfo' },
         el('div', { class: 'pname' }, p.name + (me ? t('you') : ''), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
         el('div', { class: 'ptags' }, status, presence)),

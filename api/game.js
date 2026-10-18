@@ -15,6 +15,8 @@ function pickAvatar(want, taken = []) {
   const pool = free.length ? free : AVATARS;
   return pool[crypto.randomInt(pool.length)];
 }
+// avatar accessories are unlocked by winning rounds in this room (lowest total penalty)
+const ACC_WINS = { hat: 1, shades: 2, crown: 3, halo: 5 };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg'];
 const MAX_PLAYERS = 15;
 const HAND_SIZE = 7;
@@ -220,10 +222,29 @@ function rowResults(room) {
   return out;
 }
 
+// When the 4th row is scored the round is over: the player(s) with the lowest total penalty earn a win (a shared round with no loser earns none).
+function tallyWins(room) {
+  if (!ROW_SIZES.every((_, i) => room.results[i]) || room.tallied === room.round) return;
+  room.tallied = room.round;
+  const act = activeOf(room);
+  const tot = Object.fromEntries(act.map((p) => [p.id, 0]));
+  for (const r of Object.values(room.results)) if (!r.tie) for (const id of r.losers) if (id in tot) tot[id] += r.penalty;
+  const vals = Object.values(tot);
+  if (!vals.length || Math.max(...vals) === Math.min(...vals)) return;
+  const best = Math.min(...vals);
+  room.wins = room.wins || {};
+  for (const p of act) if (tot[p.id] === best) {
+    const w = (room.wins[p.id] = (room.wins[p.id] || 0) + 1);
+    const unlocked = Object.entries(ACC_WINS).find(([, need]) => need === w);
+    if (unlocked) p.acc = unlocked[0];   // a new accessory is worn straight away
+  }
+}
+
 // Results are kept for the whole round once a row has been scored, even if the cards are turned back over.
 function storeResults(room) {
   room.results = room.results || {};
-  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, penalty: r.penalty * settingsOf(room).mult, at: Date.now() };   // `at` lets every phone advance to the next row at the same moment
+  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, penalty: r.penalty * settingsOf(room).mult, at: Date.now() };
+  tallyWins(room);   // `at` lets every phone advance to the next row at the same moment
 }
 // When the arranging time runs out, anyone who is not ready gets their cards placed in order and is marked ready.
 function enforceTimer(room) {
@@ -300,6 +321,8 @@ function view(room, pid, seen) {
         id: p.id,
         name: p.name,
         avatar: p.avatar || AVATARS[0],
+        acc: p.acc || '',
+        wins: (room.wins && room.wins[p.id]) || 0,
         isHost: p.id === room.hostId,
         ready: p.ready,
         spectator: !!p.spectator,
@@ -522,8 +545,11 @@ async function handle(action, b, query) {
     }
 
     case 'avatar':
-      need(AVATARS.includes(b.avatar), 400, 'Pick an animal from the list');
-      me.avatar = b.avatar;
+      if (b.avatar !== undefined) { need(AVATARS.includes(b.avatar), 400, 'Pick an animal from the list'); me.avatar = b.avatar; }
+      if (b.acc !== undefined) {
+        need(b.acc === '' || (ACC_WINS[b.acc] && ((room.wins && room.wins[pid]) || 0) >= ACC_WINS[b.acc]), 403, 'Win more rounds to unlock that');
+        me.acc = b.acc;
+      }
       break;
 
     case 'kick': {
