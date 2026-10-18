@@ -10,7 +10,7 @@
 <style>
   :root {
     --bg1:#18213b; --bg2:#0e1426; --bg3:#080c18; --text:#f4ead2;
-    --gold:#c9a96a; --gold-hi:#e8d3a2; --gold-lo:#8d7442; --gold-rgb:201,169,106;
+    --gold:#c9a96a; --gold-hi:#e8d3a2; --gold-lo:#8d7442; --gold-rgb:201,169,106; --glow2:70,100,200;
     --panel:24,30,54; --panel-hi:34,40,70; --panel-lo:16,20,40; --deep:12,16,32;
     --ivory:#fafaf7; --ink:#14161f; --red:#c23b4a;
     --glass:rgba(255,255,255,.045); --line:rgba(255,255,255,.1); --green:#6fcf97;
@@ -18,16 +18,17 @@
     --display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   }
   /* colour schemes (chosen in Settings, kept on this phone) */
-  html[data-theme=emerald] { --bg1:#14392c; --bg2:#0b2219; --bg3:#06140e; --text:#eaf3d9; --gold:#9fd37a; --gold-hi:#d6f0b8; --gold-lo:#5f8f46; --gold-rgb:159,211,122; --panel:14,40,30; --panel-hi:22,58,44; --panel-lo:9,28,21; --deep:7,22,16; }
-  html[data-theme=royal] { --bg1:#2d1f55; --bg2:#1a1135; --bg3:#0d0820; --text:#f1e8ff; --gold:#b99cff; --gold-hi:#e0d3ff; --gold-lo:#7a62c2; --gold-rgb:185,156,255; --panel:32,22,64; --panel-hi:46,33,90; --panel-lo:21,14,44; --deep:15,10,34; }
-  html[data-theme=crimson] { --bg1:#3d1622; --bg2:#240c14; --bg3:#12060a; --text:#ffe9e4; --gold:#f0a38e; --gold-hi:#ffd3c6; --gold-lo:#b0604f; --gold-rgb:240,163,142; --panel:46,18,28; --panel-hi:66,27,40; --panel-lo:30,11,18; --deep:22,8,13; }
-  html[data-theme=ocean] { --bg1:#123a50; --bg2:#0a2434; --bg3:#050f18; --text:#e3f4fb; --gold:#5fc9d6; --gold-hi:#b8eef4; --gold-lo:#38808c; --gold-rgb:95,201,214; --panel:12,38,54; --panel-hi:20,56,78; --panel-lo:8,26,38; --deep:6,20,30; }
+  html[data-theme=emerald] { --bg1:#15402f; --bg2:#0b261b; --bg3:#06150e; --text:#f4efd9; --gold:#e0b45a; --gold-hi:#f3dca0; --gold-lo:#9a7a35; --gold-rgb:224,180,90; --glow2:40,170,115; --panel:14,42,31; --panel-hi:22,60,45; --panel-lo:9,29,21; --deep:7,23,16; }
+  html[data-theme=royal] { --bg1:#34215f; --bg2:#1c1238; --bg3:#0d0820; --text:#f8eef6; --gold:#ff8fb8; --gold-hi:#ffc6dc; --gold-lo:#b55a80; --gold-rgb:255,143,184; --glow2:130,90,235; --panel:34,22,66; --panel-hi:50,34,96; --panel-lo:22,14,46; --deep:15,10,36; }
+  html[data-theme=crimson] { --bg1:#45182a; --bg2:#270c17; --bg3:#130609; --text:#f8ecec; --gold:#5fd4c2; --gold-hi:#b5f0e6; --gold-lo:#348a7d; --gold-rgb:95,212,194; --glow2:225,60,95; --panel:48,18,30; --panel-hi:70,28,44; --panel-lo:31,11,19; --deep:23,8,14; }
+  html[data-theme=ocean] { --bg1:#0f3b54; --bg2:#082335; --bg3:#040f18; --text:#eef7fa; --gold:#ff9a6b; --gold-hi:#ffcab0; --gold-lo:#b85f38; --gold-rgb:255,154,107; --glow2:40,155,215; --panel:10,37,54; --panel-hi:18,55,78; --panel-lo:7,25,38; --deep:5,19,30; }
   html { background: var(--bg3); overflow-x: clip; overflow-anchor: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }   /* no double-tap zoom, no text inflation on rotate */
   body { overflow-x: clip; overflow-anchor: none; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: var(--serif); font-size:15px; color:var(--text); min-height:100vh;
     background:
       radial-gradient(ellipse at 50% -10%, rgba(var(--gold-rgb),.14), transparent 55%),
+      radial-gradient(ellipse at 100% 105%, rgba(var(--glow2),.16), transparent 55%),
       radial-gradient(circle at 50% 40%, var(--bg1), var(--bg2) 60%, var(--bg3)); background-attachment: fixed; }
   main { max-width: 980px; margin: 0 auto; padding: 20px 16px 40px; }
   h1 { font-weight:600; font-size: 22px; letter-spacing: 6px; text-transform: uppercase; text-align:center; margin: 6px 0 22px; color: var(--gold-hi); }
@@ -1403,7 +1404,7 @@ function renderChat(keepScroll) {
 
 // ---- display & accessibility (kept on this phone only) ----
 const UI_DEFAULT = { fourcolor: false, text: 0, haptics: true, calm: false, voice: true, theme: 'gold' };
-const THEMES = [['gold', '#c9a96a', '#18213b'], ['emerald', '#9fd37a', '#14392c'], ['royal', '#b99cff', '#2d1f55'], ['crimson', '#f0a38e', '#3d1622'], ['ocean', '#5fc9d6', '#123a50']];
+const THEMES = [['gold', '#c9a96a', '#18213b'], ['emerald', '#e0b45a', '#15402f'], ['royal', '#ff8fb8', '#34215f'], ['crimson', '#5fd4c2', '#45182a'], ['ocean', '#ff9a6b', '#0f3b54']];
 let ui = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('sct-ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
 function applyUi() {
   if (ui.theme && ui.theme !== 'gold' && THEMES.some((x) => x[0] === ui.theme)) document.documentElement.dataset.theme = ui.theme; else delete document.documentElement.dataset.theme;
