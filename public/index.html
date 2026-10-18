@@ -1848,7 +1848,8 @@ function renderShop() {
 let giftTrayOpen = false, giftPick = null, giftSeen = null, giftLast = 0;
 const myGifts = () => (st && st.wallet && st.wallet.gifts) || {};
 const giftTotal = () => Object.values(myGifts()).reduce((a, n) => a + (n > 0 ? n : 0), 0);
-function openGiftTray(item) { giftTrayOpen = true; giftPick = item || null; syncEmoteUi(); }
+// opened a moment later: the tap that asked for it is still travelling up the page, and the outside-tap handler would close the tray again
+function openGiftTray(item) { setTimeout(() => { giftTrayOpen = true; giftPick = item || null; syncEmoteUi(); }, 30); }
 function syncGiftUi() {
   const show = !!(session && st) && giftTotal() > 0 && (st.players.length > 1 || (st.prices && st.prices.test));   // alone? only while the shop is in testing mode
   let fab = document.getElementById('giftFab');
