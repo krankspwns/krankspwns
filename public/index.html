@@ -461,6 +461,7 @@
   .timerbar.urgent { background: rgba(255,90,80,.16); border-color: #ff6b5e; animation: urgent .6s ease-in-out infinite; } .timerbar.urgent b { color: #ff9c8f; } .timerbar.urgent .tm-bar i { background: linear-gradient(90deg, #ff6b5e, #ff9a6a); } @keyframes urgent { 50% { box-shadow: 0 0 18px rgba(255,90,80,.5); } }
   .setchips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 0 0 12px; } .setchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,.07); border: 1px solid var(--line); } .setedit { padding: 4px 12px !important; font-size: 12px !important; display: inline-flex; align-items: center; gap: 5px; }
   .swatches { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; } .swatch { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: conic-gradient(var(--sw) 0 50%, var(--sb) 50% 100%); border: 2px solid rgba(255,255,255,.25); box-shadow: none; } .swatch.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(var(--gold-rgb), .55); transform: scale(1.08); }
+  .guide.still { animation: none; }   /* the pop-in plays once; later refreshes (every tap on a setting) must not replay it */
   .setbox { max-height: min(86vh, 640px); } .setsec { margin-bottom: 18px; } .setsec h4 { margin: 0 0 8px; display: flex; align-items: center; gap: 7px; color: var(--gold-hi); font-size: 15px; } .setnote { margin: 0 0 8px; font-size: 12.5px; opacity: .65; }
   .setrow { display: grid; gap: 8px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.08); } .setl { display: grid; } .setl small { opacity: .6; font-size: 12px; line-height: 1.35; margin-top: 2px; }
   .seg { display: flex; flex-wrap: wrap; gap: 6px; } .seg button { padding: 7px 13px; border-radius: 99px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,.07); color: #e9e4d6; border: 1px solid var(--line); box-shadow: none; } .seg button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-color: transparent; } .seg button:hover { transform: none; filter: brightness(1.1); } .seg.ro { opacity: .7; } .seg.ro button { cursor: default; }
@@ -1452,7 +1453,7 @@ function renderSettings() {
     row(t('setVoice'), t('setVoiceHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.voice, (v) => setUi('voice', v))),
     row(t('setCalm'), t('setCalmHint'), seg([[false, t('setOff')], [true, t('setOn')]], !!ui.calm, (v) => setUi('calm', v)))));
   if (inRoom) sections.push(el('div', { class: 'setsec' }, el('button', { type: 'button', class: 'ghost setsync', onclick: () => { resync(); toast(t('setSynced'), 'low'); } }, icon('swap', 16), t('setSync'))));
-  ov.replaceChildren(el('div', { class: 'guide setbox', role: 'dialog', 'aria-modal': 'true' },
+  ov.replaceChildren(el('div', { class: 'guide setbox' + (keep ? ' still' : ''), role: 'dialog', 'aria-modal': 'true' },
     el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('sliders', 15)), t('settings')), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
     el('div', { class: 'gscroll setscroll' }, ...sections),
     el('div', { class: 'gfoot' }, el('span'), el('button', { onclick: ov.close }, t('qrClose')))));
