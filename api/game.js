@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const TTL_SECONDS = 60 * 60 * 12;
-const AVATARS = ['cat', 'dog', 'fox', 'bear', 'panda', 'rabbit', 'frog', 'lion', 'pig', 'koala', 'owl', 'tiger'];
+const AVATARS = ['cat', 'dog', 'fox', 'bear', 'panda', 'rabbit', 'frog', 'lion', 'pig', 'koala', 'owl', 'tiger', 'penguin', 'monkey', 'elephant', 'mouse', 'chicken', 'cow', 'dino', 'unicorn'];
 // a chosen animal is kept (friends may pick the same one); with no choice the player gets a random animal nobody has yet
 function pickAvatar(want, taken = []) {
   if (AVATARS.includes(want)) return want;
