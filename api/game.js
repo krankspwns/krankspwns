@@ -21,9 +21,12 @@ const WP_PER_WIN = 10;
 const ACC_PRICE = { hat: 10, shades: 20, mustache: 20, flower: 20, headphones: 30, horns: 30, crown: 40, halo: 50 };
 const PREMIUM = { dragon: 30, robot: 30, alien: 30, ghost: 30, wizard: 40, ninja: 40 };
 const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, pie: 15, rocket: 20, bomb: 20, fireworks: 25 };
+const BORDER_PRICE = { silver: 15, gold: 20, emerald: 20, ice: 25, neon: 30, royal: 30, fire: 40, rainbow: 50 };
 const GIFT_USES = 3;   // one purchase = three throws
-const balanceOf = (room, pid) => ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
-const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [] }; p.gifts = p.gifts || {}; return p; };
+// everyone starts with a testing allowance while the shop is being tried out (set START_WP=0 for the real thing)
+const START_WP = process.env.START_WP !== undefined ? Number(process.env.START_WP) : 1000;
+const balanceOf = (room, pid) => START_WP + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
+const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
 const MAX_PLAYERS = 12;
 const HAND_SIZE = 7;
@@ -353,7 +356,7 @@ function view(room, pid, seen, cn) {
     gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
     giftN: room.giftN || 0,
     wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
-    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, gift: GIFTS, uses: GIFT_USES },
+    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES },
     chatN: room.chatN || 0,
     winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,   // who won the round that just finished ([] = a full tie, null = not finished)
     // chat: only what this phone hasn't got yet (its last seen number comes with every request)
@@ -371,6 +374,7 @@ function view(room, pid, seen, cn) {
         name: p.name,
         avatar: p.avatar || AVATARS[0],
         acc: p.acc || '',
+        bd: p.bd || '',
         wins: (room.wins && room.wins[p.id]) || 0,
         isHost: p.id === room.hostId,
         ready: p.ready,
@@ -614,12 +618,13 @@ async function handle(action, b, query) {
       if (now - (room.chatAt[pid] || 0) < 600) return viewFor(room, pid, cnOf);   // one message at a time
       room.chatAt[pid] = now;
       room.chatN = (room.chatN || 0) + 1;
-      room.chat = [...(room.chat || []), { n: room.chatN, id: pid, name: me.name, avatar: me.avatar, acc: me.acc || '', text, at: now }].slice(-50);
+      room.chat = [...(room.chat || []), { n: room.chatN, id: pid, name: me.name, avatar: me.avatar, acc: me.acc || '', bd: me.bd || '', text, at: now }].slice(-50);
       break;
     }
 
     case 'avatar':
       if (b.avatar !== undefined) { need(AVATARS.includes(b.avatar) || inventoryOf(me).owned.av.includes(b.avatar), 403, 'Buy that avatar in the shop first'); me.avatar = b.avatar; }
+      if (b.bd !== undefined) { need(b.bd === '' || inventoryOf(me).owned.bd.includes(b.bd), 403, 'Buy that border in the shop first'); me.bd = b.bd; }
       if (b.acc !== undefined) {
         need(b.acc === '' || inventoryOf(me).owned.acc.includes(b.acc), 403, 'Buy that in the shop first');
         me.acc = b.acc;
@@ -629,16 +634,18 @@ async function handle(action, b, query) {
     case 'buy': {
       inventoryOf(me);
       const kind = String(b.kind), key = String(b.key);
-      const price = kind === 'acc' ? ACC_PRICE[key] : kind === 'av' ? PREMIUM[key] : kind === 'gift' ? GIFTS[key] : undefined;
+      const price = kind === 'acc' ? ACC_PRICE[key] : kind === 'av' ? PREMIUM[key] : kind === 'bd' ? BORDER_PRICE[key] : kind === 'gift' ? GIFTS[key] : undefined;
       need(price !== undefined, 400, 'Unknown item');
       if (kind === 'acc') need(!me.owned.acc.includes(key), 409, 'You already own that');
       if (kind === 'av') need(!me.owned.av.includes(key), 409, 'You already own that');
+      if (kind === 'bd') need(!me.owned.bd.includes(key), 409, 'You already own that');
       if (kind === 'gift') need(!(me.gifts[key] > 0), 409, 'Use up the ones you have first');
       need(balanceOf(room, pid) >= price, 402, 'Not enough win points');
       room.spent = room.spent || {};
       room.spent[pid] = (room.spent[pid] || 0) + price;   // the win count itself is untouched
       if (kind === 'acc') me.owned.acc.push(key);
       else if (kind === 'av') me.owned.av.push(key);
+      else if (kind === 'bd') me.owned.bd.push(key);
       else me.gifts[key] = GIFT_USES;
       break;
     }

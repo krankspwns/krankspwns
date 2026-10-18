@@ -1,3 +1,4 @@
+process.env.START_WP = '0';   // the real economy, not the testing allowance
 const assert = require('assert');
 const h = require('./api/game.js');
 async function call(method, body, query) {
@@ -214,6 +215,13 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: 'hat' })).j.players.find((p) => p.id === winner.id).acc, 'hat', 'now it can be worn');
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: '' })).j.players.find((p) => p.id === winner.id).acc, '', 'and taken off');
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, avatar: 'dragon' })).s, 403, 'special avatars must be bought');
+  // avatar borders
+  globalThis.__rooms.get(wr.code).wins[winner.id] = 8;
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, bd: 'gold' })).s, 403, 'border must be bought first');
+  const bdv = (await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'bd', key: 'gold' })).j;
+  assert.deepEqual(bdv.wallet.owned.bd, ['gold']);
+  assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, bd: 'gold' })).j.players.find((p) => p.id === winner.id).bd, 'gold', 'border worn and visible to everyone');
+  assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'bd', key: 'gold' })).s, 409, 'already owned');
   // gifts: three throws per purchase, throttled, only at another player
   const wroom2 = globalThis.__rooms.get(wr.code); wroom2.wins[winner.id] = 8;   // 80 points to play with
   assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).s, 403, 'nothing bought yet');
