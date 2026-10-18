@@ -1095,7 +1095,11 @@ function sendEmote(k) {
 function floatEmote(pid, key) {
   if (document.hidden) return;
   const pl = st && st.players.find((q) => q.id === pid);
-  const lane = emoLane++ % 5;   // spread across the whole width of the screen, not one edge
+  // any free lane across the whole width, picked at random (never just the first few from the left)
+  const busy = new Set([...document.querySelectorAll('.emofloat')].map((x) => +x.style.getPropertyValue('--lane')));
+  const free = [0, 1, 2, 3, 4].filter((l) => !busy.has(l));
+  const pool = free.length ? free : [0, 1, 2, 3, 4];
+  const lane = pool[Math.floor(Math.random() * pool.length)];
   const b = el('div', { class: 'emofloat' }, pl ? avatarEl(pl.avatar, 34, '', pl.acc) : '', pl ? el('small', {}, pl.name) : '', emoteEl(key, 42));
   b.style.setProperty('--lane', lane);
   document.body.append(b);
