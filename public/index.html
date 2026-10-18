@@ -3114,7 +3114,7 @@ function confirmLeave() {
 async function leave() {
   const s = session;
   emoteSeen = null; chatLog = []; chatHave = undefined;
-  clearTimeout(timer); session = null;   // stop polling at once
+  clearTimeout(timer); session = null; rtClose();   // stop polling at once
   closePlayers();
   const ov = el('div', { class: 'loadbanner full', role: 'status' }, el('i', { class: 'spin' }), el('span', {}, t('leaving')));
   document.body.append(ov);
@@ -3181,16 +3181,34 @@ window.addEventListener('pageshow', () => { if (session) resync(); });
 let seenVer = null, seenAt = Date.now();
 const idleFor = () => { if (st && st.version !== seenVer) { seenVer = st.version; seenAt = Date.now(); } return Date.now() - seenAt; };
 // nothing has changed for a while (everyone is thinking): ease off so the radio can sleep; any change snaps back to full speed
-const pollDelay = () => { const base = document.hidden ? 15000 : connFails ? 2000 : document.querySelector('.chat-ov') ? 1000 : st && st.phase === 'lobby' ? 3000 : st && st.allReady ? 1000 : st && st.phase === 'dealt' ? 1800 : 1200; const idle = idleFor(); return document.hidden || connFails || st && st.allReady || document.querySelector('.chat-ov') ? base : idle > 60000 ? Math.max(base, 3500) : idle > 20000 ? Math.max(base, 2000) : base; };
+const pollDelay = () => { if (rtLive && !document.hidden && !connFails) return st && st.phase === 'dealt' && !st.allReady ? 12000 : 20000; const base = document.hidden ? 15000 : connFails ? 2000 : document.querySelector('.chat-ov') ? 1000 : st && st.phase === 'lobby' ? 3000 : st && st.allReady ? 1000 : st && st.phase === 'dealt' ? 1800 : 1200; const idle = idleFor(); return document.hidden || connFails || st && st.allReady || document.querySelector('.chat-ov') ? base : idle > 60000 ? Math.max(base, 3500) : idle > 20000 ? Math.max(base, 2000) : base; };
 // low battery or Data Saver: quietly switch the decorative animations off
 try { const sv = () => document.body.classList.toggle('autocalm', !!(navigator.connection && navigator.connection.saveData)); sv(); if (navigator.getBattery) navigator.getBattery().then((b) => { const f = () => document.body.classList.toggle('autocalm', (!b.charging && b.level <= 0.2) || !!(navigator.connection && navigator.connection.saveData)); f(); b.addEventListener('levelchange', f); b.addEventListener('chargingchange', f); }); } catch (e) {}
+// push channel: the server announces each new room version, so the polling below only has to be a slow safety net while it is connected
+let rtES = null, rtLive = false, rtFor = '', rtRetry = null;
+function rtClose() { clearTimeout(rtRetry); if (rtES) { rtES.close(); rtES = null; } rtLive = false; }
+async function rtOpen() {
+  if (!session || document.hidden || !window.EventSource || (rtES && rtFor === session.code)) return;
+  rtClose();
+  const code = session.code;
+  try {
+    const j = await api('rt', session);
+    if (!j.rt || !session || session.code !== code || rtES) return;
+    rtFor = code;
+    const es = rtES = new EventSource(j.rt.url);
+    es.onopen = () => { rtLive = true; };
+    es.onmessage = () => { if (!session) return rtClose(); clearTimeout(timer); poll().then(() => { if (session) startPolling(); }); };
+    es.onerror = () => { rtLive = false; if (es.readyState === 2) { rtClose(); rtRetry = setTimeout(rtOpen, 15000); } };
+  } catch { rtRetry = setTimeout(rtOpen, 30000); }
+}
 function startPolling() {
   clearTimeout(timer);
+  rtOpen();
   const tick = async () => { await poll(); if (session) timer = setTimeout(tick, pollDelay()); };
   timer = setTimeout(tick, pollDelay());
 }
 // coming back to the app (unlocking the phone, switching back from WhatsApp) catches up straight away
-document.addEventListener('visibilitychange', () => { if (!document.hidden && session) resync(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) rtClose(); else if (session) { resync(); rtOpen(); } });
 
 // a phone's address bar sliding away fires height-only resizes while scrolling: only a real width change (rotation) needs a rebuild
 let resizeT, lastW = window.innerWidth;

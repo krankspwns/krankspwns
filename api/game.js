@@ -23,6 +23,36 @@ const HAND_SIZE = 7;
 const ROW_SIZES = [1, 1, 2, 3];
 const SLOTS = 7; // rows of 1, 1, 2, 3
 
+// ---- realtime push (optional): Ably tells every phone "room X is now at version N", so phones fetch only when something changed ----
+// Set ABLY_API_KEY (appId.keyId:secret) to switch it on; without it everything keeps polling as before.
+const ABLY_KEY = process.env.ABLY_API_KEY || '';
+const ABLY_REST = process.env.ABLY_REST_HOST || 'https://rest.ably.io';
+const ABLY_RT = process.env.ABLY_RT_HOST || 'https://realtime.ably.io';
+const RT_TTL = 60 * 60 * 2;
+const rtChannel = (code) => 'room-' + code;
+async function rtPublish(room) {
+  if (!ABLY_KEY) return;
+  try {
+    await fetch(`${ABLY_REST}/channels/${rtChannel(room.code)}/messages`, {
+      method: 'POST',
+      headers: { Authorization: 'Basic ' + Buffer.from(ABLY_KEY).toString('base64'), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'v', data: String(room.version) }),
+      signal: AbortSignal.timeout(1500),
+    });
+  } catch {}   // a missed push is covered by the slow fallback poll
+}
+// a subscribe-only token for one room, signed as a JWT so no extra round trip to Ably is needed
+function rtUrl(code) {
+  if (!ABLY_KEY) return null;
+  const [keyName, secret] = ABLY_KEY.split(':');
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const iat = Math.floor(Date.now() / 1000);
+  const head = b64({ typ: 'JWT', alg: 'HS256', kid: keyName });
+  const body = b64({ iat, exp: iat + RT_TTL, 'x-ably-capability': JSON.stringify({ [rtChannel(code)]: ['subscribe'] }) });
+  const sig = crypto.createHmac('sha256', secret).update(head + '.' + body).digest('base64url');
+  return { url: `${ABLY_RT}/event-stream?channels=${rtChannel(code)}&v=1.2&accessToken=${head}.${body}.${sig}`, ttl: RT_TTL };
+}
+
 const mem = (globalThis.__rooms = globalThis.__rooms || new Map());
 
 async function redis(cmd) {
@@ -69,9 +99,10 @@ async function saveRoom(room) {
   const expected = room.version || 0;
   room.version = expected + 1;
   roomCache.delete(room.code);
-  if (!REDIS_URL) return void mem.set(room.code, room);
+  if (!REDIS_URL) { mem.set(room.code, room); return rtPublish(room); }
   const ok = await redis(['EVAL', CAS_LUA, '1', `room:${room.code}`, JSON.stringify(room), String(expected), String(TTL_SECONDS)]);
   if (ok !== 1) throw new Conflict();
+  await rtPublish(room);
 }
 
 // host-controlled game settings
@@ -418,6 +449,9 @@ async function handle(action, b, query) {
   const active = activeOf(room);
 
   switch (action) {
+    case 'rt':
+      return { rt: rtUrl(code) };
+
     case 'state':
       // nothing new for a non-host: a tiny reply keeps slow connections quick
       if (query.v && Number(query.v) === room.version) {
