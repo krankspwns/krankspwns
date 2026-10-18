@@ -473,6 +473,15 @@
   .cbub { display: grid; gap: 1px; padding: 7px 12px; border-radius: 16px 16px 16px 4px; background: rgba(255,255,255,.09); word-break: break-word; line-height: 1.35; font-size: 14.5px; } .cbub b { font-size: 11.5px; color: var(--gold-hi); } .cmsg.mine .cbub { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; border-radius: 16px 16px 4px 16px; } .cmsg.mine .cbub b { color: #5c4513; }
   .qrow { display: flex; gap: 6px; padding: 6px 14px 0; overflow-x: auto; } .qchip { flex: none; padding: 6px 12px !important; font-size: 12.5px !important; border-radius: 99px !important; }
   .chat-in { display: flex; gap: 8px; padding: 10px 14px 14px; } .chat-in input { flex: 1; min-width: 0; } .sendbtn { flex: none; width: 46px; padding: 0 !important; display: grid; place-items: center; border-radius: 14px !important; line-height: 0; } .sendbtn .ic { color: inherit; }
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin: 4px 0 14px; padding: 10px 6px 0; border-radius: 16px; background: radial-gradient(ellipse at 50% 100%, rgba(255,207,64,.16), transparent 70%); }
+  .pd { flex: 1; max-width: 118px; min-width: 0; display: grid; justify-items: center; gap: 3px; text-align: center; } .pd-n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; } .pd-p { font-size: 12px; color: var(--gold-hi); font-weight: 700; } .pd-w { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; min-height: 18px; }
+  .pd-b { width: 100%; border-radius: 10px 10px 0 0; display: grid; place-items: center; font-weight: 900; font-size: 26px; color: #1a1407; text-shadow: 0 1px 0 rgba(255,255,255,.4); transform-origin: 50% 100%; animation: pdrise .8s cubic-bezier(.2,.9,.3,1) backwards; box-shadow: inset 0 2px 0 rgba(255,255,255,.45); }
+  .pd.me .pd-n { color: var(--gold-hi); } .pd-crown { color: #ffcf40; margin-bottom: -2px; animation: pdbob 1.6s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255,207,64,.8)); } .pd1 .av { box-shadow: 0 0 0 3px #ffcf40, 0 0 18px rgba(255,207,64,.6); }
+  @keyframes pdrise { from { transform: scaleY(0); } } @keyframes pdbob { 50% { transform: translateY(-4px); } }
+  .winbadge, .winscount { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 800; } .winbadge { background: linear-gradient(180deg, #ffe27a, #ffcf40); color: #3a2a05; } .winscount { background: rgba(255,207,64,.16); color: #ffe27a; border: 1px solid rgba(255,207,64,.45); } .hrow .winbadge, .hrow .winscount { flex: none; }
+  .hallnote { margin: 6px 0 0; text-align: center; font-size: 12.5px; opacity: .65; }
+  .winfx { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; background: rgba(6,9,20,.72); animation: lbin .35s ease both; } .winbox { display: grid; justify-items: center; gap: 10px; padding: 24px 30px; border-radius: 24px; text-align: center; background: linear-gradient(180deg, rgb(34,40,70), rgb(16,20,40)); border: 2px solid #ffcf40; box-shadow: 0 0 70px rgba(255,207,64,.5), 0 20px 60px rgba(0,0,0,.6); animation: boxpop .6s cubic-bezier(.2,1.3,.4,1) backwards; max-width: 86vw; }
+  .wf-k { letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; font-weight: 800; color: #ffe27a; font-size: 14px; } .wf-t { font-size: 22px; font-weight: 800; } .wf-s { font-size: 13px; opacity: .7; }
   .connbar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(60,28,20,.96); border: 1px solid #ff9b6a; color: #ffd9c4; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: boxpop .25s ease backwards; white-space: nowrap; }
   .connbar button { padding: 5px 12px; font-size: 12px; border-radius: 99px; background: #ff9b6a; color: #2a0f05; border: 0; box-shadow: none; } .spin.sm { width: 14px; height: 14px; border-width: 2px; }
   .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(201,169,106,.3); border-top-color: var(--gold-hi); animation: avspin .8s linear infinite; } @keyframes lbin { from { opacity: 0; } }
@@ -1104,9 +1113,13 @@ const ACC = {
   hat: [1, '<path d="M17 13.5L24 1l7 12.5z" fill="#ff6fb0"/><path d="M17 13.5h14" stroke="#ffd23f" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="1.8" r="2.4" fill="#ffd23f"/><path d="M20.5 9.5l6.5-3.2M19.3 12l9.4-4.5" stroke="#fff" stroke-width="1" opacity=".7"/>'],
   shades: [2, '<path d="M9.5 22h29v2.2q0 5.4-5.6 5.4t-5-4.5h-3.8q.6 4.5-5 4.5T9.5 24.2z" fill="#14182b"/><path d="M12.6 24.6l4-1.5M25.8 24.6l3.4-1.2" stroke="#7fb2ff" stroke-width="1.4" stroke-linecap="round"/>'],
   crown: [3, '<path d="M13 14.5l1.8-9.5 5.2 5.2 4-7.2 4 7.2 5.2-5.2 1.8 9.5z" fill="#ffcf40" stroke="#c28a10" stroke-width="1" stroke-linejoin="round"/><circle cx="14.8" cy="5.2" r="1.5" fill="#ff6b6b"/><circle cx="24" cy="3.2" r="1.5" fill="#6bd6ff"/><circle cx="33.2" cy="5.2" r="1.5" fill="#ff6b6b"/>'],
+  headphones: [4, '<path d="M9.500 27a14.500 14.500 0 0129 0" fill="none" stroke="#2b2f45" stroke-width="3" stroke-linecap="round"/><rect x="5.500" y="24.500" width="6.500" height="11" rx="3.200" fill="#4a7bff" stroke="#2b2f45" stroke-width="1.200"/><rect x="36" y="24.500" width="6.500" height="11" rx="3.200" fill="#4a7bff" stroke="#2b2f45" stroke-width="1.200"/>'],
   halo: [5, '<ellipse cx="24" cy="5.2" rx="10.5" ry="3.2" fill="none" stroke="#ffe27a" stroke-width="2.8"/><ellipse cx="24" cy="5.2" rx="10.5" ry="3.2" fill="none" stroke="#fff6c9" stroke-width="1" opacity=".8"/>'],
 };
-const ACC_KEYS = Object.keys(ACC);
+ACC.mustache = [6, '<path d="M24 31.600q-3.200-3-8-1.600 1 5.200 8 3.400 7 1.800 8-3.400-4.800-1.400-8 1.600z" fill="#3a2410"/>'];
+ACC.horns = [8, '<path d="M13 15.500q-3.800-6.500.8-9.800.8 4.600 4.600 6.800zM35 15.500q3.800-6.500-.8-9.800-.8 4.600-4.600 6.800z" fill="#ff4d4d" stroke="#a81818" stroke-width="1"/>'];
+ACC.flower = [10, '<g transform="translate(35 12)"><circle r="3" cx="0" cy="-4.200" fill="#ff8fc0"/><circle r="3" cx="4" cy="-1.300" fill="#ff8fc0"/><circle r="3" cx="2.500" cy="3.400" fill="#ff8fc0"/><circle r="3" cx="-2.500" cy="3.400" fill="#ff8fc0"/><circle r="3" cx="-4" cy="-1.300" fill="#ff8fc0"/><circle r="2.400" fill="#ffd23f"/></g>'];
+const ACC_KEYS = Object.keys(ACC).sort((a, b) => ACC[a][0] - ACC[b][0]);
 const AVATAR_KEYS = Object.keys(AVATARS);
 const avBg = (k) => (AVATARS[k] || AVATARS.cat)[0];
 function avatarEl(key, size = 40, cls = '', acc = '') {
@@ -1387,6 +1400,23 @@ function renderSettings() {
   ov.querySelector('.setscroll').scrollTop = top;
 }
 
+// you won the round: a card with your animal, the win count and any accessory it just unlocked
+function celebrateWin(me) {
+  document.querySelector('.winfx')?.remove();
+  const unlocked = ACC_KEYS.find((k) => ACC[k][0] === me.wins);
+  const next = ACC_KEYS.find((k) => ACC[k][0] > me.wins);
+  const box = el('div', { class: 'winfx', role: 'status', onclick: (e) => e.currentTarget.remove() },
+    el('div', { class: 'winbox' },
+      el('div', { class: 'wf-k' }, t('roundWon')),
+      avatarEl(me.avatar, 92, 'happy', me.acc),
+      el('div', { class: 'wf-t' }, unlocked ? t('accUnlockedN', { name: t('acc_' + unlocked) }) : t('winsN', { n: me.wins })),
+      el('div', { class: 'wf-s' }, next ? t('accNextAt', { n: ACC[next][0] - me.wins, name: t('acc_' + next) }) : t('accAll'))));
+  document.body.append(box);
+  SND.play(unlocked ? 'final' : 'safe'); buzz([60, 40, 60]);
+  burstConfetti();
+  setTimeout(() => box.remove(), 5200);
+}
+
 // ---- QR code to join the room (the generator is loaded only when it is first needed) ----
 let qrLoading = null;
 function loadQR() {
@@ -1436,7 +1466,7 @@ function openAvatarPicker(current, onPick, curAcc = '') {
   const grid = el('div', { class: 'avgrid' }, ...AVATAR_KEYS.map((k) => el('button', { type: 'button', class: 'avpick' + (k === current ? ' on' : ''), 'aria-label': k, onclick: () => { close(); onPick(k); } }, avatarEl(k, 64, '', curAcc))));
   const parts = [el('div', { class: 'avtitle' }, t('pickAnimal')), grid];
   if (me) {   // accessories only make sense inside a room: they are earned there
-    parts.push(el('div', { class: 'avtitle acctitle' }, t('accTitle')), el('p', { class: 'leavep' }, t('accHint', { n: wins })));
+    parts.push(el('div', { class: 'avtitle acctitle' }, t('accTitle')), el('p', { class: 'leavep' }, t('accHint', { n: wins }), el('br'), el('small', {}, t('accHow'))));
     const opts = [['', t('accNone'), 0], ...ACC_KEYS.map((k) => [k, t('acc_' + k), ACC[k][0]])];
     parts.push(el('div', { class: 'accgrid' }, ...opts.map(([k, label, need]) => {
       const locked = wins < need;
@@ -1471,7 +1501,7 @@ const I18N = {
     joinedCount: (v) => `${v.n} of ${v.max} players have joined`,
     host: 'host', joined: 'joined', you: ' (you)', waitingPlayer: 'Waiting', pickAnimal: 'Choose your animal', changeAvatar: 'Change animal',
     dealN: (v) => `Shuffle & deal to ${v.n} player${v.n > 1 ? 's' : ''}`,
-    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: 'GG', chatQ2: 'Nice one!', chatQ3: 'Hurry up!', chatQ4: 'Oops!', setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', leaveRoom: 'Leave room',
+    waitingHost: 'Waiting for the host to deal…', leaveQ: 'Leave this room?', leaveNote: 'You can rejoin later with the room code.', leaveHostNote: 'You are the host: the host role passes to another player.', stay: 'Stay', leaveYes: 'Leave', creating: 'Creating your room…', joining: 'Joining the room…', leaving: 'Leaving the room…', dealing: 'Shuffling & dealing…', qrBtn: 'QR code', qrTitle: 'Scan to join', qrHint: 'Point a phone camera at the code to open the room.', qrCopy: 'Copy link', qrClose: 'Close', inviteCopy: 'Copy invite link', reconnecting: 'Reconnecting…', retryNow: 'Retry', settings: 'Settings', setGame: 'Game rules', setHostOnly: 'Only the host can change these.', setTimer: 'Arranging timer', setTimerHint: 'Time to arrange cards each round (from the next deal)', setSecs: 's', setNone: 'None', setNoTimer: 'No timer', setJokers: 'Jokers', setJokersHint: 'Wild cards that become the best card', setOn: 'On', setOff: 'Off', setMult: 'Penalty multiplier', setMultHint: 'Multiplies every penalty from the next scored row', setDisplay: 'Display & accessibility (this phone)', setFour: 'Colour-blind deck', setFourHint: 'Four suit colours: spades black, hearts red, diamonds blue, clubs green', setText: 'Text size', setHaptics: 'Vibration', setHapticsHint: 'Buzz when you lose a row and in the last seconds of the timer', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: 'GG', chatQ2: 'Nice one!', chatQ3: 'Hurry up!', chatQ4: 'Oops!', setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} players`, readyN: (v) => `${v.r}/${v.n} ready`, roundN: (v) => `round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, shuffle & deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Place all cards (${v.p}/${v.t})`, imReady: "I'm ready",
@@ -1543,7 +1573,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '选择你的动物', changeAvatar: '更换动物',
     dealN: (v) => `洗牌并发给 ${v.n} 位玩家`,
-    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快点！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', leaveRoom: '离开房间',
+    waitingHost: '等待房主发牌…', leaveQ: '离开这个房间？', leaveNote: '之后可以用房间代码重新加入。', leaveHostNote: '你是房主：离开后房主会交给其他玩家。', stay: '留下', leaveYes: '离开', creating: '正在创建房间…', joining: '正在加入房间…', leaving: '正在离开房间…', dealing: '正在洗牌发牌…', qrBtn: '二维码', qrTitle: '扫码加入', qrHint: '用手机相机对准二维码即可加入房间。', qrCopy: '复制链接', qrClose: '关闭', inviteCopy: '复制邀请链接', reconnecting: '正在重新连接…', retryNow: '重试', settings: '设置', setGame: '游戏规则', setHostOnly: '只有房主可以更改。', setTimer: '摆牌计时', setTimerHint: '每回合摆牌的时间（从下一次发牌起生效）', setSecs: '秒', setNone: '不限时', setNoTimer: '不限时', setJokers: '鬼牌', setJokersHint: '万能牌，会变成最有利的牌', setOn: '开', setOff: '关', setMult: '罚分倍数', setMultHint: '从下一行结算起所有罚分乘以倍数', setDisplay: '显示与无障碍（仅此手机）', setFour: '色盲友好牌面', setFourHint: '四种花色颜色：黑桃黑、红心红、方块蓝、梅花绿', setText: '文字大小', setHaptics: '震动', setHapticsHint: '输掉一行时、以及倒计时最后几秒会震动', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快点！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', hallWin: '胜', hallWins: (v) => `在此房间赢了 ${v.n} 回合`, hallTie: '大家打平，所以没有人获得回合胜利。', acc_headphones: '耳机', acc_mustache: '小胡子', acc_horns: '恶魔角', acc_flower: '小花', accUnlockedN: (v) => `解锁：${v.name}！`, winsN: (v) => `在此房间已赢 ${v.n} 回合`, accNextAt: (v) => `再赢 ${v.n} 回合解锁${v.name}`, accAll: '所有配饰都已解锁！', accHow: '回合胜利 = 第 4 行结束后总罚分最低（平分则共享；全员平局则无人获胜）。', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `请摆满所有牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -1615,7 +1645,7 @@ const I18N = {
     joinedCount: (v) => `已有 ${v.n}/${v.max} 位玩家加入`,
     host: '房主', joined: '已加入', you: '（你）', waitingPlayer: '等待中', pickAnimal: '選擇你的動物', changeAvatar: '更換動物',
     dealN: (v) => `洗牌並發給 ${v.n} 位玩家`,
-    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快點！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', leaveRoom: '離開房間',
+    waitingHost: '等待房主發牌…', leaveQ: '離開這個房間？', leaveNote: '之後可以用房間代碼重新加入。', leaveHostNote: '你是房主：離開後房主會交給其他玩家。', stay: '留下', leaveYes: '離開', creating: '正在建立房間…', joining: '正在加入房間…', leaving: '正在離開房間…', dealing: '正在洗牌發牌…', qrBtn: 'QR 碼', qrTitle: '掃碼加入', qrHint: '用手機相機對準 QR 碼即可加入房間。', qrCopy: '複製連結', qrClose: '關閉', inviteCopy: '複製邀請連結', reconnecting: '正在重新連線…', retryNow: '重試', settings: '設定', setGame: '遊戲規則', setHostOnly: '只有房主可以更改。', setTimer: '擺牌計時', setTimerHint: '每回合擺牌的時間（從下一次發牌起生效）', setSecs: '秒', setNone: '不限時', setNoTimer: '不限時', setJokers: '鬼牌', setJokersHint: '萬能牌，會變成最有利的牌', setOn: '開', setOff: '關', setMult: '罰分倍數', setMultHint: '從下一行結算起所有罰分乘以倍數', setDisplay: '顯示與無障礙（僅此手機）', setFour: '色盲友善牌面', setFourHint: '四種花色顏色：黑桃黑、紅心紅、方塊藍、梅花綠', setText: '文字大小', setHaptics: '震動', setHapticsHint: '輸掉一行時、以及倒數最後幾秒會震動', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: 'GG', chatQ2: '漂亮！', chatQ3: '快點！', chatQ4: '哎呀！', setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', hallWin: '勝', hallWins: (v) => `在此房間贏了 ${v.n} 回合`, hallTie: '大家打平，所以沒有人獲得回合勝利。', acc_headphones: '耳機', acc_mustache: '小鬍子', acc_horns: '惡魔角', acc_flower: '小花', accUnlockedN: (v) => `解鎖：${v.name}！`, winsN: (v) => `在此房間已贏 ${v.n} 回合`, accNextAt: (v) => `再贏 ${v.n} 回合解鎖${v.name}`, accAll: '所有配飾都已解鎖！', accHow: '回合勝利 = 第 4 行結束後總罰分最低（平分則共享；全員平手則無人獲勝）。', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `請擺滿所有牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -2311,21 +2341,47 @@ function hallPanel() {
   const list = activePlayers().map((p) => {
     let penalty = 0, lost = 0;
     for (const r of res) if (!r.tie && r.losers.includes(p.id)) { penalty += r.penalty; lost++; }
-    return { id: p.id, name: p.name, penalty, lost };
+    return { id: p.id, name: p.name, penalty, lost, wins: p.wins || 0 };
   }).sort((a, b) => a.penalty - b.penalty || a.lost - b.lost || a.name.localeCompare(b.name));
   if (!list.length) return '';
   const medals = ['#ffcf40', '#cfd6e6', '#d99a63'];
-  const rows = el('div', { class: 'hall' });
   let rank = 0, prevKey = null;
-  list.forEach((h, i) => {
-    const key = h.penalty + ':' + h.lost; if (key !== prevKey) rank = i + 1; prevKey = key;
+  list.forEach((h, i) => { const key = h.penalty + ':' + h.lost; if (key !== prevKey) rank = i + 1; prevKey = key; h.rank = rank; h.i = i; });
+  const won = (st.winners || []);
+  const winBadge = (h) => won.includes(h.id) ? el('span', { class: 'winbadge' }, icon('trophy', 12), t('hallWin')) : '';
+  const winsChip = (h) => h.wins ? el('span', { class: 'winscount', title: t('hallWins', { n: h.wins }) }, icon('trophy', 12), '×' + h.wins) : '';
+  const mood = (h) => (won.includes(h.id) || h.rank === 1 ? 'happy' : h.i === list.length - 1 && list.length > 1 && h.penalty > list[0].penalty ? 'sad' : '');
+  // the podium: 2nd - 1st - 3rd, blocks as tall as the finish
+  let podium = '';
+  if (list.length >= 2) {
+    const top = list.slice(0, 3);
+    const order = top.length === 3 ? [top[1], top[0], top[2]] : [top[1], top[0]];
+    const heights = { 1: 86, 2: 62, 3: 44 };
+    podium = el('div', { class: 'podium' }, ...order.map((h) => {
+      const size = h.rank === 1 ? 54 : 44;
+      return el('div', { class: 'pd pd' + Math.min(h.rank, 3) + (h.id === st.meId ? ' me' : '') },
+        h.rank === 1 ? el('span', { class: 'pd-crown' }, icon('trophy', 22)) : '',
+        avatarEl(avOf(h.id), size, mood(h), accOf(h.id)),
+        el('b', { class: 'pd-n' }, h.name + (h.id === st.meId ? t('you') : '')),
+        el('span', { class: 'pd-p' }, t('hallPts', { n: h.penalty })),
+        el('span', { class: 'pd-w' }, winBadge(h), winsChip(h)),
+        el('div', { class: 'pd-b', style: `height:${heights[Math.min(h.rank, 3)]}px;background:linear-gradient(180deg,${medals[Math.min(h.rank, 3) - 1]},${['#c28a10', '#8d96ab', '#9a5f2e'][Math.min(h.rank, 3) - 1]});animation-delay:${h.rank * 120}ms` }, String(h.rank)));
+    }));
+  }
+  const rest = list.length >= 2 ? list.slice(3) : list;
+  const rows = el('div', { class: 'hall' });
+  rest.forEach((h, i) => {
     const me = h.id === st.meId;
-    rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
-      el('span', { class: 'hrank', style: rank <= 3 ? `background:${medals[rank - 1]};color:#1a1407` : '' }, rank === 1 ? icon('trophy', 16) : String(rank)),
-      el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, rank === 1 ? 'happy' : i === list.length - 1 && list.length > 1 && h.penalty > list[0].penalty ? 'sad' : '', accOf(h.id))), el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
+    rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (h.rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
+      el('span', { class: 'hrank', style: h.rank <= 3 ? `background:${medals[h.rank - 1]};color:#1a1407` : '' }, h.rank === 1 ? icon('trophy', 16) : String(h.rank)),
+      el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, mood(h), accOf(h.id))),
+      el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
+      winBadge(h), winsChip(h),
       el('span', { class: 'hpts' }, el('b', {}, t('hallPts', { n: h.penalty })))));
   });
-  return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: st.round })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))), rows);
+  const tie = st.winners && !st.winners.length && list.length > 1;   // a full tie: nobody earns a round win
+  return el('div', { class: 'hallwrap' }, el('div', { class: 'sthead' }, el('div', {}, el('div', { class: 'kicker' }, t('hallSub', { n: st.round })), el('div', { class: 'strule iconlabel' }, icon('trophy', 22), t('hallTitle')))),
+    podium, rest.length ? rows : '', tie ? el('p', { class: 'hallnote' }, t('hallTie')) : '');
 }
 
 
@@ -2567,7 +2623,7 @@ function adopt(j) {
   st = j;   // planStage and the pop-up read the new state
   handleEmotes(j);
   handleChat(j, prev);
-  if (prev) { const was = prev.players.find((q) => q.id === prev.meId), now = j.players.find((q) => q.id === j.meId); if (was && now && (now.wins || 0) > (was.wins || 0)) setTimeout(() => { toast(t(ACC_KEYS.some((k) => ACC[k][0] === now.wins) ? 'accUnlocked' : 'roundWon'), 'low'); SND.play('safe'); }, 1500); }
+  if (prev) { const was = prev.players.find((q) => q.id === prev.meId), now = j.players.find((q) => q.id === j.meId); if (was && now && (now.wins || 0) > (was.wins || 0)) setTimeout(() => celebrateWin(now), Math.max(2500, 8800 - (serverNow() - ((j.rowResults || []).reduce((m, r) => Math.max(m, r.at || 0), 0))))); }
   if (prev) {   // announce a row the moment it is scored; results persist, so reopening a row is never re-announced
     const had = new Set((prev.rowResults || []).map((r) => r.row));
     const fresh = (j.rowResults || []).filter((r) => !had.has(r.row));

@@ -16,7 +16,7 @@ function pickAvatar(want, taken = []) {
   return pool[crypto.randomInt(pool.length)];
 }
 // avatar accessories are unlocked by winning rounds in this room (lowest total penalty)
-const ACC_WINS = { hat: 1, shades: 2, crown: 3, halo: 5 };
+const ACC_WINS = { hat: 1, shades: 2, crown: 3, headphones: 4, halo: 5, mustache: 6, horns: 8, flower: 10 };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
 const MAX_PLAYERS = 15;
 const HAND_SIZE = 7;
@@ -230,10 +230,13 @@ function tallyWins(room) {
   const tot = Object.fromEntries(act.map((p) => [p.id, 0]));
   for (const r of Object.values(room.results)) if (!r.tie) for (const id of r.losers) if (id in tot) tot[id] += r.penalty;
   const vals = Object.values(tot);
+  room.winnersRound = room.round;
+  room.winners = [];
   if (!vals.length || Math.max(...vals) === Math.min(...vals)) return;
   const best = Math.min(...vals);
   room.wins = room.wins || {};
   for (const p of act) if (tot[p.id] === best) {
+    room.winners.push(p.id);
     const w = (room.wins[p.id] = (room.wins[p.id] || 0) + 1);
     const unlocked = Object.entries(ACC_WINS).find(([, need]) => need === w);
     if (unlocked) p.acc = unlocked[0];   // a new accessory is worn straight away
@@ -310,6 +313,7 @@ function view(room, pid, seen, cn) {
     emotes: (room.emotes || []).filter((x) => Date.now() - x.at < 8000),
     emoteN: room.emoteN || 0,
     chatN: room.chatN || 0,
+    winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,   // who won the round that just finished ([] = a full tie, null = not finished)
     // chat: only what this phone hasn't got yet (its last seen number comes with every request)
     chat: (room.chat || []).filter((m) => m.n > (Number.isFinite(cn) ? cn : (room.chatN || 0) - 30)),
     deadline: room.deadline || null,

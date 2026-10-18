@@ -197,6 +197,7 @@ const post = (b) => call('POST', b, {});
   assert.equal(wv.players.reduce((a, p) => a + p.wins, 0), 1, 'exactly one round winner');
   const winner = wv.players.find((p) => p.wins === 1);
   assert.equal(winner.acc, 'hat', 'first win unlocks the party hat');
+  assert.deepEqual(wv.winners, [winner.id], 'the view says who won the round');
   const loserId = wv.players.find((p) => p.wins === 0).id;
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: loserId, acc: 'crown' })).s, 403, 'locked accessory refused');
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: 'shades' })).s, 403, 'needs 2 wins');
