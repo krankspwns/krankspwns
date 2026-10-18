@@ -2359,6 +2359,7 @@ function hallPanel() {
   const medals = ['#ffcf40', '#cfd6e6', '#d99a63'];
   let rank = 0, prevKey = null;
   list.forEach((h, i) => { const key = h.penalty + ':' + h.lost; if (key !== prevKey) rank = i + 1; prevKey = key; h.rank = rank; h.i = i; });
+  const anim = screenAnim || stageEnter;   // entrance animations only play when this screen appears, not on every refresh
   const won = (st.winners || []);
   const winBadge = (h) => won.includes(h.id) ? el('span', { class: 'winbadge' }, icon('trophy', 12), t('hallWin')) : '';
   const winsChip = (h) => h.wins ? el('span', { class: 'winscount', title: t('hallWins', { n: h.wins }) }, icon('trophy', 12), '×' + h.wins) : '';
@@ -2377,14 +2378,14 @@ function hallPanel() {
         el('b', { class: 'pd-n' }, h.name + (h.id === st.meId ? t('you') : '')),
         el('span', { class: 'pd-p' }, t('hallPts', { n: h.penalty })),
         el('span', { class: 'pd-w' }, winBadge(h), winsChip(h)),
-        el('div', { class: 'pd-b', style: `height:${heights[Math.min(h.rank, 3)]}px;background:linear-gradient(180deg,${medals[Math.min(h.rank, 3) - 1]},${['#c28a10', '#8d96ab', '#9a5f2e'][Math.min(h.rank, 3) - 1]});animation-delay:${h.rank * 120}ms` }, String(h.rank)));
+        el('div', { class: 'pd-b', style: `height:${heights[Math.min(h.rank, 3)]}px;background:linear-gradient(180deg,${medals[Math.min(h.rank, 3) - 1]},${['#c28a10', '#8d96ab', '#9a5f2e'][Math.min(h.rank, 3) - 1]});animation-delay:${h.rank * 120}ms${anim ? '' : ';animation:none'}` }, String(h.rank)));
     }));
   }
   const rest = list.length >= 2 ? list.slice(3) : list;
   const rows = el('div', { class: 'hall' });
   rest.forEach((h, i) => {
     const me = h.id === st.meId;
-    rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (h.rank === 1 ? ' top' : ''), style: screenAnim ? `animation-delay:${i * 70}ms` : '' },
+    rows.append(el('div', { class: 'hrow' + (me ? ' me' : '') + (h.rank === 1 ? ' top' : ''), style: anim ? `animation-delay:${i * 70}ms` : 'animation:none' },
       el('span', { class: 'hrank', style: h.rank <= 3 ? `background:${medals[h.rank - 1]};color:#1a1407` : '' }, h.rank === 1 ? icon('trophy', 16) : String(h.rank)),
       el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, mood(h), accOf(h.id))),
       el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
@@ -3104,6 +3105,9 @@ async function leave() {
   ov.remove();
 }
 
+// what the screen is drawn from: reactions, chat and the clock don't change it, so they never trigger a rebuild (which would replay every entrance animation)
+const IGNORED_FOR_RENDER = new Set(['version', 'now', 'emotes', 'emoteN', 'chat', 'chatN', 'recvAt', 'seenAgo']);
+const renderSig = (v) => JSON.stringify(v, (k, val) => (IGNORED_FOR_RENDER.has(k) ? undefined : val));
 let connFails = 0;
 function setConn(down) {
   const has = document.getElementById('connbar');
@@ -3129,9 +3133,10 @@ async function poll(force = false) {
     // the host's online/offline dots change without the room itself changing, so look for those too
     const presenceSig = (v) => v.players.map((q) => q.id + (q.online === false ? 'x' : '')).join();
     if (!force && j.version <= (st?.version ?? 0) && !(st?.isHost && (document.querySelector('.pl-ov') || presenceSig(j) !== presenceSig(st)))) return;
+    const unchanged = !!st && !force && renderSig(j) === renderSig(st) && !err;
     adopt(j);
     err = '';
-    safeRender();
+    if (!unchanged) safeRender();
   } catch { if (++connFails >= 2 || !navigator.onLine) setConn(true); }
 }
 // pull the newest state right now (used by the reconnect banner and the settings screen)
