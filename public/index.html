@@ -498,6 +498,8 @@
   .shopitem.flash { animation: shopflash .9s ease; } @keyframes shopflash { 0% { transform: scale(1); } 30% { transform: scale(1.06); box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(var(--gold-rgb), .6); } 100% { transform: scale(1); } }
   .shopitem button.busy { display: inline-flex; align-items: center; justify-content: center; gap: 7px; opacity: 1; } .shopitem button .spin { width: 14px; height: 14px; border-width: 2px; border-color: rgba(26,20,7,.25); border-top-color: #1a1407; }
   .shopitem button:not(.busy):not(.ghost) { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .buylbl { flex: 1; text-align: left; padding-left: 4px; } .pricepill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; font-size: 12.5px; font-weight: 800; background: rgba(26,20,7,.16); } .pricepill .ic { color: currentColor !important; }
+  .shopitem button.throwbtn { justify-content: center; } .throwbtn .ic { filter: grayscale(1) brightness(4); }
+  .shopitem .btnrow button.throwbtn, .shopitem button.throwbtn { background: linear-gradient(180deg, #ff9a7a, #ef4f6e) !important; color: #fff !important; border-color: transparent !important; text-shadow: 0 1px 0 rgba(0,0,0,.25); box-shadow: 0 6px 16px rgba(239,79,110,.35) !important; }
   .shopitem .btnrow { display: grid; gap: 6px; width: 100%; }
   .shopitem button { width: 100%; padding: 9px 6px; font-size: 13px; } .shopitem button.ghost { color: var(--text); }
   .emotefab.giftfab { right: calc(14px + 116px); } .giftfab .cbadge { display: grid; background: var(--gold); color: #1a1407; border-color: rgb(var(--panel)); }
@@ -1902,7 +1904,7 @@ function renderShop() {
     items = GIFT_KEYS.map((k) => {
       const left = w.gifts[k] || 0;
       return card(left > 0, giftEl(k, 60), t('gift_' + k), left > 0 ? t('giftLeft', { n: left }) : t('shopUses', { n: pr.uses, p: pr.gift[k] }),
-        left > 0 ? el('div', { class: 'btnrow' }, buy('gift', k, pr.gift[k], t('shopBuyMore')), el('button', { type: 'button', class: 'ghost', onclick: () => { ov.close(); openGiftTray(k); } }, t('giftThrowNow'))) : buy('gift', k, pr.gift[k]), 'gift:' + k);
+        left > 0 ? el('div', { class: 'btnrow' }, buy('gift', k, pr.gift[k], t('shopBuyMore')), el('button', { type: 'button', class: 'throwbtn', onclick: () => { ov.close(); openGiftTray(k); } }, withIcon('gift', t('giftThrowNow'), 15))) : buy('gift', k, pr.gift[k]), 'gift:' + k);
     });
   }
   const tabs = el('div', { class: 'shoptabs', role: 'tablist' }, ...[['acc', t('shopTabAcc')], ['av', t('shopTabAv')], ['bd', t('shopTabBd')], ['gift', t('shopTabGift')]].map(([k, label]) => el('button', { type: 'button', role: 'tab', class: k === shopTab ? 'on' : '', 'aria-selected': String(k === shopTab), onclick: () => { shopTab = k; renderShop(); } }, label)));
