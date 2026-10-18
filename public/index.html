@@ -465,10 +465,10 @@
   /* avatar borders: a gradient ring made by padding the circle (no extra elements, no animation) */
   .av.bd { background: var(--bdg) !important; box-shadow: 0 0 9px var(--bdglow, transparent); } .av.bd svg { border-radius: 50%; }
   .av.legend { box-shadow: 0 0 12px rgba(183,123,255,.6); position: relative; }
-  /* painted portraits drift slowly and catch a moving glint (only when big enough to see; off in calm / low-battery mode) */
+  /* painted portraits catch a moving glint at any size, and drift slowly when big enough to see; both off in calm / low-battery mode */
   .av.legend.live:not(.happy):not(.sad) .avb { transform-box: fill-box; transform-origin: 50% 60%; animation: lgfloat 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
   @keyframes lgfloat { 0%, 100% { transform: scale(1) translate(0, 0) rotate(0); } 50% { transform: scale(1.075) translate(.6%, -1.4%) rotate(.7deg); } }
-  .av.legend.live::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.3) 50%, transparent 62%); background-size: 260% 100%; animation: jkshimmer 4.6s linear infinite; animation-delay: var(--d, 0s); }
+  .av.legend::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.3) 50%, transparent 62%); background-size: 260% 100%; animation: jkshimmer 4.6s linear infinite; animation-delay: var(--d, 0s); }
   body.calm .av.legend .avb, body.autocalm .av.legend .avb, body.calm .av.legend::after, body.autocalm .av.legend::after { animation: none !important; }
   .bd-silver { --bdg: linear-gradient(135deg, #fff, #9aa4b8 55%, #e9edf5); --bdglow: rgba(220,228,245,.35); } .bd-gold { --bdg: linear-gradient(135deg, #fff1a8, #d9a21b 55%, #ffe27a); --bdglow: rgba(255,207,64,.5); }
   .bd-emerald { --bdg: linear-gradient(135deg, #c4f8cf, #2f8f4e 60%, #7be08f); --bdglow: rgba(80,200,120,.45); } .bd-ice { --bdg: linear-gradient(135deg, #f0fcff, #4fa8ff 60%, #bdf0ff); --bdglow: rgba(100,190,255,.5); }
