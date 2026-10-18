@@ -2118,31 +2118,48 @@ function playGift(g) {
       [['#ff4d6d', -150, 40], ['#4fe0ff', 150, 70], ['#b77bff', 0, 110]].forEach(([col, dx, dy], i) => later(260 + i * 170, () => { SND.play('pop'); glowAt(bx + dx, by + dy, col, 200, 700); ring(bx + dx, by + dy, col, 90, 700, 3); for (let k = 0; k < 28; k++) part(bx + dx, by + dy, { ang: (k / 28) * Math.PI * 2, spd: rnd(140, 260), g: 380, life: rnd(1100, 1700), size: rnd(5, 8), color: col, end: 0.15, glow: true }); }));
       pop(bx, by + 150, 'WHOOSH!', '#ff7a1f', toMe ? 50 : 40, 6); later(300, () => SND.play('crackle')); later(900, () => SND.play('crackle')); keepFor(3400);
     });
-  } else if (kind === 'boom') {   // a bomb lands, its fuse hisses, 3-2-1, then everything blows up
-    const bs = toMe ? 150 : 92;
-    const b = el('span', { class: 'giftfly' }, giftEl('bomb', bs)); b.style.filter = 'drop-shadow(0 0 7px rgba(255,255,255,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.4))'; fx.append(b);
+  } else if (kind === 'boom') {   // the bomb is thrown, lands with a thud, its fuse burns down while it shakes and glows, then a fireball
+    const bs = toMe ? 130 : 88, FUSE = 1500, LAND = 650, R = toMe ? Math.min(W, H) * 0.34 : 190;
+    const wrap = el('span', { class: 'giftfly' }); wrap.style.cssText = `width:${bs}px;height:${bs}px;transform-origin:50% 85%`; fx.append(wrap);
+    const art = giftEl('bomb', bs); art.style.cssText += ';position:absolute;left:0;top:0;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45)) drop-shadow(0 0 6px rgba(255,255,255,.4))'; wrap.append(art);
+    const glow = node(`left:${tx - bs}px;top:${ty - bs}px;width:${bs * 2}px;height:${bs * 2}px;border-radius:50%;background:radial-gradient(circle, rgba(255,60,40,.85), rgba(255,60,40,0) 65%);opacity:0`, 'giftbit');
+    const base = `translate(${tx - bs / 2}px,${ty - bs / 2}px)`;
     SND.play('throw');
-    anim(b, [{ transform: `translate(${fromX - bs / 2}px,${fromY}px) rotate(0deg) scale(.6)` }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2 - H * 0.2}px) rotate(300deg) scale(1.1)`, offset: 0.45 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2}px) rotate(380deg) scale(1)`, offset: 0.62 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2 - 70}px) rotate(380deg) scale(1)`, offset: 0.75 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2}px) rotate(380deg) scale(1)`, offset: 0.86 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2 - 24}px) rotate(380deg) scale(1)`, offset: 0.93 }, { transform: `translate(${tx - bs / 2}px,${ty - bs / 2}px) rotate(380deg) scale(1)` }], { duration: 900, fill: 'forwards' });
-    later(900, () => {
+    // 1) the throw: an arc with spin, then a squashed landing
+    anim(wrap, [{ transform: `translate(${fromX - bs / 2}px,${fromY}px) rotate(0deg) scale(.55)` }, { transform: `translate(${(fromX + tx) / 2 - bs / 2}px,${Math.min(fromY, ty) - H * 0.2}px) rotate(360deg) scale(1)`, offset: 0.55 }, { transform: `${base} rotate(700deg) scale(1.05, .9)`, offset: 0.86 }, { transform: `${base} rotate(720deg) scale(.92, 1.1)`, offset: 0.93 }, { transform: `${base} rotate(720deg) scale(1)` }], { duration: LAND, easing: 'ease-in', fill: 'forwards' });
+    later(LAND - 40, () => { SND.play('splat'); shake(160); ring(tx, ty + bs * 0.4, '#e8dcc8', bs * 0.9, 600, 6); for (let i = 0; i < 14; i++) part(tx + rnd(-bs / 2, bs / 2), ty + bs * 0.42, { ang: -Math.PI / 2 + rnd(-1.4, 1.4), spd: rnd(80, 240), g: 500, life: rnd(500, 900), size: rnd(8, 18), color: 'rgba(214,200,176,.7)', end: 1.6 }); });
+    // 2) the fuse burns: it wobbles harder and harder, glows red, sparks fly from the fuse tip, 3-2-1
+    later(LAND, () => {
       SND.play('sizzle');
-      const fuseX = tx + bs * 0.26, fuseY = ty - bs * 0.38;
-      for (let i = 0; i < 18; i++) later(i * 50, () => part(fuseX, fuseY, { ang: rnd(-Math.PI, 0), spd: rnd(80, 260), g: 500, life: rnd(300, 600), size: rnd(3, 7), color: pick(['#ffd23f', '#ff7a1f', '#fff']), end: 0.2 }));
-      anim(b, [{ filter: 'brightness(1)' }, { filter: 'brightness(1.8) sepia(1) hue-rotate(-30deg) saturate(4)' }, { filter: 'brightness(1)' }, { filter: 'brightness(1.8) sepia(1) hue-rotate(-30deg) saturate(4)' }, { filter: 'brightness(1)' }], { duration: 900, iterations: 1 });
-      // one number at a time, in the same spot: each replaces the last instead of stacking up
-      const cd = node(`left:${tx}px;top:${ty - bs * 0.95}px;font:900 70px/1 Inter,system-ui,sans-serif;color:#ff4d4d;-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.25);opacity:0`, 'giftbit');
-      [3, 2, 1].forEach((n, i) => later(i * 330, () => { SND.play('beep'); cd.textContent = String(n); anim(cd, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.3)', opacity: 1, offset: 0.25 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%,-50%) scale(.9)', opacity: i === 2 ? 0 : 0.9 }], { duration: 320, fill: 'forwards' }); }));
+      const wob = []; const steps = 28;
+      for (let i = 0; i <= steps; i++) { const k = i / steps, amp = 2 + k * k * 9, sc = 1 + k * k * 0.22; wob.push({ transform: `${base} rotate(${(i % 2 ? 1 : -1) * amp}deg) scale(${sc})`, offset: k }); }
+      anim(wrap, wob, { duration: FUSE, easing: 'linear', fill: 'forwards' });
+      anim(glow, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 0.25, transform: 'scale(.9)', offset: 0.3 }, { opacity: 0.55, transform: 'scale(1)', offset: 0.6 }, { opacity: 0.9, transform: 'scale(1.25)' }], { duration: FUSE, fill: 'forwards', easing: 'ease-in' });
+      anim(art, [{ filter: 'brightness(1)' }, { filter: 'brightness(1.4) sepia(.6) hue-rotate(-30deg) saturate(3)', offset: 0.5 }, { filter: 'brightness(2.2) sepia(1) hue-rotate(-20deg) saturate(5)' }], { duration: FUSE, fill: 'forwards', easing: 'ease-in' });
+      const fx0 = tx + bs * 0.22, fy0 = ty - bs * 0.44;
+      for (let i = 0; i < 34; i++) later(i * (FUSE / 34), () => { part(fx0 + rnd(-3, 3), fy0, { ang: -Math.PI / 2 + rnd(-1.4, 1.4), spd: rnd(120, 340), g: 700, life: rnd(300, 650), size: rnd(3, 6), color: pick(['#ffd23f', '#ff9a1f', '#fff3c0']), end: 0.2, glow: true }); });
+      const al = node(`left:${tx - bs * 0.62}px;top:${ty - bs * 0.62}px;width:${bs * 1.24}px;height:${bs * 1.24}px;border-radius:50%;border:4px solid #ff4d4d;opacity:0`, 'giftbit');
+      anim(al, [{ transform: 'scale(.6)', opacity: 0.9 }, { transform: 'scale(1.5)', opacity: 0 }], { duration: 500, iterations: 3, delay: 100, fill: 'forwards' });
+      const cd = node(`left:${tx}px;top:${ty - bs * 0.92}px;font:900 70px/1 Inter,system-ui,sans-serif;color:#ff4d4d;-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.25);opacity:0`, 'giftbit');
+      [3, 2, 1].forEach((n, i) => later(i * (FUSE / 3), () => { SND.play('beep'); cd.textContent = String(n); anim(cd, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.35)', opacity: 1, offset: 0.2 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%,-50%) scale(.9)', opacity: i === 2 ? 0 : 0.9 }], { duration: FUSE / 3 - 20, fill: 'forwards' }); }));
     });
-    later(1950, () => {
-      b.remove(); SND.play('boom'); shake(toMe ? 380 : 600); flash('#fff', toMe ? 0.4 : 0.9, 320); if (!toMe) flash('#ff9d2e', 0.45, 800, 100);
-      const R = toMe ? Math.min(W, H) * 0.42 : 230;
-      ring(tx, ty, '#fff', R, 700, 10); ring(tx, ty, '#ffb02e', R * 0.75, 900, 8, 80); ring(tx, ty, '#ff5a3c', R * 0.5, 1000, 6, 160);
-      const bb = node(`left:${tx - R * 0.55}px;top:${ty - R * 0.55}px;width:${R * 1.1}px;height:${R * 1.1}px;opacity:0`, 'giftbit'); bb.append(giftEl('burst', R * 1.1)); anim(bb, [{ transform: 'scale(.2) rotate(-10deg)', opacity: 1 }, { transform: 'scale(1.15) rotate(6deg)', opacity: 1, offset: 0.35 }, { transform: 'scale(1.3) rotate(10deg)', opacity: 0 }], { duration: 1100, fill: 'forwards' });
-      for (let i = 0; i < (toMe ? 38 : 56); i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(240, toMe ? 800 : 1200), g: 1000, life: rnd(900, 1800), size: rnd(5, 15), color: pick(['#2b2f3f', '#ff7a1f', '#ffd23f', '#555']), spin: rnd(-720, 720), end: 0.3 });
-      for (let i = 0; i < 9; i++) part(tx + rnd(-60, 60), ty + rnd(-40, 40), { ang: rnd(-Math.PI, 0), spd: rnd(40, 140), g: -90, life: rnd(1500, 2400), size: toMe ? rnd(40, 80) : rnd(70, 150), color: 'rgba(90,94,110,.5)', end: 1.8, delay: i * 40 });
-      pop(tx, toMe ? ty - R * 0.9 : ty, 'BOOM!', '#ff5a3c', toMe ? 56 : 58, -7, 60);
-      later(300, () => SND.play('crackle')); keepFor(3600);
+    // 3) the blast
+    later(LAND + FUSE, () => {
+      wrap.remove(); glow.remove(); SND.play('boom'); shake(toMe ? 420 : 600); flash('#fff', toMe ? 0.4 : 0.7, 200); if (!toMe) flash('#ff9d2e', 0.4, 700, 90);
+      // scorch mark that lingers a moment
+      const sc = node(`left:${tx - R * 0.7}px;top:${ty - R * 0.28}px;width:${R * 1.4}px;height:${R * 0.56}px;border-radius:50%;background:radial-gradient(ellipse, rgba(10,8,8,.7), rgba(10,8,8,0) 70%);opacity:0`, 'giftbit'); anim(sc, [{ opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 0.8, offset: 0.7 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' });
+      // the fireball: three layers bursting outwards
+      [['rgba(255,60,30,0)', '#ff3d1f', 1.0, 0], ['rgba(255,150,30,0)', '#ff9a1f', 0.74, 40], ['rgba(255,250,200,0)', '#fff3b8', 0.46, 80]].forEach(([c0, c1, f, dl]) => { const d = node(`left:${tx - R * f}px;top:${ty - R * f}px;width:${R * 2 * f}px;height:${R * 2 * f}px;border-radius:50%;background:radial-gradient(circle, ${c1} 0 35%, ${c1}cc 55%, ${c0} 72%);opacity:0;filter:blur(1px)`, 'giftbit'); anim(d, [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 1, offset: 0.35 }, { transform: 'scale(1.25)', opacity: 0 }], { duration: 900, delay: dl, easing: 'cubic-bezier(.1,.7,.3,1)', fill: 'forwards' }); });
+      ring(tx, ty, '#fff', R * 1.5, 700, 9); ring(tx, ty, '#ffb02e', R * 1.2, 900, 6, 90);
+      const bb = node(`left:${tx - R * 0.5}px;top:${ty - R * 0.5}px;width:${R}px;height:${R}px;opacity:0`, 'giftbit'); bb.append(giftEl('burst', R)); anim(bb, [{ transform: 'scale(.2) rotate(-10deg)', opacity: 1 }, { transform: 'scale(1.1) rotate(6deg)', opacity: 1, offset: 0.4 }, { transform: 'scale(1.25) rotate(10deg)', opacity: 0 }], { duration: 800, fill: 'forwards' });
+      for (let i = 0; i < (toMe ? 34 : 46); i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(240, toMe ? 760 : 1000), g: 900, life: rnd(900, 1700), size: rnd(6, 15), color: pick(['#2b2f3f', '#3a3f55', '#ff7a1f', '#ffd23f']), spin: rnd(-720, 720), end: 0.3 });
+      for (let i = 0; i < 22; i++) part(tx, ty, { ang: rnd(0, Math.PI * 2), spd: rnd(160, 520), g: 500, life: rnd(1300, 2200), size: rnd(3, 6), color: pick(['#ffd23f', '#ff9a1f', '#fff']), end: 0.2, glow: true });
+      // a mushroom of smoke climbing up from the blast
+      for (let i = 0; i < 8; i++) { const sx = tx + rnd(-R * 0.18, R * 0.18), size = R * rnd(0.5, 0.8); const sm = node(`left:${sx - size / 2}px;top:${ty - size / 2}px;width:${size}px;height:${size}px;border-radius:50%;background:radial-gradient(circle, rgba(88,92,108,.85), rgba(60,64,80,.55) 60%, rgba(60,64,80,0) 72%);opacity:0`, 'giftbit'); anim(sm, [{ transform: 'translateY(0) scale(.3)', opacity: 0 }, { transform: `translateY(${-R * (0.3 + i * 0.1)}px) scale(.9)`, opacity: 0.9, offset: 0.35 }, { transform: `translateY(${-R * (0.8 + i * 0.12)}px) scale(${1.4 + i * 0.12})`, opacity: 0 }], { duration: 2300, delay: 150 + i * 70, easing: 'ease-out', fill: 'forwards' }); }
+      pop(tx, ty - R * 0.95, 'BOOM!', '#ff5a3c', toMe ? 60 : 56, -7, 80);
+      later(250, () => SND.play('crackle')); later(900, () => SND.play('crackle')); keepFor(3600);
     });
-    keepFor(5200);
+    keepFor(LAND + FUSE + 3800);
   } else if (kind === 'fireworks') {   // a volley of shells with different bursts
     const cols = [['#ff5a5a', '#ffd23f'], ['#4fc3ff', '#ffffff'], ['#b77bff', '#ff8fc0'], ['#7be08f', '#ffd23f'], ['#ffd23f', '#ff7a1f']];
     const shells = 6;
