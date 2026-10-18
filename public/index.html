@@ -494,6 +494,8 @@
   .invmenu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 190px; z-index: 40; padding: 6px; border-radius: 14px; background: rgb(24,30,54); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); display: grid; gap: 4px; animation: boxpop .2s ease backwards; }
   .invmenu button { color: #f3ecda !important; display: flex !important; align-items: center; gap: 8px; width: 100%; flex: none !important; justify-content: flex-start; padding: 11px 12px !important; font-size: 13px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 10px !important; } .invmenu button:hover { background: rgba(255,255,255,.08) !important; filter: none; transform: none; }
   .hactions.even .invwrap { flex: 1; }
+  .waitact { gap: 10px; } .waitact .invwrap > button { padding: 12px 22px; font-size: 15px; background: linear-gradient(180deg, rgba(201,169,106,.28), rgba(201,169,106,.12)) !important; border-color: var(--gold-lo) !important; } .waitact > button { padding: 12px 20px; font-size: 15px; }
+  .waitroom .invmenu { min-width: 230px; }
   .avtitle { font-weight: 700; margin-bottom: 12px; text-align: center; }
   .avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center; } .avpick { padding: 4px; border-radius: 50%; border: 2px solid transparent; background: none; box-shadow: none; line-height: 0; } .avpick:hover { transform: scale(1.06); filter: none; } .avpick.on { border-color: var(--gold-hi); background: rgba(201,169,106,.25); }
   .avatar.av-empty { position: relative; display: grid; place-items: center; background: none; border: 0; color: var(--gold-lo); }
@@ -1952,7 +1954,7 @@ function drop(src, cardId, t) {
 }
 
 let tipRow = null;   // which row's criteria tip is open
-document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; safeRender(); } });
+document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; render(); } });
 function boardEl(board, mine, pid) {
   const wrap = el('div', { class: 'board' });
   const me = st.players.find(p => p.id === st.meId);
@@ -1982,10 +1984,10 @@ function boardEl(board, mine, pid) {
       row.append(node);
     }
     if (mine && dealt && !me.ready) {   // beginner help: an (i) per row explains how that row is won or lost
-      rw.append(el('button', { type: 'button', class: 'rowinfo' + (tipRow === rowIdx ? ' on' : ''), 'aria-label': t('rowN', { n: rowIdx + 1 }), onclick: (e) => { e.stopPropagation(); tipRow = tipRow === rowIdx ? null : rowIdx; safeRender(); } }, icon('info', 18)));
+      rw.append(el('button', { type: 'button', class: 'rowinfo' + (tipRow === rowIdx ? ' on' : ''), 'aria-label': t('rowN', { n: rowIdx + 1 }), onclick: (e) => { e.stopPropagation(); tipRow = tipRow === rowIdx ? null : rowIdx; render(); } }, icon('info', 18)));
       if (tipRow === rowIdx) rw.append(el('div', { class: 'rowtip', onclick: (e) => e.stopPropagation() },
         el('b', {}, t('rowN', { n: rowIdx + 1 }) + ' · ' + t('rule' + (rowIdx + 1))), el('p', {}, t('tip' + (rowIdx + 1))), el('p', { class: 'tj' }, t('tipJoker')),
-        el('button', { type: 'button', class: 'ghost', onclick: () => { tipRow = null; safeRender(); } }, t('tipClose'))));
+        el('button', { type: 'button', class: 'ghost', onclick: () => { tipRow = null; render(); } }, t('tipClose'))));
     }
     if (mine && dealt && activePlayers().every((p) => p.ready)) {
       const cards = board.slice(i - n, i).filter(Boolean);
@@ -2016,10 +2018,23 @@ function waitSettings() {
   return el('div', { class: 'setchips' }, ...bits.map(([ic, txt]) => el('span', { class: 'setchip' }, ic, txt)),
     st.isHost ? el('button', { type: 'button', class: 'ghost setedit', onclick: openSettings }, icon('sliders', 14), t('setEdit')) : '');
 }
+// one Invite button for everything: copy the room code, copy the link, or show a QR code
+function inviteControl() {
+  const link = `${location.origin}/?room=${st.code}`;
+  const close = () => { inviteOpen = false; render(); };
+  const copyItem = (icon_, label, text) => { const b = el('button', { type: 'button', role: 'menuitem', onclick: () => { copyText(text, b); setTimeout(() => { if (inviteOpen) close(); }, 900); } }, withIcon(icon_, label)); return b; };
+  const menu = el('div', { class: 'invmenu', role: 'menu', onclick: (e) => e.stopPropagation() },
+    copyItem('copy', t('copyCode'), st.code),
+    copyItem('link', t('inviteCopy'), link),
+    el('button', { type: 'button', role: 'menuitem', onclick: () => { inviteOpen = false; render(); openQR(); } }, withIcon('qr', t('qrBtn'))));
+  return el('span', { class: 'invwrap' },
+    el('button', { class: 'ghost', title: t('inviteTip'), 'aria-haspopup': 'menu', 'aria-expanded': String(inviteOpen), onclick: (e) => { e.stopPropagation(); inviteOpen = !inviteOpen; render(); } },
+      withIcon('link', t('invite')), icon('caret', 12, 'caret' + (inviteOpen ? ' up' : ''))),
+    inviteOpen ? menu : '');
+}
+
 function renderWaitingRoom() {
   const link = `${location.origin}/?room=${st.code}`;
-  const copyCode = el('button', { class: 'ghost', onclick: () => copyText(st.code, copyCode) }, withIcon('copy', t('copyCode')));
-  const copyLink = el('button', { class: 'ghost', onclick: () => copyText(link, copyLink) }, withIcon('link', t('copyLink')));
 
   const seats = el('div', { class: 'seats' });
   for (let i = 0; i < st.maxPlayers; i++) {
@@ -2044,7 +2059,7 @@ function renderWaitingRoom() {
   app.append(el('div', { class: 'panel waitroom' + (screenAnim ? ' fx-in' : '') },
     el('div', { class: 'kicker' }, t('roomCode')),
     el('div', { class: 'bigcode' }, st.code),
-    el('div', { class: 'row center' }, copyCode, copyLink, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), el('button', { class: 'ghost', onclick: openQR }, withIcon('qr', t('qrBtn')))),
+    el('div', { class: 'row center waitact' }, inviteControl(), el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn')))),
     el('div', { class: 'count' }, t('joinedCount', { n: st.players.length, max: st.maxPlayers })),
     waitSettings(),
     seats,
@@ -2402,7 +2417,7 @@ function hallPanel() {
 
 
 let inviteOpen = false;   // the Invite dropdown (copy link / QR)
-document.addEventListener('click', (e) => { if (inviteOpen && !(e.target.closest && e.target.closest('.invwrap'))) { inviteOpen = false; safeRender(); } });
+document.addEventListener('click', (e) => { if (inviteOpen && !(e.target.closest && e.target.closest('.invwrap'))) { inviteOpen = false; render(); } });
 function renderGame() {
   if (err) app.append(el('div', { class: 'err' }, tErr(err)));
   if (st.phase === 'lobby') return renderWaitingRoom();
@@ -2411,12 +2426,7 @@ function renderGame() {
   const readyCount = active.filter(p => p.ready).length;
   const panel = (i, extraCls = '') => ({ class: ('panel ' + extraCls + ' ' + (screenAnim ? 'fx-in' : '')).trim(), style: screenAnim ? `animation-delay:${i * 80}ms` : '' });
 
-  const invMenu = el('div', { class: 'invmenu', role: 'menu', onclick: (e) => e.stopPropagation() },
-    (() => { const b = el('button', { type: 'button', role: 'menuitem', onclick: () => { copyText(`${location.origin}/?room=${st.code}`, b); setTimeout(() => { inviteOpen = false; safeRender(); }, 900); } }, withIcon('link', t('inviteCopy'))); return b; })(),
-    el('button', { type: 'button', role: 'menuitem', onclick: () => { inviteOpen = false; safeRender(); openQR(); } }, withIcon('qr', t('qrBtn'))));
-  const invite = el('span', { class: 'invwrap' },
-    el('button', { class: 'ghost', title: t('inviteTip'), 'aria-haspopup': 'menu', 'aria-expanded': String(inviteOpen), onclick: (e) => { e.stopPropagation(); inviteOpen = !inviteOpen; safeRender(); } }, withIcon('link', t('invite')), icon('caret', 12, 'caret' + (inviteOpen ? ' up' : ''))),
-    inviteOpen ? invMenu : '');
+  const invite = inviteControl();
   const head = el('div', panel(0, 'gamehead'),
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, t('room')), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'hstats' }, t('playersN', { n: st.players.length, max: st.maxPlayers }), el('span', { class: 'sep' }, '·'),
