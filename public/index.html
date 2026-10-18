@@ -461,7 +461,7 @@
   .emo { display: inline-block; flex: none; line-height: 0; } .emo svg { display: block; }
   .emotefab { position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 48px; height: 48px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: rgba(24,30,54,.94) !important; border: 1px solid var(--gold-lo) !important; box-shadow: 0 8px 24px rgba(0,0,0,.5) !important; line-height: 0; } .emotefab:hover { transform: scale(1.06); filter: none; }
   .emotetray { position: fixed; right: 14px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 91; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; border-radius: 18px; background: rgb(24,30,54); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .2s ease backwards; } .emotetray button { padding: 5px !important; border-radius: 12px !important; background: rgba(255,255,255,.06) !important; border: 0 !important; box-shadow: none !important; line-height: 0; } .emotetray button:hover { background: rgba(255,255,255,.14) !important; transform: scale(1.08); filter: none; }
-  .emofloat { position: fixed; z-index: 92; left: calc(10px + var(--lane, 0) * 62px); bottom: 90px; display: grid; justify-items: center; gap: 2px; pointer-events: none; animation: emofly 2.7s ease-out forwards; } .emofloat small { font-size: 10px; font-weight: 700; background: rgba(0,0,0,.55); border-radius: 99px; padding: 1px 7px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .emofloat { position: fixed; z-index: 92; left: calc(4% + var(--lane, 0) * 19%); width: 17%; bottom: 90px; display: grid; justify-items: center; gap: 3px; pointer-events: none; animation: emofly 2.7s ease-out forwards; } .emofloat small { font-size: 11px; font-weight: 700; background: rgba(0,0,0,.6); border-radius: 99px; padding: 1px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @keyframes emofly { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 12% { opacity: 1; transform: translateY(0) scale(1.15); } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-190px) scale(1); } }
   .acctitle { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); } .accgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; } .accpick { display: grid; justify-items: center; gap: 3px; padding: 6px 2px !important; border-radius: 12px !important; background: rgba(255,255,255,.05) !important; border: 2px solid transparent !important; box-shadow: none !important; color: #e9e4d6; line-height: 1; } .accpick small { font-size: 10px; text-align: center; line-height: 1.15; } .accpick.on { border-color: var(--gold-hi) !important; background: rgba(201,169,106,.22) !important; } .accpick.locked { opacity: .4; } .accnone { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 2px dashed rgba(255,255,255,.35); }
   .recap { margin: 0 0 14px; display: grid; gap: 7px; } .recap .kicker { margin-bottom: 2px; }
@@ -1083,7 +1083,7 @@ function emoteEl(key, size = 34) {
   w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true">${EMOTE_ART[key] || ''}</svg>`;
   return w;
 }
-let emoteSeen = null, emoteLast = 0, emoteTrayOpen = false;
+let emoLane = Math.floor(Math.random() * 5), emoteSeen = null, emoteLast = 0, emoteTrayOpen = false;
 function sendEmote(k) {
   if (Date.now() - emoteLast < 900) return;
   emoteLast = Date.now();
@@ -1095,8 +1095,8 @@ function sendEmote(k) {
 function floatEmote(pid, key) {
   if (document.hidden) return;
   const pl = st && st.players.find((q) => q.id === pid);
-  const lane = document.querySelectorAll('.emofloat').length % 4;
-  const b = el('div', { class: 'emofloat' }, pl ? avatarEl(pl.avatar, 28, '', pl.acc) : '', emoteEl(key, 38), pl ? el('small', {}, pl.name) : '');
+  const lane = emoLane++ % 5;   // spread across the whole width of the screen, not one edge
+  const b = el('div', { class: 'emofloat' }, pl ? avatarEl(pl.avatar, 34, '', pl.acc) : '', pl ? el('small', {}, pl.name) : '', emoteEl(key, 42));
   b.style.setProperty('--lane', lane);
   document.body.append(b);
   setTimeout(() => b.remove(), 2800);
