@@ -259,6 +259,11 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'buy', code: bn.code, pid: nb.meId, kind: 'acc', key: 'hat' })).s, 402);
   assert.equal((await post({ action: 'buy', code: bn.code, pid: bn.meId, kind: 'gift', key: 'rose' })).j.wallet.pts, 990);
   assert.equal((await post({ action: 'throw', code: bn.code, pid: bn.meId, item: 'rose', target: bn.meId })).s, 200, 'the tester may throw at themselves');
+  // everyone can see each player's points and shop items
+  const pv = (await call('GET', null, { code: bn.code, pid: nb.meId })).j;
+  const bennyRow = pv.players.find((p) => p.id === bn.meId);
+  assert.equal(bennyRow.wp, 990); assert.deepEqual(bennyRow.inv.gifts, { rose: 2 }, 'everyone sees what others own');
+  assert.equal(pv.players.find((p) => p.id === nb.meId).wp, 0);
   // chat: cleaned, limited, only new messages sent back, and the host can switch it off
   const cr = (await post({ action: 'create', name: 'CA' })).j;
   const cb2 = (await post({ action: 'join', code: cr.code, name: 'CB' })).j;

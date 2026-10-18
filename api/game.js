@@ -376,6 +376,8 @@ function view(room, pid, seen, cn) {
         avatar: p.avatar || AVATARS[0],
         acc: p.acc || '',
         bd: p.bd || '',
+        wp: balanceOf(room, p.id),
+        inv: (() => { const q = inventoryOf(p); return { acc: q.owned.acc, av: q.owned.av, bd: q.owned.bd, gifts: Object.fromEntries(Object.entries(q.gifts).filter(([, n]) => n > 0)) }; })(),   // what everyone owns is public (normal animals aside)
         wins: (room.wins && room.wins[p.id]) || 0,
         isHost: p.id === room.hostId,
         ready: p.ready,
