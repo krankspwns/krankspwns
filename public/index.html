@@ -379,6 +379,9 @@
   .resextra { margin: 4px 0 2px; font-size: 13.5px; font-style: italic; opacity: .92; text-align: center; } .resextra.hit { font-style: normal; font-weight: 700; color: #9ef0bd; opacity: 1; }
   .predbar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; } .predbar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-hi)); transform-origin: 0 50%; animation: predbar linear forwards; } @keyframes predbar { to { transform: scaleX(0); } }
   .missline { font-size: 13px; font-weight: 700; color: #ffb0b6; padding: 0 4px; } .resextra.miss { font-style: normal; font-weight: 700; color: #ffb0b6; opacity: 1; }
+  .atkfx { position: fixed; inset: 0; z-index: 84; pointer-events: none; overflow: hidden; } .atkbit { position: fixed; left: 0; top: 0; pointer-events: none; }
+  .atkskip { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); pointer-events: auto; padding: 7px 18px; border-radius: 99px; background: rgba(10,14,28,.78) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.3) !important; font-size: 12.5px; letter-spacing: .6px; backdrop-filter: blur(4px); }
+  .atkcap { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translate(-50%, -14px); opacity: 0; padding: 8px 18px; border-radius: 99px; background: linear-gradient(180deg, rgba(255,207,64,.95), rgba(224,160,30,.95)); color: #2a1d00; font-weight: 800; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.45); transition: opacity .25s, transform .25s; white-space: nowrap; } .atkcap.on { opacity: 1; transform: translate(-50%, 0); }
   .stextra { flex-basis: 100%; } .commentary { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 10px; background: rgba(255,255,255,.07); font-size: 13.5px; font-style: italic; animation: cmsgin .4s ease backwards; animation-delay: .3s; } .cmic { font-style: normal; } .hitline { font-size: 13px; font-weight: 700; color: #9ef0bd; padding: 0 4px; } .hitline.me { color: var(--gold-hi); }
   .predstrip { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(var(--gold-rgb), .08); border: 1px solid rgba(var(--gold-rgb), .3); } .predhead { display: grid; gap: 1px; } .predhead small { opacity: .7; font-size: 12px; } .predrow { display: flex; flex-wrap: wrap; gap: 6px; }
   .pchip, .rchip { color: var(--text) !important; }   /* buttons are dark-on-gold by default; these are light chips */
@@ -758,6 +761,7 @@
   .pname { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pname .tag { margin-left: 0; }
   .ptags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; } .ptags .pill, .ptags .tag { margin: 0; }
   .pdot { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; } .pdot.on { background: rgba(111,207,151,.18); color: #8fe0ae; } .pdot.off { background: rgba(255,90,80,.25); color: #ffd2cd; }
+  .kickbtn.busy { opacity: .85; cursor: default; display: inline-flex; align-items: center; gap: 8px; } .kickbtn .spin { width: 14px; height: 14px; border-width: 2px; }
   .kickbtn { padding: 8px 14px; font-size: 12px; background: rgba(255,90,80,.16); color: #ffd2cd; border: 1px solid rgba(255,120,110,.6); box-shadow: none; white-space: nowrap; }
   .kickbtn:hover { background: rgba(255,90,80,.3); filter: none; transform: none; }
   .kickbtn.armed { background: linear-gradient(180deg, #ff7a6e, #e0483b); color: #fff; border-color: #ff5a4d; animation: readypulse 1s infinite; }
@@ -1146,6 +1150,11 @@ const SND = (() => {
     prime_triple: () => { [523, 659, 784].forEach((f) => tone({ f, dur: 0.5, vol: 0.08, type: 'triangle', lp: 2600 })); tone({ f: 1046, at: 0.12, dur: 0.4, vol: 0.08, type: 'triangle' }); tone({ f: 131, dur: 0.3, vol: 0.14 }); },
     prime_sflush: () => { [523, 659, 784, 1046, 1319].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.4, vol: 0.08, type: 'triangle' })); [2349, 2794, 3136].forEach((f, i) => tone({ f, at: 0.35 + i * 0.07, dur: 0.2, vol: 0.04, type: 'sine' })); noise({ at: 0.25, dur: 0.5, vol: 0.04, type: 'highpass', f: 6000 }); },
     prime_royal: () => { tone({ f: 98, dur: 0.5, vol: 0.18 }); [523, 659, 784, 1046, 1319, 1568].forEach((f, i) => tone({ f, at: i * 0.075, dur: 0.55, vol: 0.085, type: 'triangle' })); [1046, 1319, 1568].forEach((f) => tone({ f, at: 0.5, dur: 0.7, vol: 0.07, type: 'triangle', lp: 3000 })); [2093, 2637, 3136, 3951].forEach((f, i) => tone({ f, at: 0.55 + i * 0.07, dur: 0.22, vol: 0.04, type: 'sine' })); noise({ at: 0.45, dur: 0.7, vol: 0.05, type: 'highpass', f: 6500 }); },
+    // the showdown: a roar, a swooping dive, thunder and the hit
+    roar: () => { noise({ dur: 0.9, vol: 0.14, type: 'lowpass', f: 700, f2: 120 }); tone({ f: 110, f2: 55, dur: 0.85, vol: 0.2, type: 'sawtooth', lp: 500 }); tone({ f: 190, f2: 90, at: 0.05, dur: 0.6, vol: 0.08, type: 'sawtooth', lp: 700 }); },
+    swoop: () => { noise({ dur: 0.7, vol: 0.12, type: 'bandpass', f: 500, f2: 3200, q: 1.1 }); tone({ f: 900, f2: 400, at: 0.45, dur: 0.25, vol: 0.06, type: 'triangle' }); },
+    thunder: () => { noise({ dur: 1.1, vol: 0.2, type: 'lowpass', f: 1500, f2: 60 }); noise({ at: 0.02, dur: 0.12, vol: 0.2, type: 'highpass', f: 4000 }); tone({ f: 70, f2: 38, dur: 0.9, vol: 0.2 }); },
+    impact: () => { noise({ dur: 0.35, vol: 0.2, type: 'lowpass', f: 1600, f2: 150 }); tone({ f: 130, f2: 50, dur: 0.3, vol: 0.28 }); },
     // balloons rising: a soft airy lift, rubbery squeaks and a sparkle of glitter
     balloons: () => { noise({ dur: 1.6, vol: 0.07, type: 'bandpass', f: 350, f2: 1600, q: 0.9 }); [0, 0.18, 0.37, 0.55, 0.8, 1.05].forEach((at, i) => tone({ f: 640 + (i * 137) % 420, f2: 980 + (i * 91) % 380, at, dur: 0.12, vol: 0.05, type: 'sine' })); [0.5, 0.7, 0.95, 1.2, 1.45].forEach((at, i) => tone({ f: 2100 + i * 260, at, dur: 0.16, vol: 0.035, type: 'triangle' })); },
     boing: () => { tone({ f: 300, f2: 700, dur: 0.14, vol: 0.09, type: 'triangle' }); tone({ f: 700, f2: 420, at: 0.12, dur: 0.12, vol: 0.06, type: 'triangle' }); },
@@ -2596,7 +2605,7 @@ const I18N = {
     giftTitle: 'Gifts', giftWho: (v) => `Throw ${v.name} at…`, giftBanner: (v) => `${v.from} threw something at ${v.to}!`, giftYou: 'you',
     gift_tomato: 'Tomato', gift_rose: 'Roses', gift_snowball: 'Snowball', gift_popper: 'Party popper', gift_pie: 'Cream pie', gift_rocket: 'Rocket', gift_bomb: 'Bomb', gift_fireworks: 'Fireworks',
     av_dragon: 'Dragon', av_robot: 'Robot', av_alien: 'Alien', av_ghost: 'Ghost', av_wizard: 'Wizard', av_ninja: 'Ninja',
-    setTheme: 'Colour scheme', theme_gold: 'Midnight gold', theme_emerald: 'Emerald table', theme_royal: 'Royal purple', theme_crimson: 'Crimson', theme_ocean: 'Ocean', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: '👏 GG', chatQ2: '🔥 Nice One!', chatQ3: '⏰ Hurry Up!', chatQ4: '😅 Oops!', chatNow: 'now', cmTie: 'Dead heat! Nobody takes a penalty.', cmStreak: (v) => `${v.name} has now lost Row ${v.row} ${v.n} times. Ouch!`, cmHand_royal: (v) => `${v.name} shows a Royal Flush!`, cmHand_sflush: (v) => `${v.name} lands a Straight Flush!`, cmHand_triple: (v) => `${v.name} shows Three of a Kind!`, cmPerfect: (v) => `${v.name} hits exactly 10.5!`, cmBust: (v) => `${v.name} went bust!`, cmBusts: (v) => `Bust! ${v.names} went over 10.5.`, cmAce: (v) => `${v.name} plays an Ace. The penalty doubles!`, cmAces: (v) => `${v.n} Aces on the table! The penalty multiplies.`, cmTwo: (v) => `${v.name} drops a 2. The penalty doubles!`, cmTwos: (v) => `${v.n} twos on the table! The penalty multiplies.`, cmJoker: 'A Joker joins the fight!', cmBig: (v) => `×${v.pen} penalty! That will hurt.`, cmAlone: (v) => `${v.name} takes this one alone.`, cmShared: (v) => `${v.names} share the pain.`, cmCalled: (v) => `🎯 ${v.names} called it! +${v.wp} WP`, cmLow: (v) => `${v.name}'s ${v.card} is the lowest card.`, cmHigh: (v) => `${v.name}'s ${v.card} is the highest card.`, cmFar: (v) => `${v.name} is furthest from 10.5 with ${v.total}.`, cmWeak: (v) => `${v.name}'s ${v.hand} is the weakest hand.`, predMe: 'Me', cmMissed: (v) => `✗ ${v.names} guessed wrong (−${v.pen} WP)`, predWaitHost: 'Guessing…', chatSysMissed: (v) => `✗ ${v.names} guessed wrong (−${v.pen} WP)`, predTitle: 'Who Loses This Row?', predHint: (v) => `+${v.wp} WP if right, −${v.pen} if wrong. Skip to stay safe.`, predPicked: (v) => `${v.n} picked`, chatSysCalled: (v) => `🎯 ${v.names} called it (+${v.wp} WP)`, chatSysGift: (v) => `${v.from} threw ${v.item} at ${v.to}`, chatSysGiftAll: (v) => `${v.from} threw ${v.item} at everyone`, chatSysLose: (v) => `${v.names} lost Row ${v.n} (×${v.pen})`, chatSysTie: (v) => `Row ${v.n} was a tie`, chatSysJoin: (v) => `${v.name} joined`, chatSysLeave: (v) => `${v.name} left`, chatStickers: 'Stickers', chatHere: (v) => `${v.n} in the room`, setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
+    setTheme: 'Colour scheme', theme_gold: 'Midnight gold', theme_emerald: 'Emerald table', theme_royal: 'Royal purple', theme_crimson: 'Crimson', theme_ocean: 'Ocean', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: '👏 GG', chatQ2: '🔥 Nice One!', chatQ3: '⏰ Hurry Up!', chatQ4: '😅 Oops!', chatNow: 'now', atkSkip: 'Skip', atkCaption: (v) => `${v.name} strikes!`, cmTie: 'Dead heat! Nobody takes a penalty.', cmStreak: (v) => `${v.name} has now lost Row ${v.row} ${v.n} times. Ouch!`, cmHand_royal: (v) => `${v.name} shows a Royal Flush!`, cmHand_sflush: (v) => `${v.name} lands a Straight Flush!`, cmHand_triple: (v) => `${v.name} shows Three of a Kind!`, cmPerfect: (v) => `${v.name} hits exactly 10.5!`, cmBust: (v) => `${v.name} went bust!`, cmBusts: (v) => `Bust! ${v.names} went over 10.5.`, cmAce: (v) => `${v.name} plays an Ace. The penalty doubles!`, cmAces: (v) => `${v.n} Aces on the table! The penalty multiplies.`, cmTwo: (v) => `${v.name} drops a 2. The penalty doubles!`, cmTwos: (v) => `${v.n} twos on the table! The penalty multiplies.`, cmJoker: 'A Joker joins the fight!', cmBig: (v) => `×${v.pen} penalty! That will hurt.`, cmAlone: (v) => `${v.name} takes this one alone.`, cmShared: (v) => `${v.names} share the pain.`, cmCalled: (v) => `🎯 ${v.names} called it! +${v.wp} WP`, cmLow: (v) => `${v.name}'s ${v.card} is the lowest card.`, cmHigh: (v) => `${v.name}'s ${v.card} is the highest card.`, cmFar: (v) => `${v.name} is furthest from 10.5 with ${v.total}.`, cmWeak: (v) => `${v.name}'s ${v.hand} is the weakest hand.`, predMe: 'Me', cmMissed: (v) => `✗ ${v.names} guessed wrong (−${v.pen} WP)`, predWaitHost: 'Guessing…', chatSysMissed: (v) => `✗ ${v.names} guessed wrong (−${v.pen} WP)`, predTitle: 'Who Loses This Row?', predHint: (v) => `+${v.wp} WP if right, −${v.pen} if wrong. Skip to stay safe.`, predPicked: (v) => `${v.n} picked`, chatSysCalled: (v) => `🎯 ${v.names} called it (+${v.wp} WP)`, chatSysGift: (v) => `${v.from} threw ${v.item} at ${v.to}`, chatSysGiftAll: (v) => `${v.from} threw ${v.item} at everyone`, chatSysLose: (v) => `${v.names} lost Row ${v.n} (×${v.pen})`, chatSysTie: (v) => `Row ${v.n} was a tie`, chatSysJoin: (v) => `${v.name} joined`, chatSysLeave: (v) => `${v.name} left`, chatStickers: 'Stickers', chatHere: (v) => `${v.n} in the room`, setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} Players`, readyN: (v) => `${v.r}/${v.n} Ready`, roundN: (v) => `Round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, Shuffle & Deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Cards Placed (${v.p}/${v.t})`, imReady: "I'm Ready",
@@ -2634,7 +2643,7 @@ const I18N = {
     g8t: 'Good to know', g8a: 'If every player would lose a row (everyone has the same), it’s a tie — no penalty for anyone.', g8b: 'Penalties start fresh on every row; they don’t add up across rows.',
     gjkT: 'Joker (wild card)', gjkP: 'Each deck has one joker. It turns into the best card for the row it is in, and morphs when the row is opened.', gjk1: 'Row 1: Ace', gjk2: 'Row 2: 2 (lowest wins)', gjk3: 'Row 3: the value closest to 10.5', gjk4: 'Row 4: whatever makes the strongest hand',g8c: 'After row 4 a final board shows all rows, coloured by who lost what.', g8d: 'Joined while a game is in progress? You watch until the next round, then you’re dealt in.', g8e: 'Pop-ups, torn cards and the “You lose!” screen are just for fun — the rules above decide who loses.',
     sndMode0: 'Sound Off', sndMode1: 'Sound Effects On', sndMode2: 'Effects + Music On',
-    playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
+    playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', kickWorking: 'Removing…', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
     kickHint: 'Players who lost their connection show as offline. Kicked players can rejoin with the room code.', hostOnlyHint: 'Only the host can remove players.',
     e_moved: 'You joined another room in another tab, so you left this one.', e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
     invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
@@ -2676,7 +2685,7 @@ const I18N = {
     giftTitle: '礼物', giftWho: (v) => `把${v.name}扔向…`, giftBanner: (v) => `${v.from} 向 ${v.to} 扔了东西！`, giftYou: '你',
     gift_tomato: '番茄', gift_rose: '玫瑰', gift_snowball: '雪球', gift_popper: '彩带炮', gift_pie: '奶油派', gift_rocket: '火箭', gift_bomb: '炸弹', gift_fireworks: '烟花',
     av_dragon: '龙', av_robot: '机器人', av_alien: '外星人', av_ghost: '幽灵', av_wizard: '巫师', av_ninja: '忍者',
-    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '绯红', theme_ocean: '海洋蓝', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快点！', chatQ4: '😅 哎呀！', chatNow: '刚刚', cmTie: '平局！没人受罚。', cmStreak: (v) => `${v.name} 已经第 ${v.n} 次输掉第 ${v.row} 行了，太惨了！`, cmHand_royal: (v) => `${v.name} 亮出皇家同花顺！`, cmHand_sflush: (v) => `${v.name} 打出同花顺！`, cmHand_triple: (v) => `${v.name} 亮出三条！`, cmPerfect: (v) => `${v.name} 刚好凑出 10.5！`, cmBust: (v) => `${v.name} 爆掉了！`, cmBusts: (v) => `爆了！${v.names} 超过了 10.5。`, cmAce: (v) => `${v.name} 打出 A，罚分翻倍！`, cmAces: (v) => `桌上有 ${v.n} 张 A！罚分成倍增加。`, cmTwo: (v) => `${v.name} 打出 2，罚分翻倍！`, cmTwos: (v) => `桌上有 ${v.n} 张 2！罚分成倍增加。`, cmJoker: '鬼牌加入战局！', cmBig: (v) => `×${v.pen} 的罚分！这下痛了。`, cmAlone: (v) => `${v.name} 独自承担。`, cmShared: (v) => `${v.names} 一起受罚。`, cmCalled: (v) => `🎯 ${v.names} 猜中了！+${v.wp} WP`, cmLow: (v) => `${v.name} 的 ${v.card} 是最小的牌。`, cmHigh: (v) => `${v.name} 的 ${v.card} 是最大的牌。`, cmFar: (v) => `${v.name} 的 ${v.total} 离 10.5 最远。`, cmWeak: (v) => `${v.name} 的${v.hand}牌型最弱。`, predMe: '我', cmMissed: (v) => `✗ ${v.names} 猜错了（−${v.pen} WP）`, predWaitHost: '猜测中…', chatSysMissed: (v) => `✗ ${v.names} 猜错了（−${v.pen} WP）`, predTitle: '谁会输这一行？', predHint: (v) => `猜对 +${v.wp} WP，猜错 −${v.pen}。不选就不扣。`, predPicked: (v) => `${v.n} 人已选`, chatSysCalled: (v) => `🎯 ${v.names} 猜中了（+${v.wp} WP）`, chatSysGift: (v) => `${v.from} 向 ${v.to} 扔了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人扔了${v.item}`, chatSysLose: (v) => `${v.names} 输掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平局`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 离开了`, chatStickers: '贴纸', chatHere: (v) => `房间里 ${v.n} 人`, setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', hallWin: '胜', hallWins: (v) => `在此房间赢了 ${v.n} 回合`, hallTie: '大家打平，所以没有人获得回合胜利。', acc_headphones: '耳机', acc_mustache: '小胡子', acc_horns: '恶魔角', acc_flower: '小花', accUnlockedN: (v) => `解锁：${v.name}！`, winsN: (v) => `在此房间已赢 ${v.n} 回合`, accNextAt: (v) => `再赢 ${v.n} 回合解锁${v.name}`, accAll: '所有配饰都已解锁！', accHow: '回合胜利 = 第 4 行结束后总罚分最低（平分则共享；全员平局则无人获胜）。', leaveRoom: '离开房间',
+    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '绯红', theme_ocean: '海洋蓝', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快点！', chatQ4: '😅 哎呀！', chatNow: '刚刚', atkSkip: '跳过', atkCaption: (v) => `${v.name} 发动攻击！`, cmTie: '平局！没人受罚。', cmStreak: (v) => `${v.name} 已经第 ${v.n} 次输掉第 ${v.row} 行了，太惨了！`, cmHand_royal: (v) => `${v.name} 亮出皇家同花顺！`, cmHand_sflush: (v) => `${v.name} 打出同花顺！`, cmHand_triple: (v) => `${v.name} 亮出三条！`, cmPerfect: (v) => `${v.name} 刚好凑出 10.5！`, cmBust: (v) => `${v.name} 爆掉了！`, cmBusts: (v) => `爆了！${v.names} 超过了 10.5。`, cmAce: (v) => `${v.name} 打出 A，罚分翻倍！`, cmAces: (v) => `桌上有 ${v.n} 张 A！罚分成倍增加。`, cmTwo: (v) => `${v.name} 打出 2，罚分翻倍！`, cmTwos: (v) => `桌上有 ${v.n} 张 2！罚分成倍增加。`, cmJoker: '鬼牌加入战局！', cmBig: (v) => `×${v.pen} 的罚分！这下痛了。`, cmAlone: (v) => `${v.name} 独自承担。`, cmShared: (v) => `${v.names} 一起受罚。`, cmCalled: (v) => `🎯 ${v.names} 猜中了！+${v.wp} WP`, cmLow: (v) => `${v.name} 的 ${v.card} 是最小的牌。`, cmHigh: (v) => `${v.name} 的 ${v.card} 是最大的牌。`, cmFar: (v) => `${v.name} 的 ${v.total} 离 10.5 最远。`, cmWeak: (v) => `${v.name} 的${v.hand}牌型最弱。`, predMe: '我', cmMissed: (v) => `✗ ${v.names} 猜错了（−${v.pen} WP）`, predWaitHost: '猜测中…', chatSysMissed: (v) => `✗ ${v.names} 猜错了（−${v.pen} WP）`, predTitle: '谁会输这一行？', predHint: (v) => `猜对 +${v.wp} WP，猜错 −${v.pen}。不选就不扣。`, predPicked: (v) => `${v.n} 人已选`, chatSysCalled: (v) => `🎯 ${v.names} 猜中了（+${v.wp} WP）`, chatSysGift: (v) => `${v.from} 向 ${v.to} 扔了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人扔了${v.item}`, chatSysLose: (v) => `${v.names} 输掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平局`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 离开了`, chatStickers: '贴纸', chatHere: (v) => `房间里 ${v.n} 人`, setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', hallWin: '胜', hallWins: (v) => `在此房间赢了 ${v.n} 回合`, hallTie: '大家打平，所以没有人获得回合胜利。', acc_headphones: '耳机', acc_mustache: '小胡子', acc_horns: '恶魔角', acc_flower: '小花', accUnlockedN: (v) => `解锁：${v.name}！`, winsN: (v) => `在此房间已赢 ${v.n} 回合`, accNextAt: (v) => `再赢 ${v.n} 回合解锁${v.name}`, accAll: '所有配饰都已解锁！', accHow: '回合胜利 = 第 4 行结束后总罚分最低（平分则共享；全员平局则无人获胜）。', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `已摆牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -2713,7 +2722,7 @@ const I18N = {
     gh_none: '散牌', gh_pair: '对子', gh_straight: '顺子', gh_flush: '同花', gh_triple: '三条', gh_sflush: '同花顺', gh_royal: '皇家同花顺',
     g8t: '小提示', g8a: '如果这一行所有人都会输（所有人都一样），就是平局——没有人受惩罚。', g8b: '每一行的惩罚单独计算，不会跨行累加。',
     gjkT: '鬼牌（万能牌）', gjkP: '每副牌有一张鬼牌。它会变成所在行里最有利的牌，并在该行翻开时变形。', gjk1: '第 1 行：变成 A', gjk2: '第 2 行：变成 2（最小者赢）', gjk3: '第 3 行：变成最接近 10.5 的点数', gjk4: '第 4 行：变成能组成最强牌型的牌',g8c: '第 4 行结束后会显示最终结果，用颜色标出每个人输了哪几行。', g8d: '在游戏进行中加入的玩家先观战，下一轮会一起发牌。', g8e: '弹出提示、撕牌和“你输了！”画面只是为了好玩——谁输由上面的规则决定。',
-    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
+    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', kickWorking: '正在移出…', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
     kickHint: '断线的玩家会显示为离线。被移出的玩家可以用房间代码重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '声音已关闭', sndMode1: '音效已开启', sndMode2: '音效 + 音乐已开启',
     e_moved: '你在另一个标签页加入了其他房间，因此已离开这个房间。', e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
@@ -2756,7 +2765,7 @@ const I18N = {
     giftTitle: '禮物', giftWho: (v) => `把${v.name}丟向…`, giftBanner: (v) => `${v.from} 向 ${v.to} 丟了東西！`, giftYou: '你',
     gift_tomato: '番茄', gift_rose: '玫瑰', gift_snowball: '雪球', gift_popper: '彩帶砲', gift_pie: '奶油派', gift_rocket: '火箭', gift_bomb: '炸彈', gift_fireworks: '煙火',
     av_dragon: '龍', av_robot: '機器人', av_alien: '外星人', av_ghost: '幽靈', av_wizard: '巫師', av_ninja: '忍者',
-    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '緋紅', theme_ocean: '海洋藍', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快點！', chatQ4: '😅 哎呀！', chatNow: '剛剛', cmTie: '平手！沒人受罰。', cmStreak: (v) => `${v.name} 已經第 ${v.n} 次輸掉第 ${v.row} 行了，太慘了！`, cmHand_royal: (v) => `${v.name} 亮出皇家同花順！`, cmHand_sflush: (v) => `${v.name} 打出同花順！`, cmHand_triple: (v) => `${v.name} 亮出三條！`, cmPerfect: (v) => `${v.name} 剛好湊出 10.5！`, cmBust: (v) => `${v.name} 爆掉了！`, cmBusts: (v) => `爆了！${v.names} 超過了 10.5。`, cmAce: (v) => `${v.name} 打出 A，罰分翻倍！`, cmAces: (v) => `桌上有 ${v.n} 張 A！罰分成倍增加。`, cmTwo: (v) => `${v.name} 打出 2，罰分翻倍！`, cmTwos: (v) => `桌上有 ${v.n} 張 2！罰分成倍增加。`, cmJoker: '鬼牌加入戰局！', cmBig: (v) => `×${v.pen} 的罰分！這下痛了。`, cmAlone: (v) => `${v.name} 獨自承擔。`, cmShared: (v) => `${v.names} 一起受罰。`, cmCalled: (v) => `🎯 ${v.names} 猜中了！+${v.wp} WP`, cmLow: (v) => `${v.name} 的 ${v.card} 是最小的牌。`, cmHigh: (v) => `${v.name} 的 ${v.card} 是最大的牌。`, cmFar: (v) => `${v.name} 的 ${v.total} 離 10.5 最遠。`, cmWeak: (v) => `${v.name} 的${v.hand}牌型最弱。`, predMe: '我', cmMissed: (v) => `✗ ${v.names} 猜錯了（−${v.pen} WP）`, predWaitHost: '猜測中…', chatSysMissed: (v) => `✗ ${v.names} 猜錯了（−${v.pen} WP）`, predTitle: '誰會輸這一行？', predHint: (v) => `猜對 +${v.wp} WP，猜錯 −${v.pen}。不選就不扣。`, predPicked: (v) => `${v.n} 人已選`, chatSysCalled: (v) => `🎯 ${v.names} 猜中了（+${v.wp} WP）`, chatSysGift: (v) => `${v.from} 向 ${v.to} 丟了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人丟了${v.item}`, chatSysLose: (v) => `${v.names} 輸掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平手`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 離開了`, chatStickers: '貼圖', chatHere: (v) => `房間裡 ${v.n} 人`, setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', hallWin: '勝', hallWins: (v) => `在此房間贏了 ${v.n} 回合`, hallTie: '大家打平，所以沒有人獲得回合勝利。', acc_headphones: '耳機', acc_mustache: '小鬍子', acc_horns: '惡魔角', acc_flower: '小花', accUnlockedN: (v) => `解鎖：${v.name}！`, winsN: (v) => `在此房間已贏 ${v.n} 回合`, accNextAt: (v) => `再贏 ${v.n} 回合解鎖${v.name}`, accAll: '所有配飾都已解鎖！', accHow: '回合勝利 = 第 4 行結束後總罰分最低（平分則共享；全員平手則無人獲勝）。', leaveRoom: '離開房間',
+    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '緋紅', theme_ocean: '海洋藍', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快點！', chatQ4: '😅 哎呀！', chatNow: '剛剛', atkSkip: '跳過', atkCaption: (v) => `${v.name} 發動攻擊！`, cmTie: '平手！沒人受罰。', cmStreak: (v) => `${v.name} 已經第 ${v.n} 次輸掉第 ${v.row} 行了，太慘了！`, cmHand_royal: (v) => `${v.name} 亮出皇家同花順！`, cmHand_sflush: (v) => `${v.name} 打出同花順！`, cmHand_triple: (v) => `${v.name} 亮出三條！`, cmPerfect: (v) => `${v.name} 剛好湊出 10.5！`, cmBust: (v) => `${v.name} 爆掉了！`, cmBusts: (v) => `爆了！${v.names} 超過了 10.5。`, cmAce: (v) => `${v.name} 打出 A，罰分翻倍！`, cmAces: (v) => `桌上有 ${v.n} 張 A！罰分成倍增加。`, cmTwo: (v) => `${v.name} 打出 2，罰分翻倍！`, cmTwos: (v) => `桌上有 ${v.n} 張 2！罰分成倍增加。`, cmJoker: '鬼牌加入戰局！', cmBig: (v) => `×${v.pen} 的罰分！這下痛了。`, cmAlone: (v) => `${v.name} 獨自承擔。`, cmShared: (v) => `${v.names} 一起受罰。`, cmCalled: (v) => `🎯 ${v.names} 猜中了！+${v.wp} WP`, cmLow: (v) => `${v.name} 的 ${v.card} 是最小的牌。`, cmHigh: (v) => `${v.name} 的 ${v.card} 是最大的牌。`, cmFar: (v) => `${v.name} 的 ${v.total} 離 10.5 最遠。`, cmWeak: (v) => `${v.name} 的${v.hand}牌型最弱。`, predMe: '我', cmMissed: (v) => `✗ ${v.names} 猜錯了（−${v.pen} WP）`, predWaitHost: '猜測中…', chatSysMissed: (v) => `✗ ${v.names} 猜錯了（−${v.pen} WP）`, predTitle: '誰會輸這一行？', predHint: (v) => `猜對 +${v.wp} WP，猜錯 −${v.pen}。不選就不扣。`, predPicked: (v) => `${v.n} 人已選`, chatSysCalled: (v) => `🎯 ${v.names} 猜中了（+${v.wp} WP）`, chatSysGift: (v) => `${v.from} 向 ${v.to} 丟了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人丟了${v.item}`, chatSysLose: (v) => `${v.names} 輸掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平手`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 離開了`, chatStickers: '貼圖', chatHere: (v) => `房間裡 ${v.n} 人`, setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', hallWin: '勝', hallWins: (v) => `在此房間贏了 ${v.n} 回合`, hallTie: '大家打平，所以沒有人獲得回合勝利。', acc_headphones: '耳機', acc_mustache: '小鬍子', acc_horns: '惡魔角', acc_flower: '小花', accUnlockedN: (v) => `解鎖：${v.name}！`, winsN: (v) => `在此房間已贏 ${v.n} 回合`, accNextAt: (v) => `再贏 ${v.n} 回合解鎖${v.name}`, accAll: '所有配飾都已解鎖！', accHow: '回合勝利 = 第 4 行結束後總罰分最低（平分則共享；全員平手則無人獲勝）。', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `已擺牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -2793,7 +2802,7 @@ const I18N = {
     gh_none: '散牌', gh_pair: '對子', gh_straight: '順子', gh_flush: '同花', gh_triple: '三條', gh_sflush: '同花順', gh_royal: '皇家同花順',
     g8t: '小提示', g8a: '如果這一行所有人都會輸（所有人都一樣），就是平局——沒有人受懲罰。', g8b: '每一行的懲罰單獨計算，不會跨行累加。',
     gjkT: '鬼牌（萬能牌）', gjkP: '每副牌有一張鬼牌。它會變成所在行裡最有利的牌，並在該行翻開時變形。', gjk1: '第 1 行：變成 A', gjk2: '第 2 行：變成 2（最小者贏）', gjk3: '第 3 行：變成最接近 10.5 的點數', gjk4: '第 4 行：變成能組成最強牌型的牌',g8c: '第 4 行結束後會顯示最終結果，用顏色標出每個人輸了哪幾行。', g8d: '在遊戲進行中加入的玩家先觀戰，下一輪會一起發牌。', g8e: '彈出提示、撕牌和「你輸了！」畫面只是為了好玩——誰輸由上面的規則決定。',
-    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
+    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', kickWorking: '正在移出…', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
     kickHint: '斷線的玩家會顯示為離線。被移出的玩家可以用房間代碼重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '聲音已關閉', sndMode1: '音效已開啟', sndMode2: '音效 + 音樂已開啟',
     e_moved: '你在另一個分頁加入了其他房間，因此已離開這個房間。', e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
@@ -3506,7 +3515,9 @@ function stagePanel(active) {
 
   // what happens next: the host opens the row, everyone else waits (or turns their own cards over)
   let control = '';
-  if (res) {
+  if (res && res.losers.some((id) => atkHeld.has(id))) {
+    control = el('div', { class: 'stcontrol' }, el('div', { class: 'swait' }, el('span', { class: 'dot' })));   // the verdict waits for the creature
+  } else if (res) {
     const names = loserNames(res);
     control = el('div', { class: 'stresult' + (res.tie ? ' tie' : '') },
       res.tie ? el('span', { class: 'tiechip' }, t('tie')) : el('span', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
@@ -3527,10 +3538,15 @@ function stagePanel(active) {
 
   const grid = el('div', { class: 'tiles', style: `grid-template-columns: repeat(${cols}, minmax(0, 1fr))` });
   const ordered = [...active].sort((a, b) => (b.id === st.meId) - (a.id === st.meId));   // you first
+  if (res && !res.tie) {   // once the row is scored the table is ranked: strongest at the top, weakest at the bottom
+    const sc = (p) => { const e = res.entries.find((x) => x.id === p.id); return e ? strengthOf(res, e) : -1e9; };
+    ordered.sort((a, b) => sc(b) - sc(a));
+  }
   ordered.forEach((p, idx) => {
     const mine = p.id === st.meId;
-    const lose = !!res && !res.tie && res.losers.includes(p.id);
-    const safe = !!res && !res.tie && !lose;
+    const loseReal = !!res && !res.tie && res.losers.includes(p.id);
+    const lose = loseReal && !atkHeld.has(p.id);   // while the creature is still on its way the loser looks like everyone else
+    const safe = !!res && !res.tie && !loseReal;
     const cells = cellsOf(p), allUp = upOf(p);
     const flipMine = () => act('flipRow', { row, up: !allUp });
     const cards = el('div', { class: 'tcards' });
@@ -3545,7 +3561,7 @@ function stagePanel(active) {
       else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
     });
     const status = res
-      ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : '')
+      ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : el('span', { class: 'tstat wait' }, '…'))
       : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, ...(allUp ? [icon('tick', 12), t('openedState')] : [t('hiddenState')]));
     grid.append(el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 70}ms` : '' },
       el('div', { class: 'tname' }, avatarEl(p.avatar, 20, lose ? 'sad' : safe ? 'happy' : '', p.acc, p.bd), el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
@@ -3943,7 +3959,7 @@ const openRows = new Set();
 function resultsPanel() {
   const list = st.rowResults || [];
   if (!list.length && !st.allReady) return null;
-  const byRow = Object.fromEntries(list.map((r) => [r.row, r]));
+  const byRow = Object.fromEntries(list.filter((r) => !r.losers.some((id) => atkHeld.has(id))).map((r) => [r.row, r]));   // a row whose creature is still flying stays a secret
   const box = el('div', { class: 'panel results' }, el('div', { class: 'name' }, t('resTitle')));
   if (st.allReady) {   // stays visible after the banner is gone
     box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, lastNames())));
@@ -3984,6 +4000,137 @@ function resultsPanel() {
   return box;
 }
 
+
+// ---- the showdown: the row's strongest hand sends a creature to strike the weakest, and the screen follows it ----
+const atkHeld = new Set();   // losers whose verdict is still being held back until the creature arrives
+const ATK_STYLES = ['dragon', 'eagle', 'thunder', 'comet'];
+function strengthOf(res, e) {   // bigger = stronger, for whatever that row rewards
+  if (res.row === 0) return e.val;
+  if (res.row === 1) return -e.val;
+  if (res.row === 2) return e.bust ? -100 - e.total : e.total;
+  return HAND_RANK.indexOf(e.hand);
+}
+const atkWait = (ms) => new Promise((r) => setTimeout(r, ms));
+async function runShowdown(res) {
+  const key = st.round + ':' + res.row;
+  const release = (id) => {   // the verdict lands on that tile: the card tears, the tile turns red, the tag says LOST
+    atkHeld.delete(id);
+    const tile = document.querySelector(`.tile[data-pid="${id}"]`), e = res.entries.find((x) => x.id === id);
+    if (!tile || !e) return;
+    tile.classList.add('lose');
+    const cards = tile.querySelector('.tcards'); if (cards) cards.replaceChildren(...e.cards.map((c, ci) => tornCard(c, true, e.as ? e.as[ci] : null)));
+    const tag = tile.querySelector('.tstat'); if (tag) tag.replaceWith(el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')));
+  };
+  const releaseAll = () => res.losers.slice().forEach(release);
+  try {
+    const ent = res.entries, champ = ent.reduce((a, e) => (!a || strengthOf(res, e) > strengthOf(res, a) ? e : a), null);
+    const targets = res.losers.map((id) => ent.find((e) => e.id === id)).filter(Boolean);
+    const W = window.innerWidth, H = window.innerHeight, style = ATK_STYLES[(st.round * 5 + res.row * 3 + res.losers.length) % ATK_STYLES.length];
+    const blocked = !!document.querySelector('.guide-ov, .avbig') || document.hidden;
+    const tileOf = (id) => document.querySelector(`.tile[data-pid="${id}"]`);
+    const champTile = champ && tileOf(champ.id);
+    if (!champ || !targets.length || ui.calm) { releaseAll(); if (st) render(); return; }
+    SND.play(style === 'thunder' ? 'thunder' : style === 'eagle' ? 'swoop' : 'roar');
+    const fx = el('div', { class: 'atkfx' }); document.body.append(fx);
+    let skip = false;
+    const skipBtn = el('button', { type: 'button', class: 'atkskip', onclick: () => { skip = true; } }, t('atkSkip')); fx.append(skipBtn);
+    const cap = el('div', { class: 'atkcap' }, t('atkCaption', { name: champ.name })); fx.append(cap);
+    const raf = () => new Promise((r) => requestAnimationFrame(r));
+    const tween = async (ms, fn) => { const t0 = performance.now(); for (;;) { await raf(); const k = skip ? 1 : Math.min(1, (performance.now() - t0) / ms); fn(k); if (k >= 1) break; } };
+    const ease = (k) => (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+    const mk = (css, html = '') => { const d = el('i', { class: 'atkbit' }); d.style.cssText = css; if (html) d.innerHTML = html; fx.append(d); return d; };
+    const anim = (n, f, o) => { try { return n.animate(f, o); } catch { return null; } };
+    const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - H);
+    const docPos = (n) => { const r = n.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + window.scrollY + r.height / 2 }; };
+    let scrollNow = window.scrollY;
+    const follow = (docY, rate = 0.18) => { const want = Math.max(0, Math.min(maxScroll(), docY - H * 0.45)); scrollNow += (want - scrollNow) * rate; window.scrollTo(0, scrollNow); };
+    const vp = (pos) => ({ x: pos.x, y: pos.y - window.scrollY });
+    const spark = (x, y, n, cols, spd = 160, life = 700, size = [4, 9]) => { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, v = spd * (0.4 + Math.random() * 0.8), sz = size[0] + Math.random() * (size[1] - size[0]);
+      const d = mk(`width:${sz}px;height:${sz}px;border-radius:50%;background:${cols[i % cols.length]};box-shadow:0 0 8px ${cols[i % cols.length]}`);
+      anim(d, [{ transform: `translate(${x}px,${y}px)`, opacity: 1 }, { transform: `translate(${x + Math.cos(a) * v}px,${y + Math.sin(a) * v + 50}px)`, opacity: 0 }], { duration: life * (0.7 + Math.random() * 0.6), easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' }); } };
+    const ring = (x, y, col, sz = 120, ms = 520) => { const d = mk(`width:${sz}px;height:${sz}px;margin:${-sz / 2}px 0 0 ${-sz / 2}px;border-radius:50%;border:4px solid ${col}`); anim(d, [{ transform: `translate(${x}px,${y}px) scale(.2)`, opacity: .95 }, { transform: `translate(${x}px,${y}px) scale(1.2)`, opacity: 0 }], { duration: ms, easing: 'ease-out', fill: 'forwards' }); };
+    const shakeTile = (n) => { try { n.animate([{ transform: 'none' }, { transform: 'translate(-9px,3px) rotate(-2deg)' }, { transform: 'translate(8px,-3px) rotate(2deg)' }, { transform: 'translate(-6px,2px)' }, { transform: 'translate(4px)' }, { transform: 'none' }], { duration: 480 }); n.animate([{ boxShadow: '0 0 0 0 rgba(255,80,80,0)' }, { boxShadow: '0 0 0 5px rgba(255,90,90,.95), 0 0 46px rgba(255,80,80,.85)', offset: .25 }, { boxShadow: '0 0 0 0 rgba(255,80,80,0)' }], { duration: 900 }); } catch {} };
+    const shakeAll = () => { try { document.getElementById('app')?.animate([{ transform: 'none' }, { transform: 'translate(-6px,4px)' }, { transform: 'translate(6px,-3px)' }, { transform: 'translate(-3px,2px)' }, { transform: 'none' }], { duration: 360 }); } catch {} };
+
+    if (blocked || !champTile) {   // a screen is in the way (shop, chat, settings...): a short pass across the foreground, no scrolling and nothing to follow
+      cap.remove();
+      const em = style === 'dragon' ? '🐉' : style === 'eagle' ? '🦅' : style === 'thunder' ? '⚡' : '☄️';
+      const c = mk('font-size:64px;line-height:1;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))', em);
+      await tween(950, (k) => { const e = ease(k), x = -60 + (W + 120) * e, y = H * 0.22 + H * 0.36 * e + Math.sin(k * 9) * 14; c.style.transform = `translate(${x - 32}px,${y - 32}px) rotate(${style === 'eagle' ? 20 : 0}deg)`;
+        if (Math.random() < 0.55) spark(x, y, 1, ['#ff9a1f', '#ffd23f', '#ff4d2e'], 40, 500, [6, 12]); });
+      spark(W * 0.8, H * 0.58, 16, ['#ff9a1f', '#ffd23f', '#ff4d2e', '#fff'], 170); ring(W * 0.8, H * 0.58, '#ffb02e'); shakeAll();
+      releaseAll(); await atkWait(400);
+      fx.remove(); if (st) render(); return;
+    }
+
+    // 1) scroll to the strongest hand and let it charge
+    const cardsOf = champTile.querySelector('.tcards') || champTile;
+    const s0 = scrollNow;
+    await tween(420, (k) => follow(docPos(champTile).y, 0.3));
+    anim(champTile, [{ boxShadow: '0 0 0 0 rgba(255,207,64,0)' }, { boxShadow: '0 0 0 4px rgba(255,207,64,.95), 0 0 50px rgba(255,207,64,.85)', offset: .4 }, { boxShadow: '0 0 0 0 rgba(255,207,64,0)' }], { duration: 900 });
+    cap.classList.add('on');
+    await atkWait(skip ? 0 : 380);
+
+    // 2) the creature goes after each loser, with the screen following it
+    const em = { dragon: '🐉', eagle: '🦅', thunder: '⛈️', comet: '☄️' }[style];
+    let from = docPos(cardsOf);
+    for (const tgt of targets.slice(0, 3)) {
+      const tTile = tileOf(tgt.id); if (!tTile) { release(tgt.id); continue; }
+      const to = docPos(tTile);
+      if (style === 'dragon' || style === 'eagle') {
+        const c = mk('font-size:66px;line-height:1;filter:drop-shadow(0 8px 12px rgba(0,0,0,.55));will-change:transform', em);
+        const dist = Math.hypot(to.x - from.x, to.y - from.y), ms = Math.round(Math.min(1300, Math.max(750, dist * 0.9)));
+        anim(c, [{ opacity: 0 }, { opacity: 1 }], { duration: 160, fill: 'forwards' });
+        let last = 0;
+        await tween(ms, (k) => {
+          const e = ease(k), dive = style === 'eagle' ? -Math.sin(Math.PI * Math.min(1, k * 1.05)) * Math.min(150, dist * 0.35) : Math.sin(k * 11) * 16;
+          const pos = { x: from.x + (to.x - from.x) * e + (style === 'dragon' ? Math.sin(k * 7) * 22 : 0), y: from.y + (to.y - from.y) * e + dive };
+          follow(pos.y); const v = vp(pos);
+          c.style.transform = `translate(${v.x - 33}px,${v.y - 33}px) scale(${(0.5 + 0.6 * Math.min(1, k * 3)).toFixed(2)}) rotate(${(Math.atan2(to.y - from.y, to.x - from.x) * 57.3 * 0.3).toFixed(0)}deg)`;
+          const nowT = performance.now();
+          if (nowT - last > (style === 'dragon' ? 38 : 70)) { last = nowT;
+            if (style === 'dragon') spark(v.x, v.y + 6, 1, ['#ff9a1f', '#ffd23f', '#ff4d2e'], 36, 520, [8, 16]);
+            else { const f = mk('width:14px;height:6px;border-radius:50%;background:#f2f6ff;opacity:.9'); anim(f, [{ transform: `translate(${v.x}px,${v.y}px) rotate(0)`, opacity: .9 }, { transform: `translate(${v.x - 10}px,${v.y + 40}px) rotate(220deg)`, opacity: 0 }], { duration: 600, fill: 'forwards' }); } }
+        });
+        const v = vp(docPos(tTile));
+        if (style === 'dragon') { const fl = mk('font-size:84px;line-height:1', '🔥'); anim(fl, [{ transform: `translate(${v.x - 42}px,${v.y - 42}px) scale(.2)`, opacity: 1 }, { transform: `translate(${v.x - 42}px,${v.y - 58}px) scale(1.25)`, opacity: 1, offset: .5 }, { transform: `translate(${v.x - 42}px,${v.y - 80}px) scale(1.5)`, opacity: 0 }], { duration: 800, fill: 'forwards' }); spark(v.x, v.y, 18, ['#ff9a1f', '#ffd23f', '#ff4d2e'], 190); ring(v.x, v.y, '#ff7a1f'); }
+        else { for (const a of [-38, -28, -48]) { const sl = mk(`width:120px;height:5px;margin:-2px 0 0 -60px;border-radius:5px;background:linear-gradient(90deg,transparent,#fff,transparent);box-shadow:0 0 12px #fff`); anim(sl, [{ transform: `translate(${v.x + (a + 38) * 1.2}px,${v.y + (a + 38)}px) rotate(${a}deg) scaleX(0)`, opacity: 1 }, { transform: `translate(${v.x + (a + 38) * 1.2}px,${v.y + (a + 38)}px) rotate(${a}deg) scaleX(1)`, opacity: 1, offset: .35 }, { transform: `translate(${v.x + (a + 38) * 1.2}px,${v.y + (a + 38)}px) rotate(${a}deg) scaleX(1)`, opacity: 0 }], { duration: 520, fill: 'forwards' }); } spark(v.x, v.y, 12, ['#fff', '#cfe6ff'], 150); }
+        c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }); setTimeout(() => c.remove(), 320);
+        shakeTile(tTile); shakeAll(); SND.play('impact'); release(tgt.id);
+        from = docPos(tTile);
+        await atkWait(skip ? 0 : 520);
+      } else {
+        // from the sky: the screen goes to the loser first, then the strike comes down
+        await tween(520, () => follow(docPos(tTile).y, 0.28));
+        const v = vp(docPos(tTile));
+        if (style === 'thunder') {
+          const cl = mk('font-size:76px;line-height:1;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))', em);
+          anim(cl, [{ transform: `translate(${v.x - 38}px,${v.y - 190}px) scale(.3)`, opacity: 0 }, { transform: `translate(${v.x - 38}px,${v.y - 150}px) scale(1)`, opacity: 1 }], { duration: 300, fill: 'forwards' });
+          await atkWait(skip ? 0 : 340);
+          const zig = (() => { let pts = [], x = v.x, y = v.y - 120; pts.push([x, y]); const n = 6; for (let i = 1; i <= n; i++) { x = v.x + (i === n ? 0 : (Math.random() - 0.5) * 46); y = v.y - 120 + ((v.y - (v.y - 120)) * i) / n; pts.push([x, y]); } return pts.map((q) => q.join(',')).join(' '); })();
+          const bolt = mk('width:100vw;height:100vh;overflow:visible', `<svg width="100%" height="100%" style="overflow:visible"><polyline points="${zig}" fill="none" stroke="#fff6b0" stroke-width="7" stroke-linejoin="round" style="filter:drop-shadow(0 0 10px #ffd23f) drop-shadow(0 0 22px #fff)"/></svg>`);
+          const fl = mk('inset:0;width:100vw;height:100vh;background:#fff'); anim(fl, [{ opacity: .55 }, { opacity: 0 }], { duration: 260, fill: 'forwards' });
+          anim(bolt, [{ opacity: 1 }, { opacity: 1, offset: .5 }, { opacity: 0 }], { duration: 420, fill: 'forwards' });
+          spark(v.x, v.y, 14, ['#fff6b0', '#ffd23f', '#9fd2ff'], 170); ring(v.x, v.y, '#fff6b0'); SND.play('thunder');
+          setTimeout(() => cl.remove(), 600);
+        } else {
+          const cm = mk('font-size:72px;line-height:1;filter:drop-shadow(0 0 16px #ff7a1f)', em);
+          await tween(460, (k) => { const e = k * k, x = v.x + 260 * (1 - e), y = v.y - 340 * (1 - e); cm.style.transform = `translate(${x - 36}px,${y - 36}px) rotate(-20deg)`; if (Math.random() < 0.6) spark(x, y, 1, ['#ff9a1f', '#ffd23f'], 30, 420, [7, 13]); });
+          cm.remove(); spark(v.x, v.y, 22, ['#ff9a1f', '#ffd23f', '#ff4d2e', '#555'], 220); ring(v.x, v.y, '#ff7a1f', 170, 600); ring(v.x, v.y, '#ffd23f', 100, 420); SND.play('boom');
+        }
+        shakeTile(tTile); shakeAll(); release(tgt.id);
+        await atkWait(skip ? 0 : 560);
+      }
+    }
+    targets.slice(3).forEach((e) => release(e.id));
+    cap.classList.remove('on');
+    await atkWait(skip ? 0 : 250);
+    fx.remove();
+    { const y = window.scrollY; if (st) render(); window.scrollTo(0, y); }   // show the verdict chip and the results list, staying where we are
+  } catch (err) {
+    releaseAll(); document.querySelector('.atkfx')?.remove(); if (st) render();
+  }
+}
 function showResult(r, view, elapsed = 0) {
   // the row turns over and the cards tear first; the verdict then eases in over them
   const at = (ms) => Math.max(0, ms - elapsed);
@@ -3991,8 +4138,14 @@ function showResult(r, view, elapsed = 0) {
   if (elapsed < 300) SND.play('flip');
   for (let i = 1; i < r.entries.length && i * CASCADE_STEP <= CASCADE_MAX; i++) setTimeout(() => SND.play('tick'), at(i * CASCADE_STEP));   // the drumroll
   if (r.entries.some((e) => e.as)) setTimeout(() => SND.play('morph'), at(520 + cas));
+  const showdown = !r.tie && r.losers.length && elapsed < 1500 && !ui.calm;
   if (r.tie) setTimeout(() => SND.play('tie'), at(380 + cas));
-  else setTimeout(() => SND.play('tear'), at(520 + cas));
+  else if (!showdown) setTimeout(() => SND.play('tear'), at(520 + cas));   // with a showdown the tear happens when the creature lands
+  if (showdown) {   // the strongest hand's creature strikes the weakest first, then the verdict
+    r.losers.forEach((id) => atkHeld.add(id));
+    setTimeout(() => { runShowdown(r).then(() => buildResult(r, view, 0)); }, at(700 + cas));
+    return;
+  }
   setTimeout(() => buildResult(r, view, Math.max(0, elapsed - 950 - cas)), at(950 + cas));
 }
 
@@ -4161,6 +4314,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closePla
 
 
 // ---- player list: everyone can see it; the host can remove players ----
+let kickBusy = null;   // a removal that has been sent and is waiting for the server
 let kickArm = null, kickTimer = null;   // two-step kick: first tap arms it, second confirms
 
 function openPlayers() {
@@ -4204,10 +4358,12 @@ function renderPlayers() {
         el('div', { class: 'pname' }, p.name + (me ? t('you') : ''), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
         el('div', { class: 'ptags' }, status, presence, el('span', { class: 'wpchip sm', title: t('shopPtsHint') }, icon('trophy', 12), t('wpN', { n: p.wp || 0 }))),
         playerInv(p)),
-      canKick ? el('button', { class: 'kickbtn' + (armed ? ' armed' : ''), onclick: () => {
-        if (armed) { kickArm = null; clearTimeout(kickTimer); act('kick', { target: p.id }); }
-        else { kickArm = p.id; clearTimeout(kickTimer); kickTimer = setTimeout(() => { kickArm = null; renderPlayers(); }, 4000); renderPlayers(); }
-      } }, withIcon('user-x', armed ? t('kickSure') : t('kick'), 15)) : '');
+      canKick ? (kickBusy === p.id
+        ? el('button', { class: 'kickbtn armed busy', disabled: true }, el('i', { class: 'spin' }), t('kickWorking'))
+        : el('button', { class: 'kickbtn' + (armed ? ' armed' : ''), onclick: () => {
+            if (armed) { kickArm = null; clearTimeout(kickTimer); kickBusy = p.id; renderPlayers(); setTimeout(() => { if (kickBusy === p.id) { kickBusy = null; if (document.querySelector('.pl-ov')) renderPlayers(); } }, 7000); act('kick', { target: p.id }); }
+            else { kickArm = p.id; clearTimeout(kickTimer); kickTimer = setTimeout(() => { kickArm = null; renderPlayers(); }, 4000); renderPlayers(); }
+          } }, withIcon('user-x', armed ? t('kickSure') : t('kick'), 15))) : '');
   });
   rows.forEach((r, i) => { r.dataset.pid = st.players[i].id; });
   const keep = ov.querySelector('.gscroll')?.scrollTop || 0;
