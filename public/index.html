@@ -351,7 +351,7 @@
   .mc { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--ivory); color: var(--ink); font-weight: 700; font-size: 12px; }
   .mc.red { color: var(--red); }
   /* announcement pop-up */
-  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 5s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; overflow: hidden; }
+  .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 3.6s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; overflow: hidden; }
   .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(var(--panel),.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
   .resbox .rf-k { font-size: clamp(16px, 4.5vw, 24px); letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
   .resbox .resk { margin-top: 10px; font-size: 13px; }
@@ -4167,26 +4167,41 @@ async function runShowdown(res) {
       const tgt = shown[ti], tTile = tileOf(tgt.id); if (!tTile) { release(tgt.id); continue; }
       const tdoc = () => docPos(tTile), pen = '×' + res.penalty;
       if (style === 'dragon') {
-        const c = creature('🐉', 118);
-        const hoverDoc = (() => { const d = tdoc(); return { x: Math.min(W - 80, Math.max(80, d.x + (d.x > W / 2 ? -150 : 150))), y: d.y - 190 }; })();
-        const dist = Math.hypot(hoverDoc.x - from.x, hoverDoc.y - from.y), ms = Math.round(Math.min(1250, Math.max(800, dist * 0.8)));
-        let prev = null;
+        const c = creature('🐉', 118), wing = c.querySelector('.atkflap'); wing.style.animation = 'none';
+        const goal = tdoc(), hoverDoc = { x: Math.min(W - 90, Math.max(90, goal.x + (goal.x > W / 2 ? -150 : 150))), y: goal.y - 190 };
+        const dist = Math.hypot(hoverDoc.x - from.x, hoverDoc.y - from.y), ms = Math.round(Math.min(1900, Math.max(1300, dist * 1.25)));
+        const dirX = hoverDoc.x >= from.x ? 1 : -1;
+        // a flowing S-shaped flight: it rises, banks, swoops down to its perch, wings beating the whole way
+        const P1 = { x: from.x + dirX * 90, y: from.y - 230 }, P2 = { x: hoverDoc.x - dirX * 160, y: hoverDoc.y - 130 };
+        const bez = (k) => { const u = 1 - k; return { x: u * u * u * from.x + 3 * u * u * k * P1.x + 3 * u * k * k * P2.x + k * k * k * hoverDoc.x, y: u * u * u * from.y + 3 * u * u * k * P1.y + 3 * u * k * k * P2.y + k * k * k * hoverDoc.y }; };
+        let rot = 0, flipS = dirX, t0 = performance.now(), prevV = null;
+        const flap = (sc) => { const tt = performance.now() - t0; wing.style.transform = `scaleY(${(1 + 0.16 * Math.sin(tt * 0.019)).toFixed(3)}) scaleX(${(1 - 0.05 * Math.sin(tt * 0.019)).toFixed(3)}) skewX(${(7 * Math.sin(tt * 0.019 + 1.2)).toFixed(1)}deg)`; };
         await tween(ms, (k) => {
-          const e = ease(k), pos = { x: from.x + (hoverDoc.x - from.x) * e + Math.sin(k * 8) * 26, y: from.y + (hoverDoc.y - from.y) * e + Math.cos(k * 6) * 14 };
-          follow(pos.y); const v = vp(pos), dx = prev ? v.x - prev.x : 1, dy = prev ? v.y - prev.y : 0; prev = v;
-          place(c, v.x, v.y, 0.5 + 0.6 * Math.min(1, k * 2.5), Math.max(-30, Math.min(30, dy * 2)), dx >= 0 ? 1 : -1);
-          E.flame(v.x - (dx >= 0 ? 36 : -36), v.y + 14, -dx || -1, -dy, 3, { spd: 140, spread: 0.7, size: [10, 24], life: [320, 560] });
+          const e = Math.sin((k * Math.PI) / 2) * 0.72 + k * 0.28, p0 = bez(e), sway = Math.sin(k * 15) * 28 * (1 - k);
+          const pos = { x: p0.x, y: p0.y + sway }; follow(pos.y, 0.14);
+          const v = vp(pos), vx = prevV ? v.x - prevV.x : dirX, vy = prevV ? v.y - prevV.y : 0; prevV = v;
+          const want = Math.max(-34, Math.min(34, Math.atan2(vy, Math.abs(vx) + 2) * 57.3)); rot += (want - rot) * 0.16;
+          flipS += ((vx >= 0 ? 1 : -1) - flipS) * 0.18;
+          const sc = (0.5 + 0.55 * Math.min(1, k * 2)) * (1 + 0.04 * Math.sin(k * 20));
+          place(c, v.x, v.y, sc, rot * Math.sign(flipS || 1), flipS); flap();
+          const tx = -Math.sign(flipS) * 40;
+          E.flame(v.x + tx, v.y + 18, -flipS, 0.15, 2, { spd: 120, spread: 0.7, size: [10, 22], life: [320, 560] });
+          E.emit({ x: v.x + tx * 0.5, y: v.y, vx: rnd(-20, 20), vy: rnd(-20, 20), g: 0, life: 520, s: 30 * sc, s1: 0, col: [150, 255, 180], col1: [30, 110, 90], a: 0.35, drag: 0.98 });   // a soft green wake
         });
-        // rears back and sucks in fire
+        // hovers over the loser, rearing back and drawing in fire
         const hv = vp(hoverDoc), face = hv.x < vp(tdoc()).x ? 1 : -1;
-        await tween(320, (k) => { place(c, hv.x, hv.y, 1.1 + 0.25 * k, -14 * k * face, face); for (let i = 0; i < 3; i++) { const a = rnd(0, 6.283), r = rnd(70, 120); E.emit({ x: hv.x + face * 48 + Math.cos(a) * r, y: hv.y + Math.sin(a) * r, vx: -Math.cos(a) * 340, vy: -Math.sin(a) * 340, life: 220, s: rnd(8, 16), s1: 2, col: [255, 210, 100], col1: [255, 80, 20], drag: 1 }); } });
+        await tween(380, (k) => {
+          const bob = Math.sin((performance.now() - t0) * 0.008) * 8;
+          flipS += (face - flipS) * 0.25; place(c, hv.x, hv.y + bob, 1.1 + 0.25 * ease(k), -14 * ease(k) * face, flipS); flap();
+          for (let i = 0; i < 3; i++) { const a = rnd(0, 6.283), r = rnd(70, 120); E.emit({ x: hv.x + face * 48 + Math.cos(a) * r, y: hv.y + Math.sin(a) * r, vx: -Math.cos(a) * 340, vy: -Math.sin(a) * 340, life: 220, s: rnd(8, 16), s1: 2, col: [255, 210, 100], col1: [255, 80, 20], drag: 1 }); }
+        });
         E.freeze(90); await wait(90); SND.play('roar');
         // the breath
-        const T = vp(tdoc()), mouth = { x: hv.x + face * 52, y: hv.y + 8 };
-        const r0 = tileRect(tTile);
-        await tween(760, (k) => {
+        const T = vp(tdoc()), r0 = tileRect(tTile);
+        await tween(780, (k) => {
+          const bob = Math.sin((performance.now() - t0) * 0.012) * 5, py = hv.y + bob, mouth = { x: hv.x + face * 52, y: py + 8 };
           const aim = { x: T.x + rnd(-14, 14), y: T.y + rnd(-14, 14) }, dx = aim.x - mouth.x, dy = aim.y - mouth.y;
-          place(c, hv.x, hv.y, 1.35, -10 * face, face);
+          place(c, hv.x, py, 1.35, -10 * face, flipS); flap();
           E.flame(mouth.x, mouth.y, dx, dy, 14, { spd: 1250, spread: 0.1, size: [20, 44], life: [260, 440] }); E.beam(mouth.x, mouth.y, aim.x, aim.y, { w: 24, ms: 70 });
           E.burst(aim.x, aim.y, 4, { spd: [80, 300], life: [300, 600], s: [10, 22], col: [255, 240, 170], col1: [220, 50, 0], g: -80 });
           E.embers(r0.left, r0.top, r0.width, r0.height, 2);
@@ -4194,10 +4209,12 @@ async function runShowdown(res) {
         });
         jitter(0);
         // the blast
-        E.explosion(T.x, T.y, 1.5); flash('#ffb84a', 0.55, 380); shake(16, 560); punch(T.x, T.y); pop(T.x, T.y, pen, '#ffb02e'); hurt(tTile); scorch(tTile, 'rgba(40,12,0,.95)'); SND.play('impact'); SND.play('boom'); release(tgt.id);
-        anim(c, [{ opacity: 1 }, { opacity: 0, transform: c.style.transform + ' translate(120px,-160px)' }], { duration: 520, fill: 'forwards' });
+        E.explosion(T.x, T.y, 1.5); flash('#ffb84a', 0.5, 380); shake(16, 560); punch(T.x, T.y); pop(T.x, T.y, pen, '#ffb02e'); hurt(tTile); scorch(tTile, 'rgba(40,12,0,.95)'); SND.play('impact'); SND.play('boom'); release(tgt.id);
+        // it wheels away in a wide curve
+        const exit0 = performance.now(), ex0 = hv.x, ey0 = hv.y;
+        tween(900, (k) => { const e = k * k, x = ex0 + face * 240 * e, y = ey0 - 300 * e + Math.sin(k * 6) * 24; flipS += (face - flipS) * 0.2; place(c, x, y, 1.2 - 0.5 * e, -24 * e * face, flipS); flap(); c.style.opacity = String(1 - Math.max(0, k - 0.6) / 0.4); E.emit({ x, y, vx: 0, vy: 0, life: 380, s: 26, s1: 0, col: [150, 255, 180], col1: [30, 110, 90], a: 0.3, drag: 1 }); }).then(() => c.remove());
         from = tdoc();
-        await wait(ti < shown.length - 1 ? 560 : 800);
+        await wait(ti < shown.length - 1 ? 620 : 900);
       } else if (style === 'eagle') {
         const c = creature('🦅', 108);
         const goal = tdoc(), dist = Math.hypot(goal.x - from.x, goal.y - from.y), ms = Math.round(Math.min(1150, Math.max(700, dist * 0.8)));
@@ -4243,12 +4260,18 @@ async function runShowdown(res) {
           anim(cl, [{ opacity: 1 }, { opacity: 0 }], { duration: 600, delay: 300, fill: 'forwards' });
           await wait(ti < shown.length - 1 ? 700 : 900);
         } else {
-          const cm = creature('☄️', 140), sh = mk(`width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;background:radial-gradient(circle, rgba(0,0,0,.7), transparent 70%);opacity:0`);
-          const sx = T.x + W * 0.55, sy = T.y - H * 0.8;
-          await tween(700, (k) => { const e = k * k * k, x = sx + (T.x - sx) * e, y = sy + (T.y - sy) * e;
-            place(cm, x, y, 0.5 + 1.0 * e, -30, 1); sh.style.opacity = String(0.9 * e); sh.style.transform = `translate(${T.x}px,${T.y}px) scale(${0.3 + e})`;
-            E.flame(x + 30, y - 30, 1, -1, 5, { spd: 160, spread: 0.5, size: [18, 44], life: [400, 700] }); jitter(5 * e); });
-          jitter(0); cm.remove(); sh.remove();
+          const cm = creature('☄️', 150), sh = mk(`width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;background:radial-gradient(circle, rgba(0,0,0,.75), transparent 70%);opacity:0`), warn = mk(`inset:0;width:100vw;height:100vh;background:radial-gradient(circle at ${T.x}px ${T.y}px, rgba(255,60,40,.0), rgba(255,40,30,.28));opacity:0`);
+          const sx = Math.min(W + 30, T.x + W * 0.62), sy = Math.max(-40, T.y - H * 0.7);
+          SND.play('swoop');
+          await tween(1700, (k) => {
+            const e = Math.pow(k, 1.7), slow = k > 0.85 ? 1 : 0;   // it falls faster and faster, so there is time to see it coming
+            const x = sx + (T.x - sx) * e, y = sy + (T.y - sy) * e;
+            place(cm, x, y, 0.45 + 1.05 * e, -35 + 8 * Math.sin(k * 14), 1);
+            sh.style.opacity = String(0.95 * Math.min(1, k * 1.4)); sh.style.transform = `translate(${T.x}px,${T.y}px) scale(${0.25 + 1.0 * e})`; warn.style.opacity = String(0.6 + 0.4 * Math.sin(k * 22));
+            E.flame(x + 36, y - 36, 1, -1, 6, { spd: 200, spread: 0.55, size: [20, 52], life: [500, 900] }); E.burst(x, y, 1, { spd: [40, 160], life: [400, 800], s: [3, 7], col: [255, 230, 150], col1: [255, 90, 20], g: 120 });
+            jitter(6 * e);
+          });
+          jitter(0); cm.remove(); sh.remove(); warn.remove();
           flash('#fff', 0.6, 420); E.freeze(110); await wait(110);
           E.explosion(T.x, T.y, 2); E.burst(T.x, T.y, 28, { spd: [160, 620], life: [700, 1300], s: [6, 14], col: [150, 120, 100], col1: [40, 30, 30], g: 900, add: false });
           E.ring(T.x, T.y, 300, [255, 255, 255], 500, 8); E.smoke(T.x, T.y, 18, { size: [40, 90] });
@@ -4406,7 +4429,7 @@ function buildResult(r, view, late = 0) {
     else { setTimeout(() => SND.play('names'), 250); setTimeout(() => SND.play('safe'), 700); }
   }
   if (iLose) buzz([220, 90, 220, 90, 360]);
-  setTimeout(() => o.remove(), Math.max(900, 5100 - late));
+  setTimeout(() => o.remove(), Math.max(900, 3700 - late));
 }
 
 function showNext(row) {

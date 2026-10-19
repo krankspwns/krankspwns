@@ -350,7 +350,7 @@ function predWindow(room) {
   if (room.phase !== 'dealt' || row >= ROW_SIZES.length || active.length < 2 || !active.every((p) => p.ready)) return null;
   const base = row === 0 ? room.allReady && room.allReady.at : room.results && room.results[row - 1] && room.results[row - 1].at;
   if (!base) return null;
-  const from = base + (row === 0 ? 2500 : 3500);
+  const from = base + (row === 0 ? 2500 : 11000);   // after the strike and the verdict have played out on the phones
   return { from, until: from + PRED_MS };
 }
 function storeResults(room) {
