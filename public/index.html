@@ -4394,21 +4394,40 @@ async function runShowdown(res) {
         await tween(520, () => follow(tdoc().y, 0.28));
         const T = vp(tdoc());
         if (style === 'thunder') {
-          const cl = creature('⛈️', 170); const cx = T.x, cy = Math.max(80, T.y - 230);
-          await tween(420, (k) => { place(cl, cx + rnd(-3, 3) * k, cy + rnd(-3, 3) * k, 0.3 + 0.9 * ease(k), 0, 1); if (Math.random() < 0.5) E.burst(cx + rnd(-60, 60), cy + rnd(-20, 30), 1, { spd: [20, 90], life: [200, 400], s: [6, 14], col: [200, 225, 255], col1: [80, 120, 255], g: 0 }); });
-          for (let i = 0; i < 3; i++) {
-            const tx = T.x + rnd(-18, 18);
-            flash('#fff', i === 2 ? 0.55 : 0.35, i === 2 ? 380 : 260); E.freeze(i === 2 ? 70 : 0);
-            E.bolt(cx + rnd(-30, 30), cy + 50, tx, T.y, { w: i === 2 ? 12 : 8, ms: i === 2 ? 520 : 320, branches: i === 2 ? 6 : 4 });
-            E.burst(tx, T.y, i === 2 ? 36 : 18, { spd: [100, 420], life: [300, 700], s: [3, 8], col: [235, 245, 255], col1: [90, 130, 255], g: 80 }); E.ring(tx, T.y, i === 2 ? 240 : 150, [190, 215, 255], 460, i === 2 ? 9 : 5);
-            shake(i === 2 ? 17 : 9, i === 2 ? 560 : 320); hurt(tTile); SND.play('thunder');
-            await wait(i === 2 ? 160 : 330);
+          // a real storm cloud: dark puffs painted on the canvas, rolling in from the side, rain falling, lit from inside by every strike
+          const cx = T.x, cy = Math.max(110, T.y - 240), CL = { x: cx + (cx > W / 2 ? 260 : -260), y: cy - 40, s: 0.35, a: 0, f: 0 };
+          const PUFFS = [[-120, 14, 62], [-70, -18, 78], [-10, -38, 90], [55, -22, 80], [115, 12, 64], [-85, 34, 54], [0, 28, 74], [82, 32, 56], [-35, -2, 66], [38, -6, 70]];
+          const dropCloud = E.layer((g) => {
+            if (CL.a < 0.01) return;
+            g.save(); g.globalAlpha = CL.a;
+            for (const [px, py, pr] of PUFFS) { const x = CL.x + px * CL.s, y = CL.y + py * CL.s, r = pr * CL.s * 1.25; const gr = g.createRadialGradient(x, y - r * 0.25, r * 0.1, x, y, r); gr.addColorStop(0, '#59638a'); gr.addColorStop(0.55, '#2a3150'); gr.addColorStop(1, 'rgba(14,18,36,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); }
+            if (CL.f > 0.02) { g.globalCompositeOperation = 'lighter'; for (const [px, py, pr] of PUFFS) { const x = CL.x + px * CL.s, y = CL.y + py * CL.s + pr * CL.s * 0.2, r = pr * CL.s * 1.3; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(190,215,255,${(CL.f * 0.42).toFixed(3)})`); gr.addColorStop(1, 'rgba(120,160,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); } }
+            g.restore();
+          });
+          const rain = (n) => { for (let i = 0; i < n; i++) E.emit({ x: CL.x + rnd(-130, 130) * CL.s, y: CL.y + 40 * CL.s, vx: -90, vy: rnd(800, 1100), g: 0, life: rnd(350, 520), s: 2.2, s1: 1.2, col: [190, 215, 255], col1: [110, 150, 230], drag: 1 }); };
+          SND.play('swoop');
+          await tween(760, (k) => {
+            const e = ease(k); CL.x = cx + (CL.x0 === undefined ? (CL.x0 = CL.x - cx) : CL.x0) * (1 - e); CL.a = Math.min(1, k * 3); CL.s = 0.35 + 0.95 * e;
+            CL.f = Math.random() < 0.18 ? rnd(0.2, 0.6) : CL.f * 0.8; rain(3);
+            if (Math.random() < 0.12) E.bolt(CL.x + rnd(-80, 80) * CL.s, CL.y, CL.x + rnd(-130, 130) * CL.s, CL.y + 90 * CL.s, { w: 3, ms: 130, branches: 1 });
+          });
+          for (let i = 0; i < 4; i++) {
+            const big = i === 3, tx = T.x + rnd(-18, 18), bx = cx + rnd(-40, 40);
+            await tween(i ? 140 : 260, () => { CL.f = rnd(0.15, 0.55); rain(2); });   // it flickers before every strike
+            flash('#fff', big ? 0.6 : 0.38, big ? 420 : 280); E.freeze(big ? 80 : 0); CL.f = 1;
+            E.bolt(bx, CL.y + 60 * CL.s, tx, T.y, { w: big ? 14 : 9, ms: big ? 560 : 340, branches: big ? 7 : 4 });
+            E.beam(bx, CL.y + 60 * CL.s, tx, T.y, { w: big ? 70 : 46, col: [150, 195, 255], ms: big ? 140 : 90 });   // the glow around the bolt
+            E.burst(tx, T.y, big ? 40 : 18, { spd: [100, 460], life: [300, 760], s: [3, 8], col: [235, 245, 255], col1: [90, 130, 255], g: 80 }); E.ring(tx, T.y, big ? 260 : 160, [190, 215, 255], 480, big ? 9 : 5);
+            if (big) { E.explosion(tx, T.y, 1.1); setDim(0.97); setTimeout(() => setDim(0.9), 260); }
+            shake(big ? 19 : 10, big ? 600 : 340); hurt(tTile); SND.play('thunder');
+            const fade = setInterval(() => { CL.f *= 0.8; }, 30); setTimeout(() => clearInterval(fade), 500);
+            await wait(big ? 200 : 300);
           }
           punch(T.x, T.y, 1.06); pop(T.x, T.y, pen, '#bcd8ff');
           const r0 = tileRect(tTile); for (let i = 0; i < 8; i++) setTimeout(() => { const a = { x: r0.left + rnd(0, r0.width), y: r0.top + rnd(0, r0.height) }, b = { x: r0.left + rnd(0, r0.width), y: r0.top + rnd(0, r0.height) }; E.bolt(a.x, a.y, b.x, b.y, { w: 3, ms: 140, branches: 1 }); }, skip ? 0 : i * 70);   // the tile crackles
           E.smoke(T.x, T.y, 8); scorch(tTile, 'rgba(10,14,40,.95)'); release(tgt.id);
-          anim(cl, [{ opacity: 1 }, { opacity: 0 }], { duration: 600, delay: 300, fill: 'forwards' });
-          await wait(ti < shown.length - 1 ? 700 : 900);
+          tween(700, (k) => { CL.a = 1 - k; CL.x += 3; CL.f *= 0.9; }).then(dropCloud);
+          await wait(ti < shown.length - 1 ? 750 : 1300);
         } else {
           const cm = { x: -999, y: -999, s: 0.5, a: 0 }, sh = mk(`width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;background:radial-gradient(circle, rgba(0,0,0,.75), transparent 70%);opacity:0`), warn = mk(`inset:0;width:100vw;height:100vh;background:radial-gradient(circle at ${T.x}px ${T.y}px, rgba(255,60,40,.0), rgba(255,40,30,.28));opacity:0`);
           const sx = Math.min(W + 30, T.x + W * 0.62), sy = Math.max(-40, T.y - H * 0.7);
