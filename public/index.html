@@ -445,33 +445,25 @@
 
   /* ---- what each attack leaves of the loser's card ---- */
   .tcard.end .card.endc { position: absolute; inset: 0; box-shadow: none; }
-  .tcard.end .tfx { position: absolute; inset: 0; pointer-events: none; } .tfx svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .tcard.end .tfx, .tcard.end .tfg { position: absolute; inset: 0; pointer-events: none; }
+  .tcard.end .tfg { mix-blend-mode: screen; }
   .tcard.end.tearing { animation: endin .85s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; }
   @keyframes endin { 0% { transform: scale(1.12); filter: brightness(2.4); } 100% { transform: none; filter: none; } }
-  .e-burnt .endc { filter: sepia(.9) brightness(.42) contrast(1.1); -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 55%, rgba(0,0,0,.55) 85%, rgba(0,0,0,.2) 100%); mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 55%, rgba(0,0,0,.55) 85%, rgba(0,0,0,.2) 100%); }
-  .e-burnt .tfx { background: radial-gradient(ellipse 90% 60% at 50% 105%, rgba(255,110,20,.55), transparent 70%); } .e-burnt .flames { transform-origin: 50% 100%; animation: flick .5s ease-in-out infinite alternate; }
-  @keyframes flick { from { transform: scaleY(.88) scaleX(1.02); } to { transform: scaleY(1.08) scaleX(.98); } }
-  .em { animation: ember 1.6s ease-out infinite; } .em.e2 { animation-delay: .5s; } .em.e3 { animation-delay: 1s; } @keyframes ember { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-34px); opacity: 0; } }
-  .sm { animation: smoke 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; } .sm.s2 { animation-delay: .8s; } .sm.s3 { animation-delay: 1.6s; } @keyframes smoke { 0% { transform: translateY(0) scale(.6); opacity: .6; } 100% { transform: translateY(-30px) scale(1.5); opacity: 0; } }
-  .e-claws .endc { filter: grayscale(.55) brightness(.78); } .e-claws .cl { stroke-dasharray: 150; stroke-dashoffset: 0; } .e-claws.tearing .cl { animation: draw .35s calc(.6s + var(--cd, 0s)) ease-out backwards; } .e-claws.tearing .cl.c2 { animation-delay: calc(.72s + var(--cd, 0s)); } .e-claws.tearing .cl.c3 { animation-delay: calc(.84s + var(--cd, 0s)); } @keyframes draw { from { stroke-dashoffset: 150; } }
-  .e-zap .endc { filter: grayscale(.75) brightness(.55) contrast(1.15); } .e-zap .glow { animation: zapblink 1.1s steps(2) infinite; filter: drop-shadow(0 0 3px #ffe85a); } @keyframes zapblink { 0%, 55% { opacity: 1; } 56%, 70% { opacity: .15; } 71%, 100% { opacity: 1; } }
-  .e-crater .endc { filter: sepia(.6) brightness(.55); -webkit-mask-image: radial-gradient(circle calc(var(--cw) * .36) at 82% 16%, transparent 0 94%, #000 100%); mask-image: radial-gradient(circle calc(var(--cw) * .36) at 82% 16%, transparent 0 94%, #000 100%); }
-  .e-crater .tfx { background: radial-gradient(circle calc(var(--cw) * .36) at 82% 16%, transparent 0 80%, rgba(255,150,40,.95) 86%, rgba(30,12,4,.9) 96%, transparent 110%), radial-gradient(circle at 70% 30%, rgba(20,8,0,.6), transparent 55%); }
-  .e-cracked .endc { filter: grayscale(.4) brightness(.6); } .e-cracked .lava { filter: drop-shadow(0 0 3px #ff7a1f); animation: lavapulse 1.8s ease-in-out infinite alternate; } @keyframes lavapulse { from { opacity: .55; } to { opacity: 1; } }
-  .e-bitten .endc { filter: saturate(.75) brightness(.9) hue-rotate(-12deg); --bite: calc(var(--cw) * .17); -webkit-mask-image: radial-gradient(circle var(--bite) at 0% 28%, transparent 0 97%, #000 100%), radial-gradient(circle calc(var(--bite) * 1.15) at 100% 60%, transparent 0 97%, #000 100%), radial-gradient(circle calc(var(--bite) * .9) at 58% 100%, transparent 0 97%, #000 100%), radial-gradient(circle calc(var(--bite) * .8) at 22% 0%, transparent 0 97%, #000 100%); -webkit-mask-composite: source-in; mask-image: radial-gradient(circle var(--bite) at 0% 28%, transparent 0 97%, #000 100%), radial-gradient(circle calc(var(--bite) * 1.15) at 100% 60%, transparent 0 97%, #000 100%), radial-gradient(circle calc(var(--bite) * .9) at 58% 100%, transparent 0 97%, #000 100%), radial-gradient(circle calc(var(--bite) * .8) at 22% 0%, transparent 0 97%, #000 100%); mask-composite: intersect; }
-  .e-bitten .tfx { background: linear-gradient(180deg, rgba(120,190,255,.18), rgba(40,110,200,.3)); border-radius: calc(var(--cw) * .11); }
+  .e-burnt .endc, .e-crater .endc, .e-hole .endc { filter: sepia(.55) brightness(.62) contrast(1.05); }
+  .e-burnt .tfg, .e-crater .tfg, .e-hole .tfg, .e-cracked .tfg { animation: lavapulse 1.6s ease-in-out infinite alternate; }
+  @keyframes lavapulse { from { opacity: .6; } to { opacity: 1; } }
+  .e-zap .endc { filter: grayscale(.7) brightness(.6) contrast(1.15); } .e-zap .tfg { animation: zapblink 1.2s steps(2) infinite; } @keyframes zapblink { 0%, 52% { opacity: 1; } 53%, 66% { opacity: .1; } 67%, 100% { opacity: 1; } }
+  .e-claws .endc { filter: grayscale(.45) brightness(.8); } .e-cracked .endc { filter: grayscale(.4) brightness(.62); }
+  .e-bitten .endc { filter: saturate(.8) brightness(.92) hue-rotate(-10deg); }
+  .e-vapor .endc { filter: saturate(.7) brightness(1.1) hue-rotate(110deg); } .e-vapor .tfg { animation: lavapulse 1.1s ease-in-out infinite alternate; }
   .tcard.e-sliced .card.half { filter: grayscale(.45) brightness(.85); box-shadow: none; position: absolute; inset: 0; }
+  .tcard.e-sliced .tfx { background-size: 100% 100%; }
   .tcard.e-sliced .sl1 { clip-path: polygon(0 0, 100% 0, 100% 28%, 0 40%); transform: translate(-4px, -4px) rotate(-2.5deg); } .tcard.e-sliced .sl2 { clip-path: polygon(0 40%, 100% 28%, 100% 64%, 0 78%); transform: translate(5px, 0) rotate(1.8deg); } .tcard.e-sliced .sl3 { clip-path: polygon(0 78%, 100% 64%, 100% 100%, 0 100%); transform: translate(-3px, 5px) rotate(-1.6deg); }
   .tcard.e-sliced.tearing .card.half { animation: none; } .tcard.e-sliced.tearing .sl1 { animation: slin1 .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; } .tcard.e-sliced.tearing .sl2 { animation: slin2 .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; } .tcard.e-sliced.tearing .sl3 { animation: slin3 .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; }
   @keyframes slin1 { from { transform: none; } } @keyframes slin2 { from { transform: none; } } @keyframes slin3 { from { transform: none; } }
-  .e-warp .endc { transform: scale(.84, .9) skewX(-6deg) rotate(-7deg); filter: saturate(.6) brightness(.8) hue-rotate(250deg); box-shadow: 0 0 18px rgba(170,90,255,.8); }
-  .e-warp .tfx { background: radial-gradient(circle at 50% 50%, rgba(0,0,0,.6) 0 12%, rgba(150,80,255,.45) 30%, transparent 68%); animation: warpspin 6s linear infinite; } @keyframes warpspin { to { transform: rotate(360deg); } }
-  .e-crushed .endc { transform: scaleY(.62) translateY(30%); filter: grayscale(.45) brightness(.8); transform-origin: 50% 100%; } .e-crushed .tfx { transform: scaleY(.62) translateY(30%); transform-origin: 50% 100%; }
-  .e-frozen .endc { filter: hue-rotate(185deg) saturate(.7) brightness(1.15); } .e-frozen .tfx { background: linear-gradient(160deg, rgba(235,250,255,.7), rgba(150,205,255,.35) 55%, rgba(220,245,255,.65)); box-shadow: inset 0 0 14px rgba(255,255,255,.9), 0 0 16px rgba(150,215,255,.8); border-radius: calc(var(--cw) * .11); }
-  .e-hole .endc { filter: grayscale(.4) brightness(.65); -webkit-mask-image: radial-gradient(circle calc(var(--cw) * .2) at 52% 54%, transparent 0 96%, #000 100%); mask-image: radial-gradient(circle calc(var(--cw) * .2) at 52% 54%, transparent 0 96%, #000 100%); }
-  .e-hole .tfx { background: radial-gradient(circle at 52% 54%, transparent 0 15%, rgba(255,150,40,.9) 17%, rgba(30,14,6,.95) 24%, rgba(30,14,6,.5) 32%, transparent 46%); }
-  .e-vapor .endc { filter: saturate(.6) brightness(1.1) hue-rotate(110deg); -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0 17%, rgba(0,0,0,.35) 27%, #000 52%); mask-image: radial-gradient(circle at 50% 50%, transparent 0 17%, rgba(0,0,0,.35) 27%, #000 52%); }
-  .e-vapor .tfx { background: radial-gradient(circle at 50% 50%, rgba(190,255,225,.55) 0 14%, rgba(80,255,180,.35) 26%, transparent 50%); animation: vaporpulse 1.6s ease-in-out infinite alternate; } @keyframes vaporpulse { from { opacity: .55; } to { opacity: 1; } }
+  .e-warp { perspective: 320px; } .e-warp .endc, .e-warp .tfx, .e-warp .tfg { transform: rotateX(26deg) rotateZ(-9deg) scale(.82); } .e-warp .endc { filter: hue-rotate(255deg) saturate(.7) brightness(.85); box-shadow: 0 0 22px rgba(170,90,255,.8); } .e-warp .tfg { animation: warpspin 7s linear infinite; } @keyframes warpspin { to { transform: rotateX(26deg) rotateZ(351deg) scale(.82); } }
+  .e-crushed .endc, .e-crushed .tfx { transform: scaleY(.64) translateY(26%); transform-origin: 50% 100%; } .e-crushed .endc { filter: grayscale(.4) brightness(.82); }
+  .e-frozen .endc { filter: hue-rotate(185deg) saturate(.75) brightness(1.15); } .e-frozen .tfx { box-shadow: inset 0 0 12px rgba(255,255,255,.8), 0 0 14px rgba(150,215,255,.7); border-radius: calc(var(--cw) * .11); }
   .tcard.tearing .card.half { animation: tear .9s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.5,.4,1) backwards; }
   @keyframes tear { from { transform: none; filter: none; } 30% { transform: translate(0, -4px) scale(1.04); filter: none; } }
   /* "you lose" pop-up: red flash, spiky burst, slam and shake */
@@ -3518,20 +3510,114 @@ const cascadeOf = (n) => Math.min(CASCADE_MAX, Math.max(0, n - 1) * CASCADE_STEP
 // what is left of a loser's card depends on what hit it: every attack leaves its own mark
 const ATK_ENDS = { dragon: 'burnt', eagle: 'claws', thunder: 'zap', comet: 'crater', meteors: 'cracked', shark: 'bitten', ninja: 'sliced', blackhole: 'warp', fist: 'crushed', ice: 'frozen', cannon: 'hole', ufo: 'vapor' };
 const atkStyleOf = (res) => ATK_STYLES[((st ? st.round : 0) * 5 + res.row * 3 + res.losers.length) % ATK_STYLES.length];   // the same pick on every phone
-const END_SVG = {
-  burnt: '<defs><linearGradient id="fl" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff3d10"/><stop offset=".5" stop-color="#ff9a1f"/><stop offset="1" stop-color="#ffe27a" stop-opacity="0"/></linearGradient></defs><g class="flames"><path d="M4 145 Q0 118 12 104 Q12 120 22 112 Q22 96 32 84 Q36 108 44 110 Q46 100 54 92 Q60 112 66 106 Q70 98 78 90 Q82 114 90 112 Q94 124 98 145Z" fill="url(#fl)"/></g><g fill="#ffd27a"><circle class="em" cx="18" cy="70" r="1.6"/><circle class="em e2" cx="48" cy="50" r="1.4"/><circle class="em e3" cx="80" cy="64" r="1.8"/></g>',
-  claws: '<g fill="none" stroke-linecap="round"><path class="cl" d="M16 12 L42 130" stroke="#2a0a0e" stroke-width="5.5"/><path class="cl c2" d="M42 6 L68 124" stroke="#2a0a0e" stroke-width="5.5"/><path class="cl c3" d="M68 14 L92 132" stroke="#2a0a0e" stroke-width="5.5"/><path class="cl" d="M16 12 L42 130" stroke="#ff6b6b" stroke-width="1.6"/><path class="cl c2" d="M42 6 L68 124" stroke="#ff6b6b" stroke-width="1.6"/><path class="cl c3" d="M68 14 L92 132" stroke="#ff6b6b" stroke-width="1.6"/><path d="M19 12 L45 130 M45 6 L71 124 M71 14 L95 132" stroke="#fff" stroke-width=".7" opacity=".7"/></g>',
-  zap: '<g fill="none" stroke-linejoin="round" stroke-linecap="round"><path class="bolt" d="M54 0 L38 30 L58 42 L34 76 L60 88 L30 128 L38 145" stroke="#0e0804" stroke-width="7"/><path class="bolt" d="M56 42 L80 54 L74 72 M34 76 L14 86" stroke="#0e0804" stroke-width="4"/><path class="bolt glow" d="M54 0 L38 30 L58 42 L34 76 L60 88 L30 128 L38 145" stroke="#ffe85a" stroke-width="2"/><path class="bolt glow" d="M56 42 L80 54 L74 72 M34 76 L14 86" stroke="#ffe85a" stroke-width="1.4"/></g>',
-  cracked: '<g fill="none" stroke-linejoin="round" stroke-linecap="round"><path d="M50 72 L30 40 L34 12 M50 72 L74 48 L70 20 M50 72 L82 90 L96 118 M50 72 L28 100 L16 136 M50 72 L56 112 L52 142 M30 40 L10 38 M82 90 L98 80" stroke="#140a05" stroke-width="3.4"/><path class="lava" d="M50 72 L30 40 L34 12 M50 72 L74 48 L70 20 M50 72 L82 90 L96 118 M50 72 L28 100 L16 136 M50 72 L56 112 L52 142 M30 40 L10 38 M82 90 L98 80" stroke="#ff8a2a" stroke-width="1.4"/></g>',
-  bitten: '<g fill="#e8f6ff"><circle cx="12" cy="36" r="1.8" opacity=".9"/><circle cx="86" cy="22" r="1.4" opacity=".8"/><circle cx="26" cy="98" r="2" opacity=".85"/><circle cx="72" cy="112" r="1.6" opacity=".8"/><circle cx="50" cy="60" r="1.2" opacity=".7"/></g><g fill="#fff" opacity=".9"><path d="M0 26 l5 4 l-5 4z M0 38 l5 4 l-5 4z M0 50 l5 4 l-5 4z"/><path d="M100 62 l-5 4 l5 4z M100 74 l-5 4 l5 4z M100 86 l-5 4 l5 4z"/></g>',
-  sliced: '<g stroke="#fff" stroke-width="1.2" opacity=".85"><path d="M0 40 L100 28 M0 78 L100 64"/></g><g transform="translate(58 70) rotate(24)"><path d="M0 -14 L3 -3 L14 0 L3 3 L0 14 L-3 3 L-14 0 L-3 -3Z" fill="#dfe6f2" stroke="#2c3345" stroke-width="1.2"/><circle r="3" fill="#10141f" stroke="#c9a24a" stroke-width="1"/></g>',
-  warp: '<path d="M50 72 m-4 0 a4 4 0 1 1 8 0 a9 9 0 1 1 -18 0 a14 14 0 1 1 28 0 a20 20 0 1 1 -40 0 a27 27 0 1 1 54 0" fill="none" stroke="rgba(210,160,255,.7)" stroke-width="2"/>',
-  crushed: '<g fill="none" stroke="#120a06" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 30 L40 70 L28 100 L60 140 M92 24 L58 66 L72 104 L44 142 M20 60 L80 76"/></g><g fill="#d9d3c8" opacity=".8"><circle cx="14" cy="140" r="6"/><circle cx="40" cy="144" r="8"/><circle cx="70" cy="142" r="7"/><circle cx="92" cy="140" r="6"/></g>',
-  frozen: '<g fill="rgba(225,246,255,.95)" stroke="#fff" stroke-width=".8"><path d="M0 145 L6 118 L12 145Z M14 145 L21 104 L28 145Z M30 145 L36 122 L42 145Z M46 145 L54 100 L62 145Z M64 145 L71 126 L78 145Z M80 145 L88 108 L96 145Z"/></g><g stroke="#fff" stroke-width="1.2" opacity=".9"><path d="M82 20 l0 8 M78 24 l8 0 M20 40 l0 6 M17 43 l6 0 M70 70 l0 6 M67 73 l6 0"/></g>',
-  hole: '<g fill="#6b6b6b" opacity=".55"><circle class="sm" cx="52" cy="40" r="6"/><circle class="sm s2" cx="46" cy="30" r="8"/><circle class="sm s3" cx="56" cy="18" r="9"/></g>',
-  crater: '<g fill="#6b6b6b" opacity=".5"><circle class="sm" cx="78" cy="22" r="5"/><circle class="sm s2" cx="70" cy="12" r="7"/></g><g fill="#ffd27a"><circle class="em" cx="62" cy="40" r="1.5"/><circle class="em e2" cx="86" cy="46" r="1.3"/></g>',
-  vapor: '<g fill="#b8ffe0"><circle class="em" cx="50" cy="60" r="1.6"/><circle class="em e2" cx="40" cy="74" r="1.3"/><circle class="em e3" cx="62" cy="80" r="1.5"/><circle class="em" cx="50" cy="90" r="1.1"/></g>',
-};
+// the damage is painted once per kind (noise, charring, cracks, frost…) and laid over the card as a mask, a shading layer and a glowing layer
+const ENDTEX = {};
+const nzHash = (x, y, sd) => { let h = (x * 374761393 + y * 668265263 + sd * 1274126177) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+const nzV = (x, y, sd) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); return nzHash(xi, yi, sd) * (1 - u) * (1 - v) + nzHash(xi + 1, yi, sd) * u * (1 - v) + nzHash(xi, yi + 1, sd) * (1 - u) * v + nzHash(xi + 1, yi + 1, sd) * u * v; };
+const nzF = (x, y, sd, o = 4) => { let a = 0.5, f = 1, t = 0; for (let i = 0; i < o; i++) { t += a * nzV(x * f, y * f, sd + i); f *= 2; a *= 0.5; } return t / 0.9375; };
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+function endTex(kind) {
+  if (ENDTEX[kind]) return ENDTEX[kind];
+  const CW = 200, CH = 290, mk = () => { const c = document.createElement('canvas'); c.width = CW; c.height = CH; return c; };
+  const mask = mk(), ov = mk(), gl = mk(), mg = mask.getContext('2d'), og = ov.getContext('2d'), gg = gl.getContext('2d');
+  mg.fillStyle = '#000'; mg.fillRect(0, 0, CW, CH);
+  const rnd = (() => { let sd = 7 + kind.length * 13; return () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }; })();
+  // per-pixel pass: fn(x, y, edgeDist) -> [maskAlpha 0-1, [r,g,b,a] shade, [r,g,b,a] glow]
+  const pix = (fn) => {
+    const mi = mg.getImageData(0, 0, CW, CH), oi = og.getImageData(0, 0, CW, CH), gi = gg.getImageData(0, 0, CW, CH);
+    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
+      const d = Math.min(x, CW - 1 - x, y, CH - 1 - y), r = fn(x, y, d), i = (y * CW + x) * 4;
+      mi.data[i + 3] = Math.round(clamp01(r[0]) * 255);
+      if (r[1]) { oi.data[i] = r[1][0]; oi.data[i + 1] = r[1][1]; oi.data[i + 2] = r[1][2]; oi.data[i + 3] = Math.round(clamp01(r[1][3]) * 255); }
+      if (r[2]) { gi.data[i] = r[2][0]; gi.data[i + 1] = r[2][1]; gi.data[i + 2] = r[2][2]; gi.data[i + 3] = Math.round(clamp01(r[2][3]) * 255); }
+    }
+    mg.putImageData(mi, 0, 0); og.putImageData(oi, 0, 0); gg.putImageData(gi, 0, 0);
+  };
+  const burnAround = (cx, cy, R, wob, chr, sd, power = 1) => (x, y, d) => {   // a ragged burn: consumed inside, glowing rim, charred margin
+    const ang = Math.atan2(y - cy, x - cx), rad = Math.hypot(x - cx, y - cy), n = nzF(Math.cos(ang) * 2.4 + 5, Math.sin(ang) * 2.4 + 5, sd) * 1.4 + nzF(x / 22, y / 22, sd + 9) * 0.9;
+    const q = (R * (0.65 + 0.55 * n * wob) - rad) * power;   // > 0 inside the burn
+    const consumed = q > 6, rim = Math.exp(-Math.pow((q - 3) / 3.2, 2)), char = clamp01((q + chr) / (chr + 4)), speck = nzF(x / 3, y / 3, sd + 20) > 0.66 ? 0.18 : 0;
+    return [consumed ? 0 : 1, q > -chr ? [8 + 20 * (1 - char), 5 + 10 * (1 - char), 3, clamp01(char * 0.93 + speck * (q > -chr ? 1 : 0))] : null, rim > 0.04 ? [255, 120 + 110 * rim, 30 + 50 * rim, rim * 0.95] : null];
+  };
+  const crackTree = (g, cg, x, y, ang, len, w, depth) => {
+    for (let i = 0; i < 6 && depth > 0; i++) {
+      ang += (rnd() - 0.5) * 0.9; const step = len * (0.12 + rnd() * 0.1), nx = x + Math.cos(ang) * step, ny = y + Math.sin(ang) * step;
+      if (g) { g.strokeStyle = 'rgba(8,4,2,.95)'; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(x, y); g.lineTo(nx, ny); g.stroke(); }
+      if (cg) { cg.strokeStyle = 'rgba(255,130,40,.9)'; cg.lineWidth = Math.max(0.8, w * 0.5); cg.lineCap = 'round'; cg.beginPath(); cg.moveTo(x, y); cg.lineTo(nx, ny); cg.stroke(); cg.strokeStyle = 'rgba(255,230,150,.9)'; cg.lineWidth = Math.max(0.5, w * 0.2); cg.beginPath(); cg.moveTo(x, y); cg.lineTo(nx, ny); cg.stroke(); }
+      if (rnd() < 0.42) crackTree(g, cg, nx, ny, ang + (rnd() < 0.5 ? 0.8 : -0.8), len * 0.6, w * 0.65, depth - 1);
+      x = nx; y = ny; w *= 0.86; if (x < -10 || x > CW + 10 || y < -10 || y > CH + 10) break;
+    }
+  };
+  if (kind === 'burnt') {
+    pix((x, y, d) => {
+      const n = nzF(x / 34, y / 34, 3) * 1.1 + nzF(x / 11, y / 11, 8) * 0.35, reach = 4 + 34 * n + 62 * Math.pow(y / CH, 2.6) * (0.4 + n), q = reach - d;
+      const consumed = q > 24, rim = Math.exp(-Math.pow((q - 21) / 3.4, 2)), char = clamp01((q + 22) / 26), speck = nzF(x / 2.5, y / 2.5, 40) > 0.7 ? 0.2 : 0;
+      return [consumed ? 0 : 1, q > -22 ? [10 + 22 * (1 - char), 6 + 10 * (1 - char), 4, clamp01(char * 0.94 + speck)] : null, rim > 0.04 ? [255, 110 + 120 * rim, 24 + 60 * rim, rim] : null];
+    });
+  } else if (kind === 'crater') {
+    pix(burnAround(168, 44, 118, 1, 34, 11));
+  } else if (kind === 'hole') {
+    pix(burnAround(104, 150, 66, 1, 36, 17));
+    og.save(); og.globalCompositeOperation = 'source-over'; for (let i = 0; i < 14; i++) { const a = rnd() * 6.283, r0 = 70 + rnd() * 14, r1 = r0 + 20 + rnd() * 36; og.strokeStyle = 'rgba(15,8,4,.55)'; og.lineWidth = 1.2 + rnd() * 1.6; og.beginPath(); og.moveTo(104 + Math.cos(a) * r0, 150 + Math.sin(a) * r0); og.lineTo(104 + Math.cos(a + (rnd() - 0.5) * 0.3) * r1, 150 + Math.sin(a + (rnd() - 0.5) * 0.3) * r1); og.stroke(); } og.restore();
+  } else if (kind === 'vapor') {
+    pix((x, y) => {
+      const cx = Math.floor(x / 6), cy = Math.floor(y / 6), rad = Math.hypot(x - 100, y - 145) / 165, f = rad + 0.34 * (nzF(cx / 4, cy / 4, 5) - 0.5) + 0.12 * (nzHash(cx, cy, 3) - 0.5);
+      const gone = f < 0.3, edge = Math.exp(-Math.pow((f - 0.32) / 0.05, 2));
+      return [gone ? 0 : f < 0.4 ? (nzHash(cx, cy, 8) > 0.45 ? 1 : 0.25) : 1, f < 0.5 ? [120, 255, 200, clamp01((0.5 - f) * 1.4) * 0.45] : null, edge > 0.05 ? [150 + 105 * edge, 255, 210 + 45 * edge, edge * 0.95] : null];
+    });
+  } else if (kind === 'cracked') {
+    for (let k = 0; k < 7; k++) crackTree(og, gg, 100 + (rnd() - 0.5) * 20, 150 + (rnd() - 0.5) * 20, k / 7 * 6.283 + rnd() * 0.5, 190, 5.2, 4);
+    pix2: { const oi = og.getImageData(0, 0, CW, CH); const sh = document.createElement('canvas'); sh.width = CW; sh.height = CH; const sg = sh.getContext('2d'); sg.filter = 'blur(5px)'; sg.drawImage(ov, 0, 0); og.save(); og.globalCompositeOperation = 'destination-over'; og.globalAlpha = 0.65; og.drawImage(sh, 0, 0); og.restore(); void oi; }
+  } else if (kind === 'claws') {
+    const gashes = [[34, 8, 66, 280], [92, 0, 126, 270], [150, 14, 176, 284]];
+    for (const [x0, y0, x1, y1] of gashes) {
+      const pts = []; for (let i = 0; i <= 22; i++) { const t = i / 22; pts.push([x0 + (x1 - x0) * t + (rnd() - 0.5) * 5, y0 + (y1 - y0) * t + (rnd() - 0.5) * 3, Math.sin(Math.PI * Math.pow(t, 0.8)) * 7 + 1]); }
+      const path = (g, k) => { g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); };
+      og.lineCap = 'round'; og.lineJoin = 'round'; og.strokeStyle = 'rgba(40,5,8,.45)'; og.lineWidth = 15; path(og); og.stroke();
+      mg.globalCompositeOperation = 'destination-out'; for (let i = 1; i < pts.length; i++) { mg.lineWidth = pts[i][2] * 1.5; mg.lineCap = 'round'; mg.beginPath(); mg.moveTo(pts[i - 1][0], pts[i - 1][1]); mg.lineTo(pts[i][0], pts[i][1]); mg.stroke(); } mg.globalCompositeOperation = 'source-over';
+      for (let i = 0; i < 40; i++) { const q = pts[Math.floor(rnd() * pts.length)], side = rnd() < 0.5 ? -1 : 1, l = 3 + rnd() * 7; og.strokeStyle = 'rgba(255,248,240,.8)'; og.lineWidth = 0.9; og.beginPath(); og.moveTo(q[0] + side * q[2] * 0.7, q[1]); og.lineTo(q[0] + side * (q[2] * 0.7 + l), q[1] + (rnd() - 0.5) * 6); og.stroke(); }
+      og.strokeStyle = 'rgba(120,10,24,.6)'; og.lineWidth = 3; path(og); og.stroke();
+    }
+  } else if (kind === 'zap') {
+    const bolt = (x, y, ang, len, w, depth) => { for (let i = 0; i < 9; i++) { ang += (rnd() - 0.5) * 0.7 + (depth === 3 ? (1.57 - ang) * 0.25 : 0); const st = len * 0.11, nx = x + Math.cos(ang) * st, ny = y + Math.sin(ang) * st; og.strokeStyle = 'rgba(10,6,4,.95)'; og.lineWidth = w; og.lineCap = 'round'; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke(); gg.strokeStyle = 'rgba(255,200,60,.75)'; gg.lineWidth = w * 1.8; gg.lineCap = 'round'; gg.beginPath(); gg.moveTo(x, y); gg.lineTo(nx, ny); gg.stroke(); gg.strokeStyle = 'rgba(255,255,230,.95)'; gg.lineWidth = Math.max(0.8, w * 0.45); gg.beginPath(); gg.moveTo(x, y); gg.lineTo(nx, ny); gg.stroke(); if (depth > 0 && rnd() < 0.36) bolt(nx, ny, ang + (rnd() < 0.5 ? 0.9 : -0.9), len * 0.55, w * 0.6, depth - 1); x = nx; y = ny; w *= 0.93; } };
+    bolt(96, -4, 1.57, 330, 6.5, 3);
+    pix2: { const oi = og.getImageData(0, 0, CW, CH); const sg = document.createElement('canvas'); sg.width = CW; sg.height = CH; const sx = sg.getContext('2d'); sx.filter = 'blur(7px)'; sx.drawImage(ov, 0, 0); og.save(); og.globalCompositeOperation = 'destination-over'; og.globalAlpha = 0.8; og.drawImage(sg, 0, 0); og.restore(); void oi; }
+  } else if (kind === 'bitten') {
+    const bites = [[-8, 70, 44], [208, 168, 50], [118, 296, 42], [58, -6, 36]];
+    for (const [bx, by, br] of bites) {
+      mg.globalCompositeOperation = 'destination-out'; mg.beginPath(); for (let i = 0; i <= 48; i++) { const a = i / 48 * 6.283, tooth = (i % 2 ? 1.1 : 0.94); mg.lineTo(bx + Math.cos(a) * br * tooth, by + Math.sin(a) * br * tooth); } mg.closePath(); mg.fill(); mg.globalCompositeOperation = 'source-over';
+      og.strokeStyle = 'rgba(255,255,255,.35)'; og.lineWidth = 2; og.beginPath(); for (let i = 0; i <= 48; i++) { const a = i / 48 * 6.283, tooth = (i % 2 ? 1.1 : 0.94); og.lineTo(bx + Math.cos(a) * (br * tooth + 3), by + Math.sin(a) * (br * tooth + 3)); } og.stroke();
+    }
+    og.fillStyle = 'rgba(50,130,220,.24)'; og.fillRect(0, 0, CW, CH);
+    const sheen = og.createLinearGradient(0, 0, CW, CH); sheen.addColorStop(0.2, 'rgba(255,255,255,0)'); sheen.addColorStop(0.35, 'rgba(255,255,255,.35)'); sheen.addColorStop(0.5, 'rgba(255,255,255,0)'); og.fillStyle = sheen; og.fillRect(0, 0, CW, CH);
+    for (let i = 0; i < 22; i++) { const x = rnd() * CW, y = rnd() * CH, r = 3 + rnd() * 6, dg = og.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); dg.addColorStop(0, 'rgba(255,255,255,.95)'); dg.addColorStop(0.35, 'rgba(190,225,255,.45)'); dg.addColorStop(1, 'rgba(20,70,150,.55)'); og.fillStyle = dg; og.beginPath(); og.ellipse(x, y, r * 0.85, r, 0, 0, 6.283); og.fill(); }
+  } else if (kind === 'frozen') {
+    pix((x, y, d) => {
+      const n = nzF(x / 26, y / 26, 6), cov = clamp01(1 - d / (22 + 58 * n)) , sp = nzF(x / 3, y / 3, 12) > 0.72 ? 0.5 : 0;
+      return [1, [225 + 25 * cov, 240 + 12 * cov, 255, clamp01(0.26 + cov * 0.62 + sp * 0.3)], null];
+    });
+    const fern = (x, y, ang, len, w, depth) => { if (depth <= 0 || len < 5) return; const nx = x + Math.cos(ang) * len, ny = y + Math.sin(ang) * len; og.strokeStyle = 'rgba(255,255,255,.88)'; og.lineWidth = w; og.lineCap = 'round'; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke(); for (const sd of [-1, 1]) fern(x + Math.cos(ang) * len * 0.55, y + Math.sin(ang) * len * 0.55, ang + sd * 0.75, len * 0.5, w * 0.7, depth - 1); fern(nx, ny, ang + (rnd() - 0.5) * 0.3, len * 0.7, w * 0.8, depth - 1); };
+    for (let i = 0; i < 9; i++) { const side = i % 4, px = side === 0 ? rnd() * CW : side === 1 ? CW : side === 2 ? rnd() * CW : 0, py = side === 0 ? 0 : side === 1 ? rnd() * CH : side === 2 ? CH : rnd() * CH; fern(px, py, Math.atan2(CH / 2 - py, CW / 2 - px) + (rnd() - 0.5) * 0.6, 54 + rnd() * 30, 2, 4); }
+    for (let i = 0; i < 8; i++) { const x = 14 + i * 24 + rnd() * 8, h = 36 + rnd() * 58, w = 9 + rnd() * 8, ig = og.createLinearGradient(x - w / 2, 0, x + w / 2, 0); ig.addColorStop(0, 'rgba(255,255,255,.95)'); ig.addColorStop(0.5, 'rgba(150,205,250,.85)'); ig.addColorStop(1, 'rgba(90,160,235,.9)'); og.fillStyle = ig; og.beginPath(); og.moveTo(x - w / 2, CH); og.lineTo(x + rnd() * 2 - 1, CH - h); og.lineTo(x + w / 2, CH); og.closePath(); og.fill(); og.strokeStyle = 'rgba(255,255,255,.95)'; og.lineWidth = 1.2; og.stroke(); }
+  } else if (kind === 'crushed') {
+    pix((x, y) => {
+      const dx = x - 100, dy = y - 150, rr = Math.hypot(dx, dy), dent = Math.exp(-rr * rr / 4800), ridge = Math.abs(nzF(x / 20, y / 20, 2) - 0.5) < 0.035 ? 0.34 : 0;
+      return [1, [20, 14, 10, clamp01(dent * 0.5 + ridge)], null];
+    });
+    for (let k = 0; k < 5; k++) crackTree(og, null, 100, 150, k / 5 * 6.283 + rnd() * 0.5, 120, 2.6, 2); og.globalAlpha = 0.6;
+    for (let i = 0; i < 12; i++) { const x = rnd() * CW, y = CH - rnd() * 22, r = 10 + rnd() * 16, dg = og.createRadialGradient(x, y, 0, x, y, r); dg.addColorStop(0, 'rgba(225,215,200,.75)'); dg.addColorStop(1, 'rgba(225,215,200,0)'); og.fillStyle = dg; og.beginPath(); og.arc(x, y, r, 0, 6.283); og.fill(); }
+  } else if (kind === 'warp') {
+    pix((x, y, d) => { const rr = Math.hypot(x - 100, y - 145) / 160; return [1, [30, 10, 70, clamp01(0.55 * (1 - rr) + 0.28 * (1 - d / 60 > 0 ? 1 - d / 60 : 0))], null]; });
+    og.save(); og.globalCompositeOperation = 'lighter'; for (let a = 0; a < 3; a++) { og.beginPath(); for (let i = 0; i <= 60; i++) { const q = i / 60, ang = a * 2.094 + q * 6.2, rr = 10 + q * 135, x = 100 + Math.cos(ang) * rr, y = 145 + Math.sin(ang) * rr * 1.2; i ? og.lineTo(x, y) : og.moveTo(x, y); } og.strokeStyle = 'rgba(200,150,255,.55)'; og.lineWidth = 5; og.stroke(); og.strokeStyle = 'rgba(255,230,255,.6)'; og.lineWidth = 1.5; og.stroke(); } og.restore();
+    const cg = og.createRadialGradient(100, 145, 0, 100, 145, 42); cg.addColorStop(0, 'rgba(0,0,0,1)'); cg.addColorStop(0.7, 'rgba(0,0,0,.85)'); cg.addColorStop(1, 'rgba(0,0,0,0)'); og.fillStyle = cg; og.beginPath(); og.arc(100, 145, 42, 0, 6.283); og.fill();
+    const rg = gg.createRadialGradient(100, 145, 20, 100, 145, 70); rg.addColorStop(0, 'rgba(255,230,190,.9)'); rg.addColorStop(0.5, 'rgba(190,120,255,.55)'); rg.addColorStop(1, 'rgba(120,60,255,0)'); gg.fillStyle = rg; gg.beginPath(); gg.arc(100, 145, 70, 0, 6.283); gg.fill();
+  } else if (kind === 'sliced') {
+    og.shadowColor = 'rgba(0,0,0,.6)'; og.shadowBlur = 6; og.shadowOffsetY = 3; paintShuriken(og, 114, 150, 34, 24, 1); og.shadowBlur = 0;
+    og.strokeStyle = 'rgba(255,255,255,.9)'; og.lineWidth = 1.6; og.beginPath(); og.moveTo(0, 116); og.lineTo(CW, 81); og.moveTo(0, 226); og.lineTo(CW, 186); og.stroke();
+    gg.strokeStyle = 'rgba(255,255,255,.85)'; gg.lineWidth = 5; gg.beginPath(); gg.moveTo(0, 116); gg.lineTo(CW, 81); gg.moveTo(0, 226); gg.lineTo(CW, 186); gg.stroke();
+  }
+  return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL() });
+}
 function tornCard(id, animate, as = null, cascade = 0, style = '') {
   const kind = ATK_ENDS[style];
   if (!kind) {
@@ -3540,16 +3626,20 @@ function tornCard(id, animate, as = null, cascade = 0, style = '') {
     if (cascade) box.style.setProperty('--cd', cascade + 'ms');   // the tear waits until everyone's card is over
     return box;
   }
+  const tex = endTex(kind);
   let box;
+  const mask = `url(${tex.mask})`;
   if (kind === 'sliced') {
     const piece = (n) => { const c = cardEl(id, { as }); c.classList.add('half', 'sl' + n); return c; };
     box = el('div', { class: 'tcard end e-sliced' + (animate ? ' tearing' : '') }, piece(1), piece(2), piece(3));
   } else {
-    const c = cardEl(id, { as }); c.classList.add('endc');
+    const c = cardEl(id, { as }); c.classList.add('endc'); c.style.webkitMaskImage = c.style.maskImage = mask; c.style.webkitMaskSize = c.style.maskSize = '100% 100%';
     box = el('div', { class: 'tcard end e-' + kind + (animate ? ' tearing' : '') }, c);
   }
-  const fx = el('div', { class: 'tfx' }); fx.innerHTML = '<svg viewBox="0 0 100 145" preserveAspectRatio="none" aria-hidden="true">' + (END_SVG[kind] || '') + '</svg>';
-  const svg = fx.firstChild; svg.innerHTML = uniqSvg(svg.innerHTML); box.append(fx);
+  const fx = el('div', { class: 'tfx' }); fx.style.backgroundImage = `url(${tex.ov})`; fx.style.backgroundSize = '100% 100%';
+  const gl = el('div', { class: 'tfg' }); gl.style.backgroundImage = `url(${tex.gl})`; gl.style.backgroundSize = '100% 100%';
+  if (kind !== 'sliced') { fx.style.webkitMaskImage = fx.style.maskImage = mask; fx.style.webkitMaskSize = fx.style.maskSize = '100% 100%'; }
+  box.append(fx, gl);
   if (cascade) box.style.setProperty('--cd', cascade + 'ms');
   return box;
 }
