@@ -436,9 +436,9 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 18px rgba(242,193,78,.35) !important; animation: nbpulse 2.2s ease-in-out infinite; transition: transform .15s; }
   .nbbtn:active { transform: scale(.96); }
   .nbbtn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.65) 50%, transparent 65%); transform: translateX(-130%); animation: nbsheen 3.2s 1s ease-in-out infinite; pointer-events: none; }
-  .nbi { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(60,35,0,.16); box-shadow: inset 0 1px 1px rgba(0,0,0,.15); } .nbbtn .ic { color: #3a2706 !important; }
+  .nbi { width: 26px; height: 26px; display: block; line-height: 0; flex: none; filter: drop-shadow(0 1px 1.5px rgba(80,45,0,.35)); }
   .nbbtn.on { color: #fff !important; background: linear-gradient(180deg, #6fe0a0, #2fa866 60%, #208a50) !important; border-color: rgba(190,255,215,.8) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 6px 18px rgba(47,168,102,.35) !important; animation: nbpop .4s cubic-bezier(.2,1.6,.4,1); text-shadow: 0 1px 1px rgba(0,0,0,.2); }
-  .nbbtn.on::after { display: none; } .nbbtn.on .nbi { background: rgba(255,255,255,.25); } .nbbtn.on .ic { color: #fff !important; }
+  .nbbtn.on::after { display: none; } .nbbtn.on .nbi { filter: drop-shadow(0 1px 2px rgba(0,60,30,.4)); }
   @keyframes nbpulse { 0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 18px rgba(242,193,78,.3); } 50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 26px rgba(242,193,78,.6), 0 0 0 4px rgba(242,193,78,.12); } }
   @keyframes nbsheen { 0% { transform: translateX(-130%); } 35%, 100% { transform: translateX(130%); } }
   @keyframes nbpop { 0% { transform: scale(.9); } 100% { transform: none; } }
@@ -4339,6 +4339,12 @@ function finalPanel(active) {
   if (finalOpen) det.querySelector('.fd-h').textContent = t('hideBoard');
   return el('div', { class: 'panel final' + (stageEnter ? ' stage-enter' : '') }, nextRoundBar(active), hall, recap, det);
 }
+// full-colour icons for the Ready button: a fan of two playing cards, then a glossy tick
+const NB_SVG = {
+  cards: '<defs><linearGradient id="nbc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e9e3d6"/></linearGradient></defs><g transform="rotate(-14 13 22)"><rect x="4" y="6" width="15" height="21" rx="2.6" fill="url(#nbc)" stroke="#b9ae98" stroke-width=".9"/><path d="M11.5 12.2c1.6-2.6 4.6-1 3.2 1.3l-3.2 3.6-3.2-3.6c-1.4-2.3 1.6-3.9 3.2-1.3z" fill="#e0353b"/><text x="6.2" y="11" font-size="5" font-weight="800" fill="#e0353b" font-family="Inter,system-ui,sans-serif">A</text></g><g transform="rotate(12 19 22)"><rect x="13" y="5" width="15" height="21" rx="2.6" fill="url(#nbc)" stroke="#b9ae98" stroke-width=".9"/><path d="M20.5 10.6c-1.3 2.4-4.4 3.8-4.4 6.2 0 1.5 1.6 2.4 3.1 1.6l-.6 2.2h3.8l-.6-2.2c1.5.8 3.1-.1 3.1-1.6 0-2.4-3.1-3.8-4.4-6.2z" fill="#1d2233"/><text x="15.2" y="10" font-size="5" font-weight="800" fill="#1d2233" font-family="Inter,system-ui,sans-serif">K</text></g>',
+  tick: '<defs><radialGradient id="nbt" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9f7e6"/></radialGradient></defs><circle cx="16" cy="16" r="13" fill="url(#nbt)"/><circle cx="16" cy="16" r="13" fill="none" stroke="#bff0d3" stroke-width="1"/><path d="M9.8 16.4l4.2 4.2 8.4-8.6" fill="none" stroke="#1f9a58" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="12" cy="10" rx="4.2" ry="2" fill="#fff" opacity=".7" transform="rotate(-30 12 10)"/>',
+};
+function nbIcon(on) { const w = el('span', { class: 'nbi' }); w.innerHTML = uniqSvg(`<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">${NB_SVG[on ? 'tick' : 'cards']}</svg>`); return w; }
 // everyone taps Ready for another round; when the last one does, the next round is dealt (the host can still deal straight away from the top)
 function nextRoundBar(active) {
   const me = active.find((p) => p.id === st.meId); if (!me) return '';
@@ -4346,7 +4352,7 @@ function nextRoundBar(active) {
   return el('div', { class: 'nextbar' + (mine ? ' on' : '') },
     el('div', { class: 'nb-l' }, el('b', {}, t('nextT')), el('small', {}, el('b', { class: 'nb-n' }, t('nextN', { n, of: active.length })), ' · ', t('nextHint'))),
     el('div', { class: 'nb-avs' }, ...active.map((p) => el('span', { class: 'nb-av' + (p.nextReady ? ' r' : ''), title: p.name }, avatarEl(p.avatar, 26, '', p.acc, p.bd)))),
-    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : ''), 'aria-pressed': String(!!mine), onclick: () => { me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, el('span', { class: 'nbi' }, icon(mine ? 'check' : 'cards', 16)), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
+    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : ''), 'aria-pressed': String(!!mine), onclick: () => { me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, nbIcon(mine), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
 }
 let finalOpen = false;
 
