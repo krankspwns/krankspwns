@@ -3537,6 +3537,7 @@ function predSchedule(win) {
     if (pnl) { pnl.classList.add('pp-out'); setTimeout(go, 240); } else go();
   }, win.until - now + 20));
 }
+let predAwait = 0;
 function stagePanel(active) {
   const row = Math.min(stageRow ?? st.currentRow ?? 0, 4);
   if (row >= 4) return finalPanel(active);
@@ -3550,8 +3551,11 @@ function stagePanel(active) {
   const openedN = active.filter(upOf).length;
   const win = !res && isCurrent && st.predWin && active.length >= 2 ? st.predWin : null;
   predSchedule(win);
-  const guessing = !!win && serverNow() < win.until;   // nobody opens the row while guesses are being made
-  const guessOpen = !!win && serverNow() >= win.from - 200 && serverNow() < win.until;   // the picker appears already usable
+  // the last "ready" is shown at once, a beat before the server's reply carries the guessing window: that beat must not show the face-down cards
+  const waitingWin = !win && !res && isCurrent && row === 0 && !st.predWin && !st.allReady && active.length >= 2 && active.every((p) => p.ready) && (predAwait = predAwait || Date.now(), Date.now() - predAwait < 6000);
+  if (!waitingWin) predAwait = 0;
+  const guessing = waitingWin || (!!win && serverNow() < win.until);   // nobody opens the row while guesses are being made
+  const guessOpen = !waitingWin && !!win && serverNow() >= win.from - 200 && serverNow() < win.until;   // the picker appears already usable
 
   const dots = el('div', { class: 'sdots' });
   for (let r = 0; r < 4; r++) {
