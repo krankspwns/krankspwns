@@ -626,12 +626,12 @@
   .qrcode { font-size: 28px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; color: var(--gold-hi); margin: 14px 0 4px; }
   .gamehead { position: relative; z-index: 30; }
   .rs { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px 2px; padding-top: 10px; margin-bottom: -4px; border-top: 1px solid var(--line); }
-  .rsp { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 68px; padding: 4px 2px; border-radius: 12px; cursor: default; -webkit-tap-highlight-color: transparent; }
+  .rsp { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 76px; padding: 4px 2px; border-radius: 12px; cursor: default; -webkit-tap-highlight-color: transparent; }
   .rsp.hit { cursor: pointer; } .rsp.hit:active .rsav { transform: scale(.92); }
   .rsav { display: grid; place-items: center; padding: 3px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); transition: border-color .25s, box-shadow .25s, transform .15s; }
   .rsp.ready .rsav { border-color: var(--green); box-shadow: 0 0 10px rgba(111,207,151,.55); }
-  .rsp.me .rsn { font-weight: 800; }
-  .rsn { max-width: 100%; font-size: 11px; line-height: 1.15; color: var(--text); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rsp.me .rsn { color: var(--gold, #e8c46a); }
+  .rsn { max-width: 100%; font-size: 11px; line-height: 1.15; color: var(--text); text-align: center; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
   .invwrap { position: relative; display: inline-flex; } .invwrap > button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .invwrap .caret { flex: none; display: block; } .invwrap .caret { margin-left: 0; transition: transform .2s; } .invwrap .caret.up { transform: rotate(180deg); }
   .invmenu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 190px; z-index: 40; padding: 6px; border-radius: 14px; background: rgba(var(--panel),1); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); display: grid; gap: 4px; animation: boxpop .2s ease backwards; }
   .invmenu button { color: #f3ecda !important; display: flex !important; align-items: center; gap: 8px; width: 100%; flex: none !important; justify-content: flex-start; padding: 11px 12px !important; font-size: 13px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 10px !important; } .invmenu button:hover { background: rgba(255,255,255,.08) !important; filter: none; transform: none; }
@@ -3730,7 +3730,7 @@ function rosterStrip() {
     const b = el('button', { type: 'button', class: 'rsp' + (p.ready ? ' ready' : '') + (me ? ' me' : '') + (canThrow && !me ? ' hit' : ''), 'data-pid': p.id, title: p.name + (p.ready ? ' · ' + t('pillReady') : ''),
       onclick: (e) => { if (me || !canThrow) return; e.stopPropagation(); giftTarget = p.id; giftPick = null; giftTrayOpen = true; syncEmoteUi(); } },
       el('span', { class: 'rsav' }, avatarEl(p.avatar, 40, '', p.acc, p.bd)),
-      el('span', { class: 'rsn' }, p.name + (me ? t('you') : '')));
+      el('span', { class: 'rsn' }, p.name));
     return b;
   }));
 }
