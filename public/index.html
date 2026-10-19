@@ -1467,7 +1467,10 @@ const GIFT_SVG = {
   petal: '<path d="M24 4c10 6 14 16 10 26-3 8-10 12-10 14C24 42 17 38 14 30 10 20 14 10 24 4z" fill="#e8365a"/><path d="M24 4c-4 8-4 22 0 40" stroke="#b81d3d" stroke-width="2" fill="none"/>',
   burst: '<path d="M24 2l5 12 11-7-4 13 12 3-11 6 7 10-13-2-2 13-5-11-9 9 1-13-13 2 9-9L4 19l13-3-3-12 10 7z" fill="#ffb02e"/><path d="M24 11l3.500 8 8-4.500-3 8.500 8 3-8.500 3 4.500 8-9-1.500L25 44l-3.500-8.500-7 5.500 1.500-9L7 30l8-3.500-4-7.500 9 2z" fill="#ff5a3c"/><circle cx="24" cy="26" r="7" fill="#ffe27a"/>',
 };
-const giftEl = (k, size = 40) => { const w = el('span', { class: 'giftart' }); w.style.cssText = `display:inline-block;width:${size}px;height:${size}px;line-height:0`; w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true">${GIFT_SVG[k] || ''}</svg>`; return w; };
+const giftEl = (k, size = 40) => { const w = el('span', { class: 'giftart' }); w.style.cssText = `display:inline-block;width:${size}px;height:${size}px;line-height:0`; w.innerHTML = uniqSvg(`<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true">${GIFT_SVG[k] || ''}</svg>`); return w; };
+// gradients inside inline SVGs are found by id, and the same id on many avatars lets the browser pick one that is hidden or gone (the face then shows see-through): every drawing gets ids of its own
+let svgUid = 0;
+const uniqSvg = (h) => { const n = ++svgUid; const ids = [...h.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]); for (const id of ids) h = h.split(`id="${id}"`).join(`id="${id}_${n}"`).split(`url(#${id})`).join(`url(#${id}_${n})`).split(`href="#${id}"`).join(`href="#${id}_${n}"`); return h; };
 const avBg = (k) => (AVATARS[k] || AVATARS.cat)[0];
 // small per-animal nudge so every face sits in the middle of its circle: [scale, x, y]
 const AV_FIT = { fox: [0.93, 0, 1], lion: [0.92, 0, -2.4], monkey: [0.9, 0, 0.6], rabbit: [1, 0, 0] };
@@ -1476,11 +1479,12 @@ function avatarEl(key, size = 40, cls = '', acc = '', bd = '') {
   const w = el('span', { class: 'av avatar ' + cls + (BORDERS.includes(bd) ? ' bd bd-' + bd : '') + (LEGEND_KEYS.includes(key) ? ' legend' + (size >= 36 ? ' live' : '') : '') });
   if (BORDERS.includes(bd)) w.style.padding = Math.min(10, Math.max(1.5, size * 0.075)) + 'px';
   w.style.width = w.style.height = size + 'px';
-  w.style.setProperty('--avbg', bg);   // the disc is also painted by CSS, so a browser that drops the SVG's own circle never shows a see-through face
+  if (!/^url\(/.test(bg)) w.style.setProperty('--avbg', bg);   // the disc is also painted by CSS, so a browser that drops the SVG's own circle never shows a see-through face
   w.dataset.k = key; w.dataset.acc = acc || ''; w.dataset.bd = bd || '';   // what a long press needs to draw it large
   w.onclick = () => {};   // a real click target, so a touch lands on the animal rather than being pulled to the badge beside it
   w.style.setProperty('--d', (-Math.random() * 6).toFixed(2) + 's');   // every avatar breathes and blinks on its own rhythm
   w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${AV_FIT[key] ? `<g transform="translate(${(24 - 24 * AV_FIT[key][0] + AV_FIT[key][1]).toFixed(2)} ${(24 - 24 * AV_FIT[key][0] + AV_FIT[key][2]).toFixed(2)}) scale(${AV_FIT[key][0]})">${body}</g>` : body}${ACC[acc] ? accFit(key, acc) : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
+  if (w.innerHTML.includes(" id=\"") || w.innerHTML.includes("id=\"")) w.innerHTML = uniqSvg(w.innerHTML);
   return w;
 }
 // hold any avatar to see it big (about 80% of the screen width)
