@@ -207,6 +207,7 @@
   @keyframes bannerin { from { transform: translateY(-40px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
   .lastbanner::before { content:''; position:absolute; inset:0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%); background-size: 250% 100%; animation: sheen 3s linear infinite; }
   @keyframes sheen { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  .lastbanner.still { animation: none; }
   .lastbanner .lb-k { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-hi); position: relative; }
   .lastbanner .lb-name { font-size: clamp(30px, 8vw, 54px); font-weight: 800; line-height: 1.1; margin: 4px 0 2px; color: #fff; position: relative; animation: namepulse 1.4s ease-in-out infinite; word-break: break-word; }
   @keyframes namepulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
@@ -3360,12 +3361,26 @@ function lastBanner() {
   const left = bannerRemaining();
   if (left <= 0) return null;
   if (confettiAt !== st.allReady.at) { confettiAt = st.allReady.at; if (left > BANNER_SECONDS - 6) burstConfetti(); }
-  return el('div', { class: 'lastbanner', id: 'lastbanner' },
+  // one banner element for the whole 20 s: a redraw of the page re-attaches it instead of rebuilding it, so its entrance, shine and pulse never restart mid-way
+  const key = st.allReady.at + ':' + (st.allReady.timer ? 't' : 'r') + ':' + lang;
+  if (bannerNode && bannerKey === key) {
+    const nm = bannerNode.querySelector('.lb-name'), names = lastNames(); if (nm && nm.textContent !== names) nm.textContent = names;
+    bannerNode.querySelector('#lb-sec').textContent = t('secs', { n: Math.ceil(left) }); bannerNode.querySelector('#lb-fill').style.width = (left / BANNER_SECONDS) * 100 + '%';
+    phaseBanner(bannerNode); if (Date.now() - bannerT0 > 750) bannerNode.classList.add('still');
+    return bannerNode;
+  }
+  bannerKey = key; bannerT0 = Date.now(); bannerP0 = performance.now();
+  bannerNode = el('div', { class: 'lastbanner', id: 'lastbanner' },
     el('div', { class: 'lb-k' }, t(st.allReady.timer ? 'timesUpK' : 'bannerK')),
     el('div', { class: 'lb-name' }, lastNames()),
     el('div', { class: 'lb-s', id: 'lb-sec' }, t('secs', { n: Math.ceil(left) })),
     el('div', { class: 'lb-bar' }, el('i', { id: 'lb-fill', style: `width:${(left / BANNER_SECONDS) * 100}%` })));
+  phaseBanner(bannerNode); const mine = bannerNode; setTimeout(() => mine.classList.add('still'), 900);
+  return bannerNode;
 }
+// a re-attached node restarts its CSS animations: the shine and the name pulse are put back to where they would be had the banner never been redrawn
+const phaseBanner = (n) => queueMicrotask(() => { if (!n.isConnected) return; const base = document.timeline.currentTime - (performance.now() - bannerP0); for (const a of n.getAnimations({ subtree: true })) if (a.animationName === 'sheen' || a.animationName === 'namepulse') a.startTime = base; });
+let bannerNode = null, bannerKey = '', bannerT0 = 0, bannerP0 = 0;
 
 // keeps the banner countdown moving and removes it when the 20 seconds are up
 function bannerTick() {
