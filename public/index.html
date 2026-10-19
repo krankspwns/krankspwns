@@ -462,8 +462,17 @@
   .tcard.e-sliced.tearing .card.half { animation: none; } .tcard.e-sliced.tearing .card.half { animation: slin .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; }
   @keyframes slin { from { transform: none; } }
   .e-warp .endc { filter: hue-rotate(250deg) saturate(.7) brightness(.85); } .e-warp .tfg { animation: lavapulse 1.4s ease-in-out infinite alternate; }
-  .e-crushed .endc, .e-crushed .tfx { transform: scaleY(.64) translateY(26%); transform-origin: 50% 100%; } .e-crushed .endc { filter: grayscale(.4) brightness(.82); }
-  .e-frozen .endc { filter: hue-rotate(185deg) saturate(.7) brightness(1.1) blur(.45px); } .tcard.end.e-frozen .tfx, .tcard.end.e-frozen .tfg { inset: auto; left: -10%; top: -6.9%; width: 120%; height: 120.7%; } .e-frozen .tfg { animation: lavapulse 1.3s ease-in-out infinite alternate; }
+  .tcard.e-fold { perspective: 520px; }
+  .e-fold .fp { position: absolute; inset: 0; } .e-fold .fp .card { position: absolute; inset: 0; box-shadow: none; } .e-fold .fsh { position: absolute; inset: 0; }
+  .e-fold .fp1 { clip-path: polygon(0 0, 76% 0, 100% 16%, 100% 33.4%, 0 33.4%); transform-origin: 50% 33.4%; transform: rotateX(36deg); }
+  .e-fold .fp2 { clip-path: inset(33.3% 0 33.3% 0); transform-origin: 50% 33.3%; transform: rotateX(-36deg); }
+  .e-fold .fp3 { clip-path: inset(66.6% 0 0 0); transform-origin: 50% 66.6%; transform: translateY(calc(var(--cw) * -.09)) rotateX(36deg); }
+  .e-fold .fp1 .fsh { background: linear-gradient(180deg, rgba(255,255,255,.1), rgba(0,0,0,.34)); } .e-fold .fp2 .fsh { background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(0,0,0,.5)); } .e-fold .fp3 .fsh { background: linear-gradient(180deg, rgba(0,0,0,.34), rgba(255,255,255,.1) 55%); }
+  .e-fold .fp2 .fsh::before, .e-fold .fp2 .fsh::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.95), transparent); } .e-fold .fp2 .fsh::before { top: 33.3%; } .e-fold .fp2 .fsh::after { top: 66.6%; }
+  .e-fold .fp1 .card, .e-fold .fp2 .card, .e-fold .fp3 .card { filter: grayscale(.25) brightness(.92) contrast(1.05); }
+  .e-fold .dogear { position: absolute; left: 76%; top: 0; width: 24%; height: 16%; clip-path: polygon(0 0, 100% 100%, 0 100%); background: repeating-linear-gradient(45deg, #1d2f66 0 3px, #2c4690 3px 6px); box-shadow: -3px 3px 6px rgba(0,0,0,.5); filter: drop-shadow(-2px 2px 2px rgba(0,0,0,.5)); }
+  .tcard.e-fold.tearing { animation: foldin .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.2,.4,1) backwards; } @keyframes foldin { from { transform: scale(1.1, 1.25); filter: brightness(1.8); } }
+  .e-frozen .endc { filter: hue-rotate(185deg) saturate(.75) brightness(1.1); } .tcard.end.e-frozen .tfx, .tcard.end.e-frozen .tfg { inset: auto; left: -25%; top: -19%; width: 150%; height: 137.9%; } .e-frozen .tfg { animation: lavapulse 1.3s ease-in-out infinite alternate; }
   .tcard.tearing .card.half { animation: tear .9s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.5,.4,1) backwards; }
   @keyframes tear { from { transform: none; filter: none; } 30% { transform: translate(0, -4px) scale(1.04); filter: none; } }
   /* "you lose" pop-up: red flash, spiky burst, slam and shake */
@@ -3518,7 +3527,7 @@ const nzF = (x, y, sd, o = 4) => { let a = 0.5, f = 1, t = 0; for (let i = 0; i 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 function endTex(kind) {
   if (ENDTEX[kind]) return ENDTEX[kind];
-  const big = kind === 'frozen', CW = big ? 240 : 200, CH = big ? 350 : 290, mk = () => { const c = document.createElement('canvas'); c.width = CW; c.height = CH; return c; };
+  const big = kind === 'frozen', CW = big ? 300 : 200, CH = big ? 400 : 290, mk = () => { const c = document.createElement('canvas'); c.width = CW; c.height = CH; return c; };
   const mask = mk(), ov = mk(), gl = mk(), mg = mask.getContext('2d'), og = ov.getContext('2d'), gg = gl.getContext('2d');
   mg.fillStyle = '#000'; mg.fillRect(0, 0, CW, CH);
   const rnd = (() => { let sd = 7 + kind.length * 13; return () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }; })();
@@ -3534,7 +3543,8 @@ function endTex(kind) {
     mg.putImageData(mi, 0, 0); og.putImageData(oi, 0, 0); gg.putImageData(gi, 0, 0);
   };
   const burnAround = (cx, cy, R, wob, chr, sd, power = 1) => (x, y, d) => {   // a ragged burn: consumed inside, glowing rim, charred margin
-    const ang = Math.atan2(y - cy, x - cx), rad = Math.hypot(x - cx, y - cy), n = nzF(Math.cos(ang) * 2.4 + 5, Math.sin(ang) * 2.4 + 5, sd) * 1.4 + nzF(x / 22, y / 22, sd + 9) * 0.9;
+    const rad = Math.hypot(x - cx, y - cy); if (rad > R * 1.9 + chr + 8) return [1, null, null];
+    const ang = Math.atan2(y - cy, x - cx), n = nzF(Math.cos(ang) * 2.4 + 5, Math.sin(ang) * 2.4 + 5, sd) * 1.4 + nzF(x / 22, y / 22, sd + 9) * 0.9;
     const q = (R * (0.65 + 0.55 * n * wob) - rad) * power;   // > 0 inside the burn
     const consumed = q > 6, rim = Math.exp(-Math.pow((q - 3) / 3.2, 2)), char = clamp01((q + chr) / (chr + 4)), speck = nzF(x / 3, y / 3, sd + 20) > 0.66 ? 0.18 : 0;
     return [consumed ? 0 : 1, q > -chr ? [8 + 20 * (1 - char), 5 + 10 * (1 - char), 3, clamp01(char * 0.93 + speck * (q > -chr ? 1 : 0))] : null, rim > 0.04 ? [255, 120 + 110 * rim, 30 + 50 * rim, rim * 0.95] : null];
@@ -3599,26 +3609,32 @@ function endTex(kind) {
     };
     feather(150, 236, -0.55, 74); feather(40, 66, 2.45, 60);
   } else if (kind === 'zap') {
-    const e1 = burnAround(100, 0, 42, 1, 26, 31), e2 = burnAround(104, CH, 30, 1, 22, 33);
+    const spots = [[58, 120, 11], [148, 96, 14], [120, 198, 16], [50, 226, 9], [154, 164, 10], [98, 72, 8], [86, 150, 7]];   // where the current punched through
+    const fns = [burnAround(100, 0, 40, 1, 26, 31), burnAround(104, CH, 28, 1, 22, 33), ...spots.map((sp, i) => burnAround(sp[0], sp[1], sp[2], 1, 13, 50 + i * 3))];
     pix((x, y, d) => {
-      const a = e1(x, y, d), b = e2(x, y, d), pick = (u, v) => (!u ? v : !v ? u : u[3] >= v[3] ? u : v), halo = clamp01(1 - Math.hypot(x - 100, y - 150) / 190);
-      const sh = pick(a[1], b[1]);
-      return [Math.min(a[0], b[0]), sh || [30, 20, 14, halo * halo * 0.16], pick(a[2], b[2])];
+      let m = 1, sh = null, gl = null; const halo = clamp01(1 - Math.hypot(x - 100, y - 150) / 190);
+      for (const f of fns) { const r = f(x, y, d); m = Math.min(m, r[0]); if (r[1] && (!sh || r[1][3] > sh[3])) sh = r[1]; if (r[2] && (!gl || r[2][3] > gl[3])) gl = r[2]; }
+      return [m, sh || [30, 20, 14, halo * halo * 0.14], gl];
     });
     const tmp = document.createElement('canvas'); tmp.width = CW; tmp.height = CH; const tg = tmp.getContext('2d');
-    const bolt = (x, y, ang, len, w, depth) => {
-      for (let i = 0; i < 12; i++) {
-        ang += (rnd() - 0.5) * 0.62 + (depth >= 3 ? (1.57 - ang) * 0.2 : 0); const st = len * 0.09, nx = x + Math.cos(ang) * st, ny = y + Math.sin(ang) * st;
-        og.lineCap = 'round'; og.strokeStyle = 'rgba(70,38,18,.3)'; og.lineWidth = w * 3.4; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke();
-        og.strokeStyle = 'rgba(14,8,5,.95)'; og.lineWidth = w * 1.5; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke();
-        tg.lineCap = 'round'; tg.strokeStyle = 'rgba(120,175,255,.85)'; tg.lineWidth = w * 2.2; tg.beginPath(); tg.moveTo(x, y); tg.lineTo(nx, ny); tg.stroke(); tg.strokeStyle = 'rgba(255,255,255,1)'; tg.lineWidth = Math.max(0.9, w * 0.7); tg.beginPath(); tg.moveTo(x, y); tg.lineTo(nx, ny); tg.stroke();
-        if (rnd() < 0.06) { og.fillStyle = 'rgba(255,170,60,.9)'; og.beginPath(); og.arc(nx + (rnd() - 0.5) * 6, ny + (rnd() - 0.5) * 6, 0.9 + rnd(), 0, 6.283); og.fill(); }
-        if (depth > 0 && rnd() < 0.24) bolt(nx, ny, ang + (rnd() < 0.5 ? 1 : -1) * (0.5 + rnd() * 0.7), len * 0.55, w * 0.62, depth - 1);
-        x = nx; y = ny; w *= 0.95; if (x < -10 || x > CW + 10 || y < -10 || y > CH + 10) break;
+    const seg = (x, y, nx, ny, w) => {
+      og.lineCap = 'round'; og.strokeStyle = 'rgba(70,38,18,.28)'; og.lineWidth = w * 3.4; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke();
+      og.strokeStyle = 'rgba(14,8,5,.95)'; og.lineWidth = w * 1.5; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke();
+      tg.lineCap = 'round'; tg.strokeStyle = 'rgba(110,170,255,.9)'; tg.lineWidth = w * 2.4; tg.beginPath(); tg.moveTo(x, y); tg.lineTo(nx, ny); tg.stroke(); tg.strokeStyle = '#fff'; tg.lineWidth = Math.max(0.9, w * 0.75); tg.beginPath(); tg.moveTo(x, y); tg.lineTo(nx, ny); tg.stroke();
+    };
+    const bolt = (x, y, ang, len, w, depth, tx, ty) => {
+      for (let i = 0; i < 14; i++) {
+        const steer = tx !== undefined ? Math.atan2(ty - y, tx - x) : 1.57; let da = steer - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); ang += (rnd() - 0.5) * 0.7 + da * 0.22;
+        const st = len * 0.075, nx = x + Math.cos(ang) * st, ny = y + Math.sin(ang) * st; seg(x, y, nx, ny, w);
+        if (depth > 0 && rnd() < 0.22) bolt(nx, ny, ang + (rnd() < 0.5 ? 1 : -1) * (0.5 + rnd() * 0.7), len * 0.5, w * 0.6, depth - 1);
+        x = nx; y = ny; w *= 0.96; if (tx !== undefined && Math.hypot(tx - x, ty - y) < 8) break; if (x < -10 || x > CW + 10 || y < -10 || y > CH + 10) break;
       }
     };
-    bolt(98, 4, 1.57, 330, 5.4, 3); bolt(106, 6, 1.52, 200, 2.4, 2);
-    gg.shadowColor = 'rgba(120,175,255,1)'; gg.shadowBlur = 12; gg.drawImage(tmp, 0, 0); gg.shadowBlur = 0; gg.drawImage(tmp, 0, 0);
+    bolt(98, 2, 1.57, 360, 5.6, 3, 104, CH - 6);
+    bolt(110, 4, 1.5, 200, 2.6, 2);
+    for (let i = 0; i < spots.length - 1; i += 1) { const a = spots[i], b = spots[(i + 2) % spots.length]; if (rnd() < 0.7) bolt(a[0], a[1], Math.atan2(b[1] - a[1], b[0] - a[0]), Math.hypot(b[0] - a[0], b[1] - a[1]) * 1.1, 1.8, 0, b[0], b[1]); }   // arcs jumping from hole to hole
+    for (const sp of spots) { const sg = tg.createRadialGradient(sp[0], sp[1], 0, sp[0], sp[1], sp[2] * 2.4); sg.addColorStop(0, 'rgba(255,255,255,.85)'); sg.addColorStop(1, 'rgba(120,175,255,0)'); tg.fillStyle = sg; tg.beginPath(); tg.arc(sp[0], sp[1], sp[2] * 2.4, 0, 6.283); tg.fill(); }
+    gg.shadowColor = 'rgba(120,175,255,1)'; gg.shadowBlur = 14; gg.drawImage(tmp, 0, 0); gg.shadowBlur = 0; gg.drawImage(tmp, 0, 0);
   } else if (kind === 'bitten') {
     const bites = [[-8, 70, 44], [208, 168, 50], [118, 296, 42], [58, -6, 36]];
     for (const [bx, by, br] of bites) {
@@ -3629,25 +3645,32 @@ function endTex(kind) {
     const sheen = og.createLinearGradient(0, 0, CW, CH); sheen.addColorStop(0.2, 'rgba(255,255,255,0)'); sheen.addColorStop(0.35, 'rgba(255,255,255,.35)'); sheen.addColorStop(0.5, 'rgba(255,255,255,0)'); og.fillStyle = sheen; og.fillRect(0, 0, CW, CH);
     for (let i = 0; i < 22; i++) { const x = rnd() * CW, y = rnd() * CH, r = 3 + rnd() * 6, dg = og.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); dg.addColorStop(0, 'rgba(255,255,255,.95)'); dg.addColorStop(0.35, 'rgba(190,225,255,.45)'); dg.addColorStop(1, 'rgba(20,70,150,.55)'); og.fillStyle = dg; og.beginPath(); og.ellipse(x, y, r * 0.85, r, 0, 0, 6.283); og.fill(); }
   } else if (kind === 'frozen') {
-    const sx0 = 4, sy0 = 4, sw = 232, sh = 316, sr = 28;   // the slab, with the card sitting in its middle (20..220 x 20..310)
-    const slabSd = (x, y) => { const qx = Math.abs(x - (sx0 + sw / 2)) - (sw / 2 - sr), qy = Math.abs(y - (sy0 + sh / 2)) - (sh / 2 - sr); return -(Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - sr); };
+    const X0 = 50, Y0 = 55, X1 = 250, Y1 = 345;   // the card sits in the middle of the canvas, the crystals grow out past its edges
     pix((x, y) => {
-      const sd = slabSd(x, y); if (sd < 0) return [1, null, null];
-      const bev = clamp01(1 - sd / 15), rime = clamp01(1 - sd / (24 + 34 * nzF(x / 11, y / 11, 6))), cry = nzF(x / 3.5, y / 3.5, 13) > 0.62 ? 1 : 0;
-      const gloss = Math.exp(-Math.pow(((x - y * 0.6) - 22) / 26, 2)) * 0.2 + Math.exp(-Math.pow(((x - y * 0.6) - 126) / 9, 2)) * 0.2, deep = clamp01(y / CH);
-      const a = clamp01(0.11 + 0.1 * deep + bev * 0.5 + rime * (0.28 + cry * 0.22) + gloss), w = clamp01(bev * 0.7 + rime * 0.6 + gloss * 2);
-      return [1, [168 + 87 * w, 212 + 43 * w, 252 + 3 * w, a], null];
+      const dd = Math.min(x - X0, X1 - x, y - Y0, Y1 - y); if (dd < 0) return [1, null, null];
+      const n = nzF(x / 9, y / 9, 6), rime = clamp01(1 - dd / (16 + 46 * n)), cry = nzF(x / 3, y / 3, 13) > 0.6 ? 1 : 0, gloss = Math.exp(-Math.pow(((x - y * 0.6) - 40) / 34, 2)) * 0.18;
+      const glow = clamp01(1 - dd / 26) * 0.28, a = clamp01(0.08 + rime * (0.5 + cry * 0.28) + glow + gloss), w = clamp01(rime * 0.9 + gloss * 2);
+      return [1, [150 + 105 * w, 205 + 50 * w, 250 + 5 * w, a], null];
     });
-    og.lineJoin = 'round'; const rr = (g, x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
-    const rim = og.createLinearGradient(0, 0, CW, CH); rim.addColorStop(0, 'rgba(255,255,255,.98)'); rim.addColorStop(0.5, 'rgba(150,205,255,.7)'); rim.addColorStop(1, 'rgba(255,255,255,.95)'); og.strokeStyle = rim; og.lineWidth = 3; rr(og, sx0 + 1.5, sy0 + 1.5, sw - 3, sh - 3, sr); og.stroke(); og.strokeStyle = 'rgba(255,255,255,.55)'; og.lineWidth = 1.4; rr(og, sx0 + 12, sy0 + 12, sw - 24, sh - 24, sr - 8); og.stroke();
-    for (let k = 0; k < 6; k++) {   // fractures running through the ice
-      const side = k % 4, px = side === 0 ? 30 + rnd() * 180 : side === 1 ? CW - 6 : side === 2 ? 30 + rnd() * 180 : 6, py = side === 0 ? 6 : side === 1 ? 30 + rnd() * 280 : side === 2 ? sy0 + sh - 6 : 30 + rnd() * 280; let x = px, y = py, ang = Math.atan2(CH / 2 - py, CW / 2 - px) + (rnd() - 0.5) * 0.8; const pts = [[x, y]]; for (let i = 0; i < 7; i++) { ang += (rnd() - 0.5) * 1.1; const st = 14 + rnd() * 16; x += Math.cos(ang) * st; y += Math.sin(ang) * st; pts.push([x, y]); }
-      og.strokeStyle = 'rgba(70,130,200,.35)'; og.lineWidth = 4; og.beginPath(); pts.forEach((q, i) => (i ? og.lineTo(q[0], q[1]) : og.moveTo(q[0], q[1]))); og.stroke(); og.strokeStyle = 'rgba(255,255,255,.85)'; og.lineWidth = 1.3; og.beginPath(); pts.forEach((q, i) => (i ? og.lineTo(q[0], q[1]) : og.moveTo(q[0], q[1]))); og.stroke();
-    }
-    for (let i = 0; i < 34; i++) { const ang = rnd() * 6.283, edgeR = 112 + rnd() * 10, x = CW / 2 + Math.cos(ang) * (edgeR * 0.9 + rnd() * 8), y = CH / 2 + Math.sin(ang) * (edgeR * 1.38 + rnd() * 10), r = 1.2 + rnd() * 4.2; if (slabSd(x, y) < 5) continue; og.fillStyle = 'rgba(255,255,255,.16)'; og.beginPath(); og.arc(x, y, r, 0, 6.283); og.fill(); og.strokeStyle = 'rgba(255,255,255,.7)'; og.lineWidth = 1; og.stroke(); og.fillStyle = 'rgba(255,255,255,.9)'; og.beginPath(); og.arc(x - r * 0.3, y - r * 0.3, r * 0.28, 0, 6.283); og.fill(); }
-    og.save(); og.shadowColor = 'rgba(80,130,200,.5)'; og.shadowBlur = 5; og.shadowOffsetY = 2; const sn = og.createLinearGradient(0, sy0, 0, sy0 + 26); sn.addColorStop(0, '#ffffff'); sn.addColorStop(1, '#dcebfa'); og.fillStyle = sn; og.beginPath(); og.moveTo(sy0 + 14, sy0 + 12); for (let x = 22; x <= 218; x += 14) { const h = 7 + rnd() * 12; og.quadraticCurveTo(x - 7, sy0 + 12 + h, x, sy0 + 12 + h * 0.4); } og.lineTo(218, sy0); og.lineTo(22, sy0); og.closePath(); og.fill(); og.restore();   // a cap of snow along the top
-    for (let i = 0; i < 12; i++) { const x = 18 + i * 17.5 + rnd() * 6, y0 = sy0 + sh - 4, h = 12 + rnd() * 20, w = 6 + rnd() * 6, ig = og.createLinearGradient(x - w / 2, 0, x + w / 2, 0); ig.addColorStop(0, 'rgba(255,255,255,.95)'); ig.addColorStop(0.45, 'rgba(170,215,250,.75)'); ig.addColorStop(1, 'rgba(90,160,235,.9)'); og.fillStyle = ig; og.beginPath(); og.moveTo(x - w / 2, y0); og.quadraticCurveTo(x - w * 0.3, y0 + h * 0.6, x, y0 + h); og.quadraticCurveTo(x + w * 0.3, y0 + h * 0.6, x + w / 2, y0); og.closePath(); og.fill(); og.strokeStyle = 'rgba(255,255,255,.9)'; og.lineWidth = 1; og.stroke(); }
-    for (let i = 0; i < 16; i++) { const x = 20 + rnd() * 200, y = 20 + rnd() * 310, r = 4 + rnd() * 8; gg.strokeStyle = 'rgba(255,255,255,.9)'; gg.lineWidth = 1.4; gg.beginPath(); gg.moveTo(x - r, y); gg.lineTo(x + r, y); gg.moveTo(x, y - r); gg.lineTo(x, y + r); gg.stroke(); const sg = gg.createRadialGradient(x, y, 0, x, y, r * 1.7); sg.addColorStop(0, 'rgba(255,255,255,.55)'); sg.addColorStop(1, 'rgba(255,255,255,0)'); gg.fillStyle = sg; gg.beginPath(); gg.arc(x, y, r * 1.7, 0, 6.283); gg.fill(); }
+    const fern = (x, y, ang, len, w, depth) => { if (depth <= 0 || len < 4) return; const nx = x + Math.cos(ang) * len, ny = y + Math.sin(ang) * len; og.strokeStyle = 'rgba(255,255,255,.9)'; og.lineWidth = w; og.lineCap = 'round'; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke(); for (const sd of [-1, 1]) { fern(x + Math.cos(ang) * len * 0.35, y + Math.sin(ang) * len * 0.35, ang + sd * 1.0, len * 0.46, w * 0.7, depth - 1); fern(x + Math.cos(ang) * len * 0.7, y + Math.sin(ang) * len * 0.7, ang + sd * 0.85, len * 0.36, w * 0.7, depth - 1); } fern(nx, ny, ang + (rnd() - 0.5) * 0.2, len * 0.6, w * 0.8, depth - 1); };
+    for (let i = 0; i < 12; i++) { const side = i % 4, px = side === 0 ? X0 + 20 + rnd() * 160 : side === 1 ? X1 : side === 2 ? X0 + 20 + rnd() * 160 : X0, py = side === 0 ? Y0 : side === 1 ? Y0 + 20 + rnd() * 250 : side === 2 ? Y1 : Y0 + 20 + rnd() * 250; fern(px, py, Math.atan2((Y0 + Y1) / 2 - py, (X0 + X1) / 2 - px) + (rnd() - 0.5) * 0.7, 40 + rnd() * 30, 1.7, 4); }
+    const crystal = (x, y, ang, len, w) => {
+      const ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca, tip = [x + ca * len, y + sa * len], sh = [x + ca * len * 0.72, y + sa * len * 0.72];
+      const pL = [x + nx * w / 2, y + ny * w / 2], pR = [x - nx * w / 2, y - ny * w / 2], sL = [sh[0] + nx * w * 0.42, sh[1] + ny * w * 0.42], sR = [sh[0] - nx * w * 0.42, sh[1] - ny * w * 0.42], mid = [sh[0] + nx * w * 0.05, sh[1] + ny * w * 0.05];
+      og.save(); og.shadowColor = 'rgba(40,90,160,.55)'; og.shadowBlur = 7; og.shadowOffsetY = 3;
+      const poly = (pts, g1, g2, a1, a2) => { const gr = og.createLinearGradient(x, y, tip[0], tip[1]); gr.addColorStop(0, g1); gr.addColorStop(1, g2); og.fillStyle = gr; og.beginPath(); pts.forEach((q, i) => (i ? og.lineTo(q[0], q[1]) : og.moveTo(q[0], q[1]))); og.closePath(); og.fill(); };
+      poly([pL, sL, tip, [x, y]], 'rgba(245,253,255,.97)', 'rgba(190,228,255,.92)');   // the lit facet
+      og.shadowBlur = 0; og.shadowOffsetY = 0;
+      poly([[x, y], tip, sR, pR], 'rgba(120,180,242,.94)', 'rgba(175,218,252,.9)');   // the shaded facet
+      poly([sL, tip, sR, mid], 'rgba(255,255,255,.95)', 'rgba(220,242,255,.9)');   // the bright tip facet
+      og.strokeStyle = 'rgba(255,255,255,.95)'; og.lineWidth = 1.3; og.lineJoin = 'round'; og.beginPath(); og.moveTo(pL[0], pL[1]); og.lineTo(sL[0], sL[1]); og.lineTo(tip[0], tip[1]); og.lineTo(sR[0], sR[1]); og.lineTo(pR[0], pR[1]); og.stroke();
+      og.strokeStyle = 'rgba(255,255,255,.9)'; og.lineWidth = 1.1; og.beginPath(); og.moveTo(x, y); og.lineTo(tip[0], tip[1]); og.stroke(); og.beginPath(); og.moveTo(sL[0], sL[1]); og.lineTo(mid[0], mid[1]); og.lineTo(sR[0], sR[1]); og.stroke();
+      og.restore();
+    };
+    const cluster = (x, y, base, n, spread, l0, l1, w0) => { const arr = []; for (let i = 0; i < n; i++) arr.push({ a: base + (n > 1 ? (i / (n - 1) - 0.5) * spread : 0) + (rnd() - 0.5) * 0.18, l: l0 + rnd() * (l1 - l0), w: w0 * (0.75 + rnd() * 0.5) }); arr.sort((p1, p2) => p2.l - p1.l).forEach((c) => crystal(x + (rnd() - 0.5) * 8, y + (rnd() - 0.5) * 8, c.a, c.l, c.w)); };
+    cluster(X0 + 8, Y1 - 6, 3.4, 6, 1.5, 36, 92, 24); cluster(X1 - 8, Y1 - 4, 0.9, 5, 1.5, 34, 80, 22); cluster(X1 - 4, Y0 + 40, -0.5, 4, 1.2, 28, 62, 19); cluster(X0 + 2, Y0 + 130, 3.9, 3, 0.9, 24, 48, 16); cluster(X0 + 70, Y0 + 2, -1.7, 3, 1.1, 20, 44, 15);
+    for (let i = 0; i < 28; i++) { const x = X0 + 14 + rnd() * 172, y = Y0 + 14 + rnd() * 262; if (Math.min(x - X0, X1 - x, y - Y0, Y1 - y) > 44) continue; og.fillStyle = 'rgba(255,255,255,.14)'; og.beginPath(); og.arc(x, y, 1.4 + rnd() * 3.6, 0, 6.283); og.fill(); og.strokeStyle = 'rgba(255,255,255,.65)'; og.lineWidth = 0.9; og.stroke(); }
+    for (let i = 0; i < 18; i++) { const x = 30 + rnd() * 240, y = 40 + rnd() * 330, r = 4 + rnd() * 9; gg.strokeStyle = 'rgba(255,255,255,.95)'; gg.lineWidth = 1.5; gg.beginPath(); gg.moveTo(x - r, y); gg.lineTo(x + r, y); gg.moveTo(x, y - r); gg.lineTo(x, y + r); gg.stroke(); const sg = gg.createRadialGradient(x, y, 0, x, y, r * 1.8); sg.addColorStop(0, 'rgba(255,255,255,.6)'); sg.addColorStop(1, 'rgba(255,255,255,0)'); gg.fillStyle = sg; gg.beginPath(); gg.arc(x, y, r * 1.8, 0, 6.283); gg.fill(); }
   } else if (kind === 'crushed') {
     const rectSd = (x, y) => { const qx = Math.abs(x - 100) - 72, qy = Math.abs(y - 150) - 40; return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - 9; };   // < 0 inside the imprint of the hammer head
     const hgt = (x, y) => {
@@ -3678,8 +3701,15 @@ function endTex(kind) {
   }
   return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL() });
 }
+function foldedCard(id, animate, as, cascade) {
+  const panel = (n, ...extra) => { const c = cardEl(id, { as }); c.classList.add('endc'); return el('div', { class: 'fp fp' + n }, c, el('div', { class: 'fsh' }), ...extra); };
+  const box = el('div', { class: 'tcard end e-fold' + (animate ? ' tearing' : '') }, panel(1, el('div', { class: 'dogear' })), panel(2), panel(3));
+  if (cascade) box.style.setProperty('--cd', cascade + 'ms');
+  return box;
+}
 function tornCard(id, animate, as = null, cascade = 0, style = '') {
   const kind = ATK_ENDS[style];
+  if (kind === 'crushed') return foldedCard(id, animate, as, cascade);
   if (!kind) {
     const half = (side) => { const c = cardEl(id, { as }); c.classList.add('half', side); return c; };
     const box = el('div', { class: 'tcard' + (animate ? ' tearing' : '') }, half('l'), half('r'));
