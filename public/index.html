@@ -4244,11 +4244,13 @@ async function runShowdown(res) {
           g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.moveTo(-10, -28); g.lineTo(40, -22); g.lineTo(34, -19); g.lineTo(-10, -24); g.closePath(); g.fill();
           g.fillStyle = 'rgba(8,60,34,.8)'; g.beginPath(); g.ellipse(70, -7, 3.4, 2, 0.5, 0, 6.283); g.fill();   // nostril
           if (mo > 0.6) { g.fillStyle = `rgba(255,170,60,${0.5 + 0.3 * flick})`; g.beginPath(); g.arc(78, -6, 6 + 2 * flick, 0, 6.283); g.fill(); }   // fire in the nose
-          // eye: a glowing slit under a hard brow ridge
-          g.save(); g.translate(18, -11); g.rotate(-0.4);
-          g.shadowColor = '#ffb02e'; g.shadowBlur = 14; g.fillStyle = '#ffe27a'; g.beginPath(); g.ellipse(0, 0, 10, 5.2, 0, 0, 6.283); g.fill(); g.shadowBlur = 0;
-          g.fillStyle = '#ff6a1f'; g.beginPath(); g.ellipse(1, 0, 5.4, 5, 0, 0, 6.283); g.fill(); g.fillStyle = '#140606'; g.beginPath(); g.ellipse(1.4, 0, 1.4, 5, 0, 0, 6.283); g.fill();
-          g.fillStyle = '#0f5d35'; g.beginPath(); g.moveTo(-13, -3); g.lineTo(12, -7); g.lineTo(12, -1.5); g.lineTo(-13, 1); g.closePath(); g.fill();   // heavy lid
+          // eye: wide awake, glowing, with a sharp brow slanting down toward the snout
+          g.save(); g.translate(18, -12); g.rotate(0.22);
+          g.shadowColor = '#ffb02e'; g.shadowBlur = 16; g.fillStyle = '#fff0a0'; g.beginPath(); g.ellipse(0, 0, 11.5, 7.2, 0, 0, 6.283); g.fill(); g.shadowBlur = 0;
+          const ig = g.createRadialGradient(1, -1, 1, 1, 0, 7); ig.addColorStop(0, '#ffd23f'); ig.addColorStop(0.55, '#ff7a1f'); ig.addColorStop(1, '#c8281a'); g.fillStyle = ig; g.beginPath(); g.ellipse(1.5, 0, 6.6, 6.6, 0, 0, 6.283); g.fill();
+          g.fillStyle = '#120606'; g.beginPath(); g.ellipse(1.8, 0, 1.7, 6.2, 0, 0, 6.283); g.fill();   // the slit
+          g.fillStyle = '#fff'; g.beginPath(); g.arc(-1.5, -2.6, 1.7, 0, 6.283); g.fill();   // a glint
+          g.strokeStyle = '#0b3a22'; g.lineWidth = 3.2; g.beginPath(); g.moveTo(-13, -10); g.lineTo(14, -6); g.stroke();   // a thin, sharp brow above the eye, not over it
           g.restore();
           g.restore();
         };
