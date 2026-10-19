@@ -4,7 +4,7 @@
   "description": "A multiplayer card game: arrange seven cards, win the rows, call who loses.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0c1124",
+  "background_color": "#1b1148",
   "theme_color": "#18213b",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
