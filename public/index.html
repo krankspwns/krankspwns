@@ -2204,31 +2204,48 @@ function runGiftQ() {
 
 // a throw at somebody else: a small projectile flies from the thrower to that player and lands with a tiny version of the effect (the target itself gets the full show)
 const giftIsMini = (g) => !!st && g.to !== 'all' && g.to !== st.meId;
-function giftAnchor(pid) {
+function giftAnchor(pid, anyWhere = false) {
   if (!/^[\w-]+$/.test(String(pid))) return null;
-  for (const sel of [`.tile[data-pid="${pid}"] .tname .av`, `.who[data-pid="${pid}"] .av`]) {
-    for (const n of document.querySelectorAll(sel)) { const r = n.getBoundingClientRect(); if (r.width && r.bottom > 0 && r.top < window.innerHeight) return n; }
+  let off = null;
+  for (const sel of [`.tile[data-pid="${pid}"] .tname .av`, `.who[data-pid="${pid}"] .av`, `.seat[data-pid="${pid}"] .av`, `.prow[data-pid="${pid}"] .av`]) {
+    for (const n of document.querySelectorAll(sel)) {
+      const r = n.getBoundingClientRect();
+      if (!r.width) continue;
+      if (r.bottom > 0 && r.top < window.innerHeight) return n;
+      off = off || n;
+    }
   }
-  return null;
+  return anyWhere ? off : null;
 }
 function playGiftMini(g) {
   const art = GIFT_ART[g.item] || GIFT_ART.tomato, kind = art[1], color = art[2] || '#fff';
   const W = window.innerWidth, H = window.innerHeight, rnd = (a, b) => a + Math.random() * (b - a), pick = (a) => a[Math.floor(Math.random() * a.length)];
-  const mid = (n, fb) => { if (!n) return fb; const r = n.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
-  const tEl = giftAnchor(g.to), mineThrow = g.from === st.meId;
+  const mineThrow = g.from === st.meId;
+  const toName = (st.players.find((q) => q.id === g.to) || {}).name || '';
+  // where the target is right now (it is looked up every frame, so a layout change mid-flight cannot make the throw miss);
+  // a player scrolled off the screen is aimed at on the nearest edge, with their name shown
+  const tgt = () => {
+    const n = giftAnchor(g.to, true);
+    if (!n) return { x: W / 2, y: H * 0.3, n: null, edge: '' };
+    const r = n.getBoundingClientRect();
+    let x = r.left + r.width / 2, y = r.top + r.height / 2, edge = '';
+    if (y < 40) { y = 40; edge = '▲'; } else if (y > H - 40) { y = H - 40; edge = '▼'; }
+    return { x: Math.min(W - 26, Math.max(26, x)), y, n, edge };
+  };
   const fEl = mineThrow ? document.getElementById('giftFab') : giftAnchor(g.from);
-  const [x1, y1] = mid(tEl, [W / 2, H * 0.3]);
-  const [x0, y0] = mid(fEl, mineThrow ? [W - 44, H - 70] : [x1 < W / 2 ? W + 30 : -30, y1 + 90]);
+  let T = tgt();
+  const [x0, y0] = (() => { if (fEl) { const r = fEl.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; } return mineThrow ? [W - 44, H - 70] : [T.x < W / 2 ? W + 30 : -30, T.y + 90]; })();
+  let x1 = T.x, y1 = T.y;
   const impactSnd = kind === 'boom' ? 'boom' : kind === 'petals' ? 'chime' : kind === 'splat' ? 'splat' : 'pop';
   SND.play('throw');
-  const dist = Math.hypot(x1 - x0, y1 - y0), dur = Math.round(Math.min(760, Math.max(420, dist * 0.9)));
-  const hit = () => {   // the target flinches
-    if (!tEl) return;
-    const tile = tEl.closest('.tile, .who') || tEl;
+  const dist = Math.hypot(x1 - x0, y1 - y0), dur = Math.round(Math.min(760, Math.max(440, dist * 0.9)));
+  const hit = (n) => {   // the target flinches
+    if (!n) return;
+    const tile = n.closest('.tile, .who, .seat, .prow') || n;
     try { tile.animate([{ transform: 'none' }, { transform: 'translateX(-5px) rotate(-1.5deg)' }, { transform: 'translateX(5px) rotate(1.5deg)' }, { transform: 'translateX(-3px)' }, { transform: 'none' }], { duration: 420 }); } catch {}
-    tEl.classList.add('hop'); setTimeout(() => tEl.classList.remove('hop'), 720);
+    n.classList.add('hop'); setTimeout(() => n.classList.remove('hop'), 720);
   };
-  if (ui.calm) { setTimeout(() => { SND.play(impactSnd); hit(); }, dur); return; }
+  if (ui.calm) { setTimeout(() => { SND.play(impactSnd); hit(T.n); }, dur); return; }
   const fx = el('div', { class: 'giftfx' }); document.body.append(fx);
   const anim = (n, frames, opt) => { try { return n.animate(frames, opt); } catch { return null; } };
   const box = (css, html = '') => { const d = el('i', { class: 'giftbit' }); d.style.cssText = 'position:fixed;left:0;top:0;pointer-events:none;' + css; if (html) d.innerHTML = html; fx.append(d); return d; };
@@ -2242,7 +2259,8 @@ function playGiftMini(g) {
   const blob = (c, sz = 46, stay = 1300) => { const d = box(`width:${sz}px;height:${sz * 0.9}px;margin:${-sz / 2}px 0 0 ${-sz / 2}px;border-radius:48% 52% 45% 55% / 55% 45% 55% 45%;background:radial-gradient(circle at 35% 30%, #fff8, ${c} 55%)`);
     anim(d, [{ transform: `translate(${x1}px,${y1}px) scale(.2)`, opacity: 1 }, { transform: `translate(${x1}px,${y1}px) scale(1.15)`, opacity: 1, offset: .22 }, { transform: `translate(${x1}px,${y1 + 6}px) scale(1)`, opacity: 1, offset: .75 }, { transform: `translate(${x1}px,${y1 + 14}px) scale(.95)`, opacity: 0 }], { duration: stay, fill: 'forwards' }); };
   const impact = () => {
-    SND.play(impactSnd); hit();
+    SND.play(impactSnd); hit(T.n);
+    if (T.edge) { const lb = box('padding:3px 10px;border-radius:99px;background:rgba(20,26,48,.92);border:1px solid rgba(255,255,255,.35);color:#fff;font:700 12px system-ui;white-space:nowrap', `${toName} ${T.edge}`); anim(lb, [{ transform: `translate(${x1 - 30}px,${y1 + (T.edge === '▲' ? 26 : -40)}px)`, opacity: 0 }, { transform: `translate(${x1 - 30}px,${y1 + (T.edge === '▲' ? 26 : -40)}px)`, opacity: 1, offset: .15 }, { transform: `translate(${x1 - 30}px,${y1 + (T.edge === '▲' ? 26 : -40)}px)`, opacity: 1, offset: .8 }, { transform: `translate(${x1 - 30}px,${y1 + (T.edge === '▲' ? 26 : -40)}px)`, opacity: 0 }], { duration: 1500, fill: 'forwards' }); }
     if (kind === 'splat') { blob(color); spray(7, { cols: [color], spd: [50, 110], size: [3, 7], g: 120 }); }
     else if (kind === 'petals') { spray(9, { cols: ['#ff4d6d', '#ff8fb8', '#ffc2d4'], spd: [30, 80], life: [900, 1400], size: [5, 9], g: 90, round: false }); const h = box('font-size:22px;line-height:1', '❤️'); anim(h, [{ transform: `translate(${x1 - 11}px,${y1 - 11}px) scale(.3)`, opacity: 1 }, { transform: `translate(${x1 - 11}px,${y1 - 46}px) scale(1.1)`, opacity: 0 }], { duration: 1000, easing: 'ease-out', fill: 'forwards' }); }
     else if (kind === 'confetti') spray(16, { cols: ['#ffd23f', '#ff5a8a', '#4fc3ff', '#7be08f', '#b77bff'], spd: [70, 170], life: [800, 1300], size: [4, 7], g: 160, rect: true, round: false });
@@ -2253,15 +2271,19 @@ function playGiftMini(g) {
   };
   const proj = giftEl(g.item, 34); proj.style.cssText += ';position:fixed;left:0;top:0;pointer-events:none;will-change:transform;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))';
   fx.append(proj);
-  const dx = x1 - x0, dy = y1 - y0, arc = -Math.min(110, dist * 0.3);
-  anim(proj, [
-    { transform: `translate(${x0 - 17}px,${y0 - 17}px) scale(.55) rotate(0deg)`, opacity: 1 },
-    { transform: `translate(${x0 + dx * .5 - 17}px,${y0 + dy * .5 + arc - 17}px) scale(1) rotate(180deg)`, opacity: 1, offset: .5 },
-    { transform: `translate(${x1 - 17}px,${y1 - 17}px) scale(.8) rotate(360deg)`, opacity: 1 }], { duration: dur, easing: 'cubic-bezier(.35,.05,.65,1)', fill: 'forwards' });
-  // a short trail behind it
-  for (let i = 1; i <= 4; i++) setTimeout(() => { const px = x0 + dx * (i / 5), py = y0 + dy * (i / 5) + arc * 4 * (i / 5) * (1 - i / 5); const d = box(`width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;background:${color};opacity:.5`); anim(d, [{ transform: `translate(${px}px,${py}px) scale(1)`, opacity: .5 }, { transform: `translate(${px}px,${py}px) scale(.2)`, opacity: 0 }], { duration: 320, fill: 'forwards' }); }, (dur * i) / 5.5);
-  setTimeout(() => { proj.remove(); impact(); }, dur);
-  setTimeout(() => fx.remove(), dur + 1700);
+  const arc = -Math.min(110, dist * 0.3), start = performance.now();
+  let lastTrail = -1;
+  const step = (now) => {
+    const k = Math.min(1, (now - start) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;   // eases in and out
+    T = tgt(); x1 = T.x; y1 = T.y;   // follows the target
+    const x = x0 + (x1 - x0) * e, y = y0 + (y1 - y0) * e + arc * 4 * e * (1 - e);
+    proj.style.transform = `translate(${x - 17}px,${y - 17}px) scale(${(0.55 + 0.55 * Math.sin(Math.PI * Math.min(1, k * 1.1))).toFixed(2)}) rotate(${(k * 380).toFixed(0)}deg)`;
+    const tb = Math.floor(k * 6);
+    if (tb !== lastTrail && tb < 6) { lastTrail = tb; const d = box(`width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;background:${color};opacity:.5`); anim(d, [{ transform: `translate(${x}px,${y}px) scale(1)`, opacity: .5 }, { transform: `translate(${x}px,${y}px) scale(.2)`, opacity: 0 }], { duration: 320, fill: 'forwards' }); }
+    if (k < 1) requestAnimationFrame(step);
+    else { proj.remove(); impact(); setTimeout(() => fx.remove(), 1800); }
+  };
+  requestAnimationFrame(step);
 }
 function playGift(g) {
   if (!st) return;
@@ -3185,6 +3207,7 @@ function renderWaitingRoom() {
           el('div', { class: 'sname' }, t('waitingPlayer'), el('span', { class: 'wdots' }, el('i'), el('i'), el('i')))));
   }
 
+  [...seats.children].forEach((c, i) => { if (st.players[i]) c.dataset.pid = st.players[i].id; });
   const action = st.isHost
     ? el('button', { class: 'big', onclick: () => act('deal') }, t('dealN', { n: st.players.length }))
     : el('div', { class: 'waiting' }, el('span', { class: 'dot' }), t('waitingHost'));
@@ -4186,6 +4209,7 @@ function renderPlayers() {
         else { kickArm = p.id; clearTimeout(kickTimer); kickTimer = setTimeout(() => { kickArm = null; renderPlayers(); }, 4000); renderPlayers(); }
       } }, withIcon('user-x', armed ? t('kickSure') : t('kick'), 15)) : '');
   });
+  rows.forEach((r, i) => { r.dataset.pid = st.players[i].id; });
   const keep = ov.querySelector('.gscroll')?.scrollTop || 0;
   ov.replaceChildren(el('div', { class: 'guide pl', role: 'dialog', 'aria-modal': 'true' },
     el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', {}, icon('users', 15)), t('playersTitle', { n: st.players.length })),
