@@ -2228,7 +2228,7 @@ const giftIsMini = (g) => !!st && g.to !== 'all' && g.to !== st.meId;
 function giftAnchor(pid, anyWhere = false) {
   if (!/^[\w-]+$/.test(String(pid))) return null;
   let off = null;
-  for (const sel of [`.tile[data-pid="${pid}"] .tname .av`, `.who[data-pid="${pid}"] .av`, `.seat[data-pid="${pid}"] .av`, `.prow[data-pid="${pid}"] .av`]) {
+  for (const sel of [`.tile[data-pid="${pid}"] .tname .av`, `.who[data-pid="${pid}"] .av`, `.seat[data-pid="${pid}"] .av`, `.prow[data-pid="${pid}"] .av`, `.pd[data-pid="${pid}"] .av`, `.hcards[data-pid="${pid}"] .av`]) {
     for (const n of document.querySelectorAll(sel)) {
       const r = n.getBoundingClientRect();
       if (!r.width) continue;
@@ -2953,6 +2953,7 @@ function el(tag, props = {}, ...kids) {
   for (const [k, v] of Object.entries(props)) {
     if (k === 'class') e.className = v;
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k.startsWith('data-')) e.setAttribute(k, v);
     else e[k] = v;
   }
   for (const k of kids) e.append(k);
@@ -3683,7 +3684,7 @@ function hallPanel() {
     const heights = { 1: 86, 2: 62, 3: 44 };
     podium = el('div', { class: 'podium' }, ...order.map((h) => {
       const size = h.rank === 1 ? 54 : 44;
-      return el('div', { class: 'pd pd' + Math.min(h.rank, 3) + (h.id === st.meId ? ' me' : '') },
+      return el('div', { class: 'pd pd' + Math.min(h.rank, 3) + (h.id === st.meId ? ' me' : ''), 'data-pid': h.id },
         h.rank === 1 ? el('span', { class: 'pd-crown' }, icon('trophy', 22)) : '',
         avatarEl(avOf(h.id), size, mood(h), accOf(h.id), bdOf(h.id)),
         el('b', { class: 'pd-n' }, h.name + (h.id === st.meId ? t('you') : '')),
@@ -3696,7 +3697,7 @@ function hallPanel() {
   const rows = el('div', { class: 'hall' });
   rest.forEach((h, i) => {
     const me = h.id === st.meId;
-    rows.append(el('div', { class: 'hcards' + (me ? ' me' : '') + (h.rank === 1 ? ' top' : ''), style: anim ? `animation-delay:${i * 70}ms` : 'animation:none' },
+    rows.append(el('div', { class: 'hcards' + (me ? ' me' : '') + (h.rank === 1 ? ' top' : ''), 'data-pid': h.id, style: anim ? `animation-delay:${i * 70}ms` : 'animation:none' },
       el('span', { class: 'hrank', style: h.rank <= 3 ? `background:${medals[h.rank - 1]};color:#1a1407` : '' }, h.rank === 1 ? icon('trophy', 16) : String(h.rank)),
       el('span', { class: 'hav' }, avatarEl(avOf(h.id), 30, mood(h), accOf(h.id), bdOf(h.id))),
       el('span', { class: 'hname' }, el('b', {}, h.name + (me ? t('you') : '')), el('small', {}, t('hallLost', { n: h.lost }))),
@@ -3951,7 +3952,7 @@ function adopt(j) {
     if (fresh.length) {
       const r = fresh[fresh.length - 1];
       const elapsed = r.at ? Math.max(0, serverNow() - r.at) : 0;   // a phone that hears late joins part-way through
-      if (elapsed < 4500) { showResult(r, j, elapsed); tearRows.add(r.row); }
+      if (elapsed < 9000) { showResult(r, j, Math.min(elapsed, 1200)); tearRows.add(r.row); }   // a row this phone has never seen still gets its full show, however late the news came
     }
   }
   planStage(j, prev);
