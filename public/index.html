@@ -3832,7 +3832,7 @@ function endTex(kind) {
   }
   return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL(), rt: kind === 'glyph2' ? rt.toDataURL() : '', ex: extra.map((c) => c.toDataURL()) });
 }
-let UFO_END = 1;   // the saucer's mark: 1 vaporised pixels, 2 abducted, 3 glyph circle, 4 melted goo, 5 glitch
+let UFO_END = 8;   // the saucer's mark: 1 vaporised pixels, 2 abducted, 3 glyph circle, 4 melted goo, 5 glitch
 let FIST_END = 2;   // which look the hammer leaves behind: 1 folded, 2 shattered, 3 squashed with a hammer imprint, 4 punched through, 5 crumpled
 function glitchCard2(id, animate, as, cascade) {
   const tex = endTex('glitch2'), box = el('div', { class: 'tcard end e-glitch2' + (animate ? ' tearing' : '') });
