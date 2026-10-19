@@ -4177,68 +4177,112 @@ async function runShowdown(res) {
       const tgt = shown[ti], tTile = tileOf(tgt.id); if (!tTile) { release(tgt.id); continue; }
       const tdoc = () => docPos(tTile), pen = '×' + res.penalty;
       if (style === 'dragon') {
-        // a long dragon: a head that leads in a straight, powerful line and a body that follows along the path it flew
-        const NSEG = 26, SP = 22, HEAD = 108;
-        const goal = tdoc(), hoverDoc = { x: Math.min(W - 90, Math.max(90, goal.x + (goal.x > W / 2 ? -130 : 130))), y: goal.y - 200 };
+        // a long dragon drawn in one piece: a horned head that leads in a straight line and a scaled body that follows the path it flew
+        const LEN = 560;
+        const goal = tdoc(), hoverDoc = { x: Math.min(W - 100, Math.max(100, goal.x + (goal.x > W / 2 ? -140 : 140))), y: goal.y - 210 };
         const dir0 = Math.atan2(hoverDoc.y - from.y, hoverDoc.x - from.x);
-        const hist = []; for (let d = NSEG * SP + 60; d >= 0; d -= 6) hist.push({ x: from.x - Math.cos(dir0) * d, y: from.y - Math.sin(dir0) * d });   // the body starts already stretched out behind the head
-        const D = { x: from.x, y: from.y, face: hoverDoc.x >= from.x ? 1 : -1, alpha: 0, scale: 0.55, tilt: 0 };
-        const pushHist = () => { const l = hist[hist.length - 1]; if (Math.hypot(D.x - l.x, D.y - l.y) > 4) hist.push({ x: D.x, y: D.y }); if (hist.length > 1200) hist.shift(); };
+        const hist = []; for (let d = LEN + 80; d >= 0; d -= 6) hist.push({ x: from.x - Math.cos(dir0) * d, y: from.y - Math.sin(dir0) * d });   // the body starts already stretched out behind the head
+        const D = { x: from.x, y: from.y, ang: dir0, alpha: 0, scale: 0.55, mouth: 0.1, flame: 0 };
+        const pushHist = () => { const l = hist[hist.length - 1]; if (Math.hypot(D.x - l.x, D.y - l.y) > 4) hist.push({ x: D.x, y: D.y }); if (hist.length > 1400) hist.shift(); };
         const sample = (dist) => { let acc = 0, prev = { x: D.x, y: D.y }; for (let i = hist.length - 1; i >= 0; i--) { const q = hist[i], seg = Math.hypot(prev.x - q.x, prev.y - q.y); if (acc + seg >= dist) { const k = (dist - acc) / (seg || 1); return { x: prev.x + (q.x - prev.x) * k, y: prev.y + (q.y - prev.y) * k }; } acc += seg; prev = q; } return prev; };
-        const dropLayer = E.layer((g) => {
+        const turn = (to, rate) => { let d = to - D.ang; d = Math.atan2(Math.sin(d), Math.cos(d)); D.ang += d * rate; };
+        const fillPath = (g, pts, close = true) => { g.beginPath(); pts.forEach((q, j) => (j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); if (close) g.closePath(); };
+        const paintDragon = (g) => {
           if (D.alpha < 0.02) return;
           const sy = window.scrollY, tt = performance.now(), sc = D.scale; g.globalAlpha = D.alpha;
-          const pts = []; for (let i = 0; i <= NSEG; i++) pts.push(sample(i * SP * sc + 46 * sc));
-          for (let i = NSEG; i >= 0; i--) {   // tail first, so the nearer part of the body overlaps it
-            const q = pts[i], a = pts[Math.max(0, i - 1)], b2 = pts[Math.min(NSEG, i + 1)];
-            let dx = a.x - b2.x, dy = a.y - b2.y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
-            const nx = -dy, ny = dx, wave = Math.sin(tt * 0.006 - i * 0.5) * 6 * (0.25 + i / NSEG), px = q.x + nx * wave, py = q.y - sy + ny * wave;
-            const rad = (26 * Math.pow(1 - i / (NSEG + 2), 0.85) + 4) * sc, up = ny < 0 ? 1 : -1;
-            if (i % 2 === 0 && i < NSEG - 1) { g.fillStyle = '#ffcf4a'; g.beginPath(); g.moveTo(px + nx * up * (rad - 2) - dx * 7 * sc, py + ny * up * (rad - 2) - dy * 7 * sc); g.lineTo(px + nx * up * (rad + 13 * sc) + dx * 4 * sc, py + ny * up * (rad + 13 * sc) + dy * 4 * sc); g.lineTo(px + nx * up * (rad - 2) + dx * 9 * sc, py + ny * up * (rad - 2) + dy * 9 * sc); g.closePath(); g.fill(); }   // a golden spine
-            const gr = g.createRadialGradient(px - nx * up * rad * 0.25, py - ny * up * rad * 0.3, rad * 0.15, px, py, rad);
-            gr.addColorStop(0, '#79f0a0'); gr.addColorStop(0.6, '#2fb866'); gr.addColorStop(1, '#16804a');
-            g.fillStyle = gr; g.beginPath(); g.arc(px, py, rad, 0, 6.283); g.fill();
-            g.strokeStyle = 'rgba(8,70,40,.55)'; g.lineWidth = 1.5; g.stroke();
-            g.fillStyle = 'rgba(255,214,120,.9)'; g.beginPath(); g.ellipse(px - nx * up * rad * 0.5, py - ny * up * rad * 0.5, rad * 0.5, rad * 0.26, Math.atan2(dy, dx), 0, 6.283); g.fill();   // a pale belly
-            if (i === NSEG) { g.fillStyle = '#ff9a2e'; g.beginPath(); g.moveTo(px - dx * rad * 2.6, py - dy * rad * 2.6); g.lineTo(px + nx * rad, py + ny * rad); g.lineTo(px - nx * rad, py - ny * rad); g.closePath(); g.fill(); }   // the tail tip
+          // ---- the body: one smooth tapering ribbon with scales, a pale belly and a flaming spine ----
+          const N = 70, step = (LEN * sc) / N, L = [], R = [], C = [];
+          const side = Math.cos(D.ang) >= 0 ? 1 : -1;   // the belly is on the side facing the ground
+          for (let i = 0; i <= N; i++) {
+            const q = sample(i * step + 30 * sc), a = sample(Math.max(0, i - 1) * step + 30 * sc), b = sample((i + 1) * step + 30 * sc);
+            let dx = a.x - b.x, dy = a.y - b.y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+            const nx = -dy * side, ny = dx * side, t = i / N, wave = Math.sin(tt * 0.005 - i * 0.28) * 5 * (0.2 + t), w = (24 * Math.pow(1 - t, 0.7) + 2.5) * sc;
+            const px = q.x + nx * wave, py = q.y - sy + ny * wave;
+            L.push([px + nx * w, py + ny * w, nx, ny, w, dx, dy]); R.push([px - nx * w, py - ny * w]); C.push([px, py]);
           }
-          const hx = D.x, hy = D.y - sy;
-          g.save(); g.translate(hx, hy); g.scale(D.face * sc, sc); g.rotate((D.tilt * Math.PI) / 180); g.font = `${HEAD}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 16; g.fillText('🐲', 0, 0); g.restore();
-        });
+          // spine fins first (they sit behind the body), on the upper side
+          for (let i = 4; i < N - 4; i += 3) {
+            const t = i / N, [lx, ly, nx, ny, w, dx, dy] = L[i], up = ny < 0 ? 1 : -1, cx = C[i][0], cy = C[i][1], h = (20 * (1 - t) + 6) * sc, sway = Math.sin(tt * 0.008 - i * 0.4) * 4 * sc;
+            const bx = cx + nx * up * w * 0.9, by = cy + ny * up * w * 0.9, tipx = bx + nx * up * h + dx * (h * 0.9) + sway, tipy = by + ny * up * h + dy * (h * 0.9);
+            const gr = g.createLinearGradient(bx, by, tipx, tipy); gr.addColorStop(0, '#ff9a2e'); gr.addColorStop(1, '#ffe27a');
+            g.fillStyle = gr; g.beginPath(); g.moveTo(bx + dx * 7 * sc, by + dy * 7 * sc); g.quadraticCurveTo(bx + nx * up * h * 0.6 + dx * 2, by + ny * up * h * 0.6 + dy * 2, tipx, tipy); g.quadraticCurveTo(bx + nx * up * h * 0.3 - dx * 6, by + ny * up * h * 0.3 - dy * 6, bx - dx * 7 * sc, by - dy * 7 * sc); g.closePath(); g.fill();
+          }
+          const edge = L.map((q) => [q[0], q[1]]).concat(R.slice().reverse());
+          const bg = g.createLinearGradient(C[0][0], C[0][1], C[N][0], C[N][1]); bg.addColorStop(0, '#34c46e'); bg.addColorStop(0.55, '#1f9a58'); bg.addColorStop(1, '#127046');
+          g.fillStyle = bg; fillPath(g, edge); g.fill(); g.strokeStyle = 'rgba(6,60,34,.7)'; g.lineWidth = 2; g.stroke();
+          // pale belly stripe along the lower edge
+          const belly = []; for (let i = 0; i <= N; i++) belly.push([C[i][0] + (L[i][0] - C[i][0]) * 0.78, C[i][1] + (L[i][1] - C[i][1]) * 0.78]); for (let i = N; i >= 0; i--) belly.push([C[i][0] + (L[i][0] - C[i][0]) * 0.18, C[i][1] + (L[i][1] - C[i][1]) * 0.18]);
+          g.fillStyle = 'rgba(255,222,140,.9)'; fillPath(g, belly); g.fill();
+          // scales: little chevrons across the back
+          g.strokeStyle = 'rgba(8,80,44,.55)'; g.lineWidth = 1.6; g.lineCap = 'round';
+          for (let i = 2; i < N - 3; i += 2) { const [lx, ly, nx, ny, w, dx, dy] = L[i]; if (w < 4) break; const cx = C[i][0], cy = C[i][1]; g.beginPath(); g.moveTo(cx - nx * w * 0.5, cy - ny * w * 0.5); g.lineTo(cx - dx * w * 0.35, cy - dy * w * 0.35); g.lineTo(cx + nx * w * 0.5, cy + ny * w * 0.5); g.stroke(); }
+          // the tail ends in a flame
+          { const [, , nx, ny, , dx, dy] = L[N], tx = C[N][0], ty = C[N][1]; for (let j = 0; j < 3; j++) { const a = (j - 1) * 0.5, len = (34 - Math.abs(j - 1) * 10) * sc, ex = tx - dx * len * Math.cos(a) + nx * len * Math.sin(a) * 0.8 + Math.sin(tt * 0.01 + j) * 3, ey = ty - dy * len * Math.cos(a) + ny * len * Math.sin(a) * 0.8; const gr = g.createLinearGradient(tx, ty, ex, ey); gr.addColorStop(0, '#ff7a1f'); gr.addColorStop(1, '#ffe27a'); g.fillStyle = gr; g.beginPath(); g.moveTo(tx + nx * 5 * sc, ty + ny * 5 * sc); g.quadraticCurveTo((tx + ex) / 2 + nx * 8 * sc, (ty + ey) / 2 + ny * 8 * sc, ex, ey); g.quadraticCurveTo((tx + ex) / 2 - nx * 8 * sc, (ty + ey) / 2 - ny * 8 * sc, tx - nx * 5 * sc, ty - ny * 5 * sc); g.closePath(); g.fill(); } }
+          // ---- the head ----
+          g.save(); g.translate(D.x, D.y - sy); g.rotate(D.ang); if (Math.cos(D.ang) < 0) g.scale(1, -1); g.scale(sc * 1.05, sc * 1.05);
+          g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 14;
+          const wob = Math.sin(tt * 0.006) * 0.04, mo = D.mouth;
+          // mane: flame-like fins swept back from the skull
+          for (let j = 0; j < 5; j++) { const y0 = -26 + j * 8, len = 56 - j * 5, sw = Math.sin(tt * 0.009 + j) * 5; const gr = g.createLinearGradient(-20, y0, -20 - len, y0 + 10); gr.addColorStop(0, '#ff6a1f'); gr.addColorStop(1, '#ffd45a'); g.fillStyle = gr; g.beginPath(); g.moveTo(-16, y0 - 4); g.quadraticCurveTo(-20 - len * 0.5, y0 - 14 + sw, -22 - len, y0 + 6 + sw * 1.4); g.quadraticCurveTo(-26 - len * 0.4, y0 + 4, -16, y0 + 8); g.closePath(); g.fill(); }
+          // horns
+          for (const [hx0, hy0, hx1, hy1, hw] of [[-4, -28, -62, -66, 9], [-16, -24, -70, -44, 7]]) { const gr = g.createLinearGradient(hx0, hy0, hx1, hy1); gr.addColorStop(0, '#f5e9c8'); gr.addColorStop(1, '#c89a2a'); g.fillStyle = gr; g.beginPath(); g.moveTo(hx0, hy0); g.quadraticCurveTo((hx0 + hx1) / 2 + 4, hy0 - 26, hx1, hy1); g.quadraticCurveTo((hx0 + hx1) / 2 - 10, hy0 - 6, hx0 + hw, hy0 + 8); g.closePath(); g.fill(); }
+          // lower jaw (hinged, opens for the breath)
+          g.save(); g.translate(-8, 8); g.rotate(mo * 0.55);
+          const jg = g.createLinearGradient(0, 0, 0, 26); jg.addColorStop(0, '#2aa862'); jg.addColorStop(1, '#17794a'); g.fillStyle = jg;
+          g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(22, 2, 46, 2, 68, 0); g.bezierCurveTo(70, 8, 58, 17, 42, 18); g.bezierCurveTo(20, 20, 2, 16, -8, 8); g.closePath(); g.fill(); g.strokeStyle = 'rgba(6,60,34,.7)'; g.lineWidth = 1.5; g.stroke();
+          g.fillStyle = '#fff'; for (const tx of [26, 40, 54]) { g.beginPath(); g.moveTo(tx - 4, 0); g.lineTo(tx, -9); g.lineTo(tx + 4, 0); g.closePath(); g.fill(); }
+          g.fillStyle = '#d83a2a'; g.beginPath(); g.ellipse(34, 4, 22, 3.5 + mo * 3, 0, 0, 6.283); g.fill();   // the tongue
+          g.restore();
+          // skull and upper jaw
+          const sg = g.createLinearGradient(0, -34, 0, 10); sg.addColorStop(0, '#46d884'); sg.addColorStop(1, '#1b8a52'); g.fillStyle = sg;
+          g.beginPath(); g.moveTo(-34, -2); g.bezierCurveTo(-36, -26, -12, -36, 10, -32); g.bezierCurveTo(32, -29, 52, -24, 70, -10); g.bezierCurveTo(78, -5, 78, 2, 70, 5); g.lineTo(36, 8); g.bezierCurveTo(14, 10, -12, 8, -34, 8); g.closePath(); g.fill(); g.strokeStyle = 'rgba(6,60,34,.75)'; g.lineWidth = 2; g.stroke();
+          g.fillStyle = '#fff'; for (const tx of [34, 46, 58]) { g.beginPath(); g.moveTo(tx - 4, 7); g.lineTo(tx, 17); g.lineTo(tx + 4, 7); g.closePath(); g.fill(); }
+          g.fillStyle = 'rgba(8,60,34,.65)'; g.beginPath(); g.arc(64, -9, 2.6, 0, 6.283); g.fill();   // nostril
+          g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(24, -24, 26, 4, 0.12, 0, 6.283); g.fill();   // a highlight along the brow
+          // eye
+          g.fillStyle = '#fff6b8'; g.beginPath(); g.ellipse(16, -15, 8.5, 6, -0.3, 0, 6.283); g.fill(); g.fillStyle = '#d8281a'; g.beginPath(); g.ellipse(17.5, -15, 4.2, 4.6, -0.3, 0, 6.283); g.fill(); g.fillStyle = '#120808'; g.beginPath(); g.ellipse(17.8, -15, 1.4, 4.2, -0.3, 0, 6.283); g.fill();
+          g.strokeStyle = '#0b3a22'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(4, -25); g.lineTo(28, -17 + wob * 10); g.stroke();   // an angry brow
+          // whiskers
+          g.strokeStyle = '#ffd45a'; g.lineWidth = 2.4; for (const s2 of [1, -1]) { g.beginPath(); g.moveTo(66, -2); g.bezierCurveTo(40, -6 + s2 * 16, 10, 16 + Math.sin(tt * 0.008 + s2) * 10, -30, 12 + s2 * 6 + Math.sin(tt * 0.01) * 8); g.stroke(); }
+          g.restore();
+        };
+        const dropLayer = E.layer(paintDragon);
+        const mouthAt = () => { const v = vp(D), c = Math.cos(D.ang), s2 = Math.sin(D.ang); return { x: v.x + c * 66 * D.scale * 1.05, y: v.y + s2 * 66 * D.scale * 1.05 + (Math.cos(D.ang) < 0 ? -1 : 1) * 4 * D.scale }; };
         const goTo = (tx, ty, ms, o = {}) => new Promise((resolve) => {
-          const sx = D.x, sy0 = D.y; let prevY = D.y;
+          const sx = D.x, sy0 = D.y; let px = D.x, py = D.y;
           tween(ms, (k) => {
             const e = o.ease ? o.ease(k) : 1 - Math.pow(1 - k, 2.4);   // it surges forward and settles
             D.x = sx + (tx - sx) * e; D.y = sy0 + (ty - sy0) * e + Math.sin(k * 7) * 9 * (1 - k);
-            D.tilt += ((Math.max(-14, Math.min(14, (D.y - prevY) * 2.2))) * D.face - D.tilt) * 0.2; prevY = D.y;
+            if (Math.hypot(D.x - px, D.y - py) > 0.5) turn(Math.atan2(D.y - py, D.x - px), 0.2);
+            px = D.x; py = D.y;
             if (o.alpha) D.alpha = Math.min(1, k * 4) * (o.fadeOut ? 1 - Math.max(0, k - 0.6) / 0.4 : 1);
             if (o.scale) D.scale = o.scale(k);
             if (o.follow !== false) follow(D.y, 0.14);
             pushHist();
-            const v = vp(D); E.flame(v.x - D.face * 46 * D.scale, v.y + 16, -D.face, 0.1, 2, { spd: 120, spread: 0.6, size: [10, 22], life: [300, 520] });
           }).then(resolve);
         });
         const dist = Math.hypot(hoverDoc.x - from.x, hoverDoc.y - from.y), ms = Math.round(Math.min(1700, Math.max(1150, dist * 1.15)));
         await goTo(hoverDoc.x, hoverDoc.y, ms, { alpha: true, scale: (k) => 0.55 + 0.5 * Math.min(1, k * 2.2) });
-        // hovers over the loser and draws in fire
-        const hv = vp(hoverDoc), face = hv.x < vp(tdoc()).x ? 1 : -1; D.face = face;
-        await tween(380, (k) => { D.scale = 1.05 + 0.25 * ease(k); D.tilt = -10 * ease(k) * face; D.y = hoverDoc.y + Math.sin(performance.now() * 0.008) * 6; for (let i = 0; i < 3; i++) { const a = rnd(0, 6.283), r = rnd(70, 120); E.emit({ x: hv.x + face * 56 + Math.cos(a) * r, y: hv.y + Math.sin(a) * r, vx: -Math.cos(a) * 340, vy: -Math.sin(a) * 340, life: 220, s: rnd(8, 16), s1: 2, col: [255, 210, 100], col1: [255, 80, 20], drag: 1 }); } });
+        // hovers over the loser, turns to face it and draws in fire
+        const T0 = vp(tdoc()), face = vp(hoverDoc).x < T0.x ? 1 : -1;
+        await tween(420, (k) => { const hv = vp({ x: D.x, y: D.y }); turn(Math.atan2(T0.y - hv.y, T0.x - hv.x) - 0.25 * face, 0.14); D.scale = 1.05 + 0.2 * ease(k); D.mouth = 0.1 + 0.9 * ease(k); D.y = hoverDoc.y + Math.sin(performance.now() * 0.008) * 6; const m = mouthAt(); for (let i = 0; i < 3; i++) { const a = rnd(0, 6.283), r = rnd(60, 110); E.emit({ x: m.x + Math.cos(a) * r, y: m.y + Math.sin(a) * r, vx: -Math.cos(a) * 340, vy: -Math.sin(a) * 340, life: 220, s: rnd(8, 16), s1: 2, col: [255, 210, 100], col1: [255, 80, 20], drag: 1 }); } });
         E.freeze(90); await wait(90); SND.play('roar');
-        // the breath
+        // the breath, straight from its mouth onto the loser's card
         const T = vp(tdoc()), r0 = tileRect(tTile);
         await tween(780, (k) => {
-          D.y = hoverDoc.y + Math.sin(performance.now() * 0.012) * 5; const mouth = { x: hv.x + face * 58 * D.scale, y: D.y - window.scrollY + 10 };
-          const aim = { x: T.x + rnd(-14, 14), y: T.y + rnd(-14, 14) }, dx = aim.x - mouth.x, dy = aim.y - mouth.y;
+          D.y = hoverDoc.y + Math.sin(performance.now() * 0.012) * 5; const hv = vp({ x: D.x, y: D.y });
+          turn(Math.atan2(T.y - hv.y, T.x - hv.x), 0.25); D.mouth = 1;
+          const mouth = mouthAt(), aim = { x: T.x + rnd(-14, 14), y: T.y + rnd(-14, 14) }, dx = aim.x - mouth.x, dy = aim.y - mouth.y;
           E.flame(mouth.x, mouth.y, dx, dy, 14, { spd: 1250, spread: 0.1, size: [20, 44], life: [260, 440] }); E.beam(mouth.x, mouth.y, aim.x, aim.y, { w: 24, ms: 70 });
           E.burst(aim.x, aim.y, 4, { spd: [80, 300], life: [300, 600], s: [10, 22], col: [255, 240, 170], col1: [220, 50, 0], g: -80 });
           E.embers(r0.left, r0.top, r0.width, r0.height, 2);
           jitter(1 + 5 * k); setDim(0.55 + 0.1 * Math.random());
         });
-        jitter(0);
+        jitter(0); D.mouth = 0.3;
         // the blast
         E.explosion(T.x, T.y, 1.5); flash('#ffb84a', 0.5, 380); shake(16, 560); punch(T.x, T.y); pop(T.x, T.y, pen, '#ffb02e'); hurt(tTile); scorch(tTile, 'rgba(40,12,0,.95)'); SND.play('impact'); SND.play('boom'); release(tgt.id);
         if (ti < shown.length - 1) { from = { x: D.x, y: D.y }; await wait(500); dropLayer(); }   // (the next loser gets a fresh dragon from the strongest hand)
-        else { goTo(D.x + face * 420, D.y - 380, 900, { ease: (k) => k * k, alpha: true, fadeOut: true, follow: false }).then(dropLayer); from = tdoc(); await wait(900); }
+        else { goTo(D.x + face * 440, D.y - 400, 950, { ease: (k) => k * k, alpha: true, fadeOut: true, follow: false }).then(dropLayer); from = tdoc(); await wait(950); }
       } else if (style === 'eagle') {
         const c = creature('🦅', 108);
         const goal = tdoc(), dist = Math.hypot(goal.x - from.x, goal.y - from.y), ms = Math.round(Math.min(1150, Math.max(700, dist * 0.8)));
