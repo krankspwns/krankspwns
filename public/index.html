@@ -4395,7 +4395,7 @@ async function runShowdown(res) {
         const T = vp(tdoc());
         if (style === 'thunder') {
           // a real storm cloud: dark puffs painted on the canvas, rolling in from the side, rain falling, lit from inside by every strike
-          const cx = T.x, cy = Math.max(110, T.y - 240), CL = { x: cx + (cx > W / 2 ? 260 : -260), y: cy - 40, s: 0.35, a: 0, f: 0 };
+          const S1 = Math.min(1.1, (W / 2 - 8) / 200), cx = Math.min(W - 200 * S1 - 4, Math.max(200 * S1 + 4, T.x)), cy = Math.max(175 * S1 + 12, T.y - 240), CL = { x: cx + (cx > W / 2 ? 260 : -260), y: cy - 40, s: 0.35, a: 0, f: 0 };
           const PUFFS = [[-120, 14, 62], [-70, -18, 78], [-10, -38, 90], [55, -22, 80], [115, 12, 64], [-85, 34, 54], [0, 28, 74], [82, 32, 56], [-35, -2, 66], [38, -6, 70]];
           const dropCloud = E.layer((g) => {
             if (CL.a < 0.01) return;
@@ -4407,7 +4407,7 @@ async function runShowdown(res) {
           const rain = (n) => { for (let i = 0; i < n; i++) E.emit({ x: CL.x + rnd(-130, 130) * CL.s, y: CL.y + 40 * CL.s, vx: -90, vy: rnd(800, 1100), g: 0, life: rnd(350, 520), s: 2.2, s1: 1.2, col: [190, 215, 255], col1: [110, 150, 230], drag: 1 }); };
           SND.play('swoop');
           await tween(760, (k) => {
-            const e = ease(k); CL.x = cx + (CL.x0 === undefined ? (CL.x0 = CL.x - cx) : CL.x0) * (1 - e); CL.a = Math.min(1, k * 3); CL.s = 0.35 + 0.95 * e;
+            const e = ease(k); CL.x = cx + (CL.x0 === undefined ? (CL.x0 = CL.x - cx) : CL.x0) * (1 - e); CL.a = Math.min(1, k * 3); CL.s = 0.35 + (S1 - 0.35) * e;
             CL.f = Math.random() < 0.18 ? rnd(0.2, 0.6) : CL.f * 0.8; rain(3);
             if (Math.random() < 0.12) E.bolt(CL.x + rnd(-80, 80) * CL.s, CL.y, CL.x + rnd(-130, 130) * CL.s, CL.y + 90 * CL.s, { w: 3, ms: 130, branches: 1 });
           });

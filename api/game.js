@@ -28,7 +28,7 @@ const GIFT_USES = 3;   // one purchase = three throws
 const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(process.env.TESTER_NAME).trim().toLowerCase();
 const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
-const PRED_WP = 3, PRED_PENALTY = 1, PRED_MS = 7000;   // points for calling who loses a row, lost for a wrong call, and how long the guessing lasts
+const PRED_WP = 3, PRED_PENALTY = 1, PRED_MS = 6000;   // points for calling who loses a row, lost for a wrong call, and how long the guessing lasts
 const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
@@ -351,9 +351,11 @@ function predWindow(room) {
   // row 1: a moment after the "everyone is ready" banner. Later rows: when the host's phone says the strike and the verdict are over
   // (or, if it never says so, a while after the result)
   const prev = room.results && room.results[row - 1];
-  const from = row === 0 ? (room.allReady && room.allReady.at ? room.allReady.at + 2500 : null) : prev ? ((room.predStart && room.predStart[row]) || prev.at + 15000) : null;
+  const from = row === 0 ? (room.allReady && room.allReady.at ? room.allReady.at + 1000 : null) : prev ? ((room.predStart && room.predStart[row]) || prev.at + 15000) : null;
   if (!from) return null;
-  return { from, until: from + PRED_MS };
+  // everybody has called: no need to sit out the clock (a beat is kept so the last pick is seen)
+  const early = room.predEnd && room.predEnd[row];
+  return { from, until: early ? Math.min(from + PRED_MS, Math.max(early + 700, from + 1200)) : from + PRED_MS };
 }
 function storeResults(room) {
   room.results = room.results || {};
@@ -753,6 +755,7 @@ async function handle(action, b, query, ctx = {}) {
       const tgt = active.find((p) => p.id === String(b.target));
       need(tgt && tgt.id !== pid, 400, 'Pick another player');
       room.preds[row][pid] = tgt.id;
+      if (active.every((p) => room.preds[row][p.id])) { room.predEnd = room.predEnd || {}; room.predEnd[row] = room.predEnd[row] || now; }   // all called: the window closes early
       break;
     }
 

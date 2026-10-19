@@ -311,7 +311,7 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 409, 'no guessing before everyone is ready');
   const proom = globalThis.__rooms.get(pa.code);
   for (const pl of proom.players) { pl.board = Array(7).fill(null).map((_, i) => ({ c: 'x', up: false })); pl.hand = []; pl.ready = true; }
-  proom.allReady = { id: pa.meId, name: 'PA', at: Date.now() - 300 };   // the guessing window opens 2.5 s after the last ready
+  proom.allReady = { id: pa.meId, name: 'PA', at: Date.now() + 800 };   // the guessing window opens 2.5 s after the last ready
   proom.bonus = { [pc.meId]: 5 };
   const setRow = (cards) => { proom.players.forEach((pl, i) => { pl.board[0].c = cards[i]; }); };
   setRow(['KS', '3H', 'AD']);   // row 1: lowest card loses -> PB
@@ -326,6 +326,10 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pc.meId, row: 0, target: pa.meId })).s, 200);
   const pv0 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j;
   assert.equal(pv0.pred, pb.meId); assert.equal(pv0.predN, 2); assert.ok(pv0.predWin && pv0.predWin.until > Date.now(), 'the window comes with the state');
+  assert.ok(pv0.predWin.until - Date.now() > 2500, 'with a pick missing the clock runs on');
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pb.meId, row: 0, target: pa.meId })).s, 200);
+  const pvAll = (await call('GET', null, { code: pa.code, pid: pa.meId })).j;
+  assert.ok(pvAll.predWin.until - Date.now() < 1500, 'once everybody has called, the window closes early');
   globalThis.__rooms.get(pa.code).allReady.at = Date.now() - 20000;   // the window is over
   for (const pl of globalThis.__rooms.get(pa.code).players) pl.board[0].up = true;
   await post({ action: 'emote', code: pa.code, pid: pa.meId, e: 'gg' });   // any action stores the finished row
