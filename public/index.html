@@ -60,11 +60,17 @@
   .tag.ok { background: rgba(111,207,151,.18); color: var(--green); border-color: rgba(111,207,151,.6); }
   .tag.joined { opacity:.7; }
   button.readybtn { background: linear-gradient(180deg,#8fe0ae,#52b97c); color:#06210f; padding: 12px 26px; font-size: 15px; }
-  .card.prime { box-shadow: 0 0 0 1.5px #ffd23f, 0 0 14px rgba(255,207,64,.75), 0 4px 12px rgba(0,0,0,.45); animation: primepulse 2.4s ease-in-out infinite; }
-  .card.prime .cglint { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(110deg, transparent 32%, rgba(255,255,255,.85) 48%, rgba(255,226,120,.55) 54%, transparent 68%); transform: translateX(-120%); animation: cardglint 3s ease-in-out infinite; }
+  .card.prime { --pc: 255,207,64; --gs: 3s; box-shadow: 0 0 0 1.5px rgb(var(--pc)), 0 0 14px rgba(var(--pc),.75), 0 4px 12px rgba(0,0,0,.45); animation: primepulse 2.4s ease-in-out infinite; }
+  .card.prime .cglint { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(110deg, transparent 32%, rgba(255,255,255,.85) 48%, rgba(var(--pc),.55) 54%, transparent 68%); transform: translateX(-120%); animation: cardglint var(--gs) ease-in-out infinite; }
+  .card.pt-pair { --pc: 190,205,230; --gs: 4.4s; animation: none; box-shadow: 0 0 0 1px rgba(var(--pc),.9), 0 0 7px rgba(var(--pc),.5), 0 4px 12px rgba(0,0,0,.45); } .card.pt-pair .cglint { opacity: .6; }
+  .card.pt-straight { --pc: 90,200,255; --gs: 3.6s; } .card.pt-flush { --pc: 70,220,140; --gs: 3.2s; } .card.pt-triple { --pc: 255,150,60; --gs: 2.8s; }
+  .card.pt-sflush { --pc: 200,120,255; --gs: 2.2s; } .card.pt-royal { --pc: 255,210,70; --gs: 1.6s; animation: primeroyal 2.4s linear infinite; }
+  .cstar { position: absolute; width: 9px; height: 9px; pointer-events: none; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: cstar 1.8s ease-in-out infinite; } .cstar.a { left: 14%; top: 22%; } .cstar.b { right: 16%; bottom: 20%; animation-delay: .9s; }
+  @keyframes cstar { 0%, 100% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } }
   @keyframes cardglint { 0% { transform: translateX(-120%); } 35% { transform: translateX(120%); } 100% { transform: translateX(120%); } }
-  @keyframes primepulse { 0%, 100% { box-shadow: 0 0 0 1.5px #ffd23f, 0 0 10px rgba(255,207,64,.55), 0 4px 12px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 0 1.5px #ffe27a, 0 0 20px rgba(255,207,64,.95), 0 4px 12px rgba(0,0,0,.45); } }
-  body.calm .card.prime, body.autocalm .card.prime, body.calm .card.prime .cglint, body.autocalm .card.prime .cglint { animation: none; }
+  @keyframes primepulse { 0%, 100% { box-shadow: 0 0 0 1.5px rgb(var(--pc)), 0 0 10px rgba(var(--pc),.55), 0 4px 12px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 0 1.5px rgb(var(--pc)), 0 0 20px rgba(var(--pc),.95), 0 4px 12px rgba(0,0,0,.45); } }
+  @keyframes primeroyal { 0% { box-shadow: 0 0 0 2px #ffd23f, 0 0 20px rgba(255,210,63,.95), 0 4px 12px rgba(0,0,0,.45); } 33% { box-shadow: 0 0 0 2px #ff7ad9, 0 0 20px rgba(255,122,217,.95), 0 4px 12px rgba(0,0,0,.45); } 66% { box-shadow: 0 0 0 2px #6fe3ff, 0 0 20px rgba(111,227,255,.95), 0 4px 12px rgba(0,0,0,.45); } 100% { box-shadow: 0 0 0 2px #ffd23f, 0 0 20px rgba(255,210,63,.95), 0 4px 12px rgba(0,0,0,.45); } }
+  body.calm .card.prime, body.autocalm .card.prime, body.calm .card.prime .cglint, body.autocalm .card.prime .cglint, body.calm .cstar, body.autocalm .cstar { animation: none; }
   .card.shared::after { content:''; position:absolute; right:5px; top:5px; width:8px; height:8px; border-radius:50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); }
   .others .card.shared::after { display:none; }
   .roomcode { display:flex; align-items:baseline; gap:10px; }
@@ -606,6 +612,7 @@
   .tipart { margin: 10px 0 4px; display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; align-items: flex-start; padding: 10px 8px; border-radius: 12px; background: rgba(255,255,255,.05); } .tipart .gcards { --cw: 30px; }
   .tcol { display: grid; justify-items: center; gap: 5px; } .tcol.wide { max-width: 46%; text-align: center; } .tmark { font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 99px; line-height: 1.3; } .tmark.ok { background: rgba(80,210,140,.18); color: #7fe3ad; } .tmark.bad { background: rgba(255,90,100,.2); color: #ff8e97; }
   .tscale { flex-basis: 100%; text-align: center; font-size: 11px; opacity: .6; letter-spacing: .3px; } .tladder { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; } .tstep { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: rgba(255,255,255,.1); } .tstep.bad { background: rgba(255,90,100,.22); color: #ff8e97; } .tstep:not(.bad):last-child { background: rgba(255,207,64,.2); color: var(--gold-hi); }
+  .tstep.tt-pair { box-shadow: inset 0 0 0 1px rgba(190,205,230,.8); } .tstep.tt-straight { box-shadow: inset 0 0 0 1px rgb(90,200,255); } .tstep.tt-flush { box-shadow: inset 0 0 0 1px rgb(70,220,140); } .tstep.tt-triple { box-shadow: inset 0 0 0 1px rgb(255,150,60); } .tstep.tt-sflush { box-shadow: inset 0 0 0 1px rgb(200,120,255); } .tstep.tt-royal { box-shadow: inset 0 0 0 1px #ffd23f; }
   .rowtip .tp { margin: 6px 0 0; font-size: 12.5px; color: #ffe27a; } .rowtip .tnote { font-size: 12px; opacity: .65; }
   .rowtip b { color: var(--gold-hi); font-size: 14px; } .rowtip p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; opacity: .9; } .rowtip .tj { color: #d9b8ff; } .rowtip button { margin-top: 10px; padding: 7px 16px; font-size: 13px; }
   /* final board */
@@ -2415,7 +2422,7 @@ const I18N = {
     e_moved: 'You joined another room in another tab, so you left this one.', e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
     invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
-    tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: Nothing < Pair < Straight < Flush < Three Of A Kind < Straight Flush < Royal Flush.', tipLoses: 'Loses', tipSafe: 'Safe', tipLowHigh: 'Low → High', tipBest: 'Best', tipOver: 'Over', tipWeakStrong: 'Weakest → Strongest', tipPrime1: 'Ace sparkles: the best card here. It doubles the penalty.', tipPrime2: 'A 2 sparkles: the best card here. It doubles the penalty.', tipPrime3: 'An exact 10.5 sparkles. It doubles the penalty.', tipPrime4: 'Three of a kind, a flush or better sparkles. It raises the penalty.', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
+    tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: Nothing < Pair < Straight < Flush < Three Of A Kind < Straight Flush < Royal Flush.', tipLoses: 'Loses', tipSafe: 'Safe', tipLowHigh: 'Low → High', tipBest: 'Best', tipOver: 'Over', tipWeakStrong: 'Weakest → Strongest', tipPrime1: 'Ace sparkles: the best card here. It doubles the penalty.', tipPrime2: 'A 2 sparkles: the best card here. It doubles the penalty.', tipPrime3: 'An exact 10.5 sparkles. It doubles the penalty.', tipPrime4: 'Any pattern sparkles, and the stronger it is, the fancier the effect. A flush or better raises the penalty.', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
@@ -2495,7 +2502,7 @@ const I18N = {
     e_moved: '你在另一个标签页加入了其他房间，因此已离开这个房间。', e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
     invitedTo: (v) => `你被邀请加入房间 ${v.code}`, leftOld: '你已离开之前的房间。', joinRoomN: (v) => `加入房间 ${v.code}`, otherCode: '使用其他代码', createOwn: '或创建自己的房间',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
-    tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipPrime1: 'A 会闪光：这一行最好的牌，罚分翻倍。', tipPrime2: '2 会闪光：这一行最好的牌，罚分翻倍。', tipPrime3: '刚好 10.5 会闪光，罚分翻倍。', tipPrime4: '三条、同花或更大的牌型会闪光，罚分增加。', tipLoses: '输', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超过', tipWeakStrong: '最弱 → 最强', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
+    tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipPrime1: 'A 会闪光：这一行最好的牌，罚分翻倍。', tipPrime2: '2 会闪光：这一行最好的牌，罚分翻倍。', tipPrime3: '刚好 10.5 会闪光，罚分翻倍。', tipPrime4: '任何牌型都会闪光，越强效果越华丽。同花或更大的牌型会增加罚分。', tipLoses: '输', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超过', tipWeakStrong: '最弱 → 最强', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
@@ -2575,7 +2582,7 @@ const I18N = {
     e_moved: '你在另一個分頁加入了其他房間，因此已離開這個房間。', e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
     invitedTo: (v) => `你被邀請加入房間 ${v.code}`, leftOld: '你已離開之前的房間。', joinRoomN: (v) => `加入房間 ${v.code}`, otherCode: '使用其他代碼', createOwn: '或建立自己的房間',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
-    tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipPrime1: 'A 會閃光：這一行最好的牌，罰分翻倍。', tipPrime2: '2 會閃光：這一行最好的牌，罰分翻倍。', tipPrime3: '剛好 10.5 會閃光，罰分翻倍。', tipPrime4: '三條、同花或更大的牌型會閃光，罰分增加。', tipLoses: '輸', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超過', tipWeakStrong: '最弱 → 最強', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
+    tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipPrime1: 'A 會閃光：這一行最好的牌，罰分翻倍。', tipPrime2: '2 會閃光：這一行最好的牌，罰分翻倍。', tipPrime3: '剛好 10.5 會閃光，罰分翻倍。', tipPrime4: '任何牌型都會閃光，越強效果越華麗。同花或更大的牌型會增加罰分。', tipLoses: '輸', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超過', tipWeakStrong: '最弱 → 最強', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
@@ -2727,7 +2734,7 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared 
   if (isJk) cls.push(as ? 'joker-as' : 'joker');
   if (as && morph) cls.push('morph');
   if (!up) cls.push('down');
-  if (prime && up) cls.push('prime');
+  if (prime && up) cls.push('prime', 'pt-' + (prime === true ? 'top' : prime));
   if (shared) cls.push('shared');
   if (src !== null) cls.push('mine');
   const jokerFace = () => [el('div', { class: 'jk-star' }, '★'), el('div', { class: 'jk-w' }, 'JOKER')];
@@ -2736,7 +2743,7 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared 
     : el('div', { class: cls.join(' ') }, el('div', { class: 'ix' }, rank, el('i', {}, SUIT[suit])), el('div', { class: 'pip' }, SUIT[suit]), el('div', { class: 'ixr' }, el('div', { class: 'ix' }, rank, el('i', {}, SUIT[suit]))),
         ...(isJk ? [el('div', { class: 'jk-badge' }, '★'), ...(morph ? [el('div', { class: 'jk-cover' }, ...jokerFace())] : [])] : []));
   if (shared) e.title = t('shared');
-  if (prime && up) e.append(el('i', { class: 'cglint' }));
+  if (prime && up) { e.append(el('i', { class: 'cglint' })); if (prime === 'sflush' || prime === 'royal') e.append(el('i', { class: 'cstar a' }), el('i', { class: 'cstar b' })); }
   if (src !== null) enableDrag(e, src, id, onclick);
   else if (onclick) { e.onclick = onclick; e.style.cursor = 'pointer'; }
   return e;
@@ -2837,24 +2844,27 @@ function tipArt(r) {
     el('div', { class: 'tcol wide' }, gcards(['KS', '10D']), el('span', { class: 'tmark ok' }, '0.5 + 10 = 10.5 ✓')),
     el('div', { class: 'tcol wide' }, gcards(['9C', '5H']), el('span', { class: 'tmark bad' }, '9 + 5 = 14 ✗ ' + t('tipOver'))));
   const names = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush', 'royal'];
-  return wrap(el('div', { class: 'tladder' }, ...names.map((k, i) => el('span', { class: 'tstep' + (i === 0 ? ' bad' : '') }, t('gh_' + k)))), el('div', { class: 'tscale' }, t('tipWeakStrong')));
+  return wrap(el('div', { class: 'tladder' }, ...names.map((k, i) => el('span', { class: 'tstep' + (i === 0 ? ' bad' : ' tt-' + k) }, t('gh_' + k)))), el('div', { class: 'tscale' }, t('tipWeakStrong')));
 }
 // the strongest card (or hand) a row can show: an Ace, a 2, an exact 10.5, a flush or better. These are the ones that raise the penalty, so they sparkle.
 const CRANK = { A: 14, K: 13, Q: 12, J: 11 }, crank = (c) => CRANK[c.slice(0, -1)] || Number(c.slice(0, -1));
 const cpts2 = (c) => { const r = c.slice(0, -1); return r === 'A' ? 2 : 'JQK'.includes(r) ? 1 : Number(r) * 2; };
 const CALL = ['S', 'H', 'D', 'C'].flatMap((x) => ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'].map((r) => r + x));
-function chandStrong(cs) {
-  const rs = cs.map(crank).sort((a, b) => a - b);
-  return cs.every((c) => c.slice(-1) === cs[0].slice(-1)) || rs[0] === rs[2];   // flush, straight flush, royal flush and three of a kind
+const CHANDS = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush', 'royal'];
+function chandOf(cs) {   // the same ranking the server uses, as an index into CHANDS
+  const rs = cs.map(crank).sort((a, b) => a - b), flush = cs.every((c) => c.slice(-1) === cs[0].slice(-1));
+  const straight = (rs[1] === rs[0] + 1 && rs[2] === rs[1] + 1) || (rs[0] === 2 && rs[1] === 3 && rs[2] === 14);
+  return straight && flush ? (rs[0] >= 10 ? 6 : 5) : rs[0] === rs[2] ? 4 : flush ? 3 : straight ? 2 : rs[0] === rs[1] || rs[1] === rs[2] ? 1 : 0;
 }
+// what a row's cards earn, or '' for nothing: 'top' for an Ace / 2 / exact 10.5, and the hand's own name for row 4 (any pattern sparkles, fancier the stronger it is)
 function rowPrime(row, cs) {   // cs: the card ids of the row, all of them known
   const jk = cs.map((c, i) => c === 'JK' ? i : -1).filter((i) => i >= 0);
-  if (row === 0) return cs[0] === 'JK' || cs[0].slice(0, -1) === 'A';
-  if (row === 1) return cs[0] === 'JK' || cs[0].slice(0, -1) === '2';
-  if (row === 2) { if (cs.length < 2) return false; if (jk.length) { const o = cs.filter((c) => c !== 'JK'); return jk.length === 1 && o.length === 1 && (cpts2(o[0]) === 20 || cpts2(o[0]) === 1); } return cs.reduce((a, c) => a + cpts2(c), 0) === 21; }
-  if (cs.length < 3) return false;
-  if (!jk.length) return chandStrong(cs);
-  return CALL.some((x) => chandStrong(cs.map((c) => c === 'JK' ? x : c)));
+  if (row === 0) return cs[0] === 'JK' || cs[0].slice(0, -1) === 'A' ? 'top' : '';
+  if (row === 1) return cs[0] === 'JK' || cs[0].slice(0, -1) === '2' ? 'top' : '';
+  if (row === 2) { if (cs.length < 2) return ''; if (jk.length) { const o = cs.filter((c) => c !== 'JK'); return jk.length === 1 && o.length === 1 && (cpts2(o[0]) === 20 || cpts2(o[0]) === 1) ? 'top' : ''; } return cs.reduce((a, c) => a + cpts2(c), 0) === 21 ? 'top' : ''; }
+  if (cs.length < 3) return '';
+  const best = jk.length ? Math.max(...CALL.map((x) => chandOf(cs.map((c) => c === 'JK' ? x : c)))) : chandOf(cs);
+  return best ? CHANDS[best] : '';
 }
 let tipRow = null;   // which row's criteria tip is open
 document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; render(); } });
@@ -2868,7 +2878,7 @@ function boardEl(board, mine, pid) {
     const row = el('div', { class: 'r' });
     const rw = el('div', { class: 'rw' }, row);
     const rowSlots = board.slice(i, i + n), shown = (q) => q && q.c !== '?' && (mine ? (!me.ready || q.up) : q.up);
-    const prime = rowSlots.every(shown) && rowPrime(rowIdx, rowSlots.map((q) => q.c));   // only when every card of the row is on show, so nothing hidden is given away
+    const prime = rowSlots.every(shown) ? rowPrime(rowIdx, rowSlots.map((q) => q.c)) : '';   // only when every card of the row is on show, so nothing hidden is given away
     rw.dataset.n = String(rowIdx + 1);
     for (let k = 0; k < n; k++, i++) {
       const slot = i, s = board[slot];
