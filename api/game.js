@@ -24,8 +24,9 @@ const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, pie: 15, rocket:
 const BORDER_PRICE = { silver: 15, gold: 20, emerald: 20, ice: 25, neon: 30, royal: 30, fire: 40, rainbow: 50 };
 const GIFT_USES = 3;   // one purchase = three throws
 // the tester (a player called Benny) gets 1000 WP to try the shop, and may throw gifts at themselves
-// off unless the TESTER_NAME environment variable is set, so nobody can claim free points by typing a name
-const TESTER_NAME = String(process.env.TESTER_NAME || '').trim().toLowerCase(), TESTER_WP = 1000;
+// a player called Benny gets the test points; set the TESTER_NAME environment variable to another name, or to "off", to change or disable it
+const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(process.env.TESTER_NAME).trim().toLowerCase();
+const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
 const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
