@@ -4205,16 +4205,17 @@ function paintBlackHole(g, x, y, R, rot, a) {
   g.globalCompositeOperation = 'source-over'; disk(true);
   g.restore();
 }
-function paintUfo(g, x, y, s, rot, t) {
+function paintUfo(g, x, y, s, rot, t, ch = 0) {
   g.save(); g.translate(x, y); g.rotate(rot * 0.0174533); g.scale(s, s);
   const glow = g.createRadialGradient(0, 22, 4, 0, 22, 90); glow.addColorStop(0, 'rgba(120,255,200,.55)'); glow.addColorStop(1, 'rgba(120,255,200,0)'); g.fillStyle = glow; g.beginPath(); g.ellipse(0, 24, 92, 40, 0, 0, 6.283); g.fill();
+  if (ch > 0.02) { g.save(); g.globalCompositeOperation = 'lighter'; const R = 14 + ch * 46, og = g.createRadialGradient(0, 38, 0, 0, 38, R * 1.8); og.addColorStop(0, 'rgba(255,255,255,1)'); og.addColorStop(0.3, 'rgba(160,255,210,.95)'); og.addColorStop(1, 'rgba(40,220,150,0)'); g.fillStyle = og; g.beginPath(); g.arc(0, 38, R * 1.8, 0, 6.283); g.fill(); g.strokeStyle = 'rgba(200,255,230,.8)'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { const a = t / 90 + i * 2.1; g.beginPath(); g.arc(0, 38, R * (1 + 0.25 * i), a, a + 1.7); g.stroke(); } g.restore(); }
   const dome = g.createRadialGradient(-10, -34, 4, 0, -22, 46); dome.addColorStop(0, 'rgba(235,255,255,.95)'); dome.addColorStop(0.5, 'rgba(120,220,235,.7)'); dome.addColorStop(1, 'rgba(40,120,160,.55)');
   g.fillStyle = dome; g.strokeStyle = 'rgba(210,250,255,.9)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, -10, 36, 36, 0, Math.PI, 6.283); g.closePath(); g.fill(); g.stroke();
   g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-14, -28, 9, 5, -0.6, 0, 6.283); g.fill();
   const hull = g.createLinearGradient(0, -14, 0, 28); hull.addColorStop(0, '#f1f5fb'); hull.addColorStop(0.35, '#a9b6c8'); hull.addColorStop(0.7, '#5b6678'); hull.addColorStop(1, '#2a3140');
   g.fillStyle = hull; g.beginPath(); g.ellipse(0, 8, 88, 24, 0, 0, 6.283); g.fill(); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, 6, 86, 20, 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke();
   g.fillStyle = '#394255'; g.beginPath(); g.ellipse(0, 24, 40, 9, 0, 0, 6.283); g.fill();
-  for (let i = 0; i < 9; i++) { const a = Math.PI * (0.08 + i * 0.105), px = Math.cos(a) * 70, py = 10 + Math.sin(a) * 14, on = (Math.floor(t / 110) + i) % 3 === 0; const lg = g.createRadialGradient(px, py, 0, px, py, 9); lg.addColorStop(0, on ? 'rgba(255,255,200,1)' : 'rgba(120,255,200,.8)'); lg.addColorStop(1, 'rgba(120,255,200,0)'); g.fillStyle = lg; g.beginPath(); g.arc(px, py, 9, 0, 6.283); g.fill(); }
+  for (let i = 0; i < 9; i++) { const a = Math.PI * (0.08 + i * 0.105), px = Math.cos(a) * 70, py = 10 + Math.sin(a) * 14, on = (Math.floor(t / (110 - ch * 70)) + i) % 3 === 0; const lg = g.createRadialGradient(px, py, 0, px, py, 9); lg.addColorStop(0, on ? 'rgba(255,255,200,1)' : 'rgba(120,255,200,.8)'); lg.addColorStop(1, 'rgba(120,255,200,0)'); g.fillStyle = lg; g.beginPath(); g.arc(px, py, 9, 0, 6.283); g.fill(); }
   g.restore();
 }
 function paintShark(g, x, y, s, rot, flip, open) {
@@ -4611,29 +4612,56 @@ async function runShowdown(res) {
           dropM();
           await wait(ti < shown.length - 1 ? 700 : 1500);
         } else if (style === 'shark') {
-          // a fin cuts through the water, then the shark leaps out and bites
-          SND.play('swoop'); setDim(0.7);
-          const side = T.x > W / 2 ? -1 : 1, mv = -side, wy = Math.min(H - 70, T.y + 110), F = { x: T.x + side * Math.min(W * 0.55, 320), a: 0 };
+          // jaws: a fin circles in the dark water, then a huge shark breaches out of it and bites the card in half
+          SND.play('swoop'); setDim(0.9);
+          const side = T.x > W / 2 ? -1 : 1, mv = -side, wy = Math.min(H - 80, T.y + 105);
+          const F = { x: T.x + side * Math.min(W * 0.58, 340), a: 0, dy: 0 }, Wt = { a: 0, t0: performance.now() };
+          const wave = (x, t) => wy + 6 + Math.sin(x * 0.035 + t * 2.4) * 5 + Math.sin(x * 0.09 - t * 3.1) * 2.5;
+          const dropWater = E.layer((g) => {
+            if (Wt.a < 0.01) return; const t = (performance.now() - Wt.t0) / 1000; g.save(); g.globalAlpha = Wt.a;
+            g.beginPath(); g.moveTo(0, H); for (let x = 0; x <= W + 14; x += 14) g.lineTo(x, wave(x, t)); g.lineTo(W, H); g.closePath();
+            const gr = g.createLinearGradient(0, wy, 0, wy + 170); gr.addColorStop(0, 'rgba(70,150,220,.5)'); gr.addColorStop(1, 'rgba(8,40,100,.8)'); g.fillStyle = gr; g.fill();
+            g.strokeStyle = 'rgba(215,242,255,.7)'; g.lineWidth = 2.2; g.beginPath(); for (let x = 0; x <= W + 14; x += 14) { const y = wave(x, t); x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); g.restore();
+          });
           const dropFin = E.layer((g) => {
-            if (F.a < 0.01) return; g.globalAlpha = F.a; const x = F.x, y = wy;
-            g.strokeStyle = 'rgba(210,238,255,.7)'; g.lineWidth = 3; g.lineCap = 'round';
-            for (const o of [-1, 1]) { g.beginPath(); g.moveTo(x + mv * 8, y + 2); g.lineTo(x - mv * 70, y + o * 14); g.stroke(); }
-            g.beginPath(); g.ellipse(x, y + 3, 34, 8, 0, 0, 6.283); g.stroke();
-            const gr = g.createLinearGradient(x, y - 50, x, y); gr.addColorStop(0, '#7e95b3'); gr.addColorStop(1, '#2d3e57'); g.fillStyle = gr;
-            g.beginPath(); g.moveTo(x - 24, y); g.quadraticCurveTo(x - 8 + mv * 6, y - 26, x + mv * 18, y - 50); g.quadraticCurveTo(x + 10 + mv * 2, y - 22, x + 24, y); g.closePath(); g.fill();
+            if (F.a < 0.01) return; g.save(); g.globalAlpha = F.a; const x = F.x, y = wy + 4 + F.dy;
+            g.strokeStyle = 'rgba(215,242,255,.75)'; g.lineWidth = 3; g.lineCap = 'round';
+            for (const o of [-1, 1]) { g.beginPath(); g.moveTo(x + mv * 8, y + 2); g.lineTo(x - mv * 84, y + o * 16); g.stroke(); }
+            g.beginPath(); g.ellipse(x, y + 3, 38, 9, 0, 0, 6.283); g.stroke();
+            const gr = g.createLinearGradient(x, y - 56, x, y); gr.addColorStop(0, '#8aa2c0'); gr.addColorStop(1, '#27374f'); g.fillStyle = gr;
+            g.beginPath(); g.moveTo(x - 28, y); g.quadraticCurveTo(x - 9 + mv * 7, y - 30, x + mv * 20, y - 58); g.quadraticCurveTo(x + 11 + mv * 2, y - 24, x + 28, y); g.closePath(); g.fill(); g.restore();
           });
-          await tween(900, (k) => { const e = ease(k); F.x = T.x + side * Math.min(W * 0.55, 320) * (1 - e); F.a = Math.min(1, k * 5); if (Math.random() < 0.6) E.burst(F.x - mv * 20, wy, 1, { spd: [10, 60], life: [300, 600], s: [3, 6], col: [210, 238, 255], col1: [100, 170, 230], g: 120, add: false, up: 80 }); });
-          E.burst(F.x, wy, 26, { spd: [120, 420], life: [500, 1000], s: [4, 10], col: [220, 242, 255], col1: [80, 150, 225], g: 700, add: false, up: 260 }); E.ring(F.x, wy, 160, [200, 235, 255], 520, 6); SND.play('splat');
-          F.a = 0;
-          const Sk = { x: -999, y: -999, s: 1, rot: 0, flip: 1, o: 0 }, dropShark = E.layer((g) => paintShark(g, Sk.x, Sk.y, Sk.s, Sk.rot, Sk.flip, Sk.o)), xs = T.x - mv * 170, xe = T.x + mv * 170, yb = wy + 70, ya = Math.max(100, T.y - 50);
-          let bit = false;
-          await tween(850, (k) => {
-            const x = xs + (xe - xs) * k, y = yb - 4 * (yb - ya) * k * (1 - k), vy = -4 * (yb - ya) * (1 - 2 * k) / 850, pitch = Math.atan2(vy * 850, 340) * 0.8;
-            Sk.x = x; Sk.y = y; Sk.s = 0.78 + 0.22 * Math.sin(Math.PI * k); Sk.rot = -pitch * 57.3 * mv * -1; Sk.flip = mv > 0 ? 1 : -1; Sk.o = Math.max(0, Math.min(1, (k - 0.3) / 0.2)) * (k < 0.62 ? 1 : Math.max(0, 1 - (k - 0.62) / 0.12));
-            if (!bit && k > 0.46) { bit = true; E.freeze(80); [[-0.5, -18], [0.6, 14]].forEach(([a, o]) => E.slash(T.x + o, T.y + o, a, 300, { ms: 400, w: 16, col: [255, 255, 255] })); E.burst(T.x, T.y, 30, { spd: [100, 420], life: [500, 1000], s: [4, 10], col: [220, 242, 255], col1: [80, 150, 225], g: 600, add: false, up: 200 }); flash('#d9f0ff', 0.4, 300); shake(18, 520); punch(T.x, T.y, 1.07); popT(T.x, T.y, pen, '#9fd8ff', 150); hurt(tTile); scorch(tTile, 'rgba(10,40,90,.5)'); SND.play('impact'); release(tgt.id); }
+          let sonar = 0;
+          await tween(1150, (k) => {
+            Wt.a = Math.min(1, k * 3); F.x = T.x + side * Math.min(W * 0.58, 340) * Math.pow(1 - ease(k), 1); F.a = Math.min(1, k * 5);
+            const now = performance.now(); if (now - sonar > 240) { sonar = now; E.ring(F.x, wy, 110, [200, 235, 255], 760, 2); if (k > 0.5) punch(T.x, T.y, 1.014, 280); }
+            if (Math.random() < 0.7) E.burst(F.x - mv * 22, wy, 1, { spd: [10, 70], life: [300, 640], s: [3, 6], col: [215, 240, 255], col1: [100, 170, 235], g: 140, add: false, up: 90 });
           });
-          E.burst(xe, yb, 20, { spd: [100, 360], life: [500, 900], s: [4, 9], col: [220, 242, 255], col1: [80, 150, 225], g: 700, add: false, up: 220 }); E.ring(xe, yb, 140, [200, 235, 255], 480, 5); dropShark();
-          await wait(ti < shown.length - 1 ? 650 : 1500);
+          await wait(260);
+          await tween(320, (k) => { F.dy = k * 46; F.a = 1 - k; });   // it dives: the water goes still
+          E.burst(F.x, wy, 10, { spd: [20, 100], life: [500, 900], s: [4, 8], col: [215, 240, 255], col1: [100, 170, 235], g: -60, add: false, up: 0 });
+          await wait(380);
+          const Sk = { x: -999, y: -999, s: 1, rot: 0, flip: 1, o: 0 }, dropShark = E.layer((g) => paintShark(g, Sk.x, Sk.y, Sk.s, Sk.rot, Sk.flip, Sk.o));
+          const xs = T.x - mv * 150, xe = T.x + mv * 150, yb = wy + 140, ya = Math.max(110, T.y - 60);
+          const water = (x, n, big) => { for (let i = 0; i < n; i++) E.emit({ x: x + rnd(-40, 40), y: wy + rnd(-6, 10), vx: rnd(-160, 160), vy: -rnd(300, big ? 1000 : 700), g: 900, life: rnd(700, 1400), s: rnd(4, 11), s1: 1, col: [235, 248, 255], col1: [110, 175, 235], add: false, drag: 0.995 }); E.ring(x, wy, big ? 300 : 200, [220, 242, 255], 620, big ? 9 : 6); E.ring(x, wy + 10, big ? 200 : 130, [255, 255, 255], 440, 4); };
+          water(xs, 70, true); SND.play('splat'); SND.play('boom'); flash('#bfe6ff', 0.4, 320); shake(14, 420);
+          let bit = false, trail = 0;
+          await tween(1250, (k) => {
+            const kk = k + 0.06 * Math.sin(k * 6.283 * 1) * (k < 0.5 ? 1 : -0.6), x = xs + (xe - xs) * kk, y = yb - 4 * (yb - ya) * kk * (1 - kk), dyk = -4 * (yb - ya) * (1 - 2 * kk);
+            Sk.x = x; Sk.y = y; Sk.s = 1.0 + 0.5 * Math.sin(Math.PI * Math.min(1, kk * 1.02)); Sk.rot = Math.atan2(dyk, 300) * 57.3 * mv * 0.85; Sk.flip = mv > 0 ? 1 : -1;
+            Sk.o = kk < 0.5 ? Math.max(0, Math.min(1, (kk - 0.12) / 0.3)) : Math.max(0, 1 - (kk - 0.5) / 0.06);
+            const now = performance.now(); if (now - trail > 30) { trail = now; for (let i = 0; i < 3; i++) E.emit({ x: x - mv * rnd(20, 90), y: y + rnd(-20, 30), vx: rnd(-60, 60), vy: rnd(0, 120), g: 700, life: rnd(500, 900), s: rnd(3, 8), s1: 1, col: [235, 248, 255], col1: [110, 175, 235], add: false }); }
+            if (!bit && kk >= 0.5) {
+              bit = true; E.freeze(170); SND.play('impact'); SND.play('tear'); flash('#d9f0ff', 0.5, 340);
+              [[-0.55, -22], [0.55, 22]].forEach(([a, o]) => E.slash(T.x + o, T.y + o * 0.4, a, 360, { ms: 460, w: 18, col: [255, 255, 255] }));
+              E.burst(T.x, T.y, 46, { spd: [140, 560], life: [600, 1200], s: [5, 12], col: [235, 248, 255], col1: [90, 160, 230], g: 700, add: false, up: 200 }); E.ring(T.x, T.y, 280, [200, 235, 255], 520, 8);
+              shake(28, 660); punch(T.x, T.y, 1.12, 440); popT(T.x, T.y, pen, '#9fd8ff', 150); hurt(tTile); scorch(tTile, 'rgba(10,40,90,.5)'); release(tgt.id);
+            }
+          });
+          water(xe, 50, true); SND.play('splat'); shake(10, 360);
+          await tween(500, (k) => { Wt.a = 1 - k; });
+          dropShark(); dropWater(); dropFin();
+          await wait(ti < shown.length - 1 ? 450 : 1100);
         } else if (style === 'ninja') {
           // a flurry of throwing stars out of a puff of smoke, then the cross-cut
           SND.play('whistle'); setDim(0.65);
@@ -4755,25 +4783,46 @@ async function runShowdown(res) {
           dropCn();
           await wait(ti < shown.length - 1 ? 300 : 900);
         } else if (style === 'ufo') {
-          // a flying saucer lifts the loser's tile in a tractor beam and zaps it
-          SND.play('whistle'); setDim(0.8);
-          const r = tileRect(tTile), uy = Math.max(100, T.y - 190), U = { x: T.x + (T.x > W / 2 ? -1 : 1) * W * 0.6, y: -120, b: 0, f: 1, dx: 0, dy: -300, sc: 0.6, rot: 0 }, ut0 = performance.now();
-          const place = (_c, x, y, sc, rot) => { U.dx = x; U.dy = y; U.sc = sc; U.rot = rot; };
-          const dropUfo = E.layer((g) => paintUfo(g, U.dx, U.dy, U.sc * 0.9, U.rot, performance.now() - ut0)), c = null;
+          // an invasion: the saucer sweeps its searchlight, locks onto the tile, lifts it, charges a plasma cannon and vaporises it
+          SND.play('whistle'); setDim(0.9);
+          const r = tileRect(tTile), uy = Math.max(110, T.y - 200), U = { x: T.x + (T.x > W / 2 ? -1 : 1) * W * 0.65, y: -140, b: 0, f: 1, ang: 0, lock: 0, ch: 0, dx: 0, dy: -300, sc: 0.7, rot: 0 }, ut0 = performance.now();
+          const dropUfo = E.layer((g) => paintUfo(g, U.dx, U.dy, U.sc * 1.2, U.rot, performance.now() - ut0, U.ch));
           const dropBm = E.layer((g) => {
-            if (U.b <= 0.01) return; const by2 = U.y + 46, ex = r.left + r.width / 2, ey = Math.min(H, r.bottom + 10), py = by2 + (ey - by2) * U.b, hw = 26 + (r.width / 2 - 26) * U.b, pcx = U.x + (ex - U.x) * U.b;
-            const gr = g.createLinearGradient(0, by2, 0, ey); gr.addColorStop(0, `rgba(150,255,210,${0.7 * U.f})`); gr.addColorStop(1, `rgba(120,255,200,${0.22 * U.f})`); g.fillStyle = gr; g.beginPath(); g.moveTo(U.x - 26, by2); g.lineTo(U.x + 26, by2); g.lineTo(pcx + hw, py); g.lineTo(pcx - hw, py); g.closePath(); g.fill();
+            if (U.b <= 0.01) return; const by2 = U.dy + 52 * U.sc * 1.2, ex = r.left + r.width / 2, ey = Math.min(H, r.bottom + 12);
+            let tx, hw, ty;
+            if (U.lock < 1) { const sw = Math.sin(U.ang) * W * 0.55; tx = T.x + sw * (1 - U.lock); ty = ey; hw = 70 + 30 * U.lock; } else { tx = ex; ty = ey; hw = r.width / 2; }
+            tx = tx * (1 - 0) ; const gr = g.createLinearGradient(0, by2, 0, ty); gr.addColorStop(0, `rgba(170,255,220,${0.75 * U.f * U.b})`); gr.addColorStop(1, `rgba(110,255,190,${0.25 * U.f * U.b})`);
+            g.fillStyle = gr; g.beginPath(); g.moveTo(U.dx - 32, by2); g.lineTo(U.dx + 32, by2); g.lineTo(tx + hw, ty); g.lineTo(tx - hw, ty); g.closePath(); g.fill();
+            g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(210,255,235,${0.5 * U.f * U.b})`; g.lineWidth = 2; g.beginPath(); g.moveTo(U.dx - 32, by2); g.lineTo(tx - hw, ty); g.moveTo(U.dx + 32, by2); g.lineTo(tx + hw, ty); g.stroke();
+            const gg = g.createRadialGradient(tx, ty, 0, tx, ty, hw * 1.2); gg.addColorStop(0, `rgba(200,255,230,${0.55 * U.f * U.b})`); gg.addColorStop(1, 'rgba(100,255,190,0)'); g.fillStyle = gg; g.beginPath(); g.ellipse(tx, ty, hw * 1.2, hw * 0.35, 0, 0, 6.283); g.fill(); g.restore();
           });
-          await tween(720, (k) => { const e = ease(k); U.x = U.x + (T.x - U.x) * 0.16; U.y = -120 + (uy + 120) * e; place(c, U.x, U.y + Math.sin(k * 14) * 6, 0.6 + 0.4 * e, Math.sin(k * 10) * 6, 1); });
-          SND.play('beep'); const hold = 1050;
-          try { tTile.animate([{ transform: 'none' }, { transform: 'translateY(-34px) rotate(-3deg)', offset: .25 }, { transform: 'translateY(-42px) rotate(3deg)', offset: .6 }, { transform: 'translateY(-36px) rotate(-2deg)' }], { duration: hold, easing: 'ease-in-out' }); } catch {}
-          await tween(hold, (k) => { U.b = Math.min(1, k * 4); U.x = T.x + Math.sin(k * 18) * 8; place(c, U.x, U.y + Math.sin(k * 14) * 5, 1, Math.sin(k * 9) * 5, 1); if (Math.random() < 0.8) E.emit({ x: r.left + rnd(0, r.width), y: r.bottom - rnd(0, 20), vx: 0, vy: rnd(-200, -90), g: 0, life: 600, s: 5, s1: 1, col: [190, 255, 225], col1: [60, 230, 160], drag: 1 }); });
-          E.freeze(100); SND.play('thunder'); flash('#c8ffe9', 0.5, 340);
-          E.bolt(U.x, U.y + 50, T.x, T.y, { w: 10, ms: 420, branches: 5, col: [120, 255, 190] }); E.bolt(U.x + 10, U.y + 50, T.x + 20, T.y, { w: 6, ms: 320, branches: 3, col: [150, 255, 210] });
-          E.burst(T.x, T.y, 36, { spd: [120, 460], life: [400, 900], s: [5, 11], col: [220, 255, 240], col1: [40, 200, 140], g: 60 }); E.ring(T.x, T.y, 260, [150, 255, 210], 480, 7);
-          shake(15, 520); punch(T.x, T.y, 1.06); popT(T.x, T.y, pen, '#9dffd0', 200); hurt(tTile); scorch(tTile, 'rgba(0,40,20,.5)'); release(tgt.id);
+          // 1) it arrives, the whole screen rumbling
+          await tween(760, (k) => { const e = ease(k); U.x = U.x + (T.x - U.x) * 0.15; U.y = -140 + (uy + 140) * e; U.dx = U.x; U.dy = U.y + Math.sin(k * 14) * 6; U.sc = 0.6 + 0.45 * e; U.rot = Math.sin(k * 10) * 7; jitter(3 * k); });
+          jitter(0); SND.play('boom'); shake(10, 420); E.ring(U.dx, U.dy + 40, 260, [150, 255, 210], 640, 6);
+          // 2) the searchlight sweeps across the area, then locks onto the loser
+          SND.play('beep'); U.b = 0.01;
+          await tween(1000, (k) => { U.b = Math.min(1, k * 6); U.ang = k * 9; U.lock = k > 0.72 ? Math.min(1, (k - 0.72) / 0.28) : 0; U.dx = U.x + Math.sin(k * 16) * 7; U.dy = uy + Math.sin(k * 11) * 5; });
+          U.lock = 1; SND.play('chime'); E.ring(T.x, r.bottom, 150, [160, 255, 215], 520, 4);
+          // 3) the tile is lifted and spun in the beam, wind spiralling up around it
+          try { tTile.animate([{ transform: 'none', filter: 'none' }, { transform: 'translateY(-30px) rotate(-4deg)', filter: 'brightness(1.3) drop-shadow(0 0 16px #7dffc8)', offset: .2 }, { transform: 'translateY(-52px) rotate(6deg)', filter: 'brightness(1.5) drop-shadow(0 0 26px #7dffc8)', offset: .6 }, { transform: 'translateY(-46px) rotate(-5deg)', filter: 'brightness(1.6) drop-shadow(0 0 30px #7dffc8)' }], { duration: 1100, easing: 'ease-in-out' }); } catch {}
+          await tween(1100, (k) => {
+            U.dx = U.x + Math.sin(k * 20) * 6; U.dy = uy + Math.sin(k * 13) * 5; U.ch = Math.max(0, (k - 0.35) / 0.65);
+            for (let i = 0; i < 3; i++) { const a = rnd(0, 6.283), rr = r.width * rnd(0.35, 0.6), cx2 = r.left + r.width / 2, cy2 = r.bottom - 10; E.emit({ x: cx2 + Math.cos(a) * rr, y: cy2 + rnd(-6, 6), vx: -Math.sin(a) * 160, vy: -rnd(160, 340), g: 0, life: rnd(500, 900), s: rnd(3, 7), s1: 1, col: [210, 255, 235], col1: [60, 230, 160], drag: 0.99 }); }
+            if (k > 0.6 && Math.random() < 0.5) E.bolt(U.dx + rnd(-30, 30), U.dy + 50, r.left + rnd(0, r.width), r.top + rnd(0, r.height), { w: 3, ms: 140, branches: 1, col: [150, 255, 210] });
+            jitter(2 * k);
+          });
+          jitter(0);
+          // 4) fire: a thick plasma beam, then the tile is vaporised
+          E.freeze(110); SND.play('thunder'); SND.play('boom'); flash('#d4ffee', 0.65, 420); U.ch = 1;
+          for (let i = 0; i < 4; i++) E.beam(U.dx, U.dy + 60, T.x, T.y, { w: 70 - i * 10, col: i % 2 ? [255, 255, 255] : [110, 255, 190], ms: 260 });
+          E.bolt(U.dx, U.dy + 60, T.x, T.y, { w: 14, ms: 520, branches: 8, col: [130, 255, 200] });
+          E.explosion(T.x, T.y, 1.5); E.burst(T.x, T.y, 60, { spd: [160, 700], life: [600, 1300], s: [4, 10], col: [235, 255, 245], col1: [30, 200, 130], g: 160 });
+          for (const [rr, c, w, ms] of [[340, [150, 255, 210], 9, 600], [220, [255, 255, 255], 6, 460], [120, [100, 255, 190], 4, 340]]) E.ring(T.x, T.y, rr, c, ms, w);
+          shake(26, 700); punch(T.x, T.y, 1.1, 440); popT(T.x, T.y, pen, '#9dffd0', 220); hurt(tTile); scorch(tTile, 'rgba(0,40,20,.55)'); release(tgt.id);
           await wait(300);
-          await tween(420, (k) => { U.f = 1 - k; U.b = 1 - k; const e = k * k; U.x += 30; place(c, U.x, U.y - 500 * e, 1 - 0.4 * e, 12, 1); E.speed(U.x, U.y - 500 * e, 1, -1, 2); });
+          // 5) it leaves in a hurry, a sonic ring behind it
+          E.ring(U.dx, U.dy, 300, [200, 255, 230], 520, 5); SND.play('swoop');
+          await tween(520, (k) => { U.ch = 1 - k; U.f = 1 - k; U.b = 1 - k; const e = k * k, ox = U.dx; U.dx += 34; U.dy -= 38 * e * 3; E.speed(U.dx, U.dy, 1, -1, 3); });
           dropBm(); dropUfo();
           await wait(ti < shown.length - 1 ? 400 : 1100);
         } else {
