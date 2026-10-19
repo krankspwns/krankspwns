@@ -12,6 +12,7 @@ async function call(method, body, query) {
   return out;
 }
 globalThis.__testToks = toks;
+globalThis.__predOff = true;
 const post = (b) => call('POST', b, {});
 (async () => {
   const c = (await post({ action: 'create', name: 'Host' })).j;
@@ -304,26 +305,38 @@ const post = (b) => call('POST', b, {});
   const hv = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
   assert.deepEqual(hv.rowResults.map((r) => r.penalty), [1, 1, 1, 2], 'x0.5: a penalty of 1 stays 1 and 3 becomes 2 (rounded up)');
   // ---- predictions: name who will lose a row, earn points when right ----
+  globalThis.__predOff = false;
   const pa = (await post({ action: 'create', name: 'PA' })).j, pb = (await post({ action: 'join', code: pa.code, name: 'PB' })).j, pc = (await post({ action: 'join', code: pa.code, name: 'PC' })).j;
   await post({ action: 'deal', code: pa.code, pid: pa.meId });
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 409, 'no guessing before everyone is ready');
   const proom = globalThis.__rooms.get(pa.code);
   for (const pl of proom.players) { pl.board = Array(7).fill(null).map((_, i) => ({ c: 'x', up: false })); pl.hand = []; pl.ready = true; }
+  proom.allReady = { id: pa.meId, name: 'PA', at: Date.now() - 1000 };   // the guessing window opens 2.5 s after the last ready
+  proom.bonus = { [pc.meId]: 5 };
   const setRow = (cards) => { proom.players.forEach((pl, i) => { pl.board[0].c = cards[i]; }); };
   setRow(['KS', '3H', 'AD']);   // row 1: lowest card loses -> PB
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 409, 'the window has not opened yet');
+  assert.equal((await post({ action: 'flip', code: pa.code, pid: pa.meId, slot: 0 })).s, 409, 'no turning cards over while guesses are coming');
+  globalThis.__rooms.get(pa.code).allReady.at = Date.now() - 3000;   // now inside the window
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pa.meId })).s, 400, 'not yourself');
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 1, target: pb.meId })).s, 409, 'only the row that is next');
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 200);
+  assert.equal((await post({ action: 'predict', code: pb.meId && pa.code, pid: pb.meId, row: 0, target: pa.meId })).s, 200);
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pb.meId, row: 0, target: '' })).s, 200, 'a guess can be taken back');
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pc.meId, row: 0, target: pa.meId })).s, 200);
   const pv0 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j;
-  assert.equal(pv0.pred, pb.meId); assert.equal(pv0.predN, 2);
+  assert.equal(pv0.pred, pb.meId); assert.equal(pv0.predN, 2); assert.ok(pv0.predWin && pv0.predWin.until > Date.now(), 'the window comes with the state');
+  globalThis.__rooms.get(pa.code).allReady.at = Date.now() - 20000;   // the window is over
   for (const pl of globalThis.__rooms.get(pa.code).players) pl.board[0].up = true;
   await post({ action: 'emote', code: pa.code, pid: pa.meId, e: 'gg' });   // any action stores the finished row
   const pr0 = globalThis.__rooms.get(pa.code).results[0];
   assert.deepEqual(pr0.losers, [pb.meId]); assert.deepEqual(pr0.hits, ['PA'], 'only the right guess counts');
   assert.equal(globalThis.__rooms.get(pa.code).bonus[pa.meId], 3, 'a right guess earns points');
+  assert.equal(globalThis.__rooms.get(pa.code).bonus[pc.meId], 4, 'a wrong guess costs a point'); assert.deepEqual(pr0.misses, ['PC']);
   assert.equal(pr0.streak.n, 1);
   assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.wallet.pts, 3);
 
+  globalThis.__predOff = true;
   // ---- security ----
   const sa = (await post({ action: 'create', name: 'SecA' })).j, sb = (await post({ action: 'join', code: sa.code, name: 'SecB' })).j;
   const rawCall = async (method, body, query, headers = {}) => { let out; const res = { setHeader() {}, status(x) { this.s = x; return this; }, json(j) { out = { s: this.s, j }; } }; await h({ method, body, query, headers }, res); return out; };

@@ -28,7 +28,7 @@ const GIFT_USES = 3;   // one purchase = three throws
 const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(process.env.TESTER_NAME).trim().toLowerCase();
 const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
-const PRED_WP = 3;   // points for calling who loses a row
+const PRED_WP = 3, PRED_PENALTY = 1, PRED_MS = 7000;   // points for calling who loses a row, lost for a wrong call, and how long the guessing lasts
 const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
@@ -342,6 +342,17 @@ function sysChat(room, o) {
   room.chat = [...(room.chat || []), { n: room.chatN, sys: true, ...o, at: Date.now() }].slice(-60);
 }
 const CHAT_REACTS = ['heart', 'laugh', 'up', 'fire', 'wow'];
+// the short guessing window before each row opens: it starts once the last verdict (or the "everyone is ready" banner) has been seen,
+// and nobody can turn cards over until it is done
+function predWindow(room) {
+  if (globalThis.__predOff) return null;   // the tests switch the window off, except in the test of the window itself
+  const row = currentRowOf(room), active = activeOf(room);
+  if (room.phase !== 'dealt' || row >= ROW_SIZES.length || active.length < 2 || !active.every((p) => p.ready)) return null;
+  const base = row === 0 ? room.allReady && room.allReady.at : room.results && room.results[row - 1] && room.results[row - 1].at;
+  if (!base) return null;
+  const from = base + (row === 0 ? 2500 : 3500);
+  return { from, until: from + PRED_MS };
+}
 function storeResults(room) {
   room.results = room.results || {};
   for (const r of rowResults(room)) {
@@ -357,12 +368,19 @@ function storeResults(room) {
     room.results[r.row].called = Object.keys(pr).length;
     if (!r.tie) {
       const hit = Object.entries(pr).filter(([pid, tgt]) => r.losers.includes(tgt) && room.players.some((q) => q.id === pid));
+      const miss = Object.entries(pr).filter(([pid, tgt]) => !r.losers.includes(tgt) && room.players.some((q) => q.id === pid) && balanceOf(room, pid) >= PRED_PENALTY);   // a wrong call costs a point, never below zero
+      if (miss.length) {
+        room.bonus = room.bonus || {};
+        for (const [pid] of miss) room.bonus[pid] = (room.bonus[pid] || 0) - PRED_PENALTY;
+        room.results[r.row].misses = miss.map(([pid]) => room.players.find((q) => q.id === pid).name);
+        room.results[r.row].missIds = miss.map(([pid]) => pid);
+      }
+      if (hit.length || miss.length) sysChat(room, { k: 'called', names: hit.map(([pid]) => room.players.find((q) => q.id === pid).name), miss: room.results[r.row].misses || [], wp: PRED_WP, pen: PRED_PENALTY });
       if (hit.length) {
         room.bonus = room.bonus || {};
         for (const [pid] of hit) room.bonus[pid] = (room.bonus[pid] || 0) + PRED_WP;
         room.results[r.row].hits = hit.map(([pid]) => room.players.find((q) => q.id === pid).name);
         room.results[r.row].hitIds = hit.map(([pid]) => pid);
-        sysChat(room, { k: 'called', names: room.results[r.row].hits, wp: PRED_WP });
       }
     }
     sysChat(room, r.tie ? { k: 'tie', row: r.row } : { k: 'lose', row: r.row, names, pen: room.results[r.row].penalty });
@@ -446,9 +464,11 @@ function view(room, pid, seen, cn) {
     deadline: room.deadline || null,
     rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
     currentRow: currentRowOf(room),
+    predWin: predWindow(room),
     pred: (room.preds && room.preds[currentRowOf(room)] && room.preds[currentRowOf(room)][me.id]) || null,
     predN: Object.keys((room.preds && room.preds[currentRowOf(room)]) || {}).length,
     predWp: PRED_WP,
+    predPen: PRED_PENALTY,
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -629,6 +649,7 @@ async function handle(action, b, query, ctx = {}) {
 
     case 'flip': {
       need(room.phase === 'dealt', 409, 'No cards dealt');
+      { const w = predWindow(room); need(!w || Date.now() >= w.until, 409, 'Wait for the guesses'); }
       const slot = slotOf(b.slot);
       need(me.board[slot], 400, 'Nothing there');
       need(rowOfSlot(slot) <= currentRowOf(room), 409, 'Not this row yet');
@@ -640,6 +661,7 @@ async function handle(action, b, query, ctx = {}) {
     case 'flipRow': {
       need(room.phase === 'dealt', 409, 'No cards dealt');
       need(active.every((p) => p.ready), 409, 'Wait until everyone is ready');
+      { const w = predWindow(room); need(!w || Date.now() >= w.until, 409, 'Wait for the guesses'); }
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       need(row <= currentRowOf(room), 409, 'Not this row yet');
@@ -654,6 +676,7 @@ async function handle(action, b, query, ctx = {}) {
       need(room.hostId === pid, 403, 'Only the host can do that');
       need(room.phase === 'dealt', 409, 'No cards dealt');
       need(active.every((p) => p.ready), 409, 'Wait until everyone is ready');
+      { const w = predWindow(room); need(!w || Date.now() >= w.until, 409, 'Wait for the guesses'); }
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       need(row <= currentRowOf(room), 409, 'Not this row yet');
@@ -718,16 +741,15 @@ async function handle(action, b, query, ctx = {}) {
       break;
     }
 
-    case 'predict': {   // call who will lose the row that is about to open (needs three or more players)
-      need(room.phase === 'dealt' && active.length >= 2 && active.every((p) => p.ready), 409, 'Not now');
-      const row = currentRowOf(room);
-      need(row < ROW_SIZES.length && Number(b.row) === row && !(room.results && room.results[row]), 409, 'That row is already open');
-      const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
-      need(!active.some((p) => p.board.slice(start, start + ROW_SIZES[row]).some((c) => c && c.up)), 409, 'Too late: the row is already opening');   // once any card is face up the guess would be informed
-      const tgt = active.find((p) => p.id === String(b.target));
-      need(tgt, 400, 'Pick a player');   // you may pick yourself too: if you know your own card is weak, it is a consolation
+    case 'predict': {   // call who will lose the row that is about to open: right = +3 points, wrong = -1, no call = nothing
+      const w = predWindow(room), now = Date.now(), row = currentRowOf(room);
+      need(w && Number(b.row) === row && now >= w.from - 300 && now <= w.until + 800, 409, 'Guessing is closed');
       room.preds = room.preds || {};
-      (room.preds[row] = room.preds[row] || {})[pid] = tgt.id;
+      room.preds[row] = room.preds[row] || {};
+      if (b.target === '') { delete room.preds[row][pid]; break; }   // taking the call back
+      const tgt = active.find((p) => p.id === String(b.target));
+      need(tgt && tgt.id !== pid, 400, 'Pick another player');
+      room.preds[row][pid] = tgt.id;
       break;
     }
 
