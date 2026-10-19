@@ -807,7 +807,7 @@ module.exports = async (req, res) => {
   try {
     need(req.method === 'GET' || req.method === 'POST', 405, 'Method not allowed');
     const ip = clientIp(req);
-    if (ip) need(!memStrike('all' + ip, 3000, 60000), 429, 'Slow down a little.');
+    if (ip) need(!memStrike('all' + ip, 1500, 60000), 429, 'Slow down a little.');
     const query = req.query || Object.fromEntries(new URL(req.url, 'http://x').searchParams);
     let body = req.body;
     if (typeof body === 'string') { need(body.length <= 8000, 413, 'Too much data'); try { body = body ? JSON.parse(body) : {}; } catch { throw new HttpError(400, 'Bad request'); } }
