@@ -598,6 +598,10 @@
   .rowinfo { position: absolute; left: 0; top: 0; bottom: 0; margin: auto 0; height: 34px; width: 34px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; background: radial-gradient(circle at 40% 35%, rgba(255,226,120,.28), rgba(255,170,40,.12)) !important; border: 1px solid rgba(255,206,90,.6) !important; box-shadow: none !important; line-height: 0; z-index: 2; } .rowinfo:hover { transform: none; filter: brightness(1.2); } .rowinfo.on { background: radial-gradient(circle at 40% 35%, rgba(255,226,120,.55), rgba(255,170,40,.3)) !important; box-shadow: 0 0 14px rgba(255,200,70,.5) !important; }
   .rowtip { position: absolute; left: 0; right: 0; top: calc(50% + 24px); z-index: 30; padding: 12px 14px 12px; border-radius: 14px; text-align: left; background: rgb(var(--panel)); border: 1px solid rgba(111,211,255,.6); box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: boxpop .25s ease backwards; }
   .rowtip::before { content: ''; position: absolute; left: 13px; top: -7px; width: 12px; height: 12px; background: rgb(var(--panel)); border-left: 1px solid rgba(111,211,255,.6); border-top: 1px solid rgba(111,211,255,.6); transform: rotate(45deg); }
+  .tipart { margin: 10px 0 4px; display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; align-items: flex-start; padding: 10px 8px; border-radius: 12px; background: rgba(255,255,255,.05); } .tipart .gcards { --cw: 30px; }
+  .tcol { display: grid; justify-items: center; gap: 5px; } .tcol.wide { max-width: 46%; text-align: center; } .tmark { font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 99px; line-height: 1.3; } .tmark.ok { background: rgba(80,210,140,.18); color: #7fe3ad; } .tmark.bad { background: rgba(255,90,100,.2); color: #ff8e97; }
+  .tscale { flex-basis: 100%; text-align: center; font-size: 11px; opacity: .6; letter-spacing: .3px; } .tladder { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; } .tstep { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: rgba(255,255,255,.1); } .tstep.bad { background: rgba(255,90,100,.22); color: #ff8e97; } .tstep:not(.bad):last-child { background: rgba(255,207,64,.2); color: var(--gold-hi); }
+  .rowtip .tnote { font-size: 12px; opacity: .65; }
   .rowtip b { color: var(--gold-hi); font-size: 14px; } .rowtip p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; opacity: .9; } .rowtip .tj { color: #d9b8ff; } .rowtip button { margin-top: 10px; padding: 7px 16px; font-size: 13px; }
   /* final board */
   .final { --cw: 36px; }
@@ -2396,7 +2400,7 @@ const I18N = {
     e_moved: 'You joined another room in another tab, so you left this one.', e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
     invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
-    tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: Nothing < Pair < Straight < Flush < Three Of A Kind < Straight Flush < Royal Flush.', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
+    tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: Nothing < Pair < Straight < Flush < Three Of A Kind < Straight Flush < Royal Flush.', tipLoses: 'Loses', tipSafe: 'Safe', tipLowHigh: 'Low → High', tipBest: 'Best', tipOver: 'Over', tipWeakStrong: 'Weakest → Strongest', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
@@ -2476,7 +2480,7 @@ const I18N = {
     e_moved: '你在另一个标签页加入了其他房间，因此已离开这个房间。', e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
     invitedTo: (v) => `你被邀请加入房间 ${v.code}`, leftOld: '你已离开之前的房间。', joinRoomN: (v) => `加入房间 ${v.code}`, otherCode: '使用其他代码', createOwn: '或创建自己的房间',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
-    tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
+    tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipLoses: '输', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超过', tipWeakStrong: '最弱 → 最强', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
@@ -2556,7 +2560,7 @@ const I18N = {
     e_moved: '你在另一個分頁加入了其他房間，因此已離開這個房間。', e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
     invitedTo: (v) => `你被邀請加入房間 ${v.code}`, leftOld: '你已離開之前的房間。', joinRoomN: (v) => `加入房間 ${v.code}`, otherCode: '使用其他代碼', createOwn: '或建立自己的房間',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
-    tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
+    tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipLoses: '輸', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超過', tipWeakStrong: '最弱 → 最強', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
@@ -2804,6 +2808,20 @@ function drop(src, cardId, t) {
   return act('move', { from: src, to });
 }
 
+// a picture of each row's rule: little example cards with what happens to each
+function tipArt(r) {
+  const col = (ids, mark, cls) => el('div', { class: 'tcol' }, gcards(ids), el('span', { class: 'tmark ' + cls }, mark));
+  const wrap = (...k) => el('div', { class: 'tipart' }, ...k);
+  if (r === 0 || r === 1) {
+    const ids = r === 0 ? ['2C', '8D', 'AS'] : ['2C', '8D', 'AS'], bad = r === 0 ? 0 : 2;
+    return wrap(...ids.map((c, i) => col([c], i === bad ? t('tipLoses') : t('tipSafe'), i === bad ? 'bad' : 'ok')), el('div', { class: 'tscale' }, r === 0 ? t('tipLowHigh') : t('tipLowHigh')));
+  }
+  if (r === 2) return wrap(
+    el('div', { class: 'tcol wide' }, gcards(['KS', '10D']), el('span', { class: 'tmark ok' }, '0.5 + 10 = 10.5 ✓')),
+    el('div', { class: 'tcol wide' }, gcards(['9C', '5H']), el('span', { class: 'tmark bad' }, '9 + 5 = 14 ✗ ' + t('tipOver'))));
+  const names = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush', 'royal'];
+  return wrap(el('div', { class: 'tladder' }, ...names.map((k, i) => el('span', { class: 'tstep' + (i === 0 ? ' bad' : '') }, t('gh_' + k)))), el('div', { class: 'tscale' }, t('tipWeakStrong')));
+}
 let tipRow = null;   // which row's criteria tip is open
 document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; render(); } });
 function boardEl(board, mine, pid) {
@@ -2837,7 +2855,7 @@ function boardEl(board, mine, pid) {
     if (mine && dealt && !me.ready) {   // beginner help: an (i) per row explains how that row is won or lost
       rw.append(el('button', { type: 'button', class: 'rowinfo' + (tipRow === rowIdx ? ' on' : ''), 'aria-label': t('rowN', { n: rowIdx + 1 }), onclick: (e) => { e.stopPropagation(); tipRow = tipRow === rowIdx ? null : rowIdx; render(); } }, colorIcon(BULB_ICON, 24)));
       if (tipRow === rowIdx) rw.append(el('div', { class: 'rowtip', onclick: (e) => e.stopPropagation() },
-        el('b', {}, t('rowN', { n: rowIdx + 1 }) + ' · ' + t('rule' + (rowIdx + 1))), el('p', {}, t('tip' + (rowIdx + 1))), el('p', { class: 'tj' }, t('tipJoker')),
+        el('b', {}, t('rowN', { n: rowIdx + 1 }) + ' · ' + t('rule' + (rowIdx + 1))), tipArt(rowIdx), el('p', { class: 'tnote' }, t('tip' + (rowIdx + 1))), el('p', { class: 'tj' }, t('tipJoker')),
         el('button', { type: 'button', class: 'ghost', onclick: () => { tipRow = null; render(); } }, t('tipClose'))));
     }
     if (mine && dealt && activePlayers().every((p) => p.ready)) {
