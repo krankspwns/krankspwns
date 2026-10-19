@@ -47,6 +47,15 @@ function rtData(room) {
   const g = (room.gifts || []).filter((x) => now - x.at < 3000), e = (room.emotes || []).filter((x) => now - x.at < 3000);
   return g.length || e.length ? JSON.stringify({ v: room.version, ...(g.length && { g }), ...(e.length && { e }) }) : String(room.version);
 }
+// let the response go out first and finish the push afterwards (Vercel keeps the function alive for waitUntil); elsewhere just wait for it
+function background(promise) {
+  try {
+    const ctx = globalThis[Symbol.for('@vercel/request-context')];
+    const wu = ctx && ctx.get && ctx.get() && ctx.get().waitUntil;
+    if (wu) { wu(promise); return; }
+  } catch {}
+  return promise;
+}
 async function rtPublish(room) {
   if (!ABLY_KEY) return;
   try {
@@ -116,10 +125,10 @@ async function saveRoom(room) {
   const expected = room.version || 0;
   room.version = expected + 1;
   roomCache.delete(room.code);
-  if (!REDIS_URL) { mem.set(room.code, room); return rtPublish(room); }
+  if (!REDIS_URL) { mem.set(room.code, room); return background(rtPublish(room)); }
   const ok = await redis(['EVAL', CAS_LUA, '1', `room:${room.code}`, JSON.stringify(room), String(expected), String(TTL_SECONDS)]);
   if (ok !== 1) throw new Conflict();
-  await rtPublish(room);
+  await background(rtPublish(room));
 }
 
 // host-controlled game settings
