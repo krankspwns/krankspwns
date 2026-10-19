@@ -411,9 +411,9 @@
   .rsav { position: relative; } .rsav .ttl { position: absolute; right: -5px; top: -4px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); } .ttl { display: inline-block; line-height: 0; flex: none; }
   .mycalls { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 2px 0 12px; } .mc-k { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-hi); opacity: .85; }
   .mc-list { display: flex; gap: 6px; } .mc { position: relative; display: grid; justify-items: center; gap: 2px; padding: 4px 6px 5px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid var(--line); min-width: 36px; }
-  .mc small { display: block; font-size: 11px; line-height: 1; font-weight: 800; color: var(--gold-hi); } .mc.now { border-color: var(--gold); background: rgba(var(--gold-rgb),.14); } .mc.wait { opacity: .75; } .mc.skip { opacity: .55; } .mc.tie { opacity: .7; }
+  .mc small { display: block; font-size: 11px; line-height: 1; font-weight: 800; color: var(--gold-hi); } .mc.now { border-color: var(--gold); background: rgba(var(--gold-rgb),.14); } .mc.wait { opacity: .75; } .mc.skip { opacity: .8; border-style: dashed; background: transparent; } .mc.tie { opacity: .7; }
   .mc.hit { border-color: #6fcf97; background: rgba(111,207,151,.16); } .mc.miss { border-color: rgba(255,107,94,.7); background: rgba(255,107,94,.12); } .mc.miss .av { filter: grayscale(.6); opacity: .8; }
-  .mc-skip { width: 24px; height: 24px; display: grid; place-items: center; font-style: normal; opacity: .7; } .mc-s { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; color: #fff; } .mc.hit .mc-s { background: #2fa866; } .mc.miss .mc-s { background: #e0483b; } .mc-s .ic { color: #fff !important; }
+  .mc-skip { width: 24px; height: 24px; display: block; line-height: 0; font-style: normal; } .mc-s { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; color: #fff; } .mc.hit .mc-s { background: #2fa866; } .mc.miss .mc-s { background: #e0483b; } .mc-s .ic { color: #fff !important; }
   .gdemo { margin: 6px 0 10px; pointer-events: none; } .gbody .ppodds + .glist { margin-top: 14px; }
   .hallwrap > .sthead { flex-direction: row !important; flex-wrap: nowrap; align-items: center; gap: 10px; } .sbbtn { flex: none; padding: 6px 12px !important; font-size: 12.5px !important; min-height: 0 !important; margin: 0; }
   .guide-ov.sb-ov { align-items: center !important; padding: 12px !important; }
@@ -4184,7 +4184,7 @@ function myCallsStrip(cur) {
     const rr = res.find((x) => x.row === r), who = pk && pk !== '-' ? st.players.find((q) => q.id === pk) : null;
     const state = !who ? 'skip' : !rr ? (r === cur ? 'now' : 'wait') : rr.tie ? 'tie' : rr.losers.includes(pk) ? 'hit' : 'miss';
     return el('span', { class: 'mc ' + state, title: t('rowN', { n: r + 1 }) + ' · ' + (who ? who.name : t('predSkip')) },
-      el('small', {}, String(r + 1)), who ? avatarEl(who.avatar, 24, '', who.acc, who.bd) : el('i', { class: 'mc-skip' }, '–'),
+      el('small', {}, String(r + 1)), who ? avatarEl(who.avatar, 24, '', who.acc, who.bd) : (() => { const i = el('i', { class: 'mc-skip', 'aria-label': t('predSkip') }); i.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.55)" stroke-width="1.4" stroke-dasharray="3 2.4"/><path d="M8.6 8.2v7.6l5.6-3.8z" fill="#cfd6e6"/><rect x="15" y="8.2" width="1.9" height="7.6" rx=".9" fill="#cfd6e6"/></svg>'; return i; })(),
       state === 'hit' ? el('b', { class: 'mc-s' }, icon('check', 10)) : state === 'miss' ? el('b', { class: 'mc-s' }, icon('x', 10)) : '');
   })));
 }
