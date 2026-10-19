@@ -3933,9 +3933,13 @@ let stageRow = null, holdTimer = null, stageEnter = false;
 const tearRows = new Set();   // rows whose tear animation should play on the next render
 const HOLD_MS = 7800;         // 5s pop-up + a moment to look at the torn cards
 
+let holdWait = 0;
 function advanceStage() {
   holdTimer = null;
   if (!st) return;
+  // the next row never cuts in on a strike or a verdict that is still playing (up to 8 s of extra patience)
+  if (document.querySelector('.atkfx, .resfx') && holdWait < 16) { holdWait++; holdTimer = setTimeout(advanceStage, 500); return; }
+  holdWait = 0;
   const target = st.currentRow ?? 0;
   if (stageRow < target) {
     stageRow = Math.min(stageRow + 1, target);
@@ -4195,7 +4199,7 @@ async function runShowdown(res) {
     const shake = (amp = 10, ms = 460) => { if (!app) return; const fr = [{ transform: 'none' }]; for (let i = 0; i < 9; i++) { const k = 1 - i / 9; fr.push({ transform: `translate(${(rnd(-1, 1) * amp * k).toFixed(1)}px,${(rnd(-1, 1) * amp * k).toFixed(1)}px) rotate(${(rnd(-1, 1) * amp * k * 0.06).toFixed(2)}deg)` }); } fr.push({ transform: 'none' }); anim(app, fr, { duration: ms }); };
     const punch = (x, y, s = 1.07, ms = 340) => { if (!app) return; app.style.transformOrigin = `${x}px ${y + window.scrollY}px`; const a = anim(app, [{ transform: 'scale(1)' }, { transform: `scale(${s})`, offset: .22 }, { transform: 'scale(1)' }], { duration: ms, easing: 'ease-out' }); if (a) a.onfinish = () => { app.style.transformOrigin = ''; }; };
     const jitter = (amp) => { if (app) app.style.transform = amp ? `translate(${rnd(-amp, amp).toFixed(1)}px,${rnd(-amp, amp).toFixed(1)}px)` : ''; };
-    const pop = (x, y, text, col = '#ff5a5a') => { const p = mk(`font:900 64px system-ui;color:${col};-webkit-text-stroke:3px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.35), 0 0 24px ${col};white-space:nowrap;z-index:87`, text); anim(p, [{ transform: `translate(${x - 40}px,${y - 30}px) scale(.2) rotate(-10deg)`, opacity: 0 }, { transform: `translate(${x - 40}px,${y - 60}px) scale(1.5) rotate(-6deg)`, opacity: 1, offset: .22 }, { transform: `translate(${x - 40}px,${y - 70}px) scale(1.1) rotate(-4deg)`, opacity: 1, offset: .7 }, { transform: `translate(${x - 40}px,${y - 130}px) scale(1)`, opacity: 0 }], { duration: 1300, fill: 'forwards' }); };
+    const pop = (x, y, text, col = '#ff5a5a', delay = 0) => { y = Math.max(y, 250); x = Math.min(W - 130, Math.max(60, x)); const p = mk(`font:900 80px system-ui;color:${col};-webkit-text-stroke:4px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.45), 0 0 28px ${col}, 0 0 4px #000;white-space:nowrap;z-index:95;opacity:0`, text); anim(p, [{ transform: `translate(${x - 40}px,${y - 30}px) scale(.2) rotate(-10deg)`, opacity: 0 }, { transform: `translate(${x - 40}px,${y - 60}px) scale(1.5) rotate(-6deg)`, opacity: 1, offset: .1 }, { transform: `translate(${x - 40}px,${y - 70}px) scale(1.1) rotate(-4deg)`, opacity: 1, offset: .7 }, { transform: `translate(${x - 40}px,${y - 130}px) scale(1)`, opacity: 0 }], { duration: 1900, delay, fill: 'forwards' }); };
     const hurt = (tile) => { try { tile.animate([{ transform: 'none', filter: 'brightness(1)' }, { transform: 'translate(-12px,4px) rotate(-2.5deg)', filter: 'brightness(2.2)', offset: .12 }, { transform: 'translate(10px,-4px) rotate(2deg)', filter: 'brightness(1.4)', offset: .3 }, { transform: 'translate(-7px,2px)', offset: .5 }, { transform: 'translate(4px)', offset: .7 }, { transform: 'none', filter: 'brightness(1)' }], { duration: 640 }); tile.animate([{ boxShadow: '0 0 0 0 rgba(255,80,80,0)' }, { boxShadow: '0 0 0 6px rgba(255,90,90,.95), 0 0 60px rgba(255,80,80,.9)', offset: .2 }, { boxShadow: '0 0 0 0 rgba(255,80,80,0)' }], { duration: 1100 }); } catch {} };
     const scorch = (tile, col) => { const r = tile.getBoundingClientRect(); const s = mk(`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:14px;background:radial-gradient(circle at 50% 55%, ${col}, transparent 70%);mix-blend-mode:multiply;opacity:0`); s.style.position = 'fixed'; anim(s, [{ opacity: 0 }, { opacity: .85, offset: .25 }, { opacity: .55 }], { duration: 1400, fill: 'forwards' }); };
     const creature = (emoji, size) => { const c = mk(`font-size:${size}px;line-height:1;width:${size}px;height:${size}px;filter:drop-shadow(0 10px 14px rgba(0,0,0,.55));will-change:transform;z-index:85`); c.innerHTML = `<span class="atkflap">${emoji}</span>`; c.size = size; return c; };
@@ -4408,8 +4412,8 @@ async function runShowdown(res) {
           flash('#fff', 0.6, 420); E.freeze(110); await wait(110);
           E.explosion(T.x, T.y, 2); E.burst(T.x, T.y, 28, { spd: [160, 620], life: [700, 1300], s: [6, 14], col: [150, 120, 100], col1: [40, 30, 30], g: 900, add: false });
           E.ring(T.x, T.y, 300, [255, 255, 255], 500, 8); E.smoke(T.x, T.y, 18, { size: [40, 90] });
-          shake(24, 700); punch(T.x, T.y, 1.1, 420); pop(T.x, T.y, pen, '#ff8a3c'); hurt(tTile); scorch(tTile, 'rgba(30,10,0,.98)'); SND.play('boom'); SND.play('impact'); release(tgt.id);
-          await wait(ti < shown.length - 1 ? 650 : 900);
+          shake(24, 700); punch(T.x, T.y, 1.1, 420); pop(T.x, T.y, pen, '#ffc247', 300); hurt(tTile); scorch(tTile, 'rgba(30,10,0,.5)'); SND.play('boom'); SND.play('impact'); release(tgt.id);
+          await wait(ti < shown.length - 1 ? 900 : 1500);   // long enough to read the penalty before the verdict takes over
         }
       }
     }
@@ -4419,6 +4423,7 @@ async function runShowdown(res) {
     E.stop(); fx.remove();
     { const y = window.scrollY; if (app) { app.style.transform = ''; } if (st) render(); window.scrollTo(0, y); }   // show the verdict chip and the results list, staying where we are
   } catch (err) {
+    console.error('showdown', err);
     if (E) E.stop(); releaseAll(); document.querySelector('.atkfx')?.remove(); const a = document.getElementById('app'); if (a) { a.style.transform = ''; a.style.transformOrigin = ''; } if (st) render();
   }
 }
