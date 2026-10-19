@@ -572,7 +572,7 @@
   .chead { display: flex; align-items: baseline; gap: 6px; padding: 0 6px; font-size: 11.5px; } .chead b { color: hsl(var(--h) 90% 76%); } .chead em { font-style: normal; font-size: 10.5px; opacity: .5; } .cmsg.mine .chead b { color: var(--gold-hi); } .cmsg.mine .chead { flex-direction: row-reverse; }
   .cmsg.new { animation: cmsgin .38s cubic-bezier(.2,1.3,.4,1) backwards; } @keyframes cmsgin { from { opacity: 0; transform: translateY(14px) scale(.92); } }
   .cmsg:not(.mine) .cbub { background: linear-gradient(160deg, hsla(var(--h), 80%, 62%, .26), hsla(var(--h), 80%, 62%, .10)); border: 1px solid hsla(var(--h), 85%, 70%, .38); }
-  .cbigemo { font-size: 42px; line-height: 1.1; padding: 0 4px; animation: stpop .5s cubic-bezier(.2,1.5,.4,1) backwards; } .cstk { cursor: pointer; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); animation: stpop .55s cubic-bezier(.2,1.5,.4,1) backwards; } .cstk.again { animation: stagain .5s ease; }
+  .cbigemo { font-size: 42px; line-height: 1.1; padding: 0 4px; } .cstk { cursor: pointer; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); } .cmsg.new .cbigemo { animation: stpop .5s cubic-bezier(.2,1.5,.4,1) backwards; } .cmsg.new .cstk { animation: stpop .55s cubic-bezier(.2,1.5,.4,1) backwards; } .cstk.again { animation: stagain .5s ease; }
   @keyframes stpop { from { opacity: 0; transform: scale(.2) rotate(-14deg); } 60% { transform: scale(1.18) rotate(5deg); } } @keyframes stagain { 30% { transform: scale(1.25) rotate(-8deg); } 60% { transform: scale(.95) rotate(6deg); } }
   .chatwho { display: flex; align-items: center; gap: 10px; padding: 8px 16px 2px; } .cw-av { display: flex; } .cw-av .av { margin-left: -7px; box-shadow: 0 0 0 2px rgb(var(--panel)); } .cw-av .av:first-child { margin-left: 0; } .chatwho small { opacity: .6; font-size: 12px; }
   .chatempty .ce-stk { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; } .ce-stk span { animation: cebob 1.8s ease-in-out infinite; } @keyframes cebob { 50% { transform: translateY(-9px) rotate(5deg); } }
@@ -1645,6 +1645,7 @@ function openChat() {
   ov.close = close;
   document.body.append(ov); document.body.classList.add('noscroll');
   chatSeen = st ? st.chatN || 0 : 0;
+  chatNodes = new Map();
   renderChat(false);
   syncEmoteUi();
   setTimeout(() => document.querySelector('.chat-in input')?.focus(), 120);
@@ -1676,62 +1677,100 @@ function sendReact(n, k) {
   api('creact', { n, e: k }).then((j) => { if (j && j.chatR) { chatR = j.chatR; renderChat(true); } }).catch(() => {});
 }
 // a short line about what happened at the table
-function chatSysLine(m) {
+function chatSysLine(m, fresh) {
   const ic = m.k === 'gift' ? giftEl(m.item, 16) : m.k === 'lose' ? icon('x', 12) : m.k === 'tie' ? icon('tick', 12) : '';
   const txt = m.k === 'gift' ? (m.tn === '*' ? t('chatSysGiftAll', { from: m.fn, item: t('gift_' + m.item) }) : t('chatSysGift', { from: m.fn, to: m.tn, item: t('gift_' + m.item) }))
     : m.k === 'lose' ? t('chatSysLose', { names: (m.names || []).join(', '), n: m.row + 1, pen: m.pen })
     : m.k === 'tie' ? t('chatSysTie', { n: m.row + 1 })
     : m.k === 'join' ? t('chatSysJoin', { name: m.fn }) : t('chatSysLeave', { name: m.fn });
-  return el('div', { class: 'csys ' + m.k + (chatShown.has(m.n) ? '' : ' new') }, ic, el('span', {}, txt));
+  return el('div', { class: 'csys ' + m.k + (fresh ? ' new' : '') }, ic, el('span', {}, txt));
 }
 function chatAgo(m) {
   if (!m.at || m.pending) return '';
   const sec = Math.max(0, (serverNow() - m.at) / 1000);
   return sec < 45 ? t('chatNow') : sec < 3600 ? Math.round(sec / 60) + 'm' : Math.round(sec / 3600) + 'h';
 }
-function renderChat(keepScroll) {
-  const ov = document.querySelector('.chat-ov'); if (!ov) return;
-  const list = ov.querySelector('.chatlist');
-  const atBottom = !list || list.scrollHeight - list.scrollTop - list.clientHeight < 60;
-  const oldInput = ov.querySelector('.chat-in input');
-  const draft = oldInput ? oldInput.value : '';
-  const hadFocus = oldInput && document.activeElement === oldInput;
-  const msgs = chatLog.map((m, i) => {
-    if (m.sys) { const line = chatSysLine(m); chatShown.add(m.n); return line; }
-    const mine = m.id === (st && st.meId), stk = chatSticker(m), big = !stk && BIGEMO_RE.test(m.text);
-    let fresh = !m.pending && !chatShown.has(m.n) || m.pending && !m.shown;   // the one-off pop-in
-    if (m.pending) { m.shown = true; chatPendText.add(m.text); } else { if (fresh && mine && chatPendText.delete(m.text)) fresh = false; chatShown.add(m.n); }   // your own message already popped in while it was sending
-    const same = i && !chatLog[i - 1].sys && chatLog[i - 1].id === m.id && !stk && !chatSticker(chatLog[i - 1]);   // a run from one person only shows the name once
-    const pick = () => { if (m.pending) return; chatPick = chatPick === m.n ? null : m.n; renderChat(true); };
-    const head = el('div', { class: 'chead' }, el('b', {}, m.name + (mine ? t('you') : '')), el('em', {}, chatAgo(m)));
-    const body = stk
-      ? el('div', { class: 'cstk', onclick: (e) => { const n = e.currentTarget; n.classList.remove('again'); void n.offsetWidth; n.classList.add('again'); pick(); } }, emoteEl(stk, 76))
-      : big ? el('div', { class: 'cbigemo', onclick: pick }, m.text)
-      : el('div', { class: 'cbub', onclick: pick }, el('span', {}, m.text));
-    const rs = chatR[m.n] || {}, myR = Object.keys(rs).find((k) => rs[k].includes(st.meId));
-    const chips = Object.keys(rs).length ? el('div', { class: 'rchips' }, ...Object.keys(rs).map((k) => el('button', { type: 'button', class: 'rchip' + (rs[k].includes(st.meId) ? ' on' : ''), onclick: () => sendReact(m.n, k) }, REACT_EMO[k], el('i', {}, String(rs[k].length))))) : '';
-    const picker = chatPick === m.n && !m.pending ? el('div', { class: 'rpick' }, ...Object.keys(REACT_EMO).map((k) => el('button', { type: 'button', class: k === myR ? 'on' : '', onclick: () => sendReact(m.n, k) }, REACT_EMO[k]))) : '';
-    return el('div', { class: 'cmsg' + (mine ? ' mine' : '') + (m.pending ? ' pending' : '') + (fresh ? ' new' : '') + (stk ? ' sticker' : '') + (same ? ' same' : ''), style: `--h:${chatHue(m.id)}` },
-      same ? el('span', { class: 'cgap' }) : avatarEl(m.avatar, 34, '', m.acc, m.bd),
-      el('div', { class: 'ccol' }, same ? '' : head, body, picker, chips));
-  });
-  const input = el('input', { type: 'text', maxLength: 140, placeholder: t('chatPh'), value: draft, enterKeyHint: 'send', 'aria-label': t('chatPh'), onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = input.value; input.value = ''; sendChat(v); } } });
+// the chat window is built once; an update only touches the messages that changed, so a tap never flashes, re-plays animations or drops the keyboard
+let chatNodes = new Map();
+function chatFresh(m, mine) {   // true the first time a message is drawn, for its one-off pop-in
+  if (m.pending) { chatPendText.add(m.text); return true; }
+  let f = !chatShown.has(m.n);
+  if (f && mine && chatPendText.delete(m.text)) f = false;   // your own message already popped in while it was sending
+  chatShown.add(m.n);
+  return f;
+}
+function chatMsgEl(m, i, fresh) {
+  const mine = m.id === (st && st.meId), stk = chatSticker(m), big = !stk && BIGEMO_RE.test(m.text);
+  const prev = chatLog[i - 1];
+  const same = i && !prev.sys && prev.id === m.id && !stk && !chatSticker(prev);   // a run from one person only shows the name once
+  const pick = () => { if (m.pending) return; chatPick = chatPick === m.n ? null : m.n; renderChat(true); };
+  const head = el('div', { class: 'chead' }, el('b', {}, m.name + (mine ? t('you') : '')), el('em', {}, chatAgo(m)));
+  const body = stk
+    ? el('div', { class: 'cstk', onclick: (e) => { const n = e.currentTarget; n.classList.remove('again'); void n.offsetWidth; n.classList.add('again'); pick(); } }, emoteEl(stk, 76))
+    : big ? el('div', { class: 'cbigemo', onclick: pick }, m.text)
+    : el('div', { class: 'cbub', onclick: pick }, el('span', {}, m.text));
+  const rs = chatR[m.n] || {}, myR = Object.keys(rs).find((k) => rs[k].includes(st.meId));
+  const chips = Object.keys(rs).length ? el('div', { class: 'rchips' }, ...Object.keys(rs).map((k) => el('button', { type: 'button', class: 'rchip' + (rs[k].includes(st.meId) ? ' on' : ''), onclick: () => sendReact(m.n, k) }, REACT_EMO[k], el('i', {}, String(rs[k].length))))) : '';
+  const picker = chatPick === m.n && !m.pending ? el('div', { class: 'rpick' }, ...Object.keys(REACT_EMO).map((k) => el('button', { type: 'button', class: k === myR ? 'on' : '', onclick: () => sendReact(m.n, k) }, REACT_EMO[k]))) : '';
+  return el('div', { class: 'cmsg' + (mine ? ' mine' : '') + (m.pending ? ' pending' : '') + (fresh ? ' new' : '') + (stk ? ' sticker' : '') + (same ? ' same' : ''), style: `--h:${chatHue(m.id)}` },
+    same ? el('span', { class: 'cgap' }) : avatarEl(m.avatar, 34, '', m.acc, m.bd),
+    el('div', { class: 'ccol' }, same ? '' : head, body, picker, chips));
+}
+function chatShell(ov) {
+  const input = el('input', { type: 'text', maxLength: 140, placeholder: t('chatPh'), enterKeyHint: 'send', 'aria-label': t('chatPh'), onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = input.value; input.value = ''; sendChat(v); } } });
   const quick = ['chatQ1', 'chatQ2', 'chatQ3', 'chatQ4'].map((k) => el('button', { type: 'button', class: 'ghost qchip', onclick: () => sendChat(t(k)) }, t(k)));
-  const here = (st ? st.players : []).slice(0, 7);
-  const empty = el('div', { class: 'chatempty' }, el('div', { class: 'ce-stk' }, ...['laugh', 'clap', 'fire'].filter((k) => EMOTE_ART[k]).map((k, n) => el('span', { style: `animation-delay:${n * .25}s` }, emoteEl(k, 48)))), el('p', {}, t('chatEmpty')));
-  const tray = chatTray ? el('div', { class: 'stktray' }, ...EMOTE_KEYS.map((k) => el('button', { type: 'button', 'aria-label': k, onclick: () => { chatTray = false; sendChat('[s:' + k + ']'); } }, emoteEl(k, 40)))) : '';
-  ov.replaceChildren(el('div', { class: 'guide chatbox', role: 'dialog', 'aria-modal': 'true' },
+  const box = el('div', { class: 'guide chatbox', role: 'dialog', 'aria-modal': 'true' },
     el('div', { class: 'ghead' }, el('div', { class: 'gtitle' }, el('b', { class: 'colorful' }, colorIcon(CHAT_ICON, 22)), t('chatTitle')), el('button', { class: 'ghost gx', 'aria-label': t('gClose'), onclick: ov.close }, icon('x', 16))),
-    here.length ? el('div', { class: 'chatwho' }, el('span', { class: 'cw-av' }, ...here.map((q) => avatarEl(q.avatar, 24, '', q.acc, q.bd))), el('small', {}, t('chatHere', { n: st.players.length }))) : '',
-    el('div', { class: 'chatlist' }, ...(msgs.length ? msgs : [empty])),
-    tray,
+    el('div', { class: 'chatwho' }),
+    el('div', { class: 'chatlist' }),
     el('div', { class: 'qrow' }, ...quick),
     el('div', { class: 'chat-in' },
-      el('button', { type: 'button', class: 'stkbtn' + (chatTray ? ' on' : ''), 'aria-label': t('chatStickers'), title: t('chatStickers'), onclick: () => { chatTray = !chatTray; renderChat(true); } }, emoteEl('laugh', 30)),
-      input, el('button', { type: 'button', class: 'sendbtn', 'aria-label': t('chatSend'), onclick: () => { const v = input.value; input.value = ''; sendChat(v); input.focus(); } }, colorIcon(SEND_ICON, 26)))));
-  const nl = ov.querySelector('.chatlist');
-  if (!keepScroll || atBottom) nl.scrollTop = nl.scrollHeight; else nl.scrollTop = list ? list.scrollTop : 0;
-  if (hadFocus) { const ni = ov.querySelector('.chat-in input'); ni.focus(); try { ni.setSelectionRange(ni.value.length, ni.value.length); } catch {} }
+      el('button', { type: 'button', class: 'stkbtn', 'aria-label': t('chatStickers'), title: t('chatStickers'), onclick: () => { chatTray = !chatTray; renderChat(true); } }, emoteEl('laugh', 30)),
+      input, el('button', { type: 'button', class: 'sendbtn', 'aria-label': t('chatSend'), onclick: () => { const v = input.value; input.value = ''; sendChat(v); input.focus(); } }, colorIcon(SEND_ICON, 26))));
+  ov.replaceChildren(box);
+  return box;
+}
+function renderChat(keepScroll) {
+  const ov = document.querySelector('.chat-ov'); if (!ov) return;
+  let box = ov.querySelector('.chatbox');
+  if (!box) { chatNodes = new Map(); box = chatShell(ov); }
+  const list = box.querySelector('.chatlist');
+  const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60, top = list.scrollTop;
+  // who is here
+  const who = box.querySelector('.chatwho'), here = (st ? st.players : []).slice(0, 7);
+  const whoSig = here.map((q) => q.avatar + q.acc + q.bd).join('|') + (st ? st.players.length : 0);
+  if (who.dataset.sig !== whoSig) {
+    who.dataset.sig = whoSig; who.hidden = !here.length;
+    who.replaceChildren(el('span', { class: 'cw-av' }, ...here.map((q) => avatarEl(q.avatar, 24, '', q.acc, q.bd))), el('small', {}, t('chatHere', { n: st ? st.players.length : 0 })));
+  }
+  // messages: keep what is unchanged, rebuild only what is different
+  const keep = new Set(); let pos = 0;
+  const place = (node) => { const ref = list.children[pos]; if (ref !== node) list.insertBefore(node, ref || null); pos++; };
+  chatLog.forEach((m, i) => {
+    const key = m.n; keep.add(key);
+    const rs = chatR[m.n] ? JSON.stringify(chatR[m.n]) : '';
+    const sig = [m.text, m.pending ? 1 : 0, rs, chatPick === m.n ? 1 : 0, chatAgo(m), i && chatLog[i - 1].id === m.id && !chatLog[i - 1].sys ? 1 : 0, m.sys ? '' : st.meId].join('\u0001');
+    let c = chatNodes.get(key);
+    if (!c || c.sig !== sig) {
+      const fresh = !c && (m.sys ? !chatShown.has(m.n) : chatFresh(m, m.id === st.meId));
+      if (m.sys) chatShown.add(m.n);
+      const node = m.sys ? chatSysLine(m, fresh) : chatMsgEl(m, i, fresh);
+      if (c) c.node.replaceWith(node);
+      c = { sig, node }; chatNodes.set(key, c);
+    }
+    place(c.node);
+  });
+  for (const [k, c] of [...chatNodes]) if (!keep.has(k)) { c.node.remove(); chatNodes.delete(k); }
+  let empty = list.querySelector('.chatempty');
+  if (!chatLog.length) {
+    if (!empty) list.append(el('div', { class: 'chatempty' }, el('div', { class: 'ce-stk' }, ...['laugh', 'clap', 'fire'].filter((k) => EMOTE_ART[k]).map((k, n) => el('span', { style: `animation-delay:${n * .25}s` }, emoteEl(k, 48)))), el('p', {}, t('chatEmpty'))));
+  } else if (empty) empty.remove();
+  // sticker tray
+  let tray = box.querySelector('.stktray');
+  box.querySelector('.stkbtn').classList.toggle('on', chatTray);
+  if (chatTray && !tray) list.after(el('div', { class: 'stktray' }, ...EMOTE_KEYS.map((k) => el('button', { type: 'button', 'aria-label': k, onclick: () => { chatTray = false; sendChat('[s:' + k + ']'); } }, emoteEl(k, 40)))));
+  else if (!chatTray && tray) tray.remove();
+  if (!keepScroll || atBottom) list.scrollTop = list.scrollHeight; else list.scrollTop = top;
 }
 
 // ---- display & accessibility (kept on this phone only) ----
