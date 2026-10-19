@@ -447,8 +447,8 @@
   .tcard.end .card.endc { position: absolute; inset: 0; box-shadow: none; }
   .tcard.end .tfx, .tcard.end .tfg { position: absolute; inset: 0; pointer-events: none; }
   .tcard.end .tfg { mix-blend-mode: screen; }
-  .tcard.end.tearing { animation: endin .85s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; }
-  @keyframes endin { 0% { transform: scale(1.12); filter: brightness(2.4); } 100% { transform: none; filter: none; } }
+  .tcard.end.tearing { animation: endin 1s calc(.4s + var(--cd, 0s)) cubic-bezier(.22,.8,.3,1) backwards; }   /* the damaged card eases in: no flash, no overshoot */
+  @keyframes endin { 0% { opacity: 0; transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
   .e-burnt .endc { filter: sepia(.22) brightness(.95); } .e-crater .endc, .e-hole .endc { filter: sepia(.35) brightness(.82) contrast(1.05); }
   .e-burnt .tfg, .e-crater .tfg, .e-hole .tfg, .e-cracked .tfg { animation: lavapulse 1.6s ease-in-out infinite alternate; }
   @keyframes lavapulse { from { opacity: .6; } to { opacity: 1; } }
@@ -459,10 +459,10 @@
   .tcard.e-sliced .sp { position: absolute; inset: 0; filter: drop-shadow(0 0 .7px rgba(255,255,255,.95)) drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
   .tcard.e-sliced .sp .card.half { position: absolute; inset: 0; filter: grayscale(.4) brightness(.9); box-shadow: none; animation: none !important; }
   .tcard.e-sliced .sp1 { transform: translate(calc(var(--cw) * .05), calc(var(--cw) * -.065)) rotate(1.2deg); } .tcard.e-sliced .sp2 { transform: translate(calc(var(--cw) * -.04), calc(var(--cw) * -.01)) rotate(-1.1deg); } .tcard.e-sliced .sp3 { transform: translate(calc(var(--cw) * .055), calc(var(--cw) * .03)) rotate(.9deg); } .tcard.e-sliced .sp4 { transform: translate(calc(var(--cw) * -.045), calc(var(--cw) * .075)) rotate(-1.3deg); }
-  .tcard.e-sliced.tearing .sp { animation: spin .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; } @keyframes spin { from { transform: none; } }
+  .tcard.e-sliced.tearing .sp { animation: spin 1s calc(.4s + var(--cd, 0s)) cubic-bezier(.22,.8,.3,1) backwards; } @keyframes spin { from { transform: none; } }
   .e-warp .endc { filter: hue-rotate(250deg) saturate(.7) brightness(.85); } .e-warp .tfg { animation: lavapulse 1.4s ease-in-out infinite alternate; }
   .tcard.e-shatter .shd { position: absolute; inset: 0; } .tcard.e-shatter .shd .card.half { position: absolute; inset: 0; box-shadow: none; animation: none !important; filter: grayscale(.3); }
-  .tcard.e-shatter.tearing .shd { animation: shin .7s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.5,.4,1) backwards; } @keyframes shin { from { transform: none !important; } }
+  .tcard.e-shatter.tearing .shd { animation: shin 1s calc(.4s + var(--cd, 0s)) cubic-bezier(.22,.8,.3,1) backwards; } @keyframes shin { from { transform: none !important; } }
   .e-crushed .endc, .e-crushed .tfx, .e-crushed .tfg { transform: scaleY(.7) translateY(20%); transform-origin: 50% 100%; } .e-crushed .endc { filter: grayscale(.35) brightness(.85); }
   .e-punched .endc { filter: grayscale(.3) brightness(.88); } .e-crumple .endc { transform: scale(.88, .82) rotate(-2deg); filter: grayscale(.3) brightness(.92); } .e-crumple .tfx, .e-crumple .tfg { transform: scale(.88, .82) rotate(-2deg); }
   .tcard.e-fold { perspective: 520px; }
@@ -474,7 +474,7 @@
   .e-fold .fp2 .fsh::before, .e-fold .fp2 .fsh::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.95), transparent); } .e-fold .fp2 .fsh::before { top: 33.3%; } .e-fold .fp2 .fsh::after { top: 66.6%; }
   .e-fold .fp1 .card, .e-fold .fp2 .card, .e-fold .fp3 .card { filter: grayscale(.25) brightness(.92) contrast(1.05); }
   .e-fold .dogear { position: absolute; left: 76%; top: 0; width: 24%; height: 16%; clip-path: polygon(0 0, 100% 100%, 0 100%); background: repeating-linear-gradient(45deg, #1d2f66 0 3px, #2c4690 3px 6px); box-shadow: -3px 3px 6px rgba(0,0,0,.5); filter: drop-shadow(-2px 2px 2px rgba(0,0,0,.5)); }
-  .tcard.e-fold.tearing { animation: foldin .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.2,.4,1) backwards; } @keyframes foldin { from { transform: scale(1.1, 1.25); filter: brightness(1.8); } }
+  .tcard.e-fold.tearing .fp { animation: fpin 1s calc(.4s + var(--cd, 0s)) cubic-bezier(.22,.8,.3,1) backwards; } @keyframes fpin { from { transform: none; } }
   .e-frozen .endc { filter: hue-rotate(185deg) saturate(.75) brightness(1.1); } .tcard.end.e-frozen .tfx, .tcard.end.e-frozen .tfg { inset: auto; left: -25%; top: -19%; width: 150%; height: 137.9%; } .e-frozen .tfg { animation: lavapulse 1.3s ease-in-out infinite alternate; }
   .tcard.tearing .card.half { animation: tear .9s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.5,.4,1) backwards; }
   @keyframes tear { from { transform: none; filter: none; } 30% { transform: translate(0, -4px) scale(1.04); filter: none; } }
