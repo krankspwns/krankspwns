@@ -456,12 +456,15 @@
   .e-claws .endc { filter: grayscale(.45) brightness(.8); } .e-cracked .endc { filter: grayscale(.4) brightness(.62); }
   .e-bitten .endc { filter: saturate(.8) brightness(.92) hue-rotate(-10deg); }
   .e-vapor .endc { filter: saturate(.7) brightness(1.1) hue-rotate(110deg); } .e-vapor .tfg { animation: lavapulse 1.1s ease-in-out infinite alternate; }
-  .tcard.e-sliced .card.half { filter: grayscale(.45) brightness(.85); box-shadow: none; position: absolute; inset: 0; }
-  .tcard.e-sliced .tfx { background-size: 100% 100%; }
-  .tcard.e-sliced .sl1 { clip-path: polygon(0 0, 100% 0, 50% 50%); transform: translate(0, -5px) rotate(-1.6deg); } .tcard.e-sliced .sl2 { clip-path: polygon(100% 0, 100% 100%, 50% 50%); transform: translate(5px, 1px) rotate(1.4deg); } .tcard.e-sliced .sl3 { clip-path: polygon(100% 100%, 0 100%, 50% 50%); transform: translate(-1px, 5px) rotate(-1.2deg); } .tcard.e-sliced .sl4 { clip-path: polygon(0 100%, 0 0, 50% 50%); transform: translate(-5px, -1px) rotate(1.8deg); }
-  .tcard.e-sliced.tearing .card.half { animation: none; } .tcard.e-sliced.tearing .card.half { animation: slin .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; }
-  @keyframes slin { from { transform: none; } }
+  .tcard.e-sliced .sp { position: absolute; inset: 0; filter: drop-shadow(0 0 .7px rgba(255,255,255,.95)) drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+  .tcard.e-sliced .sp .card.half { position: absolute; inset: 0; filter: grayscale(.4) brightness(.9); box-shadow: none; animation: none !important; }
+  .tcard.e-sliced .sp1 { transform: translate(calc(var(--cw) * .05), calc(var(--cw) * -.065)) rotate(1.2deg); } .tcard.e-sliced .sp2 { transform: translate(calc(var(--cw) * -.04), calc(var(--cw) * -.01)) rotate(-1.1deg); } .tcard.e-sliced .sp3 { transform: translate(calc(var(--cw) * .055), calc(var(--cw) * .03)) rotate(.9deg); } .tcard.e-sliced .sp4 { transform: translate(calc(var(--cw) * -.045), calc(var(--cw) * .075)) rotate(-1.3deg); }
+  .tcard.e-sliced.tearing .sp { animation: spin .8s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.4,.4,1) backwards; } @keyframes spin { from { transform: none; } }
   .e-warp .endc { filter: hue-rotate(250deg) saturate(.7) brightness(.85); } .e-warp .tfg { animation: lavapulse 1.4s ease-in-out infinite alternate; }
+  .tcard.e-shatter .shd { position: absolute; inset: 0; } .tcard.e-shatter .shd .card.half { position: absolute; inset: 0; box-shadow: none; animation: none !important; filter: grayscale(.3); }
+  .tcard.e-shatter.tearing .shd { animation: shin .7s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.5,.4,1) backwards; } @keyframes shin { from { transform: none !important; } }
+  .e-crushed .endc, .e-crushed .tfx, .e-crushed .tfg { transform: scaleY(.7) translateY(20%); transform-origin: 50% 100%; } .e-crushed .endc { filter: grayscale(.35) brightness(.85); }
+  .e-punched .endc { filter: grayscale(.3) brightness(.88); } .e-crumple .endc { transform: scale(.88, .82) rotate(-2deg); filter: grayscale(.3) brightness(.92); } .e-crumple .tfx, .e-crumple .tfg { transform: scale(.88, .82) rotate(-2deg); }
   .tcard.e-fold { perspective: 520px; }
   .e-fold .fp { position: absolute; inset: 0; } .e-fold .fp .card { position: absolute; inset: 0; box-shadow: none; } .e-fold .fsh { position: absolute; inset: 0; }
   .e-fold .fp1 { clip-path: polygon(0 0, 76% 0, 100% 16%, 100% 33.4%, 0 33.4%); transform-origin: 50% 33.4%; transform: rotateX(36deg); }
@@ -3684,6 +3687,22 @@ function endTex(kind) {
       return [a, shade, null];
     });
     for (const [x0, y0] of [[28, 110], [172, 110], [28, 190], [172, 190]]) { const dir = Math.atan2(y0 - 150, x0 - 100); crackTree(og, null, x0, y0, dir + (rnd() - 0.5) * 0.4, 90, 1.7, 2); }
+  } else if (kind === 'punched') {
+    const rectSd = (x, y) => { const qx = Math.abs(x - 100) - 64, qy = Math.abs(y - 150) - 30; return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0); };   // the hammer-head sized hole
+    pix((x, y, d) => {
+      const jag = (nzF(x / 5, y / 5, 7) - 0.5) * 7, sd = rectSd(x, y) + jag, topSide = y < 150, flap = sd > 0 && sd < 15 ? 1 - sd / 15 : 0, inner = Math.abs(x - 100) < 64 && Math.abs(y - 150) < 30;
+      const lit = topSide ? 0.55 : -0.5, shade = flap > 0 ? (lit > 0 ? [255, 250, 240, flap * 0.7] : [20, 14, 10, flap * 0.75]) : (sd < 0 ? null : [20, 14, 10, clamp01(0.25 * (1 - sd / 50))]);
+      return [sd < 0 ? 0 : 1, shade, null];
+    });
+    for (let i = 0; i < 40; i++) { const side = Math.floor(rnd() * 4), t = rnd(), x = side < 2 ? 36 + t * 128 : (side === 2 ? 36 : 164), y = side < 2 ? (side === 0 ? 120 : 180) : 120 + t * 60; og.strokeStyle = 'rgba(255,250,240,.9)'; og.lineWidth = 0.9; og.beginPath(); og.moveTo(x, y); og.lineTo(x + (rnd() - 0.5) * 9, y + (side === 0 ? -1 : side === 1 ? 1 : 0) * rnd() * 7); og.stroke(); }
+    for (let k = 0; k < 6; k++) { const cx = k % 2 ? 164 : 36, cy = k < 3 ? 120 : 180; crackTree(og, null, cx, cy, Math.atan2(cy - 150, cx - 100) + (rnd() - 0.5) * 0.5, 80, 1.6, 2); }
+  } else if (kind === 'crumple') {
+    const cols = 6, rows = 8, pts = []; for (let j = 0; j <= rows; j++) { pts.push([]); for (let i = 0; i <= cols; i++) pts[j].push([i / cols * CW + (i > 0 && i < cols ? (rnd() - 0.5) * 30 : 0), j / rows * CH + (j > 0 && j < rows ? (rnd() - 0.5) * 30 : 0)]); }
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) for (const tri of [[pts[j][i], pts[j][i + 1], pts[j + 1][i]], [pts[j][i + 1], pts[j + 1][i + 1], pts[j + 1][i]]]) {
+      const l = (rnd() - 0.5) * 1.25; og.fillStyle = l > 0 ? `rgba(255,252,245,${l * 0.7})` : `rgba(20,14,10,${-l * 0.75})`; og.beginPath(); tri.forEach((q, n) => (n ? og.lineTo(q[0], q[1]) : og.moveTo(q[0], q[1]))); og.closePath(); og.fill();
+      og.strokeStyle = 'rgba(40,30,22,.22)'; og.lineWidth = 0.8; og.stroke();
+    }
+    const mi2 = mg.getImageData(0, 0, CW, CH); for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) { const d = Math.min(x, CW - 1 - x, y, CH - 1 - y), n = nzF(x / 7, y / 7, 3); mi2.data[(y * CW + x) * 4 + 3] = Math.round(clamp01((d - (2 + 9 * n)) / 1.6) * 255); } mg.putImageData(mi2, 0, 0);
   } else if (kind === 'warp') {
     pix((x, y) => {
       const dx = x - 100, dy = y - 148, r = Math.hypot(dx, dy), ang = Math.atan2(dy, dx), tw = ang + 2.6 * (1 - Math.min(1, r / 170)), n = nzF(Math.cos(tw) * r / 26 + 8, Math.sin(tw) * r / 26 + 8, 14), cut = 52 + 46 * n, q = cut - r, halo = clamp01(1 - r / 150);
@@ -3694,12 +3713,25 @@ function endTex(kind) {
     paintBlackHole(og, 100, 148, 24, 1.2, 1);
     paintBlackHole(gg, 100, 148, 24, 1.2, 0.5);
   } else if (kind === 'sliced') {
-    og.strokeStyle = 'rgba(255,255,255,.95)'; og.lineWidth = 1.4; og.beginPath(); og.moveTo(0, 0); og.lineTo(CW, CH); og.moveTo(CW, 0); og.lineTo(0, CH); og.stroke();
-    gg.strokeStyle = 'rgba(255,255,255,.9)'; gg.lineWidth = 5; gg.beginPath(); gg.moveTo(0, 0); gg.lineTo(CW, CH); gg.moveTo(CW, 0); gg.lineTo(0, CH); gg.stroke();
-    const sp = gg.createRadialGradient(100, 145, 0, 100, 145, 46); sp.addColorStop(0, 'rgba(255,255,255,1)'); sp.addColorStop(0.3, 'rgba(255,255,255,.5)'); sp.addColorStop(1, 'rgba(255,255,255,0)'); gg.fillStyle = sp; gg.beginPath(); gg.arc(100, 145, 46, 0, 6.283); gg.fill();
-    gg.strokeStyle = 'rgba(255,255,255,.9)'; gg.lineWidth = 1.4; gg.beginPath(); gg.moveTo(100, 100); gg.lineTo(100, 190); gg.moveTo(55, 145); gg.lineTo(145, 145); gg.stroke();
+    const cuts = [0.22, 0.5, 0.78];
+    for (const c of cuts) { const y0 = c * CH + 0.11 * CH, y1 = c * CH - 0.11 * CH; const lg = gg.createLinearGradient(0, 0, CW, 0); lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.25, 'rgba(255,255,255,.75)'); lg.addColorStop(0.75, 'rgba(255,255,255,.75)'); lg.addColorStop(1, 'rgba(255,255,255,0)'); gg.strokeStyle = lg; gg.lineWidth = 2.4; gg.shadowColor = 'rgba(190,220,255,.9)'; gg.shadowBlur = 8; gg.beginPath(); gg.moveTo(0, y0); gg.lineTo(CW, y1); gg.stroke(); }
+    og.save(); og.shadowColor = 'rgba(0,0,0,.65)'; og.shadowBlur = 6; og.shadowOffsetY = 3; paintShuriken(og, 150, 118, 20, 24, 1); paintShuriken(og, 52, 190, 17, -38, 1); og.restore();
   }
   return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL() });
+}
+let FIST_END = 1;   // which look the hammer leaves behind: 1 folded, 2 shattered, 3 squashed with a hammer imprint, 4 punched through, 5 crumpled
+function shatteredCard(id, animate, as, cascade) {
+  const cols = 3, rows = 4, pts = []; let sd = 11; const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  for (let j = 0; j <= rows; j++) { pts.push([]); for (let i = 0; i <= cols; i++) pts[j].push([i / cols * 100 + (i > 0 && i < cols ? (rnd() - 0.5) * 24 : 0), j / rows * 100 + (j > 0 && j < rows ? (rnd() - 0.5) * 16 : 0)]); }
+  const box = el('div', { class: 'tcard end e-shatter' + (animate ? ' tearing' : '') });
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const q = [pts[j][i], pts[j][i + 1], pts[j + 1][i + 1], pts[j + 1][i]], cx = i / cols * 100 + 100 / cols / 2 - 50, cy = j / rows * 100 + 100 / rows / 2 - 50;
+    const c = cardEl(id, { as }); c.classList.add('half'); c.style.clipPath = `polygon(${q.map((p) => p[0] + '% ' + p[1] + '%').join(',')})`;
+    const w = el('div', { class: 'shd' }, c); w.style.transform = `translate(calc(var(--cw) * ${(cx * 0.0016 + (rnd() - 0.5) * 0.03).toFixed(3)}), calc(var(--cw) * ${(cy * 0.0016 + (rnd() - 0.5) * 0.03).toFixed(3)})) rotate(${((rnd() - 0.5) * 9).toFixed(1)}deg)`; w.style.filter = `drop-shadow(0 0 .6px rgba(255,255,255,.9)) drop-shadow(0 2px 3px rgba(0,0,0,.55)) brightness(${(0.78 + rnd() * 0.3).toFixed(2)})`;
+    box.append(w);
+  }
+  if (cascade) box.style.setProperty('--cd', cascade + 'ms');
+  return box;
 }
 function foldedCard(id, animate, as, cascade) {
   const panel = (n, ...extra) => { const c = cardEl(id, { as }); c.classList.add('endc'); return el('div', { class: 'fp fp' + n }, c, el('div', { class: 'fsh' }), ...extra); };
@@ -3708,8 +3740,10 @@ function foldedCard(id, animate, as, cascade) {
   return box;
 }
 function tornCard(id, animate, as = null, cascade = 0, style = '') {
-  const kind = ATK_ENDS[style];
-  if (kind === 'crushed') return foldedCard(id, animate, as, cascade);
+  let kind = ATK_ENDS[style];
+  if (kind === 'crushed' && FIST_END === 4) kind = 'punched'; else if (kind === 'crushed' && FIST_END === 5) kind = 'crumple';
+  if (kind === 'crushed' && FIST_END === 1) return foldedCard(id, animate, as, cascade);
+  if (kind === 'crushed' && FIST_END === 2) return shatteredCard(id, animate, as, cascade);
   if (!kind) {
     const half = (side) => { const c = cardEl(id, { as }); c.classList.add('half', side); return c; };
     const box = el('div', { class: 'tcard' + (animate ? ' tearing' : '') }, half('l'), half('r'));
@@ -3720,8 +3754,15 @@ function tornCard(id, animate, as = null, cascade = 0, style = '') {
   let box;
   const mask = `url(${tex.mask})`;
   if (kind === 'sliced') {
-    const piece = (n) => { const c = cardEl(id, { as }); c.classList.add('half', 'sl' + n); return c; };
-    box = el('div', { class: 'tcard end e-sliced' + (animate ? ' tearing' : '') }, piece(1), piece(2), piece(3), piece(4));
+    const cuts = [0.22, 0.5, 0.78], yAt = (c, x) => (c - 0.11 + 0.22 * (1 - x)) * 100, edges = [null, ...cuts, null];   // three parallel blade cuts leaving four strips
+    const strip = (k) => {
+      const top = edges[k], bot = edges[k + 1], pts = [];
+      if (top === null) pts.push('0 0', '100% 0'); else pts.push(`0 ${yAt(top, 0)}%`, `100% ${yAt(top, 1)}%`);
+      if (bot === null) pts.push('100% 100%', '0 100%'); else pts.push(`100% ${yAt(bot, 1)}%`, `0 ${yAt(bot, 0)}%`);
+      const c = cardEl(id, { as }); c.classList.add('half'); c.style.clipPath = `polygon(${pts.join(',')})`;
+      return el('div', { class: 'sp sp' + (k + 1) }, c);
+    };
+    box = el('div', { class: 'tcard end e-sliced' + (animate ? ' tearing' : '') }, strip(0), strip(1), strip(2), strip(3));
   } else {
     const c = cardEl(id, { as }); c.classList.add('endc'); if (kind !== 'frozen') { c.style.webkitMaskImage = c.style.maskImage = mask; c.style.webkitMaskSize = c.style.maskSize = '100% 100%'; }
     box = el('div', { class: 'tcard end e-' + kind + (animate ? ' tearing' : '') }, c);
