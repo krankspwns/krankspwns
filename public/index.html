@@ -431,7 +431,17 @@
   .nextbar.on { background: linear-gradient(90deg, rgba(111,207,151,.16), rgba(111,207,151,.05)); border-color: rgba(111,207,151,.5); }
   .nb-l { display: grid; gap: 1px; flex: 1 1 140px; min-width: 0; } .nb-l b { font-size: 16px; } .nb-l small { font-size: 12px; opacity: .75; } .nb-n { font-size: 12px !important; color: #8fe0ae; }
   .nb-avs { display: flex; flex-wrap: wrap; gap: 4px; order: 3; flex-basis: 100%; } .nb-av { line-height: 0; border-radius: 50%; opacity: .45; filter: grayscale(.6); transition: opacity .2s, filter .2s; } .nb-av.r { opacity: 1; filter: none; box-shadow: 0 0 0 2px #6fcf97; }
-  .nextbar > button { flex: none; min-width: 108px; } .nextbar.on > button { color: #8fe0ae !important; border-color: rgba(111,207,151,.6) !important; }
+  .nbbtn { position: relative; overflow: hidden; flex: none; display: inline-flex; align-items: center; gap: 8px; min-width: 120px; justify-content: center; padding: 11px 18px 11px 12px !important; border-radius: 99px !important; font-weight: 800 !important; font-size: 15px !important; letter-spacing: .02em;
+    color: #2b1d05 !important; background: linear-gradient(180deg, #ffe9a8, #f2c14e 55%, #d99a1f) !important; border: 1px solid rgba(255,240,190,.9) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 18px rgba(242,193,78,.35) !important; animation: nbpulse 2.2s ease-in-out infinite; transition: transform .15s; }
+  .nbbtn:active { transform: scale(.96); }
+  .nbbtn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.65) 50%, transparent 65%); transform: translateX(-130%); animation: nbsheen 3.2s 1s ease-in-out infinite; pointer-events: none; }
+  .nbi { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(60,35,0,.16); box-shadow: inset 0 1px 1px rgba(0,0,0,.15); } .nbbtn .ic { color: #3a2706 !important; }
+  .nbbtn.on { color: #fff !important; background: linear-gradient(180deg, #6fe0a0, #2fa866 60%, #208a50) !important; border-color: rgba(190,255,215,.8) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 6px 18px rgba(47,168,102,.35) !important; animation: nbpop .4s cubic-bezier(.2,1.6,.4,1); text-shadow: 0 1px 1px rgba(0,0,0,.2); }
+  .nbbtn.on::after { display: none; } .nbbtn.on .nbi { background: rgba(255,255,255,.25); } .nbbtn.on .ic { color: #fff !important; }
+  @keyframes nbpulse { 0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 18px rgba(242,193,78,.3); } 50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 26px rgba(242,193,78,.6), 0 0 0 4px rgba(242,193,78,.12); } }
+  @keyframes nbsheen { 0% { transform: translateX(-130%); } 35%, 100% { transform: translateX(130%); } }
+  @keyframes nbpop { 0% { transform: scale(.9); } 100% { transform: none; } }
   .rejoin { min-height: 62vh; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; animation: lbin .4s ease both; }
   .rj-ic { width: 88px; height: 88px; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 1px rgba(var(--gold-rgb),.35), 0 14px 40px rgba(0,0,0,.5), 0 0 50px rgba(var(--gold-rgb),.25); animation: rjpulse 1.8s ease-in-out infinite; margin-bottom: 8px; } .rj-ic img { width: 100%; height: 100%; display: block; }
   .rj-t { font-size: 13px; font-weight: 700; letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); opacity: .85; }
@@ -4336,7 +4346,7 @@ function nextRoundBar(active) {
   return el('div', { class: 'nextbar' + (mine ? ' on' : '') },
     el('div', { class: 'nb-l' }, el('b', {}, t('nextT')), el('small', {}, el('b', { class: 'nb-n' }, t('nextN', { n, of: active.length })), ' · ', t('nextHint'))),
     el('div', { class: 'nb-avs' }, ...active.map((p) => el('span', { class: 'nb-av' + (p.nextReady ? ' r' : ''), title: p.name }, avatarEl(p.avatar, 26, '', p.acc, p.bd)))),
-    el('button', { type: 'button', class: mine ? 'ghost' : '', onclick: () => { me.nextReady = !mine; SND.play('tick'); render(); act('nextReady', { ready: !mine }); } }, mine ? withIcon('check', t('nextIn'), 14) : t('nextBtn')));
+    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : ''), 'aria-pressed': String(!!mine), onclick: () => { me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, el('span', { class: 'nbi' }, icon(mine ? 'check' : 'cards', 16)), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
 }
 let finalOpen = false;
 
