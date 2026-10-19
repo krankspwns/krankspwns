@@ -376,6 +376,10 @@
   .sdot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.55); border: 2px solid transparent; }
   .sdot.done { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; }
   .sdot.now { border-color: #fff; box-shadow: 0 0 12px rgba(232,211,162,.7); }
+  .resextra { margin: 4px 0 2px; font-size: 13.5px; font-style: italic; opacity: .92; text-align: center; } .resextra.hit { font-style: normal; font-weight: 700; color: #9ef0bd; opacity: 1; }
+  .stextra { flex-basis: 100%; } .commentary { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 10px; background: rgba(255,255,255,.07); font-size: 13.5px; font-style: italic; animation: cmsgin .4s ease backwards; animation-delay: .3s; } .cmic { font-style: normal; } .hitline { font-size: 13px; font-weight: 700; color: #9ef0bd; padding: 0 4px; } .hitline.me { color: var(--gold-hi); }
+  .predstrip { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(var(--gold-rgb), .08); border: 1px solid rgba(var(--gold-rgb), .3); } .predhead { display: grid; gap: 1px; } .predhead small { opacity: .7; font-size: 12px; } .predrow { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pchip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px !important; border-radius: 99px !important; font-size: 13px !important; background: rgba(255,255,255,.07) !important; border: 1px solid var(--line) !important; } .pchip.on { background: rgba(var(--gold-rgb), .28) !important; border-color: var(--gold) !important; box-shadow: 0 0 12px rgba(var(--gold-rgb), .4); }
   .stcontrol { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .stcontrol button.big { padding: 14px 24px; font-size: 15px; border-radius: 14px; }
   .swait { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; opacity: .85; }
@@ -1687,6 +1691,7 @@ function chatSysLine(m, fresh) {
   const txt = m.k === 'gift' ? (m.tn === '*' ? t('chatSysGiftAll', { from: m.fn, item: t('gift_' + m.item) }) : t('chatSysGift', { from: m.fn, to: m.tn, item: t('gift_' + m.item) }))
     : m.k === 'lose' ? t('chatSysLose', { names: (m.names || []).join(', '), n: m.row + 1, pen: m.pen })
     : m.k === 'tie' ? t('chatSysTie', { n: m.row + 1 })
+    : m.k === 'called' ? t('chatSysCalled', { names: (m.names || []).join(', '), wp: m.wp })
     : m.k === 'join' ? t('chatSysJoin', { name: m.fn }) : t('chatSysLeave', { name: m.fn });
   return el('div', { class: 'csys ' + m.k + (fresh ? ' new' : '') }, ic, el('span', {}, txt));
 }
@@ -2503,7 +2508,7 @@ const I18N = {
     giftTitle: 'Gifts', giftWho: (v) => `Throw ${v.name} at…`, giftBanner: (v) => `${v.from} threw something at ${v.to}!`, giftYou: 'you',
     gift_tomato: 'Tomato', gift_rose: 'Roses', gift_snowball: 'Snowball', gift_popper: 'Party popper', gift_pie: 'Cream pie', gift_rocket: 'Rocket', gift_bomb: 'Bomb', gift_fireworks: 'Fireworks',
     av_dragon: 'Dragon', av_robot: 'Robot', av_alien: 'Alien', av_ghost: 'Ghost', av_wizard: 'Wizard', av_ninja: 'Ninja',
-    setTheme: 'Colour scheme', theme_gold: 'Midnight gold', theme_emerald: 'Emerald table', theme_royal: 'Royal purple', theme_crimson: 'Crimson', theme_ocean: 'Ocean', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: '👏 GG', chatQ2: '🔥 Nice One!', chatQ3: '⏰ Hurry Up!', chatQ4: '😅 Oops!', chatNow: 'now', chatSysGift: (v) => `${v.from} threw ${v.item} at ${v.to}`, chatSysGiftAll: (v) => `${v.from} threw ${v.item} at everyone`, chatSysLose: (v) => `${v.names} lost Row ${v.n} (×${v.pen})`, chatSysTie: (v) => `Row ${v.n} was a tie`, chatSysJoin: (v) => `${v.name} joined`, chatSysLeave: (v) => `${v.name} left`, chatStickers: 'Stickers', chatHere: (v) => `${v.n} in the room`, setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
+    setTheme: 'Colour scheme', theme_gold: 'Midnight gold', theme_emerald: 'Emerald table', theme_royal: 'Royal purple', theme_crimson: 'Crimson', theme_ocean: 'Ocean', setCalm: 'Calm mode', setCalmHint: 'Turns off the avatar movement', setSync: 'Refresh game state', setSynced: 'Updated', setNoJokers: 'No jokers', setJokersOn: 'Jokers on', setMultN: (v) => `Penalties ×${v.n}`, setEdit: 'Edit rules', timesUp: 'Time’s up!', timesUpK: 'The clock ran out · cards auto-arranged', emoteTitle: 'Send a reaction', accTitle: 'Accessories', accHint: (v) => `Win rounds to unlock them. You have ${v.n} win${v.n === 1 ? '' : 's'} in this room.`, accNone: 'None', accNeed: (v) => `${v.n} win${v.n === 1 ? '' : 's'}`, acc_hat: 'Party hat', acc_shades: 'Shades', acc_crown: 'Crown', acc_halo: 'Halo', accUnlocked: 'New accessory unlocked!', roundWon: 'You won the round!', recapTitle: 'Round recap', rcHit: (v) => `${v.name} took the biggest hit: ×${v.n} in row ${v.row}`, rcJoker: (v) => `${v.name}’s joker became ${v.card} in row ${v.row}`, rcClean: (v) => `${v.names} lost no rows`, rcPerfect: (v) => `${v.name} hit exactly 10.5`, rcTies: (v) => v.n === 1 ? '1 row ended in a tie' : `${v.n} rows ended in a tie`, chatTitle: 'Chat', chatPh: 'Message…', chatSend: 'Send', chatEmpty: 'No messages yet. Say hi!', chatQ1: '👏 GG', chatQ2: '🔥 Nice One!', chatQ3: '⏰ Hurry Up!', chatQ4: '😅 Oops!', chatNow: 'now', cmTie: 'Dead heat! Nobody takes a penalty.', cmStreak: (v) => `${v.name} has now lost Row ${v.row} ${v.n} times. Ouch!`, cmHand_royal: (v) => `${v.name} shows a Royal Flush!`, cmHand_sflush: (v) => `${v.name} lands a Straight Flush!`, cmHand_triple: (v) => `${v.name} shows Three of a Kind!`, cmPerfect: (v) => `${v.name} hits exactly 10.5!`, cmBust: (v) => `${v.name} went bust!`, cmBusts: (v) => `Bust! ${v.names} went over 10.5.`, cmAce: (v) => `${v.name} plays an Ace. The penalty doubles!`, cmAces: (v) => `${v.n} Aces on the table! The penalty multiplies.`, cmTwo: (v) => `${v.name} drops a 2. The penalty doubles!`, cmTwos: (v) => `${v.n} twos on the table! The penalty multiplies.`, cmJoker: 'A Joker joins the fight!', cmBig: (v) => `×${v.pen} penalty! That will hurt.`, cmAlone: (v) => `${v.name} takes this one alone.`, cmShared: (v) => `${v.names} share the pain.`, cmCalled: (v) => `🎯 ${v.names} called it! +${v.wp} WP`, predTitle: 'Who Loses This Row?', predHint: (v) => `+${v.wp} WP if you're right`, predPicked: (v) => `${v.n} picked`, chatSysCalled: (v) => `🎯 ${v.names} called it (+${v.wp} WP)`, chatSysGift: (v) => `${v.from} threw ${v.item} at ${v.to}`, chatSysGiftAll: (v) => `${v.from} threw ${v.item} at everyone`, chatSysLose: (v) => `${v.names} lost Row ${v.n} (×${v.pen})`, chatSysTie: (v) => `Row ${v.n} was a tie`, chatSysJoin: (v) => `${v.name} joined`, chatSysLeave: (v) => `${v.name} left`, chatStickers: 'Stickers', chatHere: (v) => `${v.n} in the room`, setChat: 'Chat', setChatHint: 'Lets players send text messages', setVoice: 'Spoken reactions', setVoiceHint: 'Faster leh, Ai yo, Steady lah and Oof are spoken out loud', hallWin: 'WIN', hallWins: (v) => `${v.n} round wins in this room`, hallTie: 'Everyone tied, so nobody earns a round win.', acc_headphones: 'Headphones', acc_mustache: 'Moustache', acc_horns: 'Devil horns', acc_flower: 'Flower', accUnlockedN: (v) => `Unlocked: ${v.name}!`, winsN: (v) => `${v.n} round win${v.n === 1 ? '' : 's'} in this room`, accNextAt: (v) => `${v.n} more win${v.n === 1 ? '' : 's'} for the ${v.name}`, accAll: 'Every accessory unlocked!', accHow: 'A round win = the lowest total penalty after row 4 (shared if tied; a full tie gives none).', leaveRoom: 'Leave room',
     room: 'Room', playersN: (v) => `${v.n}/${v.max} Players`, readyN: (v) => `${v.r}/${v.n} Ready`, roundN: (v) => `Round ${v.n}`,
     invite: 'Invite', inviteTip: 'Copy a link so friends can join mid-game', reset: 'Reset, Shuffle & Deal', leave: 'Leave',
     inProgress: 'Game in progress', unready: 'Unready (move cards)', placeAll: (v) => `Cards Placed (${v.p}/${v.t})`, imReady: "I'm Ready",
@@ -2583,7 +2588,7 @@ const I18N = {
     giftTitle: '礼物', giftWho: (v) => `把${v.name}扔向…`, giftBanner: (v) => `${v.from} 向 ${v.to} 扔了东西！`, giftYou: '你',
     gift_tomato: '番茄', gift_rose: '玫瑰', gift_snowball: '雪球', gift_popper: '彩带炮', gift_pie: '奶油派', gift_rocket: '火箭', gift_bomb: '炸弹', gift_fireworks: '烟花',
     av_dragon: '龙', av_robot: '机器人', av_alien: '外星人', av_ghost: '幽灵', av_wizard: '巫师', av_ninja: '忍者',
-    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '绯红', theme_ocean: '海洋蓝', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快点！', chatQ4: '😅 哎呀！', chatNow: '刚刚', chatSysGift: (v) => `${v.from} 向 ${v.to} 扔了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人扔了${v.item}`, chatSysLose: (v) => `${v.names} 输掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平局`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 离开了`, chatStickers: '贴纸', chatHere: (v) => `房间里 ${v.n} 人`, setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', hallWin: '胜', hallWins: (v) => `在此房间赢了 ${v.n} 回合`, hallTie: '大家打平，所以没有人获得回合胜利。', acc_headphones: '耳机', acc_mustache: '小胡子', acc_horns: '恶魔角', acc_flower: '小花', accUnlockedN: (v) => `解锁：${v.name}！`, winsN: (v) => `在此房间已赢 ${v.n} 回合`, accNextAt: (v) => `再赢 ${v.n} 回合解锁${v.name}`, accAll: '所有配饰都已解锁！', accHow: '回合胜利 = 第 4 行结束后总罚分最低（平分则共享；全员平局则无人获胜）。', leaveRoom: '离开房间',
+    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '绯红', theme_ocean: '海洋蓝', setCalm: '安静模式', setCalmHint: '关闭头像的动作', setSync: '刷新游戏状态', setSynced: '已更新', setNoJokers: '无鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罚分 ×${v.n}`, setEdit: '修改规则', timesUp: '时间到！', timesUpK: '时间用完 · 已自动摆牌', emoteTitle: '发送表情', accTitle: '配饰', accHint: (v) => `赢下回合即可解锁。你在这个房间已赢 ${v.n} 回合。`, accNone: '无', accNeed: (v) => `${v.n} 胜`, acc_hat: '派对帽', acc_shades: '墨镜', acc_crown: '皇冠', acc_halo: '光环', accUnlocked: '解锁了新配饰！', roundWon: '你赢下了这一回合！', recapTitle: '本回合回顾', rcHit: (v) => `${v.name} 受到最重一击：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行变成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都没输`, rcPerfect: (v) => `${v.name} 刚好凑到 10.5`, rcTies: (v) => `${v.n} 行打成平局`, chatTitle: '聊天', chatPh: '输入消息…', chatSend: '发送', chatEmpty: '还没有消息，打个招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快点！', chatQ4: '😅 哎呀！', chatNow: '刚刚', cmTie: '平局！没人受罚。', cmStreak: (v) => `${v.name} 已经第 ${v.n} 次输掉第 ${v.row} 行了，太惨了！`, cmHand_royal: (v) => `${v.name} 亮出皇家同花顺！`, cmHand_sflush: (v) => `${v.name} 打出同花顺！`, cmHand_triple: (v) => `${v.name} 亮出三条！`, cmPerfect: (v) => `${v.name} 刚好凑出 10.5！`, cmBust: (v) => `${v.name} 爆掉了！`, cmBusts: (v) => `爆了！${v.names} 超过了 10.5。`, cmAce: (v) => `${v.name} 打出 A，罚分翻倍！`, cmAces: (v) => `桌上有 ${v.n} 张 A！罚分成倍增加。`, cmTwo: (v) => `${v.name} 打出 2，罚分翻倍！`, cmTwos: (v) => `桌上有 ${v.n} 张 2！罚分成倍增加。`, cmJoker: '鬼牌加入战局！', cmBig: (v) => `×${v.pen} 的罚分！这下痛了。`, cmAlone: (v) => `${v.name} 独自承担。`, cmShared: (v) => `${v.names} 一起受罚。`, cmCalled: (v) => `🎯 ${v.names} 猜中了！+${v.wp} WP`, predTitle: '谁会输这一行？', predHint: (v) => `猜对 +${v.wp} WP`, predPicked: (v) => `${v.n} 人已选`, chatSysCalled: (v) => `🎯 ${v.names} 猜中了（+${v.wp} WP）`, chatSysGift: (v) => `${v.from} 向 ${v.to} 扔了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人扔了${v.item}`, chatSysLose: (v) => `${v.names} 输掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平局`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 离开了`, chatStickers: '贴纸', chatHere: (v) => `房间里 ${v.n} 人`, setChat: '聊天', setChatHint: '允许玩家发送文字消息', setVoice: '语音表情', setVoiceHint: '“Faster leh”“Ai yo”“Steady lah”“Oof”会用语音说出来', hallWin: '胜', hallWins: (v) => `在此房间赢了 ${v.n} 回合`, hallTie: '大家打平，所以没有人获得回合胜利。', acc_headphones: '耳机', acc_mustache: '小胡子', acc_horns: '恶魔角', acc_flower: '小花', accUnlockedN: (v) => `解锁：${v.name}！`, winsN: (v) => `在此房间已赢 ${v.n} 回合`, accNextAt: (v) => `再赢 ${v.n} 回合解锁${v.name}`, accAll: '所有配饰都已解锁！', accHow: '回合胜利 = 第 4 行结束后总罚分最低（平分则共享；全员平局则无人获胜）。', leaveRoom: '离开房间',
     room: '房间', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已准备`, roundN: (v) => `第 ${v.n} 轮`,
     invite: '邀请', inviteTip: '复制链接，让朋友中途加入', reset: '重置、洗牌并发牌', leave: '离开',
     inProgress: '游戏进行中', unready: '取消准备（可移动牌）', placeAll: (v) => `已摆牌（${v.p}/${v.t}）`, imReady: '我准备好了',
@@ -2663,7 +2668,7 @@ const I18N = {
     giftTitle: '禮物', giftWho: (v) => `把${v.name}丟向…`, giftBanner: (v) => `${v.from} 向 ${v.to} 丟了東西！`, giftYou: '你',
     gift_tomato: '番茄', gift_rose: '玫瑰', gift_snowball: '雪球', gift_popper: '彩帶砲', gift_pie: '奶油派', gift_rocket: '火箭', gift_bomb: '炸彈', gift_fireworks: '煙火',
     av_dragon: '龍', av_robot: '機器人', av_alien: '外星人', av_ghost: '幽靈', av_wizard: '巫師', av_ninja: '忍者',
-    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '緋紅', theme_ocean: '海洋藍', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快點！', chatQ4: '😅 哎呀！', chatNow: '剛剛', chatSysGift: (v) => `${v.from} 向 ${v.to} 丟了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人丟了${v.item}`, chatSysLose: (v) => `${v.names} 輸掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平手`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 離開了`, chatStickers: '貼圖', chatHere: (v) => `房間裡 ${v.n} 人`, setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', hallWin: '勝', hallWins: (v) => `在此房間贏了 ${v.n} 回合`, hallTie: '大家打平，所以沒有人獲得回合勝利。', acc_headphones: '耳機', acc_mustache: '小鬍子', acc_horns: '惡魔角', acc_flower: '小花', accUnlockedN: (v) => `解鎖：${v.name}！`, winsN: (v) => `在此房間已贏 ${v.n} 回合`, accNextAt: (v) => `再贏 ${v.n} 回合解鎖${v.name}`, accAll: '所有配飾都已解鎖！', accHow: '回合勝利 = 第 4 行結束後總罰分最低（平分則共享；全員平手則無人獲勝）。', leaveRoom: '離開房間',
+    setTheme: '配色', theme_gold: '午夜金', theme_emerald: '翡翠牌桌', theme_royal: '皇家紫', theme_crimson: '緋紅', theme_ocean: '海洋藍', setCalm: '安靜模式', setCalmHint: '關閉頭像的動作', setSync: '重新整理遊戲狀態', setSynced: '已更新', setNoJokers: '無鬼牌', setJokersOn: '含鬼牌', setMultN: (v) => `罰分 ×${v.n}`, setEdit: '修改規則', timesUp: '時間到！', timesUpK: '時間用完 · 已自動擺牌', emoteTitle: '傳送表情', accTitle: '配飾', accHint: (v) => `贏下回合即可解鎖。你在這個房間已贏 ${v.n} 回合。`, accNone: '無', accNeed: (v) => `${v.n} 勝`, acc_hat: '派對帽', acc_shades: '墨鏡', acc_crown: '皇冠', acc_halo: '光環', accUnlocked: '解鎖了新配飾！', roundWon: '你贏下了這一回合！', recapTitle: '本回合回顧', rcHit: (v) => `${v.name} 受到最重一擊：第 ${v.row} 行 ×${v.n}`, rcJoker: (v) => `${v.name} 的鬼牌在第 ${v.row} 行變成了 ${v.card}`, rcClean: (v) => `${v.names} 一行都沒輸`, rcPerfect: (v) => `${v.name} 剛好湊到 10.5`, rcTies: (v) => `${v.n} 行打成平手`, chatTitle: '聊天', chatPh: '輸入訊息…', chatSend: '傳送', chatEmpty: '還沒有訊息，打個招呼吧！', chatQ1: '👏 GG', chatQ2: '🔥 漂亮！', chatQ3: '⏰ 快點！', chatQ4: '😅 哎呀！', chatNow: '剛剛', cmTie: '平手！沒人受罰。', cmStreak: (v) => `${v.name} 已經第 ${v.n} 次輸掉第 ${v.row} 行了，太慘了！`, cmHand_royal: (v) => `${v.name} 亮出皇家同花順！`, cmHand_sflush: (v) => `${v.name} 打出同花順！`, cmHand_triple: (v) => `${v.name} 亮出三條！`, cmPerfect: (v) => `${v.name} 剛好湊出 10.5！`, cmBust: (v) => `${v.name} 爆掉了！`, cmBusts: (v) => `爆了！${v.names} 超過了 10.5。`, cmAce: (v) => `${v.name} 打出 A，罰分翻倍！`, cmAces: (v) => `桌上有 ${v.n} 張 A！罰分成倍增加。`, cmTwo: (v) => `${v.name} 打出 2，罰分翻倍！`, cmTwos: (v) => `桌上有 ${v.n} 張 2！罰分成倍增加。`, cmJoker: '鬼牌加入戰局！', cmBig: (v) => `×${v.pen} 的罰分！這下痛了。`, cmAlone: (v) => `${v.name} 獨自承擔。`, cmShared: (v) => `${v.names} 一起受罰。`, cmCalled: (v) => `🎯 ${v.names} 猜中了！+${v.wp} WP`, predTitle: '誰會輸這一行？', predHint: (v) => `猜對 +${v.wp} WP`, predPicked: (v) => `${v.n} 人已選`, chatSysCalled: (v) => `🎯 ${v.names} 猜中了（+${v.wp} WP）`, chatSysGift: (v) => `${v.from} 向 ${v.to} 丟了${v.item}`, chatSysGiftAll: (v) => `${v.from} 向所有人丟了${v.item}`, chatSysLose: (v) => `${v.names} 輸掉了第 ${v.n} 行（×${v.pen}）`, chatSysTie: (v) => `第 ${v.n} 行平手`, chatSysJoin: (v) => `${v.name} 加入了`, chatSysLeave: (v) => `${v.name} 離開了`, chatStickers: '貼圖', chatHere: (v) => `房間裡 ${v.n} 人`, setChat: '聊天', setChatHint: '允許玩家傳送文字訊息', setVoice: '語音表情', setVoiceHint: '「Faster leh」「Ai yo」「Steady lah」「Oof」會用語音說出來', hallWin: '勝', hallWins: (v) => `在此房間贏了 ${v.n} 回合`, hallTie: '大家打平，所以沒有人獲得回合勝利。', acc_headphones: '耳機', acc_mustache: '小鬍子', acc_horns: '惡魔角', acc_flower: '小花', accUnlockedN: (v) => `解鎖：${v.name}！`, winsN: (v) => `在此房間已贏 ${v.n} 回合`, accNextAt: (v) => `再贏 ${v.n} 回合解鎖${v.name}`, accAll: '所有配飾都已解鎖！', accHow: '回合勝利 = 第 4 行結束後總罰分最低（平分則共享；全員平手則無人獲勝）。', leaveRoom: '離開房間',
     room: '房間', playersN: (v) => `${v.n}/${v.max} 位玩家`, readyN: (v) => `${v.r}/${v.n} 已準備`, roundN: (v) => `第 ${v.n} 輪`,
     invite: '邀請', inviteTip: '複製連結，讓朋友中途加入', reset: '重置、洗牌並發牌', leave: '離開',
     inProgress: '遊戲進行中', unready: '取消準備（可移動牌）', placeAll: (v) => `已擺牌（${v.p}/${v.t}）`, imReady: '我準備好了',
@@ -3326,6 +3331,40 @@ function tornCard(id, animate, as = null) {
   return el('div', { class: 'tcard' + (animate ? ' tearing' : '') }, half('l'), half('r'));
 }
 
+// a short line of match commentary for a row that has just been scored
+const HAND_RANK = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush', 'royal'];
+function commentFor(res) {
+  const ent = res.entries || [], names = res.tie ? [] : loserNames(res);
+  if (res.tie) return t('cmTie');
+  if (res.streak && res.streak.n >= 3) return t('cmStreak', { name: res.streak.name, n: res.streak.n, row: res.row + 1 });
+  if (res.row === 3) {
+    const best = ent.reduce((a, e) => (!a || HAND_RANK.indexOf(e.hand) > HAND_RANK.indexOf(a.hand) ? e : a), null);
+    if (best && ['royal', 'sflush', 'triple'].includes(best.hand)) return t('cmHand_' + best.hand, { name: best.name });
+  }
+  if (res.row === 2) {
+    const perfect = ent.find((e) => e.total === 10.5), bust = ent.filter((e) => e.bust);
+    if (perfect) return t('cmPerfect', { name: perfect.name });
+    if (bust.length) return bust.length === 1 ? t('cmBust', { name: bust[0].name }) : t('cmBusts', { names: bust.map((e) => e.name).join(', ') });
+  }
+  if (res.row === 0 || res.row === 1) {
+    const star = ent.filter((e) => e.val === (res.row === 0 ? 14 : 2));
+    if (star.length > 1) return t(res.row === 0 ? 'cmAces' : 'cmTwos', { n: star.length });
+    if (star.length === 1) return t(res.row === 0 ? 'cmAce' : 'cmTwo', { name: star[0].name });
+  }
+  if (ent.some((e) => e.as)) return t('cmJoker');
+  if (res.penalty >= 4) return t('cmBig', { pen: res.penalty });
+  if (names.length === 1 && ent.length >= 3) return t('cmAlone', { name: names[0] });
+  if (names.length > 1) return t('cmShared', { names: names.join(', ') });
+  return '';
+}
+const hitSeen = new Set();
+// before a row opens: tap the player you think will lose it
+function predStrip(active, row) {
+  const others = active.filter((p) => p.id !== st.meId);
+  return el('div', { class: 'stextra predstrip' },
+    el('div', { class: 'predhead' }, el('b', {}, t('predTitle')), el('small', {}, t('predHint', { wp: st.predWp || 3 }) + (st.predN ? ' · ' + t('predPicked', { n: st.predN }) : ''))),
+    el('div', { class: 'predrow' }, ...others.map((p) => el('button', { type: 'button', class: 'pchip' + (st.pred === p.id ? ' on' : ''), onclick: () => { if (st.pred === p.id) return; st.pred = p.id; SND.play('tick'); render(); act('predict', { row, target: p.id }); } }, avatarEl(p.avatar, 30, '', p.acc, p.bd), el('span', {}, p.name)))));
+}
 function stagePanel(active) {
   const row = Math.min(stageRow ?? st.currentRow ?? 0, 4);
   if (row >= 4) return finalPanel(active);
@@ -3355,11 +3394,16 @@ function stagePanel(active) {
       res.tie ? el('span', { class: 'tiechip' }, t('tie')) : el('span', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
       ...(res.tie ? [] : names.map((n) => el('span', { class: 'loserchip' }, n))),
       el('span', { class: 'grow' }),
-      res.tie ? el('div', { class: 'rpen none' }, t('noPenalty')) : el('div', { class: 'rpen' }, '×' + res.penalty));
+      res.tie ? el('div', { class: 'rpen none' }, t('noPenalty')) : el('div', { class: 'rpen' }, '×' + res.penalty),
+      ...(commentFor(res) ? [el('div', { class: 'stextra commentary' }, el('span', { class: 'cmic' }, '🎙️'), el('span', {}, commentFor(res)))] : []),
+      ...(res.hits && res.hits.length ? [el('div', { class: 'stextra hitline' + ((res.hitIds || []).includes(st.meId) ? ' me' : '') }, t('cmCalled', { names: res.hits.join(', '), wp: st.predWp || 3 }))] : []));
+    const hk = st.round + ':' + row;
+    if ((res.hitIds || []).includes(st.meId) && !hitSeen.has(hk)) { hitSeen.add(hk); setTimeout(() => SND.play('chime'), 350); }
   } else if (isCurrent) {
     control = el('div', { class: 'stcontrol' },
       st.isHost ? el('button', { class: 'big', onclick: () => act('flipRowAll', { row, up: true }) }, t('stageHost', { n: row + 1 })) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), t('stageWaitHost')),
-      el('div', { class: 'scount' }, t('openedN', { n: openedN, total: active.length })));
+      el('div', { class: 'scount' }, t('openedN', { n: openedN, total: active.length })),
+      ...(active.length >= 3 && active.some((p) => p.id === st.meId) && !active.some((p) => cellsOf(p).some((c) => c && c.up)) ? [predStrip(active, row)] : []));
   }
 
   const grid = el('div', { class: 'tiles', style: `grid-template-columns: repeat(${cols}, minmax(0, 1fr))` });
@@ -3854,17 +3898,19 @@ function buildResult(r, view, late = 0) {
         el('div', { class: 'tcards' }, ...(() => { const tr = tiersOf(r.row, e.cards); return e.cards.map((c, ci) => lose ? tornCard(c, true, e.as ? e.as[ci] : null) : cardEl(c, { up: true, as: e.as ? e.as[ci] : null, morph: !!e.as, prime: tr[ci] })); })()),
         el('div', { class: 'tfoot' }, lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : ''));
     }));
+  const cm = commentFor(r);
+  const extra = [cm ? el('div', { class: 'resextra' }, '🎙️ ' + cm) : '', r.hits && r.hits.length ? el('div', { class: 'resextra hit' }, t('cmCalled', { names: r.hits.join(', '), wp: st.predWp || 3 })) : ''];
   const box = iLose
     ? el('div', { class: 'resbox hasboard youlose' },
         el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
         el('div', { class: 'resnames youlose' }, t('youLose')),
         others.length ? el('div', { class: 'resk' }, t('alongWith', { names: others.join(' · ') })) : '',
-        penalty, board)
+        penalty, ...extra, board)
     : el('div', { class: 'resbox hasboard' },
         el('div', { class: 'rf-k' }, t('rowN', { n: r.row + 1 })),
         r.tie ? '' : el('div', { class: 'resk' }, t(names.length > 1 ? 'losers' : 'loser')),
         el('div', { class: 'resnames' }, r.tie ? t('tie') : names.join(' · ')),
-        penalty, board);
+        penalty, ...extra, board);
   const o = el('div', { class: 'resfx' + (iLose ? ' lose' : '') }, iLose ? el('div', { class: 'spikes' }) : '', box);
   document.body.append(o);
   if (!r.tie) {
@@ -4139,7 +4185,7 @@ function predict(action, x) {
   return null;
 }
 
-const ACT_SOUND = { place: 'place', move: 'place', unplace: 'return', flip: 'flip', flipRow: 'flip', flipRowAll: 'flip', kick: 'kick' };
+const ACT_SOUND = { predict: '', place: 'place', move: 'place', unplace: 'return', flip: 'flip', flipRow: 'flip', flipRowAll: 'flip', kick: 'kick' };
 function act(action, extra = {}) {
   err = '';
   if (action === 'ready') SND.play(extra.ready ? 'ready' : 'unready'); else if (ACT_SOUND[action]) SND.play(ACT_SOUND[action]);

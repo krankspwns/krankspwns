@@ -303,6 +303,28 @@ const post = (b) => call('POST', b, {});
   for (let row = 0; row < 4; row++) await post({ action: 'flipRowAll', code: hr.code, pid: hr.meId, row, up: true });
   const hv = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
   assert.deepEqual(hv.rowResults.map((r) => r.penalty), [1, 1, 1, 2], 'x0.5: a penalty of 1 stays 1 and 3 becomes 2 (rounded up)');
+  // ---- predictions: name who will lose a row, earn points when right ----
+  const pa = (await post({ action: 'create', name: 'PA' })).j, pb = (await post({ action: 'join', code: pa.code, name: 'PB' })).j, pc = (await post({ action: 'join', code: pa.code, name: 'PC' })).j;
+  await post({ action: 'deal', code: pa.code, pid: pa.meId });
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 409, 'no guessing before everyone is ready');
+  const proom = globalThis.__rooms.get(pa.code);
+  for (const pl of proom.players) { pl.board = Array(7).fill(null).map((_, i) => ({ c: 'x', up: false })); pl.hand = []; pl.ready = true; }
+  const setRow = (cards) => { proom.players.forEach((pl, i) => { pl.board[0].c = cards[i]; }); };
+  setRow(['KS', '3H', 'AD']);   // row 1: lowest card loses -> PB
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pa.meId })).s, 400, 'not yourself');
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 1, target: pb.meId })).s, 409, 'only the row that is next');
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 200);
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pc.meId, row: 0, target: pa.meId })).s, 200);
+  const pv0 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j;
+  assert.equal(pv0.pred, pb.meId); assert.equal(pv0.predN, 2);
+  for (const pl of globalThis.__rooms.get(pa.code).players) pl.board[0].up = true;
+  await post({ action: 'emote', code: pa.code, pid: pa.meId, e: 'gg' });   // any action stores the finished row
+  const pr0 = globalThis.__rooms.get(pa.code).results[0];
+  assert.deepEqual(pr0.losers, [pb.meId]); assert.deepEqual(pr0.hits, ['PA'], 'only the right guess counts');
+  assert.equal(globalThis.__rooms.get(pa.code).bonus[pa.meId], 3, 'a right guess earns points');
+  assert.equal(pr0.streak.n, 1);
+  assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.wallet.pts, 3);
+
   // ---- security ----
   const sa = (await post({ action: 'create', name: 'SecA' })).j, sb = (await post({ action: 'join', code: sa.code, name: 'SecB' })).j;
   const rawCall = async (method, body, query, headers = {}) => { let out; const res = { setHeader() {}, status(x) { this.s = x; return this; }, json(j) { out = { s: this.s, j }; } }; await h({ method, body, query, headers }, res); return out; };

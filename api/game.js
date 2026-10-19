@@ -28,7 +28,8 @@ const GIFT_USES = 3;   // one purchase = three throws
 const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(process.env.TESTER_NAME).trim().toLowerCase();
 const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
-const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
+const PRED_WP = 3;   // points for calling who loses a row
+const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
@@ -347,6 +348,23 @@ function storeResults(room) {
     if (room.results[r.row]) continue;
     room.results[r.row] = { ...r, penalty: Math.ceil(r.penalty * settingsOf(room).mult), at: Date.now() };
     const names = r.losers.map((id) => (room.players.find((q) => q.id === id) || {}).name).filter(Boolean);
+    // how often each player has lost each row, for the commentary ("third time Ben loses row 2")
+    room.rl = room.rl || {};
+    if (!r.tie) for (const id of r.losers) { const a = room.rl[id] = room.rl[id] || [0, 0, 0, 0]; a[r.row]++; }
+    if (!r.tie && r.losers.length === 1) room.results[r.row].streak = { name: names[0], n: room.rl[r.losers[0]][r.row] };
+    // predictions: whoever named a loser of this row earns a few points
+    const pr = (room.preds && room.preds[r.row]) || {};
+    room.results[r.row].called = Object.keys(pr).length;
+    if (!r.tie) {
+      const hit = Object.entries(pr).filter(([pid, tgt]) => r.losers.includes(tgt) && room.players.some((q) => q.id === pid));
+      if (hit.length) {
+        room.bonus = room.bonus || {};
+        for (const [pid] of hit) room.bonus[pid] = (room.bonus[pid] || 0) + PRED_WP;
+        room.results[r.row].hits = hit.map(([pid]) => room.players.find((q) => q.id === pid).name);
+        room.results[r.row].hitIds = hit.map(([pid]) => pid);
+        sysChat(room, { k: 'called', names: room.results[r.row].hits, wp: PRED_WP });
+      }
+    }
     sysChat(room, r.tie ? { k: 'tie', row: r.row } : { k: 'lose', row: r.row, names, pen: room.results[r.row].penalty });
   }
   tallyWins(room);   // `at` lets every phone advance to the next row at the same moment
@@ -428,6 +446,9 @@ function view(room, pid, seen, cn) {
     deadline: room.deadline || null,
     rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
     currentRow: currentRowOf(room),
+    pred: (room.preds && room.preds[currentRowOf(room)] && room.preds[currentRowOf(room)][me.id]) || null,
+    predN: Object.keys((room.preds && room.preds[currentRowOf(room)]) || {}).length,
+    predWp: PRED_WP,
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -532,7 +553,7 @@ async function handle(action, b, query, ctx = {}) {
   const me = room.players.find((p) => p.id === pid);
   need(me && tokenOk(me, ctx.tok), 404, 'You are not in this room');
   await touchPresence(code, pid);
-  const PLAYER_ACTIONS = ['place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
+  const PLAYER_ACTIONS = ['predict', 'place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
   need(!(me.spectator && PLAYER_ACTIONS.includes(action)), 409, 'Wait for the next round');
   const active = activeOf(room);
 
@@ -565,6 +586,7 @@ async function handle(action, b, query, ctx = {}) {
       }
       room.deck = deck; // leftovers, for players who join mid-round
       room.results = {};
+      room.preds = {};
       room.deadline = set.timer ? Date.now() + set.timer * 1000 : null;
       room.phase = 'dealt';
       room.allReady = null;
@@ -693,6 +715,19 @@ async function handle(action, b, query, ctx = {}) {
       room.chatAt[pid] = now;
       room.chatN = (room.chatN || 0) + 1;
       room.chat = [...(room.chat || []), { n: room.chatN, id: pid, name: me.name, avatar: me.avatar, acc: me.acc || '', bd: me.bd || '', text, at: now }].slice(-50);
+      break;
+    }
+
+    case 'predict': {   // call who will lose the row that is about to open (needs three or more players)
+      need(room.phase === 'dealt' && active.length >= 3 && active.every((p) => p.ready), 409, 'Not now');
+      const row = currentRowOf(room);
+      need(row < ROW_SIZES.length && Number(b.row) === row && !(room.results && room.results[row]), 409, 'That row is already open');
+      const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
+      need(!active.some((p) => p.board.slice(start, start + ROW_SIZES[row]).some((c) => c && c.up)), 409, 'Too late: the row is already opening');   // once any card is face up the guess would be informed
+      const tgt = active.find((p) => p.id === String(b.target));
+      need(tgt && tgt.id !== pid, 400, 'Pick another player');
+      room.preds = room.preds || {};
+      (room.preds[row] = room.preds[row] || {})[pid] = tgt.id;
       break;
     }
 
