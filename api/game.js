@@ -746,7 +746,7 @@ async function handle(action, b, query, ctx = {}) {
 
     case 'predict': {   // call who will lose the row that is about to open: right = +3 points, wrong = -1, no call = nothing
       const w = predWindow(room), now = Date.now(), row = currentRowOf(room);
-      need(w && Number(b.row) === row && now >= w.from - 300 && now <= w.until + 800, 409, 'Guessing is closed');
+      need(w && Number(b.row) === row && now >= w.from - 1500 && now <= w.until + 800, 409, 'Guessing is closed');
       room.preds = room.preds || {};
       room.preds[row] = room.preds[row] || {};
       if (b.target === '') { delete room.preds[row][pid]; break; }   // taking the call back

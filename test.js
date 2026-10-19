@@ -311,7 +311,7 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 409, 'no guessing before everyone is ready');
   const proom = globalThis.__rooms.get(pa.code);
   for (const pl of proom.players) { pl.board = Array(7).fill(null).map((_, i) => ({ c: 'x', up: false })); pl.hand = []; pl.ready = true; }
-  proom.allReady = { id: pa.meId, name: 'PA', at: Date.now() - 1000 };   // the guessing window opens 2.5 s after the last ready
+  proom.allReady = { id: pa.meId, name: 'PA', at: Date.now() - 300 };   // the guessing window opens 2.5 s after the last ready
   proom.bonus = { [pc.meId]: 5 };
   const setRow = (cards) => { proom.players.forEach((pl, i) => { pl.board[0].c = cards[i]; }); };
   setRow(['KS', '3H', 'AD']);   // row 1: lowest card loses -> PB
