@@ -304,6 +304,9 @@ const post = (b) => call('POST', b, {});
   for (let row = 0; row < 4; row++) await post({ action: 'flipRowAll', code: hr.code, pid: hr.meId, row, up: true });
   const hv = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
   assert.deepEqual(hv.rowResults.map((r) => r.penalty), [1, 1, 1, 2], 'x0.5: a penalty of 1 stays 1 and 3 becomes 2 (rounded up)');
+  { const sx = hv.players.map((q) => q.sess); const lost = (id) => hv.rowResults.filter((r) => !r.tie && r.losers.includes(id)).reduce((t, r) => t + r.penalty, 0);
+    assert.ok(sx.every((x) => x && x.rounds === 1), 'the session scoreboard counts the finished round');
+    assert.deepEqual(hv.players.map((q) => q.sess.pen), hv.players.map((q) => lost(q.id)), 'and each player\'s total penalty'); }
   // ---- predictions: name who will lose a row, earn points when right ----
   globalThis.__predOff = false;
   const pa = (await post({ action: 'create', name: 'PA' })).j, pb = (await post({ action: 'join', code: pa.code, name: 'PB' })).j, pc = (await post({ action: 'join', code: pa.code, name: 'PC' })).j;

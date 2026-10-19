@@ -325,12 +325,26 @@ function tallyWins(room) {
   const vals = Object.values(tot);
   room.winnersRound = room.round;
   room.winners = [];
-  if (!vals.length || Math.max(...vals) === Math.min(...vals)) return;
-  const best = Math.min(...vals);
-  room.wins = room.wins || {};
-  for (const p of act) if (tot[p.id] === best) {
-    room.winners.push(p.id);
-    room.wins[p.id] = (room.wins[p.id] || 0) + 1;
+  if (vals.length && Math.max(...vals) !== Math.min(...vals)) {
+    const best = Math.min(...vals);
+    room.wins = room.wins || {};
+    for (const p of act) if (tot[p.id] === best) {
+      room.winners.push(p.id);
+      room.wins[p.id] = (room.wins[p.id] || 0) + 1;
+    }
+  }
+  // the session scoreboard and the titles shown next round
+  room.sess = room.sess || {}; room.titles = {};
+  const results = Object.values(room.results);
+  for (const p of act) {
+    const sx = room.sess[p.id] = room.sess[p.id] || { rounds: 0, pen: 0, rows: 0, hits: 0, calls: 0, streak: 0, best: 0 };
+    const lostRows = results.filter((r) => !r.tie && r.losers.includes(p.id)).length;
+    const hits = results.filter((r) => (r.hitIds || []).includes(p.id)).length;
+    const calls = results.filter((r) => !r.tie && r.picks && r.picks[p.id]).length;
+    sx.rounds++; sx.pen += tot[p.id]; sx.rows += lostRows; sx.hits += hits; sx.calls += calls;
+    sx.streak = room.winners.includes(p.id) ? sx.streak + 1 : 0; sx.best = Math.max(sx.best, sx.streak);
+    const allClean = act.every((q) => !results.some((r) => !r.tie && r.losers.includes(q.id)));
+    room.titles[p.id] = sx.streak >= 2 ? 'fire' : hits >= 3 ? 'sniper' : !lostRows && !allClean ? 'clean' : '';
   }
 }
 
@@ -487,6 +501,8 @@ function view(room, pid, seen, cn) {
         wp: balanceOf(room, p.id),
         inv: (() => { const q = inventoryOf(p); return { acc: q.owned.acc, av: q.owned.av, bd: q.owned.bd, gifts: Object.fromEntries(Object.entries(q.gifts).filter(([, n]) => n > 0)) }; })(),   // what everyone owns is public (normal animals aside)
         wins: (room.wins && room.wins[p.id]) || 0,
+        sess: (room.sess && room.sess[p.id]) || null,
+        title: (room.titles && room.titles[p.id]) || '',
         isHost: p.id === room.hostId,
         ready: p.ready,
         spectator: !!p.spectator,
