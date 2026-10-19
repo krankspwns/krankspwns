@@ -426,7 +426,8 @@
   .sbr.hd { background: none; padding-top: 0; padding-bottom: 0; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; opacity: .6; } .sbr.top { background: linear-gradient(90deg, rgba(255,207,64,.18), rgba(255,255,255,.04)); } .sbr.me { border-color: var(--gold); }
   .sbrk { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; background: rgba(255,255,255,.08); } .sbn { display: flex; align-items: center; gap: 5px; min-width: 0; } .sbn b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
   .sbv { text-align: center; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; } .sbr.hd .sbv { font-size: 9px; letter-spacing: 0; } .sbhav { display: flex; flex: none; } .sbhav .av + .av { margin-left: -10px; } .sbv.wp { color: var(--gold-hi); }
-  .sbfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; } .sbfoot .ghost { flex: none; }
+  .sbfoot { position: sticky; bottom: -14px; margin: 0 -14px -14px; padding: 12px 14px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: linear-gradient(180deg, rgba(var(--panel-lo),0), rgba(var(--panel-lo),.96) 30%); } .sbfoot .ghost { flex: none; }
+  .sbbox.many .sbr { padding: 4px 8px; } .sbbox.many .sbtab { gap: 3px; } .sbbox.many .sbhl { gap: 5px; } .sbbox.many .sbh { padding: 6px 8px; }
   .igshare { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #fff !important; font-weight: 800 !important; background: linear-gradient(45deg, #f9ce34, #ee2a7b 50%, #6228d7) !important; border: 0 !important; box-shadow: 0 6px 20px rgba(238,42,123,.35) !important; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
   .igshare:disabled { opacity: .7; } .igring { width: 20px; height: 20px; flex: none; display: block; line-height: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .ppmine { font-weight: 700; opacity: .85 !important; } .ppmine.all { color: #6fcf97; opacity: 1 !important; }
@@ -5873,7 +5874,7 @@ async function scoreboardImage(data) {
   g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   const hls = [['sbMost', most, most && '×' + most[0].p.wins], ['sbCaller', caller, caller && caller[0].x.hits + '/' + caller[0].x.calls], ['sbClean', clean, clean && String(clean[0].x.pen)]].filter((h) => h[1]);
   // the whole block is centred in the space above the footer; rows grow when there are only a few players
-  const rowH = Math.min(150, Math.floor(820 / Math.max(1, list.length))), blockH = 250 + (hls.length ? 330 : 40) + 30 + list.length * rowH;
+  const rowH = Math.min(150, Math.floor((list.length > 6 ? 940 : 820) / Math.max(1, list.length))), blockH = 250 + (hls.length ? 330 : 40) + 30 + list.length * rowH;
   const top = Math.max(120, Math.round((1700 - blockH) / 2));
   // faint card suits, only in the empty space below the table
   { const free0 = top + blockH + 40; if (1690 - free0 > 260) { g.fillStyle = 'rgba(255,255,255,.035)'; g.font = f(400, Math.min(380, 1690 - free0)); g.textBaseline = 'bottom'; g.fillText('♠', 170, 1700); g.fillText('♣', 920, 1700); g.textBaseline = 'alphabetic'; } }
@@ -5903,13 +5904,13 @@ async function scoreboardImage(data) {
     rr(50, ry, W - 100, hgt, 24);
     if (e.rank === 1 && rounds) { const lg = g.createLinearGradient(50, 0, W - 50, 0); lg.addColorStop(0, 'rgba(255,207,64,.24)'); lg.addColorStop(1, 'rgba(255,255,255,.05)'); g.fillStyle = lg; } else g.fillStyle = 'rgba(255,255,255,.05)';
     g.fill(); if (e.p.id === st.meId) { g.strokeStyle = 'rgba(255,207,64,.85)'; g.lineWidth = 3; g.stroke(); }
-    const rd = Math.min(56, hgt * 0.6); g.beginPath(); g.arc(102, mid, rd / 2, 0, 6.2832); g.fillStyle = e.rank <= 3 && rounds ? medals[e.rank - 1] : 'rgba(255,255,255,.12)'; g.fill();
+    const rd = Math.min(56, hgt * 0.62); g.beginPath(); g.arc(102, mid, rd / 2, 0, 6.2832); g.fillStyle = e.rank <= 3 && rounds ? medals[e.rank - 1] : 'rgba(255,255,255,.12)'; g.fill();
     g.fillStyle = e.rank <= 3 && rounds ? '#1a1407' : '#fff'; g.font = f(900, rd * 0.5); g.textBaseline = 'middle'; g.fillText(String(e.rank), 102, mid + 1);
     const ad = Math.min(76, hgt * 0.78); disc(ims.get(e.p.avatar), 180, mid, ad, 'rgba(255,255,255,.25)');
-    g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = f(800, Math.min(40, hgt * 0.4)); const nm = fit(e.p.name, e.p.title ? 260 : 300); g.fillText(nm, 236, mid + 1);
-    const tim = titles.get(e.p.title); if (tim) g.drawImage(tim, 236 + g.measureText(nm).width + 10, mid - 18, 36, 36);
+    g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = f(800, Math.min(40, hgt * 0.46)); const nm = fit(e.p.name, e.p.title ? 260 : 300); g.fillText(nm, 236, mid + 1);
+    const tim = titles.get(e.p.title), ts = Math.min(36, hgt * 0.5); if (tim) g.drawImage(tim, 236 + g.measureText(nm).width + 10, mid - ts / 2, ts, ts);
     g.textAlign = 'center';
-    [String(e.p.wins || 0), String(e.x.pen), e.x.hits + '/' + e.x.calls, String(e.p.wp ?? 0)].forEach((v, k) => { let px = Math.min(42, hgt * 0.42); g.font = f(800, px); while (g.measureText(v).width > 106 && px > 20) { px -= 2; g.font = f(800, px); } g.fillStyle = k === 3 ? '#ffd56b' : '#fff'; g.fillText(v, colX[k], mid + 1); });   // shrinks to fit its column, never over the row's edge
+    [String(e.p.wins || 0), String(e.x.pen), e.x.hits + '/' + e.x.calls, String(e.p.wp ?? 0)].forEach((v, k) => { let px = Math.min(42, hgt * 0.48); g.font = f(800, px); while (g.measureText(v).width > 106 && px > 20) { px -= 2; g.font = f(800, px); } g.fillStyle = k === 3 ? '#ffd56b' : '#fff'; g.fillText(v, colX[k], mid + 1); });   // shrinks to fit its column, never over the row's edge
     g.textBaseline = 'alphabetic';
   });
   // footer: the app icon and where to play
@@ -5947,7 +5948,7 @@ function openScoreboard() {
     el('span', { class: 'sbn' }, el('b', {}, e.p.name), titleBadge(e.p.title, 15)),
     el('span', { class: 'sbv' }, String(e.p.wins || 0)), el('span', { class: 'sbv' }, String(e.x.pen)), el('span', { class: 'sbv' }, e.x.hits + '/' + e.x.calls), el('span', { class: 'sbv wp' }, String(e.p.wp ?? 0))));
   const d = new Date();
-  const box = el('div', { class: 'avbox sbbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('sbTitle') },
+  const box = el('div', { class: 'avbox sbbox' + (list.length > 7 ? ' many' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': t('sbTitle') },
     el('div', { class: 'sb-k' }, 'ROW OF RECKONING'),
     el('div', { class: 'sb-t' }, t('sbTitle')),
     el('div', { class: 'sb-sub' }, t('room') + ' ' + st.code + ' · ' + t('sbRounds', { n: rounds }) + ' · ' + d.toLocaleDateString()),
