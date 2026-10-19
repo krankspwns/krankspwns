@@ -2866,6 +2866,13 @@ function rowPrime(row, cs) {   // cs: the card ids of the row, all of them known
   const best = jk.length ? Math.max(...CALL.map((x) => chandOf(cs.map((c) => c === 'JK' ? x : c)))) : chandOf(cs);
   return best ? CHANDS[best] : '';
 }
+// a pair only lights up the two cards that make it (with a joker: the joker and the higher of the other two)
+function pairMask(cs) {
+  const ranks = cs.map((c) => c === 'JK' ? 'JK' : c.slice(0, -1));
+  const j = cs.indexOf('JK');
+  if (j >= 0) { const o = [0, 1, 2].filter((x) => x !== j).sort((a, b) => crank(cs[b]) - crank(cs[a]))[0]; return cs.map((_, x) => x === j || x === o); }
+  return ranks.map((r) => ranks.filter((q) => q === r).length === 2);
+}
 let tipRow = null;   // which row's criteria tip is open
 document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; render(); } });
 function boardEl(board, mine, pid) {
@@ -2878,7 +2885,7 @@ function boardEl(board, mine, pid) {
     const row = el('div', { class: 'r' });
     const rw = el('div', { class: 'rw' }, row);
     const rowSlots = board.slice(i, i + n), shown = (q) => q && q.c !== '?' && (mine ? (!me.ready || q.up) : q.up);
-    const prime = rowSlots.every(shown) ? rowPrime(rowIdx, rowSlots.map((q) => q.c)) : '';   // only when every card of the row is on show, so nothing hidden is given away
+    const prime = rowSlots.every(shown) ? rowPrime(rowIdx, rowSlots.map((q) => q.c)) : '', pmask = prime === 'pair' ? pairMask(rowSlots.map((q) => q.c)) : null;   // only when every card of the row is on show, so nothing hidden is given away
     rw.dataset.n = String(rowIdx + 1);
     for (let k = 0; k < n; k++, i++) {
       const slot = i, s = board[slot];
@@ -2886,11 +2893,11 @@ function boardEl(board, mine, pid) {
       const f = fx[pid + ':' + slot];
       const fxCls = f ? 'fx-' + f : '';
       if (s) {
-        if (!mine) inner = cardEl(s.c, { up: s.up, extra: fxCls, prime });
+        if (!mine) inner = cardEl(s.c, { up: s.up, extra: fxCls, prime: pmask && !pmask[k] ? '' : prime });
         else {
           // You see your own cards until you press Ready; then only the ones you flipped face up.
           const flip = () => act('flip', { slot });
-          const look = { up: !me.ready || s.up, shared: !me.ready && s.up, extra: fxCls, prime };
+          const look = { up: !me.ready || s.up, shared: !me.ready && s.up, extra: fxCls, prime: pmask && !pmask[k] ? '' : prime };
           inner = cardEl(s.c, canMove ? { ...look, src: slot, onclick: () => act('unplace', { slot }) } : { ...look, onclick: dealt ? flip : null });
         }
       }
