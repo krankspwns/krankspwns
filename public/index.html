@@ -4172,6 +4172,71 @@ function atkEngine() {
   return api;
 }
 
+
+// ---- hand-drawn showdown props (canvas): a black hole with accretion disk, a flying saucer, a shark and a war hammer ----
+function paintBlackHole(g, x, y, R, rot, a) {
+  g.save(); g.globalAlpha = a; g.translate(x, y);
+  let gr = g.createRadialGradient(0, 0, R * 0.5, 0, 0, R * 3.2); gr.addColorStop(0, 'rgba(120,70,255,.5)'); gr.addColorStop(0.45, 'rgba(60,20,150,.2)'); gr.addColorStop(1, 'rgba(20,0,60,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * 3.2, 0, 6.283); g.fill();
+  const disk = (front) => {
+    g.save(); g.rotate(-0.3); g.scale(1, 0.3); g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 48; i++) {
+      const q = i / 47, r = R * (1.06 + q * 1.4), a0 = Math.pow(1 - q, 1.2) * 0.6, gg = g.createLinearGradient(-r, 0, r, 0);
+      gg.addColorStop(0, `rgba(255,${230 - q * 130 | 0},${150 - q * 110 | 0},${a0})`); gg.addColorStop(0.5, `rgba(255,${120 - q * 60 | 0},${50 + q * 40 | 0},${a0 * 0.4})`); gg.addColorStop(1, `rgba(170,70,255,${a0 * 0.3})`);
+      g.strokeStyle = gg; g.lineWidth = R * 0.05; g.beginPath(); g.arc(0, 0, r, front ? 0 : Math.PI, front ? Math.PI : 6.283); g.stroke();
+    }
+    for (let k = 0; k < 14; k++) {   // glowing knots of matter orbiting in the disk
+      const ang = rot * (1.6 - k * 0.05) + k * 0.9, r = R * (1.15 + (k % 5) * 0.28), px = Math.cos(ang) * r, py = Math.sin(ang) * r;
+      if ((py > 0) !== front) continue; const kg = g.createRadialGradient(px, py, 0, px, py, R * 0.22); kg.addColorStop(0, 'rgba(255,240,210,.9)'); kg.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = kg; g.beginPath(); g.arc(px, py, R * 0.22, 0, 6.283); g.fill();
+    }
+    g.restore();
+  };
+  disk(false);
+  g.globalCompositeOperation = 'source-over';
+  const hg = g.createRadialGradient(0, 0, R * 0.9, 0, 0, R * 1.18); hg.addColorStop(0, 'rgba(0,0,0,1)'); hg.addColorStop(0.7, 'rgba(0,0,0,.9)'); hg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = hg; g.beginPath(); g.arc(0, 0, R * 1.18, 0, 6.283); g.fill();
+  g.fillStyle = '#000'; g.beginPath(); g.arc(0, 0, R, 0, 6.283); g.fill();
+  g.globalCompositeOperation = 'lighter';
+  const ring = g.createRadialGradient(0, 0, R * 0.96, 0, 0, R * 1.2); ring.addColorStop(0, 'rgba(255,255,255,0)'); ring.addColorStop(0.35, 'rgba(255,235,190,.95)'); ring.addColorStop(1, 'rgba(255,150,80,0)'); g.fillStyle = ring; g.beginPath(); g.arc(0, 0, R * 1.2, 0, 6.283); g.fill();   // the photon ring
+  g.save(); g.rotate(-0.3); const lg = g.createLinearGradient(-R * 1.5, 0, R * 1.5, 0); lg.addColorStop(0, 'rgba(255,240,200,.85)'); lg.addColorStop(0.5, 'rgba(255,170,90,.6)'); lg.addColorStop(1, 'rgba(190,100,255,.35)'); g.strokeStyle = lg; g.lineWidth = R * 0.11; g.lineCap = 'round'; g.beginPath(); g.arc(0, 0, R * 1.2, Math.PI * 1.08, Math.PI * 1.92); g.stroke(); g.restore();   // the far side of the disk, bent over the top
+  g.globalCompositeOperation = 'source-over'; disk(true);
+  g.restore();
+}
+function paintUfo(g, x, y, s, rot, t) {
+  g.save(); g.translate(x, y); g.rotate(rot * 0.0174533); g.scale(s, s);
+  const glow = g.createRadialGradient(0, 22, 4, 0, 22, 90); glow.addColorStop(0, 'rgba(120,255,200,.55)'); glow.addColorStop(1, 'rgba(120,255,200,0)'); g.fillStyle = glow; g.beginPath(); g.ellipse(0, 24, 92, 40, 0, 0, 6.283); g.fill();
+  const dome = g.createRadialGradient(-10, -34, 4, 0, -22, 46); dome.addColorStop(0, 'rgba(235,255,255,.95)'); dome.addColorStop(0.5, 'rgba(120,220,235,.7)'); dome.addColorStop(1, 'rgba(40,120,160,.55)');
+  g.fillStyle = dome; g.strokeStyle = 'rgba(210,250,255,.9)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, -10, 36, 36, 0, Math.PI, 6.283); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-14, -28, 9, 5, -0.6, 0, 6.283); g.fill();
+  const hull = g.createLinearGradient(0, -14, 0, 28); hull.addColorStop(0, '#f1f5fb'); hull.addColorStop(0.35, '#a9b6c8'); hull.addColorStop(0.7, '#5b6678'); hull.addColorStop(1, '#2a3140');
+  g.fillStyle = hull; g.beginPath(); g.ellipse(0, 8, 88, 24, 0, 0, 6.283); g.fill(); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, 6, 86, 20, 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke();
+  g.fillStyle = '#394255'; g.beginPath(); g.ellipse(0, 24, 40, 9, 0, 0, 6.283); g.fill();
+  for (let i = 0; i < 9; i++) { const a = Math.PI * (0.08 + i * 0.105), px = Math.cos(a) * 70, py = 10 + Math.sin(a) * 14, on = (Math.floor(t / 110) + i) % 3 === 0; const lg = g.createRadialGradient(px, py, 0, px, py, 9); lg.addColorStop(0, on ? 'rgba(255,255,200,1)' : 'rgba(120,255,200,.8)'); lg.addColorStop(1, 'rgba(120,255,200,0)'); g.fillStyle = lg; g.beginPath(); g.arc(px, py, 9, 0, 6.283); g.fill(); }
+  g.restore();
+}
+function paintShark(g, x, y, s, rot, flip, open) {
+  g.save(); g.translate(x, y); g.rotate(rot * 0.0174533); g.scale(s * flip, s);
+  const body = g.createLinearGradient(0, -44, 0, 36); body.addColorStop(0, '#2f4a6b'); body.addColorStop(0.45, '#6f8eae'); body.addColorStop(0.62, '#b7cadd'); body.addColorStop(0.78, '#f3f7fb'); body.addColorStop(1, '#dfe8f1');
+  g.fillStyle = '#3b5878'; g.beginPath(); g.moveTo(-60, -2); g.lineTo(-108, -50); g.lineTo(-92, 0); g.lineTo(-104, 40); g.closePath(); g.fill();   // tail
+  g.fillStyle = '#2f4a6b'; g.beginPath(); g.moveTo(-6, -36); g.quadraticCurveTo(-18, -78, -48, -86); g.quadraticCurveTo(-36, -50, -40, -30); g.closePath(); g.fill();   // dorsal fin
+  g.fillStyle = body; g.beginPath(); g.moveTo(104, 4); g.bezierCurveTo(70, -40, -10, -48, -72, -14); g.lineTo(-72, 14); g.bezierCurveTo(-10, 40, 64, 30, 104, 4); g.closePath(); g.fill();
+  g.fillStyle = '#4a6482'; g.beginPath(); g.moveTo(8, 18); g.quadraticCurveTo(-8, 56, -40, 60); g.quadraticCurveTo(-22, 38, -24, 20); g.closePath(); g.fill();   // pectoral fin
+  g.strokeStyle = 'rgba(30,50,80,.5)'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(34 - i * 8, -12); g.quadraticCurveTo(30 - i * 8, -2, 34 - i * 8, 8); g.stroke(); }   // gills
+  g.fillStyle = '#0b1220'; g.beginPath(); g.arc(70, -9, 5.5, 0, 6.283); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(72, -11, 2, 0, 6.283); g.fill();
+  const gape = open * 20; g.fillStyle = '#5a0f1a'; g.beginPath(); g.moveTo(104, 8); g.quadraticCurveTo(80, 12 + gape * 0.6, 54, 12 + gape); g.quadraticCurveTo(80, 6, 104, 8); g.fill();
+  g.fillStyle = '#fff'; for (let i = 0; i < 8; i++) { const tx = 98 - i * 6, ty = 9 + i * 0.5 + gape * (i / 8) * 0.9; g.beginPath(); g.moveTo(tx, 8 + i * 0.3); g.lineTo(tx - 3, ty + 7); g.lineTo(tx - 6, 8 + i * 0.3); g.closePath(); g.fill(); }
+  g.restore();
+}
+function paintHammer(g, x, y, s, rot) {
+  g.save(); g.translate(x, y); g.rotate(rot * 0.0174533); g.scale(s, s);
+  const wood = g.createLinearGradient(-14, 0, 14, 0); wood.addColorStop(0, '#5b3a1c'); wood.addColorStop(0.5, '#a8743c'); wood.addColorStop(1, '#4a2e15');
+  g.fillStyle = wood; g.beginPath(); g.roundRect ? g.roundRect(-13, -300, 26, 310, 8) : g.rect(-13, -300, 26, 310); g.fill();
+  g.fillStyle = '#2b1a0c'; for (let i = 0; i < 6; i++) g.fillRect(-14, -150 - i * 16, 28, 6);   // leather grip
+  const steel = g.createLinearGradient(0, -54, 0, 60); steel.addColorStop(0, '#f2f6fb'); steel.addColorStop(0.25, '#aab6c6'); steel.addColorStop(0.7, '#5d6879'); steel.addColorStop(1, '#2c3442');
+  g.fillStyle = steel; g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3; g.beginPath(); g.roundRect ? g.roundRect(-92, -48, 184, 104, 16) : g.rect(-92, -48, 184, 104); g.fill(); g.stroke();
+  const gold = g.createLinearGradient(-92, 0, 92, 0); gold.addColorStop(0, '#8a5a10'); gold.addColorStop(0.5, '#ffe08a'); gold.addColorStop(1, '#8a5a10'); g.fillStyle = gold; g.fillRect(-92, -14, 184, 14);
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.roundRect ? g.roundRect(-82, -42, 164, 10, 5) : g.rect(-82, -42, 164, 10); g.fill();
+  g.restore();
+}
+
 async function runShowdown(res) {
   const release = (id) => {   // the verdict lands on that tile: the card tears, the tile turns red, the tag says LOST
     atkHeld.delete(id);
@@ -4230,7 +4295,7 @@ async function runShowdown(res) {
     // ---- a screen is in the way (shop, chat, settings...): one quick pass across the foreground ----
     if (blocked || !champTile) {
       cap.remove();
-      const emo = { dragon: '🐉', eagle: '🦅', thunder: '⛈️', comet: '☄️', meteors: '🌠', shark: '🦈', ninja: '🥷', blackhole: '🌀', fist: '👊', ice: '🧊', cannon: '💣', ufo: '🛸' }[style], c = creature(emo, 96);
+      const emo = { dragon: '🐉', eagle: '🦅', thunder: '⛈️', comet: '☄️', meteors: '🌠', shark: '🦈', ninja: '🥷', blackhole: '🌀', fist: '🔨', ice: '🧊', cannon: '💣', ufo: '🛸' }[style], c = creature(emo, 96);
       let hx = W * 0.8, hy = H * 0.62;
       await tween(900, (k) => { const e = ease(k), x = -60 + (W * 0.8 + 60) * e, y = H * 0.2 + H * 0.42 * e + Math.sin(k * 9) * 14; place(c, x, y, 0.6 + 0.5 * Math.min(1, k * 3), 14); E.flame(x - 30, y + 10, -1, 0.2, 3, { spd: 160, spread: 0.6, size: [12, 26], life: [300, 500] }); });
       c.remove(); E.explosion(hx, hy, 1.2); flash('#fff', 0.45, 240); shake(12); SND.play('impact'); releaseAll();
@@ -4493,14 +4558,14 @@ async function runShowdown(res) {
           await tween(900, (k) => { const e = ease(k); F.x = T.x + side * Math.min(W * 0.55, 320) * (1 - e); F.a = Math.min(1, k * 5); if (Math.random() < 0.6) E.burst(F.x - mv * 20, wy, 1, { spd: [10, 60], life: [300, 600], s: [3, 6], col: [210, 238, 255], col1: [100, 170, 230], g: 120, add: false, up: 80 }); });
           E.burst(F.x, wy, 26, { spd: [120, 420], life: [500, 1000], s: [4, 10], col: [220, 242, 255], col1: [80, 150, 225], g: 700, add: false, up: 260 }); E.ring(F.x, wy, 160, [200, 235, 255], 520, 6); SND.play('splat');
           F.a = 0;
-          const c = creature('🦈', 180), xs = T.x - mv * 170, xe = T.x + mv * 170, yb = wy + 70, ya = Math.max(100, T.y - 50);
+          const Sk = { x: -999, y: -999, s: 1, rot: 0, flip: 1, o: 0 }, dropShark = E.layer((g) => paintShark(g, Sk.x, Sk.y, Sk.s, Sk.rot, Sk.flip, Sk.o)), xs = T.x - mv * 170, xe = T.x + mv * 170, yb = wy + 70, ya = Math.max(100, T.y - 50);
           let bit = false;
           await tween(850, (k) => {
-            const x = xs + (xe - xs) * k, y = yb - 4 * (yb - ya) * k * (1 - k), vy = -4 * (yb - ya) * (1 - 2 * k) / 850, pitch = Math.atan2(vy * 850 * 0.35, 1);
-            place(c, x, y, 0.9 + 0.25 * Math.sin(Math.PI * k), -pitch * 57.3, mv > 0 ? -1 : 1);
+            const x = xs + (xe - xs) * k, y = yb - 4 * (yb - ya) * k * (1 - k), vy = -4 * (yb - ya) * (1 - 2 * k) / 850, pitch = Math.atan2(vy * 850, 340) * 0.8;
+            Sk.x = x; Sk.y = y; Sk.s = 0.78 + 0.22 * Math.sin(Math.PI * k); Sk.rot = -pitch * 57.3 * mv * -1; Sk.flip = mv > 0 ? 1 : -1; Sk.o = Math.max(0, Math.min(1, (k - 0.3) / 0.2)) * (k < 0.62 ? 1 : Math.max(0, 1 - (k - 0.62) / 0.12));
             if (!bit && k > 0.46) { bit = true; E.freeze(80); [[-0.5, -18], [0.6, 14]].forEach(([a, o]) => E.slash(T.x + o, T.y + o, a, 300, { ms: 400, w: 16, col: [255, 255, 255] })); E.burst(T.x, T.y, 30, { spd: [100, 420], life: [500, 1000], s: [4, 10], col: [220, 242, 255], col1: [80, 150, 225], g: 600, add: false, up: 200 }); flash('#d9f0ff', 0.4, 300); shake(18, 520); punch(T.x, T.y, 1.07); popT(T.x, T.y, pen, '#9fd8ff', 150); hurt(tTile); scorch(tTile, 'rgba(10,40,90,.5)'); SND.play('impact'); release(tgt.id); }
           });
-          E.burst(xe, yb, 20, { spd: [100, 360], life: [500, 900], s: [4, 9], col: [220, 242, 255], col1: [80, 150, 225], g: 700, add: false, up: 220 }); E.ring(xe, yb, 140, [200, 235, 255], 480, 5); c.remove();
+          E.burst(xe, yb, 20, { spd: [100, 360], life: [500, 900], s: [4, 9], col: [220, 242, 255], col1: [80, 150, 225], g: 700, add: false, up: 220 }); E.ring(xe, yb, 140, [200, 235, 255], 480, 5); dropShark();
           await wait(ti < shown.length - 1 ? 650 : 1500);
         } else if (style === 'ninja') {
           // a flurry of throwing stars from the strongest hand, then the cross-cut
@@ -4531,20 +4596,14 @@ async function runShowdown(res) {
           // a vortex opens over the loser and pulls its cards in
           SND.play('roar'); setDim(0.92);
           const BH = { r: 0, rot: 0, a: 1 };
-          const dropBH = E.layer((g) => {
-            if (BH.r < 2) return; g.globalAlpha = BH.a; const R = BH.r;
-            let gr = g.createRadialGradient(T.x, T.y, R * 0.4, T.x, T.y, R * 2.2); gr.addColorStop(0, 'rgba(140,60,255,.55)'); gr.addColorStop(1, 'rgba(80,20,160,0)'); g.fillStyle = gr; g.beginPath(); g.arc(T.x, T.y, R * 2.2, 0, 6.283); g.fill();
-            g.globalCompositeOperation = 'lighter'; g.lineWidth = 5; g.strokeStyle = 'rgba(190,130,255,.55)';
-            for (let a = 0; a < 3; a++) { g.beginPath(); for (let i = 0; i <= 40; i++) { const q = i / 40, ang = BH.rot + a * 2.094 + q * 5, rr = R * (0.3 + q * 1.7), x = T.x + Math.cos(ang) * rr, y = T.y + Math.sin(ang) * rr * 0.75; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
-            g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.beginPath(); g.ellipse(T.x, T.y, R * 0.62, R * 0.5, 0, 0, 6.283); g.fill(); g.strokeStyle = 'rgba(255,220,255,.85)'; g.lineWidth = 2.5; g.stroke();
-          });
-          await tween(650, (k) => { BH.r = 90 * ease(k); BH.rot += 0.14; });
+          const dropBH = E.layer((g) => { if (BH.r < 2) return; paintBlackHole(g, T.x, T.y, BH.r, BH.rot, BH.a); });
+          await tween(650, (k) => { BH.r = 62 * ease(k); BH.rot += 0.05; });
           try { tTile.animate([{ transform: 'none' }, { transform: 'scale(.94) rotate(-3deg)', offset: .25 }, { transform: 'scale(.82) rotate(4deg)', offset: .6 }, { transform: 'scale(.62) rotate(-8deg)', opacity: .55 }], { duration: 950, easing: 'ease-in' }); } catch {}
           await tween(950, (k) => {
-            BH.rot += 0.2 + k * 0.3; BH.r = 90 + 8 * Math.sin(k * 22);
+            BH.rot += 0.07 + k * 0.1; BH.r = 62 + 4 * Math.sin(k * 22);
             for (let i = 0; i < 3; i++) { const a = rnd(0, 6.283), r0 = rnd(130, 240), x = T.x + Math.cos(a) * r0, y = T.y + Math.sin(a) * r0 * 0.8; E.emit({ x, y, vx: -Math.cos(a) * r0 / 0.45, vy: -Math.sin(a) * r0 * 0.8 / 0.45, life: 450, s: 6, s1: 1, col: [225, 175, 255], col1: [110, 50, 200], drag: 1 }); }
           });
-          await tween(200, (k) => { BH.r = 98 * (1 - k); });
+          await tween(220, (k) => { BH.r = 66 * (1 - k * k); });
           E.freeze(100); flash('#e3c4ff', 0.55, 420); E.burst(T.x, T.y, 46, { spd: [140, 520], life: [500, 1100], s: [6, 16], col: [235, 200, 255], col1: [100, 40, 200], g: 80 }); E.ring(T.x, T.y, 280, [210, 160, 255], 560, 8); E.ring(T.x, T.y, 170, [255, 255, 255], 380, 4);
           shake(20, 600); punch(T.x, T.y, 1.08, 420); popT(T.x, T.y, pen, '#e0b8ff', 250); hurt(tTile); scorch(tTile, 'rgba(30,0,60,.55)'); SND.play('boom'); release(tgt.id);
           dropBH();
@@ -4552,9 +4611,9 @@ async function runShowdown(res) {
         } else if (style === 'fist') {
           // a giant fist from above, with a shockwave and cracks in the ground
           SND.play('whistle'); setDim(0.75);
-          const c = creature('👊', 240), sh = mk('width:220px;height:64px;margin:-32px 0 0 -110px;border-radius:50%;background:radial-gradient(ellipse, rgba(0,0,0,.7), transparent 70%);opacity:0');
+          const Hm = { x: -999, y: -999, s: 0.9, rot: 0 }, dropHm = E.layer((g) => paintHammer(g, Hm.x, Hm.y, Hm.s, Hm.rot)), sh = mk('width:220px;height:64px;margin:-32px 0 0 -110px;border-radius:50%;background:radial-gradient(ellipse, rgba(0,0,0,.7), transparent 70%);opacity:0');
           const y0 = -180, yHit = Math.max(120, T.y - 20);
-          await tween(640, (k) => { const e = k * k * k, y = y0 + (yHit - y0) * e; place(c, T.x, y, 0.7 + 0.5 * e, -80, 1); sh.style.opacity = String(k); sh.style.transform = `translate(${T.x}px,${T.y + 40}px) scale(${0.4 + 0.9 * k})`; E.speed(T.x, y, 0, 1, 2); });
+          await tween(640, (k) => { const e = k * k * k, y = y0 + (yHit - y0) * e; Hm.x = T.x + 70 * (1 - e); Hm.y = y - 10; Hm.s = 0.75 + 0.35 * e; Hm.rot = 28 * (1 - e); sh.style.opacity = String(k); sh.style.transform = `translate(${T.x}px,${T.y + 40}px) scale(${0.4 + 0.9 * k})`; E.speed(T.x, y, 0, 1, 2); });
           sh.remove(); E.freeze(130); SND.play('boom'); SND.play('impact');
           const cracks = Array.from({ length: 9 }, (_, i) => { const a = i * 0.7 + rnd(-0.2, 0.2), len = rnd(100, 220), pts = [[T.x, T.y + 20]]; for (let j = 1; j <= 6; j++) pts.push([T.x + Math.cos(a) * len * j / 6 + rnd(-10, 10), T.y + 20 + Math.sin(a) * len * 0.7 * j / 6 + rnd(-10, 10)]); return pts; });
           const ct0 = performance.now(), dropCr = E.layer((g) => { const k = (performance.now() - ct0) / 1500; if (k > 1) return; const grow = Math.min(1, k * 6); g.globalAlpha = 1 - Math.max(0, k - 0.6) / 0.4; g.lineCap = 'round'; for (const pts of cracks) { const n = Math.max(1, Math.round(pts.length * grow)); g.beginPath(); pts.slice(0, n).forEach((q, j) => (j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.strokeStyle = 'rgba(20,12,8,.9)'; g.lineWidth = 7; g.stroke(); g.strokeStyle = 'rgba(255,230,190,.55)'; g.lineWidth = 2; g.stroke(); } });
@@ -4563,8 +4622,8 @@ async function runShowdown(res) {
           shake(28, 700); punch(T.x, T.y, 1.12, 440); popT(T.x, T.y, pen, '#ffd27a', 200); hurt(tTile); scorch(tTile, 'rgba(30,15,0,.5)'); release(tgt.id);
           try { tTile.animate([{ transform: 'none' }, { transform: 'scale(1.06,.78)', offset: .25 }, { transform: 'none' }], { duration: 520 }); } catch {}
           await wait(320);
-          anim(c, [{ opacity: 1 }, { opacity: 0, transform: c.style.transform + ' translateY(-220px)' }], { duration: 520, fill: 'forwards' });
-          setTimeout(dropCr, 1600);
+          await tween(480, (k) => { Hm.y -= 14 * k; Hm.rot = -10 * k; });
+          dropHm(); setTimeout(dropCr, 1200);
           await wait(ti < shown.length - 1 ? 650 : 1500);
         } else if (style === 'ice') {
           // frost creeps over the loser's tile, freezes it solid and shatters
@@ -4618,7 +4677,9 @@ async function runShowdown(res) {
         } else if (style === 'ufo') {
           // a flying saucer lifts the loser's tile in a tractor beam and zaps it
           SND.play('whistle'); setDim(0.8);
-          const c = creature('🛸', 180), r = tileRect(tTile), uy = Math.max(100, T.y - 190), U = { x: T.x + (T.x > W / 2 ? -1 : 1) * W * 0.6, y: -120, b: 0, f: 1 };
+          const r = tileRect(tTile), uy = Math.max(100, T.y - 190), U = { x: T.x + (T.x > W / 2 ? -1 : 1) * W * 0.6, y: -120, b: 0, f: 1, dx: 0, dy: -300, sc: 0.6, rot: 0 }, ut0 = performance.now();
+          const place = (_c, x, y, sc, rot) => { U.dx = x; U.dy = y; U.sc = sc; U.rot = rot; };
+          const dropUfo = E.layer((g) => paintUfo(g, U.dx, U.dy, U.sc * 0.9, U.rot, performance.now() - ut0)), c = null;
           const dropBm = E.layer((g) => {
             if (U.b <= 0.01) return; const by2 = U.y + 46, ex = r.left + r.width / 2, ey = Math.min(H, r.bottom + 10), py = by2 + (ey - by2) * U.b, hw = 26 + (r.width / 2 - 26) * U.b, pcx = U.x + (ex - U.x) * U.b;
             const gr = g.createLinearGradient(0, by2, 0, ey); gr.addColorStop(0, `rgba(150,255,210,${0.7 * U.f})`); gr.addColorStop(1, `rgba(120,255,200,${0.22 * U.f})`); g.fillStyle = gr; g.beginPath(); g.moveTo(U.x - 26, by2); g.lineTo(U.x + 26, by2); g.lineTo(pcx + hw, py); g.lineTo(pcx - hw, py); g.closePath(); g.fill();
@@ -4633,7 +4694,7 @@ async function runShowdown(res) {
           shake(15, 520); punch(T.x, T.y, 1.06); popT(T.x, T.y, pen, '#9dffd0', 200); hurt(tTile); scorch(tTile, 'rgba(0,40,20,.5)'); release(tgt.id);
           await wait(300);
           await tween(420, (k) => { U.f = 1 - k; U.b = 1 - k; const e = k * k; U.x += 30; place(c, U.x, U.y - 500 * e, 1 - 0.4 * e, 12, 1); E.speed(U.x, U.y - 500 * e, 1, -1, 2); });
-          dropBm();
+          dropBm(); dropUfo();
           await wait(ti < shown.length - 1 ? 400 : 1100);
         } else {
           const cm = { x: -999, y: -999, s: 0.5, a: 0 }, sh = mk(`width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;background:radial-gradient(circle, rgba(0,0,0,.75), transparent 70%);opacity:0`), warn = mk(`inset:0;width:100vw;height:100vh;background:radial-gradient(circle at ${T.x}px ${T.y}px, rgba(255,60,40,.0), rgba(255,40,30,.28));opacity:0`);
