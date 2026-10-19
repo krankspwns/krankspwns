@@ -3719,7 +3719,7 @@ function endTex(kind) {
   }
   return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL() });
 }
-let FIST_END = 1;   // which look the hammer leaves behind: 1 folded, 2 shattered, 3 squashed with a hammer imprint, 4 punched through, 5 crumpled
+let FIST_END = 2;   // which look the hammer leaves behind: 1 folded, 2 shattered, 3 squashed with a hammer imprint, 4 punched through, 5 crumpled
 function shatteredCard(id, animate, as, cascade) {
   const cols = 3, rows = 4, pts = []; let sd = 11; const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
   for (let j = 0; j <= rows; j++) { pts.push([]); for (let i = 0; i <= cols; i++) pts[j].push([i / cols * 100 + (i > 0 && i < cols ? (rnd() - 0.5) * 24 : 0), j / rows * 100 + (j > 0 && j < rows ? (rnd() - 0.5) * 16 : 0)]); }
