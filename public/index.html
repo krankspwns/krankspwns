@@ -4186,6 +4186,10 @@ async function runShowdown(res) {
   try {
     const ent = res.entries, champ = ent.reduce((a, e) => (!a || strengthOf(res, e) > strengthOf(res, a) ? e : a), null);
     const targets = res.losers.map((id) => ent.find((e) => e.id === id)).filter(Boolean);
+    // every player tied for the strongest hand sends a creature: they are paired off with the losers (as many strikes as the bigger side, at most three)
+    const champs = champ ? ent.filter((e) => strengthOf(res, e) === strengthOf(res, champ) && !res.losers.includes(e.id)).slice(0, 3) : [];
+    if (champ && !champs.length) champs.push(champ);
+    const pairs = Array.from({ length: Math.min(3, Math.max(champs.length, targets.length)) }, (_, i) => ({ champ: champs[i % champs.length], tgt: targets[i % targets.length] }));
     const W = window.innerWidth, H = window.innerHeight, style = ATK_STYLES[(st.round * 5 + res.row * 3 + res.losers.length) % ATK_STYLES.length];
     const blocked = !!document.querySelector('.guide-ov, .avbig') || document.hidden;
     const tileOf = (id) => document.querySelector(`.tile[data-pid="${id}"]`);
@@ -4234,19 +4238,25 @@ async function runShowdown(res) {
     }
 
     // ---- 1) the screen goes to the strongest hand, which charges up ----
-    const cardsOf = champTile.querySelector('.tcards') || champTile;
-    await tween(420, () => follow(docPos(champTile).y, 0.3));
-    anim(champTile, [{ boxShadow: '0 0 0 0 rgba(255,207,64,0)' }, { boxShadow: '0 0 0 5px rgba(255,207,64,.98), 0 0 70px rgba(255,207,64,.95)', offset: .4 }, { boxShadow: '0 0 0 0 rgba(255,207,64,0)' }], { duration: 950 });
-    { const r = tileRect(champTile); for (let i = 0; i < 28; i++) E.emit({ x: r.left + rnd(0, r.width), y: r.top + rnd(0, r.height), vx: rnd(-20, 20), vy: rnd(-200, -60), g: -30, life: rnd(500, 900), s: rnd(4, 9), s1: 0, col: [255, 235, 150], col1: [255, 160, 30], drag: 0.97 }); }
-    cap.classList.add('on');
-    await wait(420);
-    setDim(style === 'thunder' ? 0.9 : 0.55);
-
-    // ---- 2) the creature goes after each loser, with the screen following it ----
+    const charge = async (c, first) => {
+      const tl = tileOf(c.id) || champTile, cds = tl.querySelector('.tcards') || tl;
+      if (!first) { cap.classList.remove('on'); cap.textContent = t('atkCaption', { name: c.name }); setDim(0.55); }
+      await tween(420, () => follow(docPos(tl).y, 0.3));
+      anim(tl, [{ boxShadow: '0 0 0 0 rgba(255,207,64,0)' }, { boxShadow: '0 0 0 5px rgba(255,207,64,.98), 0 0 70px rgba(255,207,64,.95)', offset: .4 }, { boxShadow: '0 0 0 0 rgba(255,207,64,0)' }], { duration: 950 });
+      { const r = tileRect(tl); for (let i = 0; i < 28; i++) E.emit({ x: r.left + rnd(0, r.width), y: r.top + rnd(0, r.height), vx: rnd(-20, 20), vy: rnd(-200, -60), g: -30, life: rnd(500, 900), s: rnd(4, 9), s1: 0, col: [255, 235, 150], col1: [255, 160, 30], drag: 0.97 }); }
+      cap.classList.add('on');
+      await wait(420);
+      setDim(style === 'thunder' ? 0.9 : 0.55);
+      return cds;
+    };
+    const cardsOf = await charge(pairs[0].champ, true);
     let from = docPos(cardsOf);
-    const shown = targets.slice(0, 3);
+    const shown = pairs.map((p) => p.tgt), seen = new Set();
     for (let ti = 0; ti < shown.length; ti++) {
+      if (ti > 0 && pairs[ti].champ.id !== pairs[ti - 1].champ.id) { const cd = await charge(pairs[ti].champ, false); from = docPos(cd); }   // the next tied hand sends its own creature
       const tgt = shown[ti], tTile = tileOf(tgt.id); if (!tTile) { release(tgt.id); continue; }
+      const again = seen.has(tgt.id); seen.add(tgt.id);
+      const popT = (...a) => { if (!again) pop(...a); };
       const tdoc = () => docPos(tTile), pen = '×' + res.penalty;
       if (style === 'dragon') {
         // a long dragon drawn in one piece: a horned head that leads in a straight line and a scaled body that follows the path it flew
@@ -4369,7 +4379,7 @@ async function runShowdown(res) {
         });
         jitter(0); D.mouth = 0.3;
         // the blast
-        E.explosion(T.x, T.y, 1.5); flash('#ffb84a', 0.5, 380); shake(16, 560); punch(T.x, T.y); pop(T.x, T.y, pen, '#ffb02e'); hurt(tTile); scorch(tTile, 'rgba(40,12,0,.95)'); SND.play('impact'); SND.play('boom'); release(tgt.id);
+        E.explosion(T.x, T.y, 1.5); flash('#ffb84a', 0.5, 380); shake(16, 560); punch(T.x, T.y); popT(T.x, T.y, pen, '#ffb02e'); hurt(tTile); scorch(tTile, 'rgba(40,12,0,.95)'); SND.play('impact'); SND.play('boom'); release(tgt.id);
         if (ti < shown.length - 1) { from = { x: D.x, y: D.y }; await wait(500); dropLayer(); }   // (the next loser gets a fresh dragon from the strongest hand)
         else { goTo(D.x + face * 440, D.y - 400, 950, { ease: (k) => k * k, alpha: true, fadeOut: true, follow: false }).then(dropLayer); from = tdoc(); await wait(950); }
       } else if (style === 'eagle') {
@@ -4392,7 +4402,7 @@ async function runShowdown(res) {
         await wait(260);
         flash('#e8f4ff', 0.4, 300); shake(15, 520); punch(T.x, T.y, 1.06); E.ring(T.x, T.y, 250, [200, 230, 255], 520, 7); E.ring(T.x, T.y, 150, [255, 255, 255], 380, 4);
         for (let i = 0; i < 26; i++) E.emit({ x: T.x + rnd(-20, 20), y: T.y + rnd(-20, 20), vx: rnd(-420, 420), vy: rnd(-380, 120), g: 160, life: rnd(700, 1400), s: rnd(5, 9), s1: 2, col: [255, 255, 255], col1: [170, 200, 255], drag: 0.96 });   // feathers
-        pop(T.x, T.y, pen, '#cfe6ff'); release(tgt.id);
+        popT(T.x, T.y, pen, '#cfe6ff'); release(tgt.id);
         anim(c, [{ opacity: 1 }, { opacity: 0, transform: c.style.transform + ' translate(200px,-120px) scale(1.3)' }], { duration: 480, fill: 'forwards' });
         from = tdoc();
         await wait(ti < shown.length - 1 ? 520 : 760);
@@ -4430,7 +4440,7 @@ async function runShowdown(res) {
             const fade = setInterval(() => { CL.f *= 0.8; }, 30); setTimeout(() => clearInterval(fade), 500);
             await wait(big ? 200 : 300);
           }
-          punch(T.x, T.y, 1.06); pop(T.x, T.y, pen, '#bcd8ff');
+          punch(T.x, T.y, 1.06); popT(T.x, T.y, pen, '#bcd8ff');
           const r0 = tileRect(tTile); for (let i = 0; i < 8; i++) setTimeout(() => { const a = { x: r0.left + rnd(0, r0.width), y: r0.top + rnd(0, r0.height) }, b = { x: r0.left + rnd(0, r0.width), y: r0.top + rnd(0, r0.height) }; E.bolt(a.x, a.y, b.x, b.y, { w: 3, ms: 140, branches: 1 }); }, skip ? 0 : i * 70);   // the tile crackles
           E.smoke(T.x, T.y, 8); scorch(tTile, 'rgba(10,14,40,.95)'); release(tgt.id);
           tween(700, (k) => { CL.a = 1 - k; CL.x += 3; CL.f *= 0.9; }).then(dropCloud);
@@ -4458,7 +4468,7 @@ async function runShowdown(res) {
           flash('#fff', 0.6, 420); E.freeze(110); await wait(110);
           E.explosion(T.x, T.y, 2); E.burst(T.x, T.y, 28, { spd: [160, 620], life: [700, 1300], s: [6, 14], col: [150, 120, 100], col1: [40, 30, 30], g: 900, add: false });
           E.ring(T.x, T.y, 300, [255, 255, 255], 500, 8); E.smoke(T.x, T.y, 18, { size: [40, 90] });
-          shake(24, 700); punch(T.x, T.y, 1.1, 420); pop(T.x, T.y, pen, '#ffc247', 300); hurt(tTile); scorch(tTile, 'rgba(30,10,0,.5)'); SND.play('boom'); SND.play('impact'); release(tgt.id);
+          shake(24, 700); punch(T.x, T.y, 1.1, 420); popT(T.x, T.y, pen, '#ffc247', 300); hurt(tTile); scorch(tTile, 'rgba(30,10,0,.5)'); SND.play('boom'); SND.play('impact'); release(tgt.id);
           await wait(ti < shown.length - 1 ? 900 : 1500);   // long enough to read the penalty before the verdict takes over
         }
       }
