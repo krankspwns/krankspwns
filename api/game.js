@@ -348,9 +348,11 @@ function predWindow(room) {
   if (globalThis.__predOff) return null;   // the tests switch the window off, except in the test of the window itself
   const row = currentRowOf(room), active = activeOf(room);
   if (room.phase !== 'dealt' || row >= ROW_SIZES.length || active.length < 2 || !active.every((p) => p.ready)) return null;
-  const base = row === 0 ? room.allReady && room.allReady.at : room.results && room.results[row - 1] && room.results[row - 1].at;
-  if (!base) return null;
-  const from = base + (row === 0 ? 2500 : 11000);   // after the strike and the verdict have played out on the phones
+  // row 1: a moment after the "everyone is ready" banner. Later rows: when the host's phone says the strike and the verdict are over
+  // (or, if it never says so, a while after the result)
+  const prev = room.results && room.results[row - 1];
+  const from = row === 0 ? (room.allReady && room.allReady.at ? room.allReady.at + 2500 : null) : prev ? ((room.predStart && room.predStart[row]) || prev.at + 15000) : null;
+  if (!from) return null;
   return { from, until: from + PRED_MS };
 }
 function storeResults(room) {
@@ -607,6 +609,7 @@ async function handle(action, b, query, ctx = {}) {
       room.deck = deck; // leftovers, for players who join mid-round
       room.results = {};
       room.preds = {};
+      room.predStart = {};
       room.deadline = set.timer ? Date.now() + set.timer * 1000 : null;
       room.phase = 'dealt';
       room.allReady = null;
@@ -750,6 +753,17 @@ async function handle(action, b, query, ctx = {}) {
       const tgt = active.find((p) => p.id === String(b.target));
       need(tgt && tgt.id !== pid, 400, 'Pick another player');
       room.preds[row][pid] = tgt.id;
+      break;
+    }
+
+    case 'predStart': {   // the host's phone: the verdict has been seen, the guessing for the next row can begin
+      need(room.hostId === pid, 403, 'Only the host can do that');
+      const row = currentRowOf(room);
+      need(row > 0 && row < ROW_SIZES.length && Number(b.row) === row, 409, 'Not now');
+      need(room.results && room.results[row - 1], 409, 'Not now');
+      room.predStart = room.predStart || {};
+      if (room.predStart[row]) return viewFor(room, pid, cnOf);   // already started
+      room.predStart[row] = Date.now();
       break;
     }
 

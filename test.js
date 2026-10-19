@@ -336,6 +336,15 @@ const post = (b) => call('POST', b, {});
   assert.equal(pr0.streak.n, 1);
   assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.wallet.pts, 3);
 
+  // the next row's guessing starts when the host's phone says the verdict is over (or a while after the result)
+  { const r = globalThis.__rooms.get(pa.code); r.results[0].at = Date.now() - 2000; }
+  const w1 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j.predWin;
+  assert.ok(w1 && w1.from > Date.now() + 5000, 'row 2: the window waits for the host');
+  assert.equal((await post({ action: 'predStart', code: pa.code, pid: pb.meId, row: 1 })).s, 403, 'only the host starts it');
+  assert.equal((await post({ action: 'predStart', code: pa.code, pid: pa.meId, row: 2 })).s, 409, 'only the next row');
+  assert.equal((await post({ action: 'predStart', code: pa.code, pid: pa.meId, row: 1 })).s, 200);
+  const w2 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j.predWin;
+  assert.ok(w2 && w2.from <= Date.now() && w2.until > Date.now(), 'row 2: guessing is open now');
   globalThis.__predOff = true;
   // ---- security ----
   const sa = (await post({ action: 'create', name: 'SecA' })).j, sb = (await post({ action: 'join', code: sa.code, name: 'SecB' })).j;
