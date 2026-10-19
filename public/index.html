@@ -576,6 +576,7 @@
   @keyframes stpop { from { opacity: 0; transform: scale(.2) rotate(-14deg); } 60% { transform: scale(1.18) rotate(5deg); } } @keyframes stagain { 30% { transform: scale(1.25) rotate(-8deg); } 60% { transform: scale(.95) rotate(6deg); } }
   .chatwho { display: flex; align-items: center; gap: 10px; padding: 8px 16px 2px; } .cw-av { display: flex; } .cw-av .av { margin-left: -7px; box-shadow: 0 0 0 2px rgb(var(--panel)); } .cw-av .av:first-child { margin-left: 0; } .chatwho small { opacity: .6; font-size: 12px; }
   .chatempty .ce-stk { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; } .ce-stk span { animation: cebob 1.8s ease-in-out infinite; } @keyframes cebob { 50% { transform: translateY(-9px) rotate(5deg); } }
+  .chatbox, .chatbox * { -webkit-tap-highlight-color: transparent; } .chatbox button, .cbub, .cstk, .cbigemo { touch-action: manipulation; } .cbub, .cstk, .cbigemo, .rchip, .rpick { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   .csys { align-self: center; display: flex; align-items: center; gap: 6px; max-width: 92%; padding: 4px 12px; border-radius: 99px; background: rgba(255,255,255,.07); font-size: 12px; opacity: .85; text-align: center; line-height: 1.3; } .csys.new { animation: cmsgin .38s ease backwards; } .csys .ic { flex: none; } .csys.lose { background: rgba(255,90,100,.14); color: #ffb0b6; } .csys.tie { background: rgba(255,207,64,.12); color: var(--gold-hi); } .csys.gift { background: rgba(182,120,255,.16); color: #e3ccff; } .csys .giftbit, .csys svg { flex: none; }
   .rchips { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 4px; } .rchip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px !important; border-radius: 99px !important; font-size: 13px !important; background: rgba(255,255,255,.09) !important; border: 1px solid transparent !important; line-height: 1.3; } .rchip i { font-style: normal; font-size: 11.5px; font-weight: 800; opacity: .85; } .rchip.on { background: rgba(var(--gold-rgb), .25) !important; border-color: var(--gold-lo) !important; }
   .rpick { display: flex; gap: 2px; padding: 4px 6px; border-radius: 99px; background: rgb(var(--panel)); border: 1px solid var(--line); box-shadow: 0 8px 22px rgba(0,0,0,.45); animation: boxpop .18s ease backwards; } .rpick button { background: none !important; border: 0 !important; padding: 2px 5px !important; font-size: 21px; line-height: 1.2; border-radius: 10px !important; } .rpick button:active { transform: scale(1.3); } .rpick button.on { background: rgba(var(--gold-rgb), .28) !important; }
@@ -1614,7 +1615,7 @@ document.addEventListener('click', (e) => { if (emoteTrayOpen && !(e.target.clos
 let chatLog = [], chatHave = undefined, chatSeen = 0, chatPopT = null;
 const chatOn = () => !!(st && st.settings && st.settings.chat !== false);
 function handleChat(j, prev) {
-  if (j.chatR) chatR = j.chatR;
+  if (j.chatR) { const mine = chatR; chatR = { ...j.chatR }; const now = Date.now(); for (const n of Object.keys(chatRHold)) { if (chatRHold[n] < now) delete chatRHold[n]; else if (mine[n]) chatR[n] = mine[n]; else delete chatR[n]; } }
   if (!prev || prev.code !== j.code || chatHave === undefined) { chatLog = []; chatHave = undefined; chatSeen = j.chatN || 0; }
   const fresh = (j.chat || []).filter((m) => !chatLog.some((x) => x.n === m.n));
   if (fresh.length) {
@@ -1646,6 +1647,7 @@ function openChat() {
   document.body.append(ov); document.body.classList.add('noscroll');
   chatSeen = st ? st.chatN || 0 : 0;
   chatNodes = new Map();
+  chatLog.forEach((m) => chatShown.add(m.n));   // what is already there appears at once; only new arrivals pop in
   renderChat(false);
   syncEmoteUi();
   setTimeout(() => document.querySelector('.chat-in input')?.focus(), 120);
@@ -1665,7 +1667,7 @@ const CHAT_HUES = [350, 24, 46, 140, 172, 202, 262, 312];
 const chatHue = (id) => { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return CHAT_HUES[h % CHAT_HUES.length]; };
 const STICKER_RE = /^\[s:(\w+)\]$/, BIGEMO_RE = /^(?:\p{Extended_Pictographic}️?(?:‍\p{Extended_Pictographic}️?)*\s*){1,3}$/u;
 const chatSticker = (m) => { const x = STICKER_RE.exec(m.text); return x && EMOTE_ART[x[1]] ? x[1] : null; };
-let chatTray = false, chatShown = new Set(), chatPendText = new Set(), chatR = {}, chatPick = null;
+let chatTray = false, chatShown = new Set(), chatPendText = new Set(), chatR = {}, chatPick = null, chatRHold = {};
 const REACT_EMO = { heart: '❤️', laugh: '😂', up: '👍', fire: '🔥', wow: '😮' };
 function sendReact(n, k) {
   const cur = { ...(chatR[n] || {}) };
@@ -1673,8 +1675,8 @@ function sendReact(n, k) {
   for (const e of Object.keys(cur)) { const ids = cur[e].filter((x) => x !== st.meId); if (cur[e].length !== ids.length) had = e; if (ids.length) cur[e] = ids; else delete cur[e]; }
   if (had !== k) cur[k] = [...(cur[k] || []), st.meId];
   chatR = { ...chatR }; if (Object.keys(cur).length) chatR[n] = cur; else delete chatR[n];
-  chatPick = null; renderChat(true);
-  api('creact', { n, e: k }).then((j) => { if (j && j.chatR) { chatR = j.chatR; renderChat(true); } }).catch(() => {});
+  chatPick = null; chatRHold[n] = Date.now() + 3000; renderChat(true);   // for a moment, an older update from the server must not undo what you just tapped
+  api('creact', { n, e: k }).then((j) => { if (j && j.chatR) { delete chatRHold[n]; chatR = j.chatR; renderChat(true); } }).catch(() => { delete chatRHold[n]; });
 }
 // a short line about what happened at the table
 function chatSysLine(m, fresh) {
@@ -1709,12 +1711,16 @@ function chatMsgEl(m, i, fresh) {
     ? el('div', { class: 'cstk', onclick: (e) => { const n = e.currentTarget; n.classList.remove('again'); void n.offsetWidth; n.classList.add('again'); pick(); } }, emoteEl(stk, 76))
     : big ? el('div', { class: 'cbigemo', onclick: pick }, m.text)
     : el('div', { class: 'cbub', onclick: pick }, el('span', {}, m.text));
+  return el('div', { class: 'cmsg' + (mine ? ' mine' : '') + (m.pending ? ' pending' : '') + (fresh ? ' new' : '') + (stk ? ' sticker' : '') + (same ? ' same' : ''), style: `--h:${chatHue(m.id)}` },
+    same ? el('span', { class: 'cgap' }) : avatarEl(m.avatar, 34, '', m.acc, m.bd),
+    el('div', { class: 'ccol' }, same ? '' : head, body, el('div', { class: 'cx' }, ...chatExtras(m))));
+}
+// the reaction bar and the chips under a message: swapped in place, so the message itself never redraws
+function chatExtras(m) {
   const rs = chatR[m.n] || {}, myR = Object.keys(rs).find((k) => rs[k].includes(st.meId));
   const chips = Object.keys(rs).length ? el('div', { class: 'rchips' }, ...Object.keys(rs).map((k) => el('button', { type: 'button', class: 'rchip' + (rs[k].includes(st.meId) ? ' on' : ''), onclick: () => sendReact(m.n, k) }, REACT_EMO[k], el('i', {}, String(rs[k].length))))) : '';
   const picker = chatPick === m.n && !m.pending ? el('div', { class: 'rpick' }, ...Object.keys(REACT_EMO).map((k) => el('button', { type: 'button', class: k === myR ? 'on' : '', onclick: () => sendReact(m.n, k) }, REACT_EMO[k]))) : '';
-  return el('div', { class: 'cmsg' + (mine ? ' mine' : '') + (m.pending ? ' pending' : '') + (fresh ? ' new' : '') + (stk ? ' sticker' : '') + (same ? ' same' : ''), style: `--h:${chatHue(m.id)}` },
-    same ? el('span', { class: 'cgap' }) : avatarEl(m.avatar, 34, '', m.acc, m.bd),
-    el('div', { class: 'ccol' }, same ? '' : head, body, picker, chips));
+  return [picker, chips];
 }
 function chatShell(ov) {
   const input = el('input', { type: 'text', maxLength: 140, placeholder: t('chatPh'), enterKeyHint: 'send', 'aria-label': t('chatPh'), onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = input.value; input.value = ''; sendChat(v); } } });
@@ -1727,6 +1733,7 @@ function chatShell(ov) {
     el('div', { class: 'chat-in' },
       el('button', { type: 'button', class: 'stkbtn', 'aria-label': t('chatStickers'), title: t('chatStickers'), onclick: () => { chatTray = !chatTray; renderChat(true); } }, emoteEl('laugh', 30)),
       input, el('button', { type: 'button', class: 'sendbtn', 'aria-label': t('chatSend'), onclick: () => { const v = input.value; input.value = ''; sendChat(v); input.focus(); } }, colorIcon(SEND_ICON, 26))));
+  box.addEventListener('pointerdown', (e) => { if (e.target.closest('button, .cbub, .cstk, .cbigemo')) e.preventDefault(); });   // tapping never pulls focus off the text box, so the keyboard stays put
   ov.replaceChildren(box);
   return box;
 }
@@ -1748,15 +1755,16 @@ function renderChat(keepScroll) {
   const place = (node) => { const ref = list.children[pos]; if (ref !== node) list.insertBefore(node, ref || null); pos++; };
   chatLog.forEach((m, i) => {
     const key = m.n; keep.add(key);
-    const rs = chatR[m.n] ? JSON.stringify(chatR[m.n]) : '';
-    const sig = [m.text, m.pending ? 1 : 0, rs, chatPick === m.n ? 1 : 0, chatAgo(m), i && chatLog[i - 1].id === m.id && !chatLog[i - 1].sys ? 1 : 0, m.sys ? '' : st.meId].join('\u0001');
+    const xs = (chatR[m.n] ? JSON.stringify(chatR[m.n]) : '') + (chatPick === m.n ? '|pick' : '');
+    const sig = [m.text, m.pending ? 1 : 0, chatAgo(m), i && chatLog[i - 1].id === m.id && !chatLog[i - 1].sys ? 1 : 0, m.sys ? '' : st.meId].join('\u0001');
     let c = chatNodes.get(key);
+    if (c && c.sig === sig && c.xs !== xs && !m.sys) { c.node.querySelector('.cx').replaceChildren(...chatExtras(m)); c.xs = xs; }
     if (!c || c.sig !== sig) {
       const fresh = !c && (m.sys ? !chatShown.has(m.n) : chatFresh(m, m.id === st.meId));
       if (m.sys) chatShown.add(m.n);
       const node = m.sys ? chatSysLine(m, fresh) : chatMsgEl(m, i, fresh);
       if (c) c.node.replaceWith(node);
-      c = { sig, node }; chatNodes.set(key, c);
+      c = { sig, xs, node }; chatNodes.set(key, c);
     }
     place(c.node);
   });
