@@ -1,11 +1,17 @@
 const assert = require('assert');
+process.env.TESTER_NAME = 'benny';   // the shop tester is only switched on when asked for
 const h = require('./api/game.js');
+const toks = {};   // every player's secret token, picked up from the create / join replies and sent along automatically
 async function call(method, body, query) {
   let out;
   const res = { setHeader() {}, status(s) { this.s = s; return this; }, json(j) { out = { s: this.s, j }; } };
-  await h({ method, body, query }, res);
+  const pid = (body && body.pid) || (query && query.pid);
+  const headers = pid && toks[pid] ? { 'x-tok': toks[pid] } : {};
+  await h({ method, body, query, headers }, res);
+  if (out.j && out.j.tok && out.j.meId) toks[out.j.meId] = out.j.tok;
   return out;
 }
+globalThis.__testToks = toks;
 const post = (b) => call('POST', b, {});
 (async () => {
   const c = (await post({ action: 'create', name: 'Host' })).j;
@@ -297,5 +303,35 @@ const post = (b) => call('POST', b, {});
   for (let row = 0; row < 4; row++) await post({ action: 'flipRowAll', code: hr.code, pid: hr.meId, row, up: true });
   const hv = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
   assert.deepEqual(hv.rowResults.map((r) => r.penalty), [1, 1, 1, 2], 'x0.5: a penalty of 1 stays 1 and 3 becomes 2 (rounded up)');
+  // ---- security ----
+  const sa = (await post({ action: 'create', name: 'SecA' })).j, sb = (await post({ action: 'join', code: sa.code, name: 'SecB' })).j;
+  const rawCall = async (method, body, query, headers = {}) => { let out; const res = { setHeader() {}, status(x) { this.s = x; return this; }, json(j) { out = { s: this.s, j }; } }; await h({ method, body, query, headers }, res); return out; };
+  assert.ok(sa.tok && sb.tok && sa.tok !== sb.tok, 'every player gets their own secret token');
+  assert.equal(JSON.stringify((await call('GET', null, { code: sa.code, pid: sa.meId })).j).includes('tkh'), false, 'token hashes never leave the server');
+  // a player id is public (everyone sees it) and proves nothing on its own
+  assert.equal((await rawCall('GET', null, { code: sa.code, pid: sa.meId })).s, 404, 'no token: refused');
+  assert.equal((await rawCall('GET', null, { code: sa.code, pid: sa.meId }, { 'x-tok': 'nope' })).s, 404, 'wrong token: refused');
+  assert.equal((await rawCall('GET', null, { code: sa.code, pid: sa.meId }, { 'x-tok': sb.tok })).s, 404, "another player's token does not work for you");
+  assert.equal((await rawCall('POST', { action: 'kick', code: sa.code, pid: sa.meId, target: sb.meId })).s, 404, 'nobody can act as the host by knowing their id');
+  assert.equal((await rawCall('POST', { action: 'deal', code: sa.code, pid: sa.meId, tok: sb.tok })).s, 404, 'a guest cannot deal as the host');
+  assert.equal((await rawCall('POST', { action: 'deal', code: sa.code, pid: sb.meId, tok: sb.tok })).s, 403, 'a guest cannot deal even with their own token');
+  assert.equal((await rawCall('POST', { action: 'join', code: sa.code, name: 'SecA' })).s, 409, 'a seat cannot be taken over while its owner is around');
+  assert.equal((await rawCall('GET', null, { code: sa.code, pid: sa.meId }, { 'x-tok': sa.tok })).s, 200, 'the real token works (header)');
+  assert.equal((await rawCall('POST', { action: 'state', code: sa.code, pid: sa.meId, tok: sa.tok })).s, 200, 'the real token works (body)');
+  // junk input
+  assert.equal((await rawCall('GET', null, { code: '../x', pid: 'a' })).s, 404, 'odd room codes are refused');
+  assert.equal((await rawCall('POST', 'not json', {})).s, 400, 'broken json is a 400, not a crash');
+  assert.equal((await rawCall('POST', { action: 'chat', code: sa.code, pid: sa.meId, tok: sa.tok, text: 'x'.repeat(9000) })).s, 413, 'oversized bodies are refused');
+  assert.equal((await rawCall('PUT', {}, {})).s, 405, 'only GET and POST');
+  await post({ action: 'buy', code: sa.code, pid: sa.meId, kind: 'gift', key: 'constructor' }).then((r) => assert.equal(r.s, 400, 'prototype names are not shop items'));
+  await post({ action: 'buy', code: sa.code, pid: sa.meId, kind: 'gift', key: '__proto__' }).then((r) => assert.equal(r.s, 400));
+  assert.equal((await post({ action: 'throw', code: sa.code, pid: sa.meId, item: 'constructor', target: sb.meId })).s, 400);
+  // per-address limits (only when the platform tells us the address)
+  let limited = 0;
+  for (let i = 0; i < 25; i++) if ((await rawCall('POST', { action: 'create', name: 'Spam' + i }, {}, { 'x-real-ip': '203.0.113.9' })).s === 429) limited++;
+  assert.ok(limited >= 4, 'creating rooms in bulk gets limited');
+  let nf = 0;
+  for (let i = 0; i < 40; i++) if ((await rawCall('GET', null, { code: 'ZZZZ', pid: 'x' }, { 'x-real-ip': '203.0.113.10' })).s === 429) nf++;
+  assert.ok(nf >= 5, 'guessing room codes gets limited');
   console.log('all ok');
 })().catch(e => { console.error(e); process.exit(1); });

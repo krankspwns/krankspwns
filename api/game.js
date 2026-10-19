@@ -24,9 +24,11 @@ const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, pie: 15, rocket:
 const BORDER_PRICE = { silver: 15, gold: 20, emerald: 20, ice: 25, neon: 30, royal: 30, fire: 40, rainbow: 50 };
 const GIFT_USES = 3;   // one purchase = three throws
 // the tester (a player called Benny) gets 1000 WP to try the shop, and may throw gifts at themselves
-const TESTER_NAME = 'benny', TESTER_WP = 1000;
-const isTester = (p) => !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
+// off unless the TESTER_NAME environment variable is set, so nobody can claim free points by typing a name
+const TESTER_NAME = String(process.env.TESTER_NAME || '').trim().toLowerCase(), TESTER_WP = 1000;
+const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
 const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN - ((room.spent && room.spent[pid]) || 0);
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
 const MAX_PLAYERS = 12;
@@ -163,6 +165,38 @@ const NAME_MAX = 12;   // characters (an emoji or a Chinese character counts as 
 function cleanName(n) {
   const clean = String(n || '').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, '').replace(/\s+/g, ' ').trim();
   return Array.from(clean).slice(0, NAME_MAX).join('').trim();
+}
+
+// ---- who is who: every player holds a secret token. Player ids are public (everyone sees them), so an id alone never proves anything.
+const newToken = () => crypto.randomBytes(24).toString('base64url');
+const hashToken = (t) => crypto.createHash('sha256').update(String(t)).digest('hex');
+function tokenOk(p, tok) {
+  if (!p || !p.tkh || !tok) return false;
+  const a = Buffer.from(p.tkh), b = Buffer.from(hashToken(tok));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+function issueToken(p) { const tok = newToken(); p.tkh = hashToken(tok); return tok; }
+
+// ---- abuse limits: best effort per address, so one machine cannot hammer the game or burn the database quota ----
+const rlMem = (globalThis.__rl = globalThis.__rl || new Map());
+function clientIp(req) {
+  const h = (req && req.headers) || {};
+  return String(h['x-vercel-forwarded-for'] || h['x-real-ip'] || String(h['x-forwarded-for'] || '').split(',')[0] || '').trim();
+}
+function memStrike(key, max, windowMs) {
+  const now = Date.now();
+  let e = rlMem.get(key);
+  if (!e || now > e.reset) { e = { n: 0, reset: now + windowMs }; rlMem.set(key, e); }
+  e.n++;
+  if (rlMem.size > 4000) for (const [k, v] of rlMem) if (now > v.reset) rlMem.delete(k);
+  return e.n > max;
+}
+const RL_LUA = "local n = redis.call('INCR', KEYS[1]) if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end return n";
+// counts one use of `key`; true once the address is over its allowance (shared across servers when Redis is there)
+async function strike(ip, kind, max, seconds) {
+  if (!ip) return false;   // local testing: no address, no limit
+  if (!REDIS_URL) return memStrike(kind + ip, max, seconds * 1000);
+  try { return Number(await redis(['EVAL', RL_LUA, '1', `rl:${kind}:${ip}`, String(seconds)])) > max; } catch { return false; }
 }
 
 class HttpError extends Error {
@@ -429,23 +463,26 @@ function need(cond, status, msg) {
   if (!cond) throw new HttpError(status, msg);
 }
 
-async function handle(action, b, query) {
+async function handle(action, b, query, ctx = {}) {
   if (action === 'create') {
+    need(!(await strike(ctx.ip, 'c', 20, 600)), 429, 'Too many new rooms. Try again in a few minutes.');
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
     let code;
     do code = makeCode();
     while (await loadRoom(code));
     const host = { id: crypto.randomUUID(), name, avatar: pickAvatar(b.avatar), hand: [], board: Array(SLOTS).fill(null), ready: false };
+    const tok = issueToken(host);
     const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0 };
     await saveRoom(room);
     await touchPresence(code, host.id);
-    return viewFor(room, host.id);
+    return { ...(await viewFor(room, host.id)), tok };
   }
 
   const code = String(b.code || query.code || '').toUpperCase();
-  let room = action === 'state' ? await loadRoomCached(code, query.f ? 0 : 700) : await loadRoom(code);
-  need(room, 404, 'Room not found');
+  if (action === 'join') need(!(await strike(ctx.ip, 'j', 40, 600)), 429, 'Too many tries. Wait a few minutes.');
+  let room = /^[A-Z]{4}$/.test(code) ? (action === 'state' ? await loadRoomCached(code, query.f ? 0 : 700) : await loadRoom(code)) : null;
+  if (!room) { need(!(await strike(ctx.ip, 'nf', 30, 600)), 429, 'Too many tries. Wait a few minutes.'); throw new HttpError(404, 'Room not found'); }
   if (room.deadline && Date.now() >= room.deadline && room.phase === 'dealt') {   // time is up: arrange the stragglers' cards
     if (action === 'state') room = await loadRoom(code);
     if (room && enforceTimer(room)) { storeResults(room); await saveRoom(room); }
@@ -459,11 +496,14 @@ async function handle(action, b, query) {
     // same name as someone who has gone quiet = that player coming back (lost phone data, new browser): hand their seat back
     const same = room.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
     if (same) {
+      // only a seat that has been silent for a good while can be taken back (the owner would still hold the old token otherwise)
       const ts = (await readPresence(code))[same.id];
-      need(!ts || Date.now() - ts > 20000, 409, 'Name already taken');
+      need(!ts || Date.now() - ts > 120000, 409, 'Name already taken');
+      const tok = issueToken(same);   // the old token stops working
+      await saveRoom(room);
       seenThrottle.delete(code + ':' + same.id);
       await touchPresence(code, same.id);
-      return viewFor(room, same.id);
+      return { ...(await viewFor(room, same.id)), tok };
     }
     const p = { id: crypto.randomUUID(), name, avatar: pickAvatar(b.avatar, room.players.map((q) => q.avatar)), hand: [], board: Array(SLOTS).fill(null), ready: false };
     if (room.phase === 'dealt') {
@@ -477,18 +517,19 @@ async function handle(action, b, query) {
         room.allReady = null;
       }
     }
+    const tok = issueToken(p);
     room.players.push(p);
     sysChat(room, { k: 'join', fn: name });
     await saveRoom(room);
     await touchPresence(code, p.id);
-    return viewFor(room, p.id);
+    return { ...(await viewFor(room, p.id)), tok };
   }
 
   const pid = String(b.pid || query.pid || '');
   const cnRaw = query.cn !== undefined ? query.cn : b.cn;
   const cnOf = cnRaw === undefined || cnRaw === '' ? undefined : Number(cnRaw);
   const me = room.players.find((p) => p.id === pid);
-  need(me, 404, 'You are not in this room');
+  need(me && tokenOk(me, ctx.tok), 404, 'You are not in this room');
   await touchPresence(code, pid);
   const PLAYER_ACTIONS = ['place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
   need(!(me.spectator && PLAYER_ACTIONS.includes(action)), 409, 'Wait for the next round');
@@ -685,7 +726,8 @@ async function handle(action, b, query) {
     case 'buy': {
       inventoryOf(me);
       const kind = String(b.kind), key = String(b.key);
-      const price = kind === 'acc' ? ACC_PRICE[key] : kind === 'av' ? PREMIUM[key] : kind === 'bd' ? BORDER_PRICE[key] : kind === 'gift' ? GIFTS[key] : undefined;
+      const table = kind === 'acc' ? ACC_PRICE : kind === 'av' ? PREMIUM : kind === 'bd' ? BORDER_PRICE : kind === 'gift' ? GIFTS : null;
+      const price = table && own(table, key) ? table[key] : undefined;
       need(price !== undefined, 400, 'Unknown item');
       if (kind === 'acc') need(!me.owned.acc.includes(key), 409, 'You already own that');
       if (kind === 'av') need(!me.owned.av.includes(key), 409, 'You already own that');
@@ -704,8 +746,8 @@ async function handle(action, b, query) {
     case 'throw': {
       inventoryOf(me);
       const key = String(b.item);
-      need(GIFTS[key] !== undefined, 400, 'Unknown item');
-      need(me.gifts[key] > 0, 403, 'You have none left');
+      need(own(GIFTS, key), 400, 'Unknown item');
+      need(own(me.gifts, key) && me.gifts[key] > 0, 403, 'You have none left');
       const all = String(b.target) === 'all';   // everyone at once costs every throw of the pack
       const target = all ? null : room.players.find((q) => q.id === String(b.target));
       if (all) { need(room.players.length > 1 || isTester(me), 400, 'Nobody to throw at'); need(me.gifts[key] >= GIFT_USES, 403, `Throwing at everyone needs all ${GIFT_USES} throws`); }
@@ -760,16 +802,23 @@ async function handle(action, b, query) {
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   try {
+    need(req.method === 'GET' || req.method === 'POST', 405, 'Method not allowed');
+    const ip = clientIp(req);
+    if (ip) need(!memStrike('all' + ip, 3000, 60000), 429, 'Slow down a little.');
     const query = req.query || Object.fromEntries(new URL(req.url, 'http://x').searchParams);
     let body = req.body;
-    if (typeof body === 'string') body = body ? JSON.parse(body) : {};
-    body = body || {};
-    const action = req.method === 'GET' ? 'state' : body.action;
+    if (typeof body === 'string') { need(body.length <= 8000, 413, 'Too much data'); try { body = body ? JSON.parse(body) : {}; } catch { throw new HttpError(400, 'Bad request'); } }
+    body = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
+    need(JSON.stringify(body).length <= 8000, 413, 'Too much data');
+    const action = req.method === 'GET' ? 'state' : typeof body.action === 'string' ? body.action : '';
+    const h = req.headers || {};
+    const tok = String(h['x-tok'] || body.tok || '').slice(0, 100);
     let result;
     for (let attempt = 0; ; attempt++) {
       try {
-        result = await handle(action, body, query);
+        result = await handle(action, body, query, { ip, tok });
         break;
       } catch (e) {
         if (!(e instanceof Conflict) || attempt >= 8) throw e;
@@ -779,6 +828,7 @@ module.exports = async (req, res) => {
   } catch (e) {
     const status = e instanceof Conflict ? 503 : e.status || 500;
     if (status === 500) console.error(e);
+    if (status === 429) res.setHeader('Retry-After', '60');
     res.status(status).json({ error: status === 500 ? 'Server error' : status === 503 ? 'Busy, try again' : e.message });
   }
 };

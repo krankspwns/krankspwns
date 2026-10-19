@@ -2773,7 +2773,7 @@ if (invitedCode) {
     inviteCode = invitedCode;
     if (session) {
       const old = session; session = null; leftOld = true;
-      try { fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', code: old.code, pid: old.pid }), keepalive: true }); } catch {}
+      try { fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', code: old.code, pid: old.pid, tok: old.tok }), keepalive: true }); } catch {}
       try { localStorage.removeItem('sct'); } catch {}
     }
   }
@@ -2806,7 +2806,7 @@ let confettiAt = 0;
   }
 })();
 
-function load() { for (const store of [() => localStorage, () => sessionStorage]) { try { const v = JSON.parse(store().getItem('sct') || 'null'); if (v) return v; } catch {} } return null; }
+function load() { for (const store of [() => localStorage, () => sessionStorage]) { try { const v = JSON.parse(store().getItem('sct') || 'null'); if (v && v.tok) return v; if (v) store().removeItem('sct'); } catch {} } return null; }   // a seat saved before tokens existed is dropped
 function save() { for (const store of [() => localStorage, () => sessionStorage]) { try { session ? store().setItem('sct', JSON.stringify(session)) : store().removeItem('sct'); } catch {} } }
 
 // every phone works out how far its clock is from the server's, so countdowns and row changes happen at the same moment for everyone
@@ -3675,7 +3675,7 @@ async function enter(action, body) {
     session = null;
     adopt(await api(action, body));
     inviteCode = ''; leftOld = false;
-    session = { code: st.code, pid: st.meId };
+    session = { code: st.code, pid: st.meId, tok: st.tok };   // the token is this seat's secret: the id alone proves nothing
     save(); startPolling();
   } catch (e) { err = e.message; }
   entering = false;
@@ -4156,7 +4156,7 @@ function act(action, extra = {}) {
       if (failed) {   // something was rejected: pull the real state so the screen can't drift
         failed = false;
         try {
-          const rr = await fetch(`/api/game?code=${session.code}&pid=${session.pid}`);
+          const rr = await fetch(`/api/game?code=${session.code}&pid=${session.pid}`, { headers: { 'x-tok': session.tok || '' } });
           j = await rr.json();
           if (rr.status === 404) return dropSession(/not in this room/i.test(j.error || '') ? 'You were removed from the room by the host' : 'Room no longer available');
         } catch {}
@@ -4193,7 +4193,7 @@ window.addEventListener('storage', (e) => {
   let n; try { n = JSON.parse(e.newValue); } catch { return; }
   if (!n || !n.code || n.code === session.code) return;
   const old = session;
-  try { fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', code: old.code, pid: old.pid }), keepalive: true }); } catch {}
+  try { fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', code: old.code, pid: old.pid, tok: old.tok }), keepalive: true }); } catch {}
   emoteSeen = null; giftSeen = null; wpDisp = null; wpTarget = null; chatLog = []; chatHave = undefined;
   clearTimeout(timer); rtClose(); session = null; st = null; closePlayers();   // not save(): that would erase the other tab's new seat
   err = 'You joined another room in another tab'; render();
@@ -4243,7 +4243,7 @@ async function poll(force = false, fresh = false) {
   const t0 = Date.now();
   try {
     const mine = session;
-    const r = await fetch(`/api/game?code=${mine.code}&pid=${mine.pid}&cn=${chatHave}${!force && st && st.version ? '&v=' + st.version : ''}${fresh ? '&f=1' : ''}`);
+    const r = await fetch(`/api/game?code=${mine.code}&pid=${mine.pid}&cn=${chatHave}${!force && st && st.version ? '&v=' + st.version : ''}${fresh ? '&f=1' : ''}`, { headers: { 'x-tok': mine.tok || '' } });
     const j = await r.json();
     if (session !== mine) return;   // we left (or switched rooms) while this was in flight
     if (r.status === 404) return dropSession(/not in this room/i.test(j.error || '') ? 'You were removed from the room by the host' : 'Room no longer available');
