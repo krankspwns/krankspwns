@@ -462,6 +462,9 @@
   .tcard.e-sliced.tearing .sp { animation: spin 1s calc(.4s + var(--cd, 0s)) cubic-bezier(.22,.8,.3,1) backwards; } @keyframes spin { from { transform: none; } }
   .e-warp .endc { filter: hue-rotate(250deg) saturate(.7) brightness(.85); } .e-warp .tfg { animation: lavapulse 1.4s ease-in-out infinite alternate; }
   .tcard.end .tfr { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; transform-origin: 50% 51.7%; animation: ringspin 14s linear infinite; } @keyframes ringspin { to { transform: rotate(360deg); } }
+  .tcard.end .tfq0 { animation: ringspin 26s linear infinite; } .tcard.end .tfq1 { animation: ringspin 18s linear infinite reverse; } .tcard.end .tfq2 { animation: ringspin 5s linear infinite; }
+  .tcard.end .tsweep { position: absolute; left: 22%; top: 33.4%; width: 56%; height: 38.6%; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; background: conic-gradient(from 0deg, rgba(95,251,241,0) 0deg, rgba(95,251,241,0) 250deg, rgba(95,251,241,.5) 358deg, rgba(255,255,255,.8) 360deg); -webkit-mask-image: radial-gradient(circle, transparent 0 18%, #000 20% 96%, transparent 100%); mask-image: radial-gradient(circle, transparent 0 18%, #000 20% 96%, transparent 100%); animation: ringspin 3.2s linear infinite; }
+  .e-hud .endc { filter: saturate(.9) brightness(.95); } .e-hud .tfg { animation: lavapulse 1.8s ease-in-out infinite alternate; }
   .e-glyph2 .endc { filter: sepia(.15) brightness(.9); } .e-glyph2 .tfg { animation: lavapulse 1.5s ease-in-out infinite alternate; }
   .tcard.e-glitch2 .gl { position: absolute; inset: 0; } .tcard.e-glitch2 .gl .card.half { position: absolute; inset: 0; box-shadow: none; animation: none !important; filter: saturate(.85) brightness(.96); } .tcard.e-glitch2 .tfg { animation: zapblink 1.6s steps(2) infinite; mix-blend-mode: screen; }
   .tcard.e-glitch .gl { position: absolute; inset: 0; } .tcard.e-glitch .gl .card.half { position: absolute; inset: 0; box-shadow: none; animation: none !important; filter: saturate(.8) brightness(.95); } .tcard.e-glitch .tfg { animation: zapblink 1.3s steps(2) infinite; mix-blend-mode: screen; }
@@ -3537,7 +3540,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 function endTex(kind) {
   if (ENDTEX[kind]) return ENDTEX[kind];
   const big = kind === 'frozen', CW = big ? 300 : 200, CH = big ? 400 : 290, mk = () => { const c = document.createElement('canvas'); c.width = CW; c.height = CH; return c; };
-  const mask = mk(), ov = mk(), gl = mk(), rt = mk(), mg = mask.getContext('2d'), og = ov.getContext('2d'), gg = gl.getContext('2d'), rg = rt.getContext('2d');
+  const extra = [], mask = mk(), ov = mk(), gl = mk(), rt = mk(), mg = mask.getContext('2d'), og = ov.getContext('2d'), gg = gl.getContext('2d'), rg = rt.getContext('2d');
   mg.fillStyle = '#000'; mg.fillRect(0, 0, CW, CH);
   const rnd = (() => { let sd = 7 + kind.length * 13; return () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }; })();
   // per-pixel pass: fn(x, y, edgeDist) -> [maskAlpha 0-1, [r,g,b,a] shade, [r,g,b,a] glow]
@@ -3773,6 +3776,32 @@ function endTex(kind) {
     rg.strokeStyle = 'rgba(170,255,220,.9)'; rg.lineWidth = 2; rg.lineCap = 'round'; for (let i = 0; i < 28; i++) { const a = i / 28 * 6.2832; rg.beginPath(); rg.arc(0, 0, R + 44, a, a + 0.1); rg.stroke(); }
     for (let i = 0; i < 3; i++) { const a = i * 2.0944; rg.fillStyle = 'rgba(255,255,255,1)'; rg.beginPath(); rg.arc(Math.cos(a) * (R + 44), Math.sin(a) * (R + 44), 3.4, 0, 6.2832); rg.fill(); }
     rg.restore();
+  } else if (kind === 'hud') {
+    // a modern targeting HUD: a clean laser-cut disc, glass tint, gradient arcs on separate spinning layers, readouts, an anamorphic flare
+    const cx0 = 100, cy0 = 150, R = 56, CY = [95, 251, 241], VI = [160, 130, 255], PK = [255, 120, 220];
+    const grad = (g, a, b, c0, c1, al = 1) => { const gr = g.createLinearGradient(a[0], a[1], b[0], b[1]); gr.addColorStop(0, `rgba(${c0[0]},${c0[1]},${c0[2]},${al})`); gr.addColorStop(1, `rgba(${c1[0]},${c1[1]},${c1[2]},${al})`); return gr; };
+    pix((x, y) => {
+      const r = Math.hypot(x - cx0, y - cy0), cut = Math.abs(r - R) < 1.7 ? 0 : 1, shadow = clamp01(1 - Math.abs(r - R) / 20), inside = r < R - 2, edgeN = Math.atan2(y - cy0, x - cx0), tint = inside ? clamp01(0.12 + 0.22 * (r / R)) : 0;
+      const halo = clamp01(1 - Math.max(0, r - (R + 8)) / 62), dark = Math.max(0.9 * Math.pow(halo, 1.15), inside ? 0.58 : 0);   // a deep navy spotlight so the neon reads on the pale card
+      return [cut, [6, 14, 32, clamp01(dark)], Math.abs(r - R) < 4.4 && cut ? [110, 255, 235, clamp01(1 - Math.abs(r - R - 0.4) / 3.6) * 0.95] : (inside ? [90, 220, 255, tint * 0.3] : null)];
+    });
+    const sheen = og.createLinearGradient(cx0 - R, cy0 - R, cx0 + R * 0.4, cy0 + R * 0.6); sheen.addColorStop(0, 'rgba(255,255,255,.34)'); sheen.addColorStop(0.5, 'rgba(255,255,255,0)'); og.save(); og.beginPath(); og.arc(cx0, cy0, R - 3, 0, 6.2832); og.clip(); og.fillStyle = sheen; og.fillRect(0, 0, CW, CH); const vg = og.createRadialGradient(cx0, cy0, 8, cx0, cy0, R); vg.addColorStop(0, 'rgba(120,255,240,.2)'); vg.addColorStop(1, 'rgba(90,120,255,.3)'); og.fillStyle = vg; og.fillRect(0, 0, CW, CH); og.restore();
+    const tmp = document.createElement('canvas'); tmp.width = CW; tmp.height = CH; const tg = tmp.getContext('2d');
+    // fixed HUD: corner brackets, ticks, readouts, the core and the lens flare
+    tg.strokeStyle = grad(tg, [20, 60], [180, 240], CY, VI, 0.95); tg.lineWidth = 2; tg.lineCap = 'square';
+    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const x = cx0 + sx * 66, y = cy0 + sy * 66; tg.beginPath(); tg.moveTo(x, y - sy * 14); tg.lineTo(x, y); tg.lineTo(x - sx * 14, y); tg.stroke(); }
+    tg.lineWidth = 1.2; for (let i = 0; i < 4; i++) { const a = i * 1.5708; tg.beginPath(); tg.moveTo(cx0 + Math.cos(a) * (R + 5), cy0 + Math.sin(a) * (R + 5)); tg.lineTo(cx0 + Math.cos(a) * (R + 17), cy0 + Math.sin(a) * (R + 17)); tg.stroke(); }
+    tg.font = '700 8px ui-monospace, Menlo, monospace'; tg.textAlign = 'center'; tg.fillStyle = 'rgba(190,255,248,.98)'; tg.fillText('TARGET LOCKED', cx0, cy0 - R - 24); tg.font = '600 6.5px ui-monospace, Menlo, monospace'; tg.fillStyle = 'rgba(160,230,255,.9)'; tg.fillText('48.213° N   73.077° W', cx0, cy0 + R + 30); tg.fillStyle = 'rgba(255,170,235,.95)'; tg.fillText('SIGNAL LOST  ·  100%', cx0, cy0 + R + 40);
+    tg.fillStyle = 'rgba(255,255,255,1)'; tg.beginPath(); tg.arc(cx0, cy0, 3.4, 0, 6.2832); tg.fill(); tg.strokeStyle = 'rgba(180,255,245,1)'; tg.lineWidth = 1.4; tg.beginPath(); tg.arc(cx0, cy0, 9, 0, 6.2832); tg.stroke(); tg.beginPath(); tg.moveTo(cx0 - 20, cy0); tg.lineTo(cx0 - 12, cy0); tg.moveTo(cx0 + 12, cy0); tg.lineTo(cx0 + 20, cy0); tg.moveTo(cx0, cy0 - 20); tg.lineTo(cx0, cy0 - 12); tg.moveTo(cx0, cy0 + 12); tg.lineTo(cx0, cy0 + 20); tg.stroke();
+    const fl = tg.createLinearGradient(0, 0, CW, 0); fl.addColorStop(0, 'rgba(95,251,241,0)'); fl.addColorStop(0.5, 'rgba(235,255,252,1)'); fl.addColorStop(1, 'rgba(160,130,255,0)'); tg.fillStyle = fl; tg.fillRect(0, cy0 - 1, CW, 2);
+    const fl2 = tg.createLinearGradient(0, cy0 - 40, 0, cy0 + 40); fl2.addColorStop(0, 'rgba(255,255,255,0)'); fl2.addColorStop(0.5, 'rgba(255,255,255,.8)'); fl2.addColorStop(1, 'rgba(255,255,255,0)'); tg.fillStyle = fl2; tg.fillRect(cx0 - 0.7, cy0 - 40, 1.4, 80);
+    gg.shadowColor = 'rgba(95,251,241,1)'; gg.shadowBlur = 10; gg.drawImage(tmp, 0, 0); gg.shadowBlur = 0; gg.drawImage(tmp, 0, 0);
+    // the spinning layers (each its own canvas)
+    const layer = () => { const c = mk(); extra.push(c); const g = c.getContext('2d'); g.translate(cx0, cy0); g.shadowColor = 'rgba(95,251,241,.95)'; g.shadowBlur = 9; g.lineCap = 'round'; return g; };
+    let g = layer(); g.strokeStyle = grad(g, [-80, -80], [80, 80], CY, VI); g.lineWidth = 3.2; for (let i = 0; i < 4; i++) { const a = i * 1.5708 + 0.25; g.beginPath(); g.arc(0, 0, 82, a, a + 0.62 - (i % 2) * 0.16); g.stroke(); } g.lineWidth = 1.4; g.strokeStyle = 'rgba(210,235,255,.85)'; g.beginPath(); g.arc(0, 0, 82, 0, 6.2832); g.setLineDash([1, 7]); g.stroke(); g.setLineDash([]);
+    for (let i = 0; i < 3; i++) { const a = i * 2.0944 + 0.9; g.fillStyle = i === 0 ? 'rgba(255,140,230,1)' : 'rgba(255,255,255,1)'; g.beginPath(); g.arc(Math.cos(a) * 82, Math.sin(a) * 82, 3.2, 0, 6.2832); g.fill(); }
+    g = layer(); g.lineWidth = 1.8; for (let i = 0; i < 60; i++) { const a = i / 60 * 6.2832, long = i % 5 === 0; g.strokeStyle = long ? 'rgba(255,255,255,.95)' : 'rgba(170,240,255,.7)'; g.beginPath(); g.moveTo(Math.cos(a) * (long ? 66 : 69), Math.sin(a) * (long ? 66 : 69)); g.lineTo(Math.cos(a) * 73, Math.sin(a) * 73); g.stroke(); }
+    g = layer(); g.strokeStyle = grad(g, [-50, 50], [50, -50], PK, CY); g.lineWidth = 4.4; g.beginPath(); g.arc(0, 0, 45, -1.2, 3.6); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(Math.cos(3.6) * 45, Math.sin(3.6) * 45, 4.2, 0, 6.2832); g.fill(); g.strokeStyle = 'rgba(200,225,255,.6)'; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, 34, 0.5, 5.4); g.stroke();
   } else if (kind === 'glitch2') {
     pix((x, y) => {
       const f = y / CH, cx = Math.floor(x / 4), cy = Math.floor(y / 4), t = clamp01((f - 0.58) / 0.34 + 0.2 * (nzF(x / 14, y / 14, 5) - 0.5)), keep = nzHash(cx, cy, 9) > t * 1.05;
@@ -3801,7 +3830,7 @@ function endTex(kind) {
     for (const c of cuts) { const y0 = c * CH + 0.11 * CH, y1 = c * CH - 0.11 * CH; const lg = gg.createLinearGradient(0, 0, CW, 0); lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.25, 'rgba(255,255,255,.75)'); lg.addColorStop(0.75, 'rgba(255,255,255,.75)'); lg.addColorStop(1, 'rgba(255,255,255,0)'); gg.strokeStyle = lg; gg.lineWidth = 2.4; gg.shadowColor = 'rgba(190,220,255,.9)'; gg.shadowBlur = 8; gg.beginPath(); gg.moveTo(0, y0); gg.lineTo(CW, y1); gg.stroke(); }
     og.save(); og.shadowColor = 'rgba(0,0,0,.65)'; og.shadowBlur = 6; og.shadowOffsetY = 3; paintShuriken(og, 150, 118, 20, 24, 1); paintShuriken(og, 52, 190, 17, -38, 1); og.restore();
   }
-  return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL(), rt: kind === 'glyph2' ? rt.toDataURL() : '' });
+  return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL(), rt: kind === 'glyph2' ? rt.toDataURL() : '', ex: extra.map((c) => c.toDataURL()) });
 }
 let UFO_END = 1;   // the saucer's mark: 1 vaporised pixels, 2 abducted, 3 glyph circle, 4 melted goo, 5 glitch
 let FIST_END = 2;   // which look the hammer leaves behind: 1 folded, 2 shattered, 3 squashed with a hammer imprint, 4 punched through, 5 crumpled
@@ -3859,7 +3888,7 @@ function foldedCard(id, animate, as, cascade) {
 }
 function tornCard(id, animate, as = null, cascade = 0, style = '') {
   let kind = ATK_ENDS[style];
-  if (kind === 'vapor' && UFO_END > 1) kind = ['vapor', 'abduct', 'glyph', 'melt', 'glitch', 'glyph2', 'glitch2'][UFO_END - 1];
+  if (kind === 'vapor' && UFO_END > 1) kind = ['vapor', 'abduct', 'glyph', 'melt', 'glitch', 'glyph2', 'glitch2', 'hud'][UFO_END - 1];
   if (kind === 'crushed' && FIST_END === 4) kind = 'punched'; else if (kind === 'crushed' && FIST_END === 5) kind = 'crumple';
   if (kind === 'glitch') return glitchCard(id, animate, as, cascade);
   if (kind === 'glitch2') return glitchCard2(id, animate, as, cascade);
@@ -3890,8 +3919,10 @@ function tornCard(id, animate, as = null, cascade = 0, style = '') {
   }
   const fx = el('div', { class: 'tfx' }); fx.style.backgroundImage = `url(${tex.ov})`; fx.style.backgroundSize = '100% 100%';
   const gl = el('div', { class: 'tfg' }); gl.style.backgroundImage = `url(${tex.gl})`; gl.style.backgroundSize = '100% 100%';
-  if (kind !== 'sliced' && kind !== 'warp' && kind !== 'vapor' && kind !== 'frozen' && kind !== 'abduct' && kind !== 'melt' && kind !== 'glyph' && kind !== 'glyph2') { fx.style.webkitMaskImage = fx.style.maskImage = mask; fx.style.webkitMaskSize = fx.style.maskSize = '100% 100%'; }
+  if (kind !== 'sliced' && kind !== 'warp' && kind !== 'vapor' && kind !== 'frozen' && kind !== 'abduct' && kind !== 'melt' && kind !== 'glyph' && kind !== 'glyph2' && kind !== 'hud') { fx.style.webkitMaskImage = fx.style.maskImage = mask; fx.style.webkitMaskSize = fx.style.maskSize = '100% 100%'; }
   box.append(fx, gl);
+  (tex.ex || []).forEach((u, i) => { const d = el('div', { class: 'tfr tfq' + i }); d.style.backgroundImage = `url(${u})`; d.style.backgroundSize = '100% 100%'; box.append(d); });
+  if (kind === 'hud') box.append(el('div', { class: 'tsweep' }));
   if (tex.rt) { const rtl = el('div', { class: 'tfr' }); rtl.style.backgroundImage = `url(${tex.rt})`; rtl.style.backgroundSize = '100% 100%'; box.append(rtl); }
   if (cascade) box.style.setProperty('--cd', cascade + 'ms');
   return box;
