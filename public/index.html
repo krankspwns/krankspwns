@@ -625,6 +625,13 @@
   .qrbox .leaverow button:not(.ghost) { box-shadow: 0 6px 16px rgba(var(--gold-rgb),.25); } .qrbox .leaverow button:not(.ghost) .ic { color: currentColor !important; stroke-width: 2.3; }
   .qrcode { font-size: 28px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; color: var(--gold-hi); margin: 14px 0 4px; }
   .gamehead { position: relative; z-index: 30; }
+  .rs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 4px; padding: 4px 0 8px; }
+  .rsp { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 68px; padding: 4px 2px; border-radius: 12px; cursor: default; -webkit-tap-highlight-color: transparent; }
+  .rsp.hit { cursor: pointer; } .rsp.hit:active .rsav { transform: scale(.92); }
+  .rsav { display: grid; place-items: center; padding: 3px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); transition: border-color .25s, box-shadow .25s, transform .15s; }
+  .rsp.ready .rsav { border-color: var(--green); box-shadow: 0 0 10px rgba(111,207,151,.55); }
+  .rsp.me .rsn { font-weight: 800; }
+  .rsn { max-width: 100%; font-size: 11px; line-height: 1.15; color: var(--text); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .invwrap { position: relative; display: inline-flex; } .invwrap > button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .invwrap .caret { flex: none; display: block; } .invwrap .caret { margin-left: 0; transition: transform .2s; } .invwrap .caret.up { transform: rotate(180deg); }
   .invmenu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 190px; z-index: 40; padding: 6px; border-radius: 14px; background: rgba(var(--panel),1); border: 1px solid var(--gold-lo); box-shadow: 0 14px 40px rgba(0,0,0,.6); display: grid; gap: 4px; animation: boxpop .2s ease backwards; }
   .invmenu button { color: #f3ecda !important; display: flex !important; align-items: center; gap: 8px; width: 100%; flex: none !important; justify-content: flex-start; padding: 11px 12px !important; font-size: 13px !important; background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 10px !important; } .invmenu button:hover { background: rgba(255,255,255,.08) !important; filter: none; transform: none; }
@@ -2167,7 +2174,7 @@ function syncGiftUi() {
   const show = !!(session && st) && giftTotal() > 0 && (st.players.length > 1 || (st.prices && st.prices.test));   // alone? only while the shop is in testing mode
   let fab = document.getElementById('giftFab');
   if (!show) { fab?.remove(); document.getElementById('giftTray')?.remove(); giftTrayOpen = false; giftPick = null; return; }
-  if (!fab) { fab = el('button', { id: 'giftFab', type: 'button', class: 'emotefab giftfab', 'aria-label': t('giftTitle'), title: t('giftTitle'), onclick: (e) => { e.stopPropagation(); giftTrayOpen = !giftTrayOpen; giftPick = null; syncEmoteUi(); } }, colorIcon(GIFT_ICON, 30), el('i', { class: 'cbadge' })); document.body.append(fab); }
+  if (!fab) { fab = el('button', { id: 'giftFab', type: 'button', class: 'emotefab giftfab', 'aria-label': t('giftTitle'), title: t('giftTitle'), onclick: (e) => { e.stopPropagation(); giftTrayOpen = !giftTrayOpen; giftPick = null; giftTarget = null; syncEmoteUi(); } }, colorIcon(GIFT_ICON, 30), el('i', { class: 'cbadge' })); document.body.append(fab); }
   fab.querySelector('.cbadge').textContent = String(giftTotal());
   document.getElementById('giftTray')?.remove();
   if (!giftTrayOpen) return;
@@ -2176,15 +2183,15 @@ function syncGiftUi() {
   const body = giftPick
     ? [el('h5', {}, el('button', { type: 'button', class: 'ghost', onclick: () => { giftPick = null; syncEmoteUi(); } }, '‹'),  giftEl(giftPick, 22), t('giftWho', { name: t('gift_' + giftPick) })),
        el('div', { class: 'giftwho' }, (st.players.length > 1 || (st.prices && st.prices.test)) ? el('button', { type: 'button', class: 'giftall', disabled: (myGifts()[giftPick] || 0) < st.prices.uses, onclick: () => sendGift(giftPick, 'all') }, el('span', { class: 'gall' }, icon('users', 20)), el('span', {}, el('b', {}, t('giftEveryone')), el('small', {}, (myGifts()[giftPick] || 0) < st.prices.uses ? t('giftEveryoneNeed', { n: st.prices.uses }) : t('giftEveryoneCost', { n: st.prices.uses })))) : '', ...st.players.filter((p) => p.id !== st.meId || (st.prices && st.prices.test)).map((p) => el('button', { type: 'button', onclick: () => sendGift(giftPick, p.id) }, avatarEl(p.avatar, 30, '', p.acc, p.bd), el('span', {}, p.name + (p.id === st.meId ? t('you') : '')))))]
-    : [el('h5', {}, t('giftTitle')), el('div', { class: 'giftgrid' }, ...owned.map((k) => el('button', { type: 'button', onclick: () => { giftPick = k; syncEmoteUi(); } }, giftEl(k, 36), el('small', {}, t('gift_' + k) + ' ×' + myGifts()[k]))))];
+    : [el('h5', {}, t('giftTitle') + (giftTarget ? ' → ' + ((st.players.find((q) => q.id === giftTarget) || {}).name || '') : '')), el('div', { class: 'giftgrid' }, ...owned.map((k) => el('button', { type: 'button', onclick: () => { if (giftTarget && st.players.some((q) => q.id === giftTarget)) sendGift(k, giftTarget); else { giftPick = k; syncEmoteUi(); } } }, giftEl(k, 36), el('small', {}, t('gift_' + k) + ' ×' + myGifts()[k]))))];
   document.body.append(el('div', { id: 'giftTray', class: 'gifttray', role: 'menu', onclick: (e) => e.stopPropagation() }, ...body));
 }
-document.addEventListener('click', (e) => { if (giftTrayOpen && !(e.target.closest && e.target.closest('#giftTray, #giftFab'))) { giftTrayOpen = false; giftPick = null; syncEmoteUi(); } });
+document.addEventListener('click', (e) => { if (giftTrayOpen && !(e.target.closest && e.target.closest('#giftTray, #giftFab'))) { giftTrayOpen = false; giftPick = null; giftTarget = null; syncEmoteUi(); } });
 function sendGift(item, target) {
   if (Date.now() - giftLast < 1500 || (myGifts()[item] || 0) < (target === 'all' ? st.prices.uses : 1)) return;
   giftLast = Date.now();
   st.wallet.gifts[item] -= target === 'all' ? st.prices.uses : 1;   // shown at once; the server copy follows
-  giftTrayOpen = false; giftPick = null;
+  giftTrayOpen = false; giftPick = null; giftTarget = null;
   queueGift({ item, from: st.meId, to: target });
   syncEmoteUi();
   act('throw', { item, target });
@@ -2228,7 +2235,7 @@ const giftIsMini = (g) => !!st && g.to !== 'all' && g.to !== st.meId;
 function giftAnchor(pid, anyWhere = false) {
   if (!/^[\w-]+$/.test(String(pid))) return null;
   let off = null;
-  for (const sel of [`.tile[data-pid="${pid}"] .tname .av`, `.who[data-pid="${pid}"] .av`, `.seat[data-pid="${pid}"] .av`, `.prow[data-pid="${pid}"] .av`, `.pd[data-pid="${pid}"] .av`, `.hcards[data-pid="${pid}"] .av`]) {
+  for (const sel of [`.tile[data-pid="${pid}"] .tname .av`, `.who[data-pid="${pid}"] .av`, `.seat[data-pid="${pid}"] .av`, `.prow[data-pid="${pid}"] .av`, `.pd[data-pid="${pid}"] .av`, `.rsp[data-pid="${pid}"] .av`, `.hcards[data-pid="${pid}"] .av`]) {
     for (const n of document.querySelectorAll(sel)) {
       const r = n.getBoundingClientRect();
       if (!r.width) continue;
@@ -3712,6 +3719,21 @@ function hallPanel() {
 
 let inviteOpen = false;   // the Invite dropdown (copy link / QR)
 document.addEventListener('click', (e) => { if (inviteOpen && !(e.target.closest && e.target.closest('.invwrap'))) { inviteOpen = false; render(); } });
+// everyone at the table, name under the avatar: a green ring means ready; tap somebody to throw a gift at them
+let giftTarget = null;
+function rosterStrip() {
+  const list = activePlayers();
+  if (list.length < 1 || list.every((p) => p.ready) && Math.min(stageRow ?? st.currentRow ?? 0, 4) >= 4) return null;   // not on the Hall of Fame
+  const canThrow = giftTotal() > 0;
+  return el('div', { class: 'rs' + (screenAnim ? ' fx-in' : '') }, ...list.map((p) => {
+    const me = p.id === st.meId;
+    const b = el('button', { type: 'button', class: 'rsp' + (p.ready ? ' ready' : '') + (me ? ' me' : '') + (canThrow && !me ? ' hit' : ''), 'data-pid': p.id, title: p.name + (p.ready ? ' · ' + t('pillReady') : ''),
+      onclick: (e) => { if (me || !canThrow) return; e.stopPropagation(); giftTarget = p.id; giftPick = null; giftTrayOpen = true; syncEmoteUi(); } },
+      el('span', { class: 'rsav' }, avatarEl(p.avatar, 40, '', p.acc, p.bd)),
+      el('span', { class: 'rsn' }, p.name + (me ? t('you') : '')));
+    return b;
+  }));
+}
 function renderGame() {
   if (err) app.append(el('div', { class: 'err' }, tErr(err)));
   if (st.phase === 'lobby') return renderWaitingRoom();
@@ -3728,6 +3750,7 @@ function renderGame() {
     el('div', { class: 'hactions' + (st.isHost ? '' : ' even') }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
     el('button', { class: 'ghost leavebtn', onclick: confirmLeave }, withIcon('logout', t('leave'))));
   app.append(head);
+  const strip = rosterStrip(); if (strip) app.append(strip);
   const tbar = timerBar(); if (tbar) app.append(tbar);
   const chips = settingChips(); if (chips) app.append(chips);
   const banner = lastBanner();
