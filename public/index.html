@@ -625,7 +625,7 @@
   .qrbox .leaverow button:not(.ghost) { box-shadow: 0 6px 16px rgba(var(--gold-rgb),.25); } .qrbox .leaverow button:not(.ghost) .ic { color: currentColor !important; stroke-width: 2.3; }
   .qrcode { font-size: 28px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; color: var(--gold-hi); margin: 14px 0 4px; }
   .gamehead { position: relative; z-index: 30; }
-  .rs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 4px; padding: 4px 0 8px; }
+  .rs { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px 2px; padding-top: 6px; border-top: 1px solid var(--line); }
   .rsp { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 68px; padding: 4px 2px; border-radius: 12px; cursor: default; -webkit-tap-highlight-color: transparent; }
   .rsp.hit { cursor: pointer; } .rsp.hit:active .rsav { transform: scale(.92); }
   .rsav { display: grid; place-items: center; padding: 3px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); transition: border-color .25s, box-shadow .25s, transform .15s; }
@@ -3725,7 +3725,7 @@ function rosterStrip() {
   const list = activePlayers();
   if (list.length < 1 || list.every((p) => p.ready) && Math.min(stageRow ?? st.currentRow ?? 0, 4) >= 4) return null;   // not on the Hall of Fame
   const canThrow = giftTotal() > 0;
-  return el('div', { class: 'rs' + (screenAnim ? ' fx-in' : '') }, ...list.map((p) => {
+  return el('div', { class: 'rs' }, ...list.map((p) => {
     const me = p.id === st.meId;
     const b = el('button', { type: 'button', class: 'rsp' + (p.ready ? ' ready' : '') + (me ? ' me' : '') + (canThrow && !me ? ' hit' : ''), 'data-pid': p.id, title: p.name + (p.ready ? ' · ' + t('pillReady') : ''),
       onclick: (e) => { if (me || !canThrow) return; e.stopPropagation(); giftTarget = p.id; giftPick = null; giftTrayOpen = true; syncEmoteUi(); } },
@@ -3749,8 +3749,8 @@ function renderGame() {
       el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: active.length })), el('span', { class: 'sep' }, '·'), t('roundN', { n: st.round })),
     el('div', { class: 'hactions' + (st.isHost ? '' : ' even') }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { onclick: () => act('deal') }, t('reset')) : ''),
     el('button', { class: 'ghost leavebtn', onclick: confirmLeave }, withIcon('logout', t('leave'))));
+  const strip = rosterStrip(); if (strip) head.append(strip);   // inside the same card as the room code and buttons
   app.append(head);
-  const strip = rosterStrip(); if (strip) app.append(strip);
   const tbar = timerBar(); if (tbar) app.append(tbar);
   const chips = settingChips(); if (chips) app.append(chips);
   const banner = lastBanner();
