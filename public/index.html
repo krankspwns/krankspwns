@@ -637,6 +637,7 @@
   .rsp.hit { cursor: pointer; } .rsp.hit:active .rsav { transform: scale(.92); }
   .rsav { display: grid; place-items: center; padding: 3px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); transition: border-color .25s, box-shadow .25s, transform .15s; }
   .rsp.ready .rsav { border-color: var(--green); box-shadow: 0 0 10px rgba(111,207,151,.55); }
+  .rsw { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; color: var(--gold-hi); } .rsw.zero { opacity: .4; }
   .rsp.me .rsn { color: var(--gold, #e8c46a); }
   .rsn { max-width: 100%; font-size: 11px; line-height: 1.15; color: var(--text); text-align: center; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
   .invwrap { position: relative; display: inline-flex; } .invwrap > button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .invwrap .caret { flex: none; display: block; } .invwrap .caret { margin-left: 0; transition: transform .2s; } .invwrap .caret.up { transform: rotate(180deg); }
@@ -3749,7 +3750,8 @@ function rosterStrip() {
     const b = el('button', { type: 'button', class: 'rsp' + (p.ready ? ' ready' : '') + (me ? ' me' : '') + (canThrow && !me ? ' hit' : ''), 'data-pid': p.id, title: p.name + (p.ready ? ' · ' + t('pillReady') : ''),
       onclick: (e) => { if (me || !canThrow) return; e.stopPropagation(); giftTarget = p.id; giftPick = null; giftTrayOpen = true; syncEmoteUi(); } },
       el('span', { class: 'rsav' }, avatarEl(p.avatar, 40, '', p.acc, p.bd)),
-      el('span', { class: 'rsn' }, p.name));
+      el('span', { class: 'rsn' }, p.name),
+      el('span', { class: 'rsw' + (p.wins ? '' : ' zero'), title: t('hallWins', { n: p.wins || 0 }) }, icon('trophy', 11), '×' + (p.wins || 0)));
     return b;
   }));
 }
