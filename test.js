@@ -311,7 +311,6 @@ const post = (b) => call('POST', b, {});
   for (const pl of proom.players) { pl.board = Array(7).fill(null).map((_, i) => ({ c: 'x', up: false })); pl.hand = []; pl.ready = true; }
   const setRow = (cards) => { proom.players.forEach((pl, i) => { pl.board[0].c = cards[i]; }); };
   setRow(['KS', '3H', 'AD']);   // row 1: lowest card loses -> PB
-  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pa.meId })).s, 400, 'not yourself');
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 1, target: pb.meId })).s, 409, 'only the row that is next');
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 200);
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pc.meId, row: 0, target: pa.meId })).s, 200);

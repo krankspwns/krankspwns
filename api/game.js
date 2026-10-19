@@ -719,13 +719,13 @@ async function handle(action, b, query, ctx = {}) {
     }
 
     case 'predict': {   // call who will lose the row that is about to open (needs three or more players)
-      need(room.phase === 'dealt' && active.length >= 3 && active.every((p) => p.ready), 409, 'Not now');
+      need(room.phase === 'dealt' && active.length >= 2 && active.every((p) => p.ready), 409, 'Not now');
       const row = currentRowOf(room);
       need(row < ROW_SIZES.length && Number(b.row) === row && !(room.results && room.results[row]), 409, 'That row is already open');
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
       need(!active.some((p) => p.board.slice(start, start + ROW_SIZES[row]).some((c) => c && c.up)), 409, 'Too late: the row is already opening');   // once any card is face up the guess would be informed
       const tgt = active.find((p) => p.id === String(b.target));
-      need(tgt && tgt.id !== pid, 400, 'Pick another player');
+      need(tgt, 400, 'Pick a player');   // you may pick yourself too: if you know your own card is weak, it is a consolation
       room.preds = room.preds || {};
       (room.preds[row] = room.preds[row] || {})[pid] = tgt.id;
       break;
