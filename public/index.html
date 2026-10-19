@@ -2650,7 +2650,7 @@ const I18N = {
     observing: 'Observing', watching: 'Watching', obsTitle: 'You’re watching this round',
     obsText: 'You joined while a game was in progress. You can follow along below — the host will deal you in when the next round starts.',
     obsWait: 'Waiting for the next round…', e_spec: 'Wait for the next round',
-    stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `Open row ${v.n} for everyone`, stageWaitHost: 'Waiting for the host to open this row…',
+    stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `Open row ${v.n} for everyone`, stageWaitHost: 'Open your own cards, or wait for the host to open them all',
     openedN: (v) => `${v.n}/${v.total} Opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
     youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
     finalTitle: 'Final board', hallTitle: 'Hall of Fame', hallSub: (v) => `Round ${v.n} · lowest penalty wins`, hallPts: (v) => `${v.n} pts`, hallLast: (v) => `+${v.n} this round`, hallLost: (v) => `${v.n} row${v.n === 1 ? '' : 's'} lost`, hallRounds: (v) => `${v.n} rd`, showBoard: 'Show final board', hideBoard: 'Hide final board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} of 4 rows`,
@@ -2730,7 +2730,7 @@ const I18N = {
     observing: '观战中', watching: '观战', obsTitle: '你正在观战本轮',
     obsText: '你是在游戏进行中加入的。可以先在下方观看，房主开始下一轮时你会被一起发牌。',
     obsWait: '等待下一轮…', e_spec: '请等待下一轮',
-    stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `为所有人翻开第 ${v.n} 行`, stageWaitHost: '等待房主翻开这一行…',
+    stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `为所有人翻开第 ${v.n} 行`, stageWaitHost: '翻开你自己的牌，或等房主一起翻开',
     openedN: (v) => `${v.n}/${v.total} 已翻开`, hiddenState: '未翻开', openedState: '已翻开', lostTag: '输了', safeTag: '安全',
     youLose: '你输了！', alongWith: (v) => `还有 ${v.names}`, nextUp: '下一行', allDone: '四行全部结束',
     finalTitle: '最终结果', hallTitle: '名人堂', hallSub: (v) => `第 ${v.n} 回合 · 罚分最低者获胜`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `输了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '显示最终结果', hideBoard: '收起最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
@@ -2810,7 +2810,7 @@ const I18N = {
     observing: '觀戰中', watching: '觀戰', obsTitle: '你正在觀戰本輪',
     obsText: '你是在遊戲進行中加入的。可以先在下方觀看，房主開始下一輪時你會被一起發牌。',
     obsWait: '等待下一輪…', e_spec: '請等待下一輪',
-    stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `為所有人翻開第 ${v.n} 行`, stageWaitHost: '等待房主翻開這一行…',
+    stageRowOf: (v) => `第 ${v.n} / 4 行`, stageHost: (v) => `為所有人翻開第 ${v.n} 行`, stageWaitHost: '翻開你自己的牌，或等房主一起翻開',
     openedN: (v) => `${v.n}/${v.total} 已翻開`, hiddenState: '未翻開', openedState: '已翻開', lostTag: '輸了', safeTag: '安全',
     youLose: '你輸了！', alongWith: (v) => `還有 ${v.names}`, nextUp: '下一行', allDone: '四行全部結束',
     finalTitle: '最終結果', hallTitle: '名人堂', hallSub: (v) => `第 ${v.n} 回合 · 罰分最低者獲勝`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `輸了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '顯示最終結果', hideBoard: '收起最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
@@ -3584,7 +3584,7 @@ function stagePanel(active) {
     if ((res.hitIds || []).includes(st.meId) && !hitSeen.has(hk)) { hitSeen.add(hk); setTimeout(() => SND.play('chime'), 350); }
   } else if (isCurrent) {
     control = el('div', { class: 'stcontrol' },
-      st.isHost ? el('button', { class: 'big', disabled: guessing, onclick: () => act('flipRowAll', { row, up: true }) }, guessing ? t('predWaitHost') : t('stageHost', { n: row + 1 })) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), t('stageWaitHost')),
+      st.isHost ? el('button', { class: 'big', disabled: guessing, onclick: () => act('flipRowAll', { row, up: true }) }, guessing ? t('predWaitHost') : t('stageHost', { n: row + 1 })) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), t(guessing ? 'predWaitHost' : 'stageWaitHost')),
       el('div', { class: 'scount' }, t('openedN', { n: openedN, total: active.length })),
       );
   }
