@@ -2884,6 +2884,14 @@ function pairMask(cs) {
   if (j >= 0) { const o = [0, 1, 2].filter((x) => x !== j).sort((a, b) => crank(cs[b]) - crank(cs[a]))[0]; return cs.map((_, x) => x === j || x === o); }
   return ranks.map((r) => ranks.filter((q) => q === r).length === 2);
 }
+// the sparkle tier of each card in a row once its cards are on show ('' for none); a pair lights only its two cards
+function tiersOf(row, ids) {
+  if (!ids.length || ids.some((c) => !c || c === '?')) return ids.map(() => '');
+  const tier = rowPrime(row, ids);
+  if (!tier) return ids.map(() => '');
+  const mask = tier === 'pair' ? pairMask(ids) : null;
+  return ids.map((_, i) => (mask && !mask[i] ? '' : tier));
+}
 let primeMemo = {};   // the tier each of your rows had last time it was drawn, so its flourish plays once
 const PRIME_RANK = { top: 1, pair: 1, straight: 2, flush: 3, triple: 4, sflush: 5, royal: 6 };
 let tipRow = null;   // which row's criteria tip is open
@@ -3250,13 +3258,14 @@ function stagePanel(active) {
     const cells = cellsOf(p), allUp = upOf(p);
     const flipMine = () => act('flipRow', { row, up: !allUp });
     const cards = el('div', { class: 'tcards' });
+    const tiers = tiersOf(row, cells.map((cell) => cell && cell.up && cell.c !== '?' ? cell.c : null));
     cells.forEach((cell, i) => {
       const vis = !!cell && cell.up && cell.c !== '?';
       const f = fx[p.id + ':' + (start + i)];
       const fxCls = f ? 'fx-' + f : '';
       const as = vis && res ? effOf(res, p.id, i) : null;   // a joker turns into its best card once the row is scored
       if (vis && lose) cards.append(tornCard(cell.c, tearNow, as));
-      else if (vis) cards.append(cardEl(cell.c, { up: true, extra: fxCls, as, morph: !!as && tearNow }));
+      else if (vis) cards.append(cardEl(cell.c, { up: true, extra: fxCls, as, morph: !!as && tearNow, prime: tiers[i] }));
       else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
     });
     const status = res
@@ -3291,7 +3300,7 @@ function finalPanel(active) {
       const cls = !res || res.tie ? 'tie' : lose ? 'lost' : 'safe';
       rows.append(el('div', { class: 'frow ' + cls },
         el('span', { class: 'fnum' }, String(r + 1)),
-        el('span', { class: 'fcards' }, ...(entry ? entry.cards.map((c, ci) => cardEl(c, { up: true, as: entry.as ? entry.as[ci] : null })) : [])),
+        el('span', { class: 'fcards' }, ...(entry ? (() => { const tr = tiersOf(r, entry.cards); return entry.cards.map((c, ci) => cardEl(c, { up: true, as: entry.as ? entry.as[ci] : null, prime: lose ? '' : tr[ci] })); })() : [])),
         el('span', { class: 'fmark' }, lose ? el('b', { class: 'iconlabel' }, icon('x', 12), '×' + res.penalty) : res && !res.tie ? icon('tick', 14) : '')));
     }
     grid.append(el('div', { class: 'ftile' + (p.id === st.meId ? ' me' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 80}ms` : '' },
@@ -3729,7 +3738,7 @@ function buildResult(r, view, late = 0) {
       const lose = !r.tie && r.losers.includes(e.id), safe = !r.tie && !lose, mine = e.id === meId;
       return el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') },
         el('div', { class: 'tname' }, avatarEl(avOf(e.id), 18, lose ? 'sad' : safe ? 'happy' : '', accOf(e.id), bdOf(e.id)), el('span', { class: 'tn' }, e.name + (mine ? t('you') : ''))),
-        el('div', { class: 'tcards' }, ...e.cards.map((c, ci) => lose ? tornCard(c, true, e.as ? e.as[ci] : null) : cardEl(c, { up: true, as: e.as ? e.as[ci] : null, morph: !!e.as }))),
+        el('div', { class: 'tcards' }, ...(() => { const tr = tiersOf(r.row, e.cards); return e.cards.map((c, ci) => lose ? tornCard(c, true, e.as ? e.as[ci] : null) : cardEl(c, { up: true, as: e.as ? e.as[ci] : null, morph: !!e.as, prime: tr[ci] })); })()),
         el('div', { class: 'tfoot' }, lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : ''));
     }));
   const box = iLose
