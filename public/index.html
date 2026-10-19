@@ -413,7 +413,7 @@
   .tcard .card.half { position: absolute; inset: 0; filter: grayscale(.55) brightness(.82); box-shadow: none; }
   .tcard .card.half.l { clip-path: polygon(0 0, 54% 0, 47% 11%, 55% 23%, 46% 36%, 54% 49%, 45% 62%, 55% 74%, 47% 87%, 53% 100%, 0 100%); transform: translate(calc(var(--cw) * -.035), 3px) rotate(-4.5deg); transform-origin: 100% 100%; }
   .tcard .card.half.r { clip-path: polygon(54% 0, 100% 0, 100% 100%, 53% 100%, 47% 87%, 55% 74%, 45% 62%, 54% 49%, 46% 36%, 55% 23%, 47% 11%); transform: translate(calc(var(--cw) * .035), -3px) rotate(5deg); transform-origin: 0 100%; }
-  .tcard.tearing .card.half { animation: tear .9s .5s cubic-bezier(.2,1.5,.4,1) backwards; }
+  .tcard.tearing .card.half { animation: tear .9s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.5,.4,1) backwards; }
   @keyframes tear { from { transform: none; filter: none; } 30% { transform: translate(0, -4px) scale(1.04); filter: none; } }
   /* "you lose" pop-up: red flash, spiky burst, slam and shake */
   .resfx.lose { animation: resfx 5s ease forwards, redflash 1.1s ease-out; background: radial-gradient(circle, rgba(130,12,12,.88), rgba(25,0,0,0) 78%); }
@@ -3326,9 +3326,14 @@ function layoutFor(rowIdx, n) {
 }
 
 // a card split along a jagged line, halves drifting apart
-function tornCard(id, animate, as = null) {
+// the row turns over like a quick drumroll: one player after another, about a tenth of a second apart (never more than 0.7 s in all)
+const CASCADE_STEP = 90, CASCADE_MAX = 700;
+const cascadeOf = (n) => Math.min(CASCADE_MAX, Math.max(0, n - 1) * CASCADE_STEP);
+function tornCard(id, animate, as = null, cascade = 0) {
   const half = (side) => { const c = cardEl(id, { as }); c.classList.add('half', side); return c; };
-  return el('div', { class: 'tcard' + (animate ? ' tearing' : '') }, half('l'), half('r'));
+  const box = el('div', { class: 'tcard' + (animate ? ' tearing' : '') }, half('l'), half('r'));
+  if (cascade) box.style.setProperty('--cd', cascade + 'ms');   // the tear waits until everyone's card is over
+  return box;
 }
 
 // a short line of match commentary for a row that has just been scored
@@ -3421,8 +3426,8 @@ function stagePanel(active) {
       const f = fx[p.id + ':' + (start + i)];
       const fxCls = f ? 'fx-' + f : '';
       const as = vis && res ? effOf(res, p.id, i) : null;   // a joker turns into its best card once the row is scored
-      if (vis && lose) cards.append(tornCard(cell.c, tearNow, as));
-      else if (vis) cards.append(cardEl(cell.c, { up: true, extra: fxCls, as, morph: !!as && tearNow, prime: tiers[i] }));
+      if (vis && lose) cards.append(tornCard(cell.c, tearNow, as, tearNow ? cascadeOf(active.length) : 0));
+      else if (vis) { const cn = cardEl(cell.c, { up: true, extra: fxCls, as, morph: !!as && tearNow, prime: tiers[i] }); if (f === 'flip') cn.style.animationDelay = Math.min(idx * CASCADE_STEP, CASCADE_MAX) + 'ms'; cards.append(cn); }
       else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
     });
     const status = res
@@ -3867,11 +3872,13 @@ function resultsPanel() {
 function showResult(r, view, elapsed = 0) {
   // the row turns over and the cards tear first; the verdict then eases in over them
   const at = (ms) => Math.max(0, ms - elapsed);
+  const cas = cascadeOf(r.entries.length);
   if (elapsed < 300) SND.play('flip');
-  if (r.entries.some((e) => e.as)) setTimeout(() => SND.play('morph'), at(520));
-  if (r.tie) setTimeout(() => SND.play('tie'), at(380));
-  else setTimeout(() => SND.play('tear'), at(520));
-  setTimeout(() => buildResult(r, view, Math.max(0, elapsed - 950)), at(950));
+  for (let i = 1; i < r.entries.length && i * CASCADE_STEP <= CASCADE_MAX; i++) setTimeout(() => SND.play('tick'), at(i * CASCADE_STEP));   // the drumroll
+  if (r.entries.some((e) => e.as)) setTimeout(() => SND.play('morph'), at(520 + cas));
+  if (r.tie) setTimeout(() => SND.play('tie'), at(380 + cas));
+  else setTimeout(() => SND.play('tear'), at(520 + cas));
+  setTimeout(() => buildResult(r, view, Math.max(0, elapsed - 950 - cas)), at(950 + cas));
 }
 
 function buildResult(r, view, late = 0) {
