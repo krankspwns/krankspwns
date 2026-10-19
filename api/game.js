@@ -501,6 +501,7 @@ function view(room, pid, seen, cn) {
         wp: balanceOf(room, p.id),
         inv: (() => { const q = inventoryOf(p); return { acc: q.owned.acc, av: q.owned.av, bd: q.owned.bd, gifts: Object.fromEntries(Object.entries(q.gifts).filter(([, n]) => n > 0)) }; })(),   // what everyone owns is public (normal animals aside)
         wins: (room.wins && room.wins[p.id]) || 0,
+        nextReady: !!(room.nextReady && room.nextReady[p.id]),
         sess: (room.sess && room.sess[p.id]) || null,
         title: (room.titles && room.titles[p.id]) || '',
         isHost: p.id === room.hostId,
@@ -612,8 +613,15 @@ async function handle(action, b, query, ctx = {}) {
       }
       return viewFor(room, pid, cnOf);
 
+    case 'nextReady': {   // after row 4: each player says they are ready for another round; once everyone is, it is dealt as if the host had pressed deal
+      need(room.phase === 'dealt' && ROW_SIZES.every((_, i) => room.results && room.results[i]), 409, 'The round is not over yet');
+      room.nextReady = room.nextReady || {};
+      if (b.ready === false) delete room.nextReady[pid]; else room.nextReady[pid] = true;
+      if (!activeOf(room).every((p) => room.nextReady[p.id])) break;
+    }
+    // falls through: everyone is ready
     case 'deal': {
-      need(room.hostId === pid, 403, 'Only the host can do that');
+      need(room.hostId === pid || action === 'nextReady', 403, 'Only the host can do that');
       // One deck covers up to 7 players (49 cards); more players add extra decks.
       const decks = Math.ceil((room.players.length * HAND_SIZE) / 52);
       const set = settingsOf(room);
@@ -631,6 +639,7 @@ async function handle(action, b, query, ctx = {}) {
       room.deadline = set.timer ? Date.now() + set.timer * 1000 : null;
       room.phase = 'dealt';
       room.allReady = null;
+      room.nextReady = {};
       room.round += 1;
       break;
     }

@@ -307,6 +307,16 @@ const post = (b) => call('POST', b, {});
   { const sx = hv.players.map((q) => q.sess); const lost = (id) => hv.rowResults.filter((r) => !r.tie && r.losers.includes(id)).reduce((t, r) => t + r.penalty, 0);
     assert.ok(sx.every((x) => x && x.rounds === 1), 'the session scoreboard counts the finished round');
     assert.deepEqual(hv.players.map((q) => q.sess.pen), hv.players.map((q) => lost(q.id)), 'and each player\'s total penalty'); }
+  { // ---- ready for the next round: once every player is, the next round is dealt ----
+    const r0 = hv.round;
+    assert.equal((await post({ action: 'nextReady', code: hr.code, pid: hb.meId })).s, 200);
+    let v = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
+    assert.equal(v.round, r0, 'one player ready is not enough'); assert.deepEqual(v.players.map((q) => q.nextReady), [false, true]);
+    assert.equal((await post({ action: 'nextReady', code: hr.code, pid: hr.meId })).s, 200);
+    v = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
+    assert.equal(v.round, r0 + 1, 'everyone ready deals the next round'); assert.equal(v.hand.length, 7); assert.ok(v.players.every((q) => !q.nextReady), 'and clears the ready marks');
+    assert.equal((await post({ action: 'nextReady', code: hr.code, pid: hb.meId })).s, 409, 'only once the round is over');
+  }
   // ---- predictions: name who will lose a row, earn points when right ----
   globalThis.__predOff = false;
   const pa = (await post({ action: 'create', name: 'PA' })).j, pb = (await post({ action: 'join', code: pa.code, name: 'PB' })).j, pc = (await post({ action: 'join', code: pa.code, name: 'PC' })).j;
