@@ -370,6 +370,7 @@ function storeResults(room) {
     // predictions: whoever named a loser of this row earns a few points
     const pr = (room.preds && room.preds[r.row]) || {};
     room.results[r.row].called = Object.keys(pr).length;
+    room.results[r.row].picks = { ...pr };   // who named whom, shown on the tiles once the row is open
     if (!r.tie) {
       const hit = Object.entries(pr).filter(([pid, tgt]) => r.losers.includes(tgt) && room.players.some((q) => q.id === pid));
       const miss = Object.entries(pr).filter(([pid, tgt]) => !r.losers.includes(tgt) && room.players.some((q) => q.id === pid) && balanceOf(room, pid) >= PRED_PENALTY);   // a wrong call costs a point, never below zero
@@ -470,6 +471,7 @@ function view(room, pid, seen, cn) {
     currentRow: currentRowOf(room),
     predWin: predWindow(room),
     pred: (room.preds && room.preds[currentRowOf(room)] && room.preds[currentRowOf(room)][me.id]) || null,
+    predPicks: (() => { const w = predWindow(room); return w && Date.now() < w.until ? null : (room.preds && room.preds[currentRowOf(room)]) || {}; })(),   // everybody's calls, only once the guessing is over
     predN: Object.keys((room.preds && room.preds[currentRowOf(room)]) || {}).length,
     predWp: PRED_WP,
     predPen: PRED_PENALTY,

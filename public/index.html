@@ -632,6 +632,9 @@
   .qrbox .leaverow button:not(.ghost) { box-shadow: 0 6px 16px rgba(var(--gold-rgb),.25); } .qrbox .leaverow button:not(.ghost) .ic { color: currentColor !important; stroke-width: 2.3; }
   .qrcode { font-size: 28px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; color: var(--gold-hi); margin: 14px 0 4px; }
   .gamehead { position: relative; z-index: 30; }
+  .tvotes { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 3px; margin: 6px 0 2px; padding: 3px 8px; border-radius: 99px; background: rgba(255,255,255,.07); border: 1px solid var(--line); font-size: 11px; font-weight: 800; animation: tvin .35s ease backwards; } .tvotes.right { border-color: rgba(111,207,151,.6); background: rgba(111,207,151,.14); }
+  .tvl { font-size: 12px; } .tvav .av { box-shadow: 0 0 0 1px rgba(255,255,255,.25); } .tvn { opacity: .8; margin-left: 2px; }
+  @keyframes tvin { from { opacity: 0; transform: translateY(4px) scale(.9); } }
   .rs { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px 2px; padding-top: 10px; margin-bottom: -4px; border-top: 1px solid var(--line); }
   .rsp { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 76px; padding: 4px 2px; border-radius: 12px; cursor: default; -webkit-tap-highlight-color: transparent; }
   .rsp.hit { cursor: pointer; } .rsp.hit:active .rsav { transform: scale(.92); }
@@ -3590,6 +3593,7 @@ function stagePanel(active) {
       );
   }
 
+  const picks = res ? res.picks : isCurrent ? st.predPicks : null;   // who thinks who will lose
   const grid = el('div', { class: 'tiles', style: `grid-template-columns: repeat(${cols}, minmax(0, 1fr))` });
   const ordered = [...active].sort((a, b) => (b.id === st.meId) - (a.id === st.meId));   // you first
   if (res && !res.tie) {   // once the row is scored the table is ranked: strongest at the top, weakest at the bottom
@@ -3617,9 +3621,12 @@ function stagePanel(active) {
     const status = res
       ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : el('span', { class: 'tstat wait' }, '…'))
       : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, ...(allUp ? [icon('tick', 12), t('openedState')] : [t('hiddenState')]));
+    const voters = picks ? active.filter((q) => picks[q.id] === p.id) : [];
+    const votes = voters.length ? el('div', { class: 'tvotes' + (res && !res.tie && res.losers.includes(p.id) ? ' right' : '') }, el('span', { class: 'tvl' }, '🎯'), ...voters.map((q) => el('span', { class: 'tvav', title: q.name }, avatarEl(q.avatar, 18, '', q.acc, q.bd))), el('span', { class: 'tvn' }, '×' + voters.length)) : '';
     grid.append(el('div', { class: 'tile' + (mine ? ' me' : '') + (lose ? ' lose' : '') + (safe ? ' safe' : '') + (screenAnim ? ' fx-in' : ''), style: screenAnim ? `animation-delay:${idx * 70}ms` : '' },
       el('div', { class: 'tname' }, avatarEl(p.avatar, 20, lose ? 'sad' : safe ? 'happy' : '', p.acc, p.bd), el('span', { class: 'tn' }, p.name + (mine ? t('you') : '')), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
       cards,
+      votes,
       el('div', { class: 'tfoot' }, status,
         mine && isCurrent && !res ? el('button', { class: 'ghost tflip', disabled: guessing, onclick: flipMine }, allUp ? t('flipDown') : t('flipUp')) : '')));
   });
