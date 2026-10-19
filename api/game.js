@@ -299,9 +299,21 @@ function tallyWins(room) {
 }
 
 // Results are kept for the whole round once a row has been scored, even if the cards are turned back over.
+// short lines in the chat about what is happening at the table (gifts, row results, people coming and going)
+function sysChat(room, o) {
+  if (settingsOf(room).chat === false) return;
+  room.chatN = (room.chatN || 0) + 1;
+  room.chat = [...(room.chat || []), { n: room.chatN, sys: true, ...o, at: Date.now() }].slice(-60);
+}
+const CHAT_REACTS = ['heart', 'laugh', 'up', 'fire', 'wow'];
 function storeResults(room) {
   room.results = room.results || {};
-  for (const r of rowResults(room)) if (!room.results[r.row]) room.results[r.row] = { ...r, penalty: Math.ceil(r.penalty * settingsOf(room).mult), at: Date.now() };
+  for (const r of rowResults(room)) {
+    if (room.results[r.row]) continue;
+    room.results[r.row] = { ...r, penalty: Math.ceil(r.penalty * settingsOf(room).mult), at: Date.now() };
+    const names = r.losers.map((id) => (room.players.find((q) => q.id === id) || {}).name).filter(Boolean);
+    sysChat(room, r.tie ? { k: 'tie', row: r.row } : { k: 'lose', row: r.row, names, pen: room.results[r.row].penalty });
+  }
   tallyWins(room);   // `at` lets every phone advance to the next row at the same moment
 }
 // When the arranging time runs out, anyone who is not ready gets their cards placed in order and is marked ready.
@@ -374,6 +386,7 @@ function view(room, pid, seen, cn) {
     wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
     prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES, test: isTester(me) },
     chatN: room.chatN || 0,
+    chatR: room.chatR || {},
     winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,   // who won the round that just finished ([] = a full tie, null = not finished)
     // chat: only what this phone hasn't got yet (its last seen number comes with every request)
     chat: (room.chat || []).filter((m) => m.n > (Number.isFinite(cn) ? cn : (room.chatN || 0) - 30)),
@@ -465,6 +478,7 @@ async function handle(action, b, query) {
       }
     }
     room.players.push(p);
+    sysChat(room, { k: 'join', fn: name });
     await saveRoom(room);
     await touchPresence(code, p.id);
     return viewFor(room, p.id);
@@ -640,6 +654,25 @@ async function handle(action, b, query) {
       break;
     }
 
+    case 'creact': {   // one reaction per player per chat message; tapping the same one again takes it back
+      need(CHAT_REACTS.includes(b.e), 400, 'Unknown reaction');
+      const n = Number(b.n);
+      need((room.chat || []).some((m) => m.n === n && !m.sys), 404, 'That message is gone');
+      const now = Date.now();
+      room.reactAt = room.reactAt || {};
+      if (now - (room.reactAt[pid] || 0) < 350) return viewFor(room, pid, cnOf);
+      room.reactAt[pid] = now;
+      room.chatR = room.chatR || {};
+      const cur = room.chatR[n] || {};
+      let had = null;
+      for (const [e, ids] of Object.entries(cur)) { const i = ids.indexOf(pid); if (i >= 0) { ids.splice(i, 1); had = e; if (!ids.length) delete cur[e]; } }
+      if (had !== b.e) (cur[b.e] = cur[b.e] || []).push(pid);
+      if (Object.keys(cur).length) room.chatR[n] = cur; else delete room.chatR[n];
+      const live = new Set(room.chat.map((m) => m.n));
+      for (const k of Object.keys(room.chatR)) if (!live.has(Number(k))) delete room.chatR[k];
+      break;
+    }
+
     case 'avatar':
       if (b.avatar !== undefined) { need(AVATARS.includes(b.avatar) || inventoryOf(me).owned.av.includes(b.avatar), 403, 'Buy that avatar in the shop first'); me.avatar = b.avatar; }
       if (b.bd !== undefined) { need(b.bd === '' || inventoryOf(me).owned.bd.includes(b.bd), 403, 'Buy that border in the shop first'); me.bd = b.bd; }
@@ -684,6 +717,7 @@ async function handle(action, b, query) {
       me.gifts[key] -= all ? GIFT_USES : 1;
       room.giftN = (room.giftN || 0) + 1;
       room.gifts = [...(room.gifts || []).filter((x) => now - x.at < 10000), { n: room.giftN, from: pid, to: all ? 'all' : target.id, item: key, at: now }].slice(-10);
+      sysChat(room, { k: 'gift', fn: me.name, tn: all ? '*' : target.name, item: key });
       break;
     }
 
@@ -694,13 +728,16 @@ async function handle(action, b, query) {
       need(target, 404, 'Player not found');
       need(target.id !== pid, 400, 'You can’t remove yourself');
       room.players = room.players.filter((q) => q.id !== target.id);
+      sysChat(room, { k: 'leave', fn: target.name });
       room.allReady = null;
       seenMem.get(code) && delete seenMem.get(code)[target.id];
       break;
     }
 
     case 'leave': {
+      const leaver = room.players.find((p) => p.id === pid);
       room.players = room.players.filter((p) => p.id !== pid);
+      if (leaver && room.players.length) sysChat(room, { k: 'leave', fn: leaver.name });
       if (!room.players.length) {
         if (!REDIS_URL) mem.delete(code);
         else await redis(['DEL', `room:${code}`]);

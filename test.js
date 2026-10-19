@@ -269,14 +269,20 @@ const post = (b) => call('POST', b, {});
   const cr = (await post({ action: 'create', name: 'CA' })).j;
   const cb2 = (await post({ action: 'join', code: cr.code, name: 'CB' })).j;
   const m1 = (await post({ action: 'chat', code: cr.code, pid: cr.meId, text: '  hi\u0000   there\u202e  ' })).j;
-  assert.equal(m1.chat.length, 1); assert.equal(m1.chat[0].text, 'hi there'); assert.equal(m1.chat[0].name, 'CA');
+  assert.equal(m1.chat.filter((m) => !m.sys).length, 1); const hi = m1.chat.find((m) => !m.sys); assert.equal(hi.text, 'hi there'); assert.equal(hi.name, 'CA');
+  assert.equal(m1.chat[0].k, 'join', 'joining is announced in the chat');
   assert.equal((await post({ action: 'chat', code: cr.code, pid: cr.meId, text: '   ' })).s, 400, 'blank message refused');
   await post({ action: 'chat', code: cr.code, pid: cr.meId, text: 'too fast' });   // inside the 600ms window: ignored
-  assert.equal(globalThis.__rooms.get(cr.code).chatN, 1, 'rate limit: one message at a time per player');
+  assert.equal(globalThis.__rooms.get(cr.code).chatN, 2, 'rate limit: one message at a time per player');
   const m2 = (await post({ action: 'chat', code: cr.code, pid: cb2.meId, text: 'x'.repeat(400) })).j;
   assert.equal(m2.chat.find((m) => m.name === 'CB').text.length, 140, 'messages are cut at 140 characters');
-  const since = (await call('GET', null, { code: cr.code, pid: cr.meId, cn: '1' })).j;
-  assert.deepEqual(since.chat.map((m) => m.n), [2], 'only messages newer than the last seen number');
+  const since = (await call('GET', null, { code: cr.code, pid: cr.meId, cn: '2' })).j;
+  assert.deepEqual(since.chat.map((m) => m.n), [3], 'only messages newer than the last seen number');
+  // reactions: one per player per message, tap again to take it back
+  assert.deepEqual((await post({ action: 'creact', code: cr.code, pid: cb2.meId, n: hi.n, e: 'heart' })).j.chatR[hi.n].heart, [cb2.meId]);
+  await new Promise((r) => setTimeout(r, 400));
+  assert.deepEqual(Object.keys((await post({ action: 'creact', code: cr.code, pid: cb2.meId, n: hi.n, e: 'fire' })).j.chatR[hi.n]), ['fire'], 'a new reaction replaces the old one');
+  assert.equal((await post({ action: 'creact', code: cr.code, pid: cb2.meId, n: 999, e: 'fire' })).s, 404, 'no reacting to missing messages');
   await post({ action: 'settings', code: cr.code, pid: cr.meId, chat: false });
   assert.equal((await post({ action: 'chat', code: cr.code, pid: cb2.meId, text: 'hello?' })).s, 403, 'chat off');
   // half penalties are rounded up
