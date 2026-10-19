@@ -60,6 +60,11 @@
   .tag.ok { background: rgba(111,207,151,.18); color: var(--green); border-color: rgba(111,207,151,.6); }
   .tag.joined { opacity:.7; }
   button.readybtn { background: linear-gradient(180deg,#8fe0ae,#52b97c); color:#06210f; padding: 12px 26px; font-size: 15px; }
+  .card.prime { box-shadow: 0 0 0 1.5px #ffd23f, 0 0 14px rgba(255,207,64,.75), 0 4px 12px rgba(0,0,0,.45); animation: primepulse 2.4s ease-in-out infinite; }
+  .card.prime .cglint { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(110deg, transparent 32%, rgba(255,255,255,.85) 48%, rgba(255,226,120,.55) 54%, transparent 68%); transform: translateX(-120%); animation: cardglint 3s ease-in-out infinite; }
+  @keyframes cardglint { 0% { transform: translateX(-120%); } 35% { transform: translateX(120%); } 100% { transform: translateX(120%); } }
+  @keyframes primepulse { 0%, 100% { box-shadow: 0 0 0 1.5px #ffd23f, 0 0 10px rgba(255,207,64,.55), 0 4px 12px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 0 1.5px #ffe27a, 0 0 20px rgba(255,207,64,.95), 0 4px 12px rgba(0,0,0,.45); } }
+  body.calm .card.prime, body.autocalm .card.prime, body.calm .card.prime .cglint, body.autocalm .card.prime .cglint { animation: none; }
   .card.shared::after { content:''; position:absolute; right:5px; top:5px; width:8px; height:8px; border-radius:50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); }
   .others .card.shared::after { display:none; }
   .roomcode { display:flex; align-items:baseline; gap:10px; }
@@ -601,7 +606,7 @@
   .tipart { margin: 10px 0 4px; display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; align-items: flex-start; padding: 10px 8px; border-radius: 12px; background: rgba(255,255,255,.05); } .tipart .gcards { --cw: 30px; }
   .tcol { display: grid; justify-items: center; gap: 5px; } .tcol.wide { max-width: 46%; text-align: center; } .tmark { font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 99px; line-height: 1.3; } .tmark.ok { background: rgba(80,210,140,.18); color: #7fe3ad; } .tmark.bad { background: rgba(255,90,100,.2); color: #ff8e97; }
   .tscale { flex-basis: 100%; text-align: center; font-size: 11px; opacity: .6; letter-spacing: .3px; } .tladder { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; } .tstep { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: rgba(255,255,255,.1); } .tstep.bad { background: rgba(255,90,100,.22); color: #ff8e97; } .tstep:not(.bad):last-child { background: rgba(255,207,64,.2); color: var(--gold-hi); }
-  .rowtip .tnote { font-size: 12px; opacity: .65; }
+  .rowtip .tp { margin: 6px 0 0; font-size: 12.5px; color: #ffe27a; } .rowtip .tnote { font-size: 12px; opacity: .65; }
   .rowtip b { color: var(--gold-hi); font-size: 14px; } .rowtip p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; opacity: .9; } .rowtip .tj { color: #d9b8ff; } .rowtip button { margin-top: 10px; padding: 7px 16px; font-size: 13px; }
   /* final board */
   .final { --cw: 36px; }
@@ -669,6 +674,8 @@
   .gflow { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; margin: 6px 0 16px; }
   .gf { display: grid; justify-items: center; gap: 4px; padding: 10px 8px; min-width: 62px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 12px; font-weight: 700; }
   .gf-i { font-size: 22px; } .gf-a { font-size: 22px; opacity: .5; }
+  .gsteps { display: grid; gap: 10px; margin-top: 6px; } .gstep { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); } .gstep .gf-i { position: relative; flex: none; } .gst-n { position: absolute; top: -7px; left: -7px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; line-height: 1; background: var(--gold); color: #2a1d00; }
+  .gst-t { display: grid; gap: 2px; min-width: 0; } .gst-t b { font-size: 15px; } .gst-t small { font-size: 13.5px; opacity: .78; line-height: 1.35; }
   .glist { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: 14.5px; line-height: 1.5; }
   .glist.bullets { list-style: none; padding-left: 0; } .glist.bullets li { position: relative; padding-left: 20px; }
   .glist.bullets li::before { content: ''; position: absolute; left: 3px; top: .55em; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
@@ -2380,8 +2387,8 @@ const I18N = {
     gLoses: 'LOSES', gSafe: 'safe', gBust: 'BUST', gPerfect: 'PERFECT', gPenaltyIs: 'Penalty',
     g1t: 'The game in one minute', g1p: 'Up to 12 players. Everyone gets 7 cards and arranges them in 4 rows of 1, 1, 2 and 3 cards. The rows are then revealed one at a time from the top. Every row is its own contest — the loser of a row takes a penalty.',
     g2t: 'How a round goes', g2a: 'Deal', g2b: 'Arrange', g2c: 'Ready', g2d: 'Reveal', g2e: 'Penalty',
-    g2l1: 'The host presses “Shuffle & deal”.', g2l2: 'Place all 7 cards in the rows.', g2l3: 'Press “I’m ready” — your cards turn face down and lock.',
-    g2l4: 'Once everyone is ready, the host opens row 1, then row 2, 3 and 4.', g2l5: 'After each row the loser(s) and the penalty are shown to everyone. The host can deal a new round at any time.',
+    g2l1: 'The host taps “Shuffle & Deal”.', g2l2: 'Place all 7 cards in the rows.', g2l3: 'Tap “I’m Ready”. Your cards flip face down.',
+    g2l4: 'The host opens rows 1 to 4, one by one.', g2l5: 'The loser of each row takes the penalty.',
     g3t: 'Placing your cards', g3a: 'Tap a card in your hand — it goes into the next free slot, top row first.', g3b: 'Tap a placed card to send it back to your hand.', g3c: 'Or drag any card to any slot you like.', g3d: 'Fill all 7 slots, then press “I’m ready”.', gTap: 'tap', gHand: 'Your hand', gDrag: 'drag',
     g4t: 'Row 1 — lowest card loses', g4p: 'Ace is the highest card and 2 is the lowest. The lowest card in the row loses. If several players share the lowest rank (any suit), they all lose.',
     g4n: 'Penalty is ×1 — but every Ace anyone has in this row doubles up:', gLow: 'low', gHigh: 'high',
@@ -2400,7 +2407,7 @@ const I18N = {
     e_moved: 'You joined another room in another tab, so you left this one.', e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
     invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
     notOpened: 'Not opened yet', tapDetails: 'Tap a row to see everyone’s cards',
-    tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: Nothing < Pair < Straight < Flush < Three Of A Kind < Straight Flush < Royal Flush.', tipLoses: 'Loses', tipSafe: 'Safe', tipLowHigh: 'Low → High', tipBest: 'Best', tipOver: 'Over', tipWeakStrong: 'Weakest → Strongest', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
+    tip1: 'One card. The LOWEST card loses (Ace is the highest). Every Ace anyone holds doubles the penalty.', tip2: 'One card. The HIGHEST card loses, so a low card is safe (2 is the lowest). Every 2 anyone holds doubles the penalty.', tip3: 'Two cards added up: A = 1, J/Q/K = 0.5, other cards = their number. Closest to 10.5 wins, going over loses. An exact 10.5 doubles the penalty.', tip4: 'Three cards make a hand. The WEAKEST hand loses: Nothing < Pair < Straight < Flush < Three Of A Kind < Straight Flush < Royal Flush.', tipLoses: 'Loses', tipSafe: 'Safe', tipLowHigh: 'Low → High', tipBest: 'Best', tipOver: 'Over', tipWeakStrong: 'Weakest → Strongest', tipPrime1: 'Ace sparkles: the best card here. It doubles the penalty.', tipPrime2: 'A 2 sparkles: the best card here. It doubles the penalty.', tipPrime3: 'An exact 10.5 sparkles. It doubles the penalty.', tipPrime4: 'Three of a kind, a flush or better sparkles. It raises the penalty.', tipJoker: '★ A joker becomes the best card for the row it is in.', tipClose: 'Got it',
     resTitle: 'Row results', rowN: (v) => `Row ${v.n}`, rule1: 'Lowest card loses', rule2: 'Highest card loses',
     rule3: 'Closest to 10.5 (over loses)', rule4: 'Weakest pattern loses',
     loser: 'Loser', losers: 'Losers', penalty: 'Penalty', bust: 'Bust', tie: 'Tie', noPenalty: 'No penalty',
@@ -2460,8 +2467,8 @@ const I18N = {
     gLoses: '输', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '惩罚',
     g1t: '一分钟看懂玩法', g1p: '最多 12 位玩家。每人发 7 张牌，按 1、1、2、3 张摆成 4 行。然后从上到下一行一行揭晓。每一行都是一场独立的比拼——输的人要受惩罚。',
     g2t: '一轮怎么玩', g2a: '发牌', g2b: '摆牌', g2c: '准备', g2d: '揭晓', g2e: '惩罚',
-    g2l1: '房主点击“洗牌并发牌”。', g2l2: '把 7 张牌都摆进各行。', g2l3: '点击“我准备好了”——你的牌会盖上并锁定。',
-    g2l4: '所有人准备好后，房主依次翻开第 1、2、3、4 行。', g2l5: '每翻完一行，所有人都会看到输家和惩罚。房主随时可以开始新的一轮。',
+    g2l1: '房主点击“洗牌并发牌”。', g2l2: '把 7 张牌摆进各行。', g2l3: '点击“我准备好了”，牌会盖上。',
+    g2l4: '房主依次翻开第 1 到 4 行。', g2l5: '每行的输家承担惩罚。',
     g3t: '怎么摆牌', g3a: '点击手牌，它会放入下一个空位（从最上面一行开始）。', g3b: '点击已摆的牌，可以放回手牌。', g3c: '也可以把任意一张牌拖到任意位置。', g3d: '摆满 7 个位置后，点击“我准备好了”。', gTap: '点击', gHand: '你的手牌', gDrag: '拖动',
     g4t: '第 1 行 — 最小的牌输', g4p: 'A 最大，2 最小。这一行里最小的牌输。如果有几位玩家的牌点数相同且最小（花色不限），他们一起输。',
     g4n: '惩罚是 ×1——但这一行里每出现一张 A，惩罚就翻倍：', gLow: '小', gHigh: '大',
@@ -2480,7 +2487,7 @@ const I18N = {
     e_moved: '你在另一个标签页加入了其他房间，因此已离开这个房间。', e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
     invitedTo: (v) => `你被邀请加入房间 ${v.code}`, leftOld: '你已离开之前的房间。', joinRoomN: (v) => `加入房间 ${v.code}`, otherCode: '使用其他代码', createOwn: '或创建自己的房间',
     notOpened: '尚未翻开', tapDetails: '点击某一行查看所有人的牌',
-    tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipLoses: '输', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超过', tipWeakStrong: '最弱 → 最强', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
+    tip1: '1 张牌。最小的牌输（A 最大）。场上每出现一张 A，罚分翻倍。', tip2: '1 张牌。最大的牌输，所以小牌安全（2 最小）。场上每出现一张 2，罚分翻倍。', tip3: '两张牌点数相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超过 10.5 就输。刚好 10.5 罚分翻倍。', tip4: '三张牌组成牌型。最弱的牌型输：散牌 < 对子 < 顺子 < 同花 < 三条 < 同花顺 < 皇家同花顺。', tipPrime1: 'A 会闪光：这一行最好的牌，罚分翻倍。', tipPrime2: '2 会闪光：这一行最好的牌，罚分翻倍。', tipPrime3: '刚好 10.5 会闪光，罚分翻倍。', tipPrime4: '三条、同花或更大的牌型会闪光，罚分增加。', tipLoses: '输', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超过', tipWeakStrong: '最弱 → 最强', tipJoker: '★ 鬼牌会变成所在行里最有利的牌。', tipClose: '知道了',
     resTitle: '各行结果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌输', rule2: '最大的牌输',
     rule3: '最接近 10.5（超过即输）', rule4: '牌型最弱者输',
     loser: '输家', losers: '输家', penalty: '惩罚', bust: '爆了', tie: '平局', noPenalty: '无惩罚',
@@ -2540,8 +2547,8 @@ const I18N = {
     gLoses: '輸', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '懲罰',
     g1t: '一分鐘看懂玩法', g1p: '最多 12 位玩家。每人發 7 張牌，依 1、1、2、3 張擺成 4 行。然後由上到下一行一行揭曉。每一行都是一場獨立的比拼——輸的人要受懲罰。',
     g2t: '一輪怎麼玩', g2a: '發牌', g2b: '擺牌', g2c: '準備', g2d: '揭曉', g2e: '懲罰',
-    g2l1: '房主點擊「洗牌並發牌」。', g2l2: '把 7 張牌都擺進各行。', g2l3: '點擊「我準備好了」——你的牌會蓋上並鎖定。',
-    g2l4: '所有人準備好後，房主依序翻開第 1、2、3、4 行。', g2l5: '每翻完一行，所有人都會看到輸家和懲罰。房主隨時可以開始新的一輪。',
+    g2l1: '房主點擊「洗牌並發牌」。', g2l2: '把 7 張牌擺進各行。', g2l3: '點擊「我準備好了」，牌會蓋上。',
+    g2l4: '房主依序翻開第 1 到 4 行。', g2l5: '每行的輸家承擔懲罰。',
     g3t: '怎麼擺牌', g3a: '點擊手牌，它會放入下一個空位（從最上面一行開始）。', g3b: '點擊已擺的牌，可以放回手牌。', g3c: '也可以把任意一張牌拖到任意位置。', g3d: '擺滿 7 個位置後，點擊「我準備好了」。', gTap: '點擊', gHand: '你的手牌', gDrag: '拖動',
     g4t: '第 1 行 — 最小的牌輸', g4p: 'A 最大，2 最小。這一行裡最小的牌輸。如果有幾位玩家的牌點數相同且最小（花色不限），他們一起輸。',
     g4n: '懲罰是 ×1——但這一行裡每出現一張 A，懲罰就翻倍：', gLow: '小', gHigh: '大',
@@ -2560,7 +2567,7 @@ const I18N = {
     e_moved: '你在另一個分頁加入了其他房間，因此已離開這個房間。', e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
     invitedTo: (v) => `你被邀請加入房間 ${v.code}`, leftOld: '你已離開之前的房間。', joinRoomN: (v) => `加入房間 ${v.code}`, otherCode: '使用其他代碼', createOwn: '或建立自己的房間',
     notOpened: '尚未翻開', tapDetails: '點擊某一行查看所有人的牌',
-    tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipLoses: '輸', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超過', tipWeakStrong: '最弱 → 最強', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
+    tip1: '1 張牌。最小的牌輸（A 最大）。場上每出現一張 A，罰分翻倍。', tip2: '1 張牌。最大的牌輸，所以小牌安全（2 最小）。場上每出現一張 2，罰分翻倍。', tip3: '兩張牌點數相加：A = 1，J/Q/K = 0.5，其他按面值。越接近 10.5 越好，超過 10.5 就輸。剛好 10.5 罰分翻倍。', tip4: '三張牌組成牌型。最弱的牌型輸：散牌 < 對子 < 順子 < 同花 < 三條 < 同花順 < 皇家同花順。', tipPrime1: 'A 會閃光：這一行最好的牌，罰分翻倍。', tipPrime2: '2 會閃光：這一行最好的牌，罰分翻倍。', tipPrime3: '剛好 10.5 會閃光，罰分翻倍。', tipPrime4: '三條、同花或更大的牌型會閃光，罰分增加。', tipLoses: '輸', tipSafe: '安全', tipLowHigh: '小 → 大', tipBest: '最佳', tipOver: '超過', tipWeakStrong: '最弱 → 最強', tipJoker: '★ 鬼牌會變成所在行裡最有利的牌。', tipClose: '知道了',
     resTitle: '各行結果', rowN: (v) => `第 ${v.n} 行`, rule1: '最小的牌輸', rule2: '最大的牌輸',
     rule3: '最接近 10.5（超過即輸）', rule4: '牌型最弱者輸',
     loser: '輸家', losers: '輸家', penalty: '懲罰', bust: '爆了', tie: '平局', noPenalty: '無懲罰',
@@ -2701,7 +2708,7 @@ function el(tag, props = {}, ...kids) {
 
 // A card on screen. src ('hand' | slot index) makes it draggable (own cards only);
 // onclick without src is a plain click. shared = visible to the other players.
-function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared = false, as = null, morph = false } = {}) {
+function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared = false, as = null, morph = false, prime = false } = {}) {
   if (id === '?') return el('div', { class: 'card back' });
   if (id !== 'JK') as = null;
   const face = as || id;   // `as`: the card a joker has turned into once its row is scored
@@ -2712,6 +2719,7 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared 
   if (isJk) cls.push(as ? 'joker-as' : 'joker');
   if (as && morph) cls.push('morph');
   if (!up) cls.push('down');
+  if (prime && up) cls.push('prime');
   if (shared) cls.push('shared');
   if (src !== null) cls.push('mine');
   const jokerFace = () => [el('div', { class: 'jk-star' }, '★'), el('div', { class: 'jk-w' }, 'JOKER')];
@@ -2720,6 +2728,7 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared 
     : el('div', { class: cls.join(' ') }, el('div', { class: 'ix' }, rank, el('i', {}, SUIT[suit])), el('div', { class: 'pip' }, SUIT[suit]), el('div', { class: 'ixr' }, el('div', { class: 'ix' }, rank, el('i', {}, SUIT[suit]))),
         ...(isJk ? [el('div', { class: 'jk-badge' }, '★'), ...(morph ? [el('div', { class: 'jk-cover' }, ...jokerFace())] : [])] : []));
   if (shared) e.title = t('shared');
+  if (prime && up) e.append(el('i', { class: 'cglint' }));
   if (src !== null) enableDrag(e, src, id, onclick);
   else if (onclick) { e.onclick = onclick; e.style.cursor = 'pointer'; }
   return e;
@@ -2822,6 +2831,23 @@ function tipArt(r) {
   const names = ['none', 'pair', 'straight', 'flush', 'triple', 'sflush', 'royal'];
   return wrap(el('div', { class: 'tladder' }, ...names.map((k, i) => el('span', { class: 'tstep' + (i === 0 ? ' bad' : '') }, t('gh_' + k)))), el('div', { class: 'tscale' }, t('tipWeakStrong')));
 }
+// the strongest card (or hand) a row can show: an Ace, a 2, an exact 10.5, a flush or better. These are the ones that raise the penalty, so they sparkle.
+const CRANK = { A: 14, K: 13, Q: 12, J: 11 }, crank = (c) => CRANK[c.slice(0, -1)] || Number(c.slice(0, -1));
+const cpts2 = (c) => { const r = c.slice(0, -1); return r === 'A' ? 2 : 'JQK'.includes(r) ? 1 : Number(r) * 2; };
+const CALL = ['S', 'H', 'D', 'C'].flatMap((x) => ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'].map((r) => r + x));
+function chandStrong(cs) {
+  const rs = cs.map(crank).sort((a, b) => a - b);
+  return cs.every((c) => c.slice(-1) === cs[0].slice(-1)) || rs[0] === rs[2];   // flush, straight flush, royal flush and three of a kind
+}
+function rowPrime(row, cs) {   // cs: the card ids of the row, all of them known
+  const jk = cs.map((c, i) => c === 'JK' ? i : -1).filter((i) => i >= 0);
+  if (row === 0) return cs[0] === 'JK' || cs[0].slice(0, -1) === 'A';
+  if (row === 1) return cs[0] === 'JK' || cs[0].slice(0, -1) === '2';
+  if (row === 2) { if (cs.length < 2) return false; if (jk.length) { const o = cs.filter((c) => c !== 'JK'); return jk.length === 1 && o.length === 1 && (cpts2(o[0]) === 20 || cpts2(o[0]) === 1); } return cs.reduce((a, c) => a + cpts2(c), 0) === 21; }
+  if (cs.length < 3) return false;
+  if (!jk.length) return chandStrong(cs);
+  return CALL.some((x) => chandStrong(cs.map((c) => c === 'JK' ? x : c)));
+}
 let tipRow = null;   // which row's criteria tip is open
 document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; render(); } });
 function boardEl(board, mine, pid) {
@@ -2833,6 +2859,8 @@ function boardEl(board, mine, pid) {
   for (const [rowIdx, n] of ROWS.entries()) {
     const row = el('div', { class: 'r' });
     const rw = el('div', { class: 'rw' }, row);
+    const rowSlots = board.slice(i, i + n), shown = (q) => q && q.c !== '?' && (mine ? (!me.ready || q.up) : q.up);
+    const prime = rowSlots.every(shown) && rowPrime(rowIdx, rowSlots.map((q) => q.c));   // only when every card of the row is on show, so nothing hidden is given away
     rw.dataset.n = String(rowIdx + 1);
     for (let k = 0; k < n; k++, i++) {
       const slot = i, s = board[slot];
@@ -2840,11 +2868,11 @@ function boardEl(board, mine, pid) {
       const f = fx[pid + ':' + slot];
       const fxCls = f ? 'fx-' + f : '';
       if (s) {
-        if (!mine) inner = cardEl(s.c, { up: s.up, extra: fxCls });
+        if (!mine) inner = cardEl(s.c, { up: s.up, extra: fxCls, prime });
         else {
           // You see your own cards until you press Ready; then only the ones you flipped face up.
           const flip = () => act('flip', { slot });
-          const look = { up: !me.ready || s.up, shared: !me.ready && s.up, extra: fxCls };
+          const look = { up: !me.ready || s.up, shared: !me.ready && s.up, extra: fxCls, prime };
           inner = cardEl(s.c, canMove ? { ...look, src: slot, onclick: () => act('unplace', { slot }) } : { ...look, onclick: dealt ? flip : null });
         }
       }
@@ -2855,7 +2883,7 @@ function boardEl(board, mine, pid) {
     if (mine && dealt && !me.ready) {   // beginner help: an (i) per row explains how that row is won or lost
       rw.append(el('button', { type: 'button', class: 'rowinfo' + (tipRow === rowIdx ? ' on' : ''), 'aria-label': t('rowN', { n: rowIdx + 1 }), onclick: (e) => { e.stopPropagation(); tipRow = tipRow === rowIdx ? null : rowIdx; render(); } }, colorIcon(BULB_ICON, 24)));
       if (tipRow === rowIdx) rw.append(el('div', { class: 'rowtip', onclick: (e) => e.stopPropagation() },
-        el('b', {}, t('rowN', { n: rowIdx + 1 }) + ' · ' + t('rule' + (rowIdx + 1))), tipArt(rowIdx), el('p', { class: 'tnote' }, t('tip' + (rowIdx + 1))), el('p', { class: 'tj' }, t('tipJoker')),
+        el('b', {}, t('rowN', { n: rowIdx + 1 }) + ' · ' + t('rule' + (rowIdx + 1))), tipArt(rowIdx), el('p', { class: 'tnote' }, t('tip' + (rowIdx + 1))), el('p', { class: 'tj' }, t('tipJoker')), el('p', { class: 'tp' }, '✦ ' + t('tipPrime' + (rowIdx + 1))),
         el('button', { type: 'button', class: 'ghost', onclick: () => { tipRow = null; render(); } }, t('tipClose'))));
     }
     if (mine && dealt && activePlayers().every((p) => p.ready)) {
@@ -3723,9 +3751,7 @@ function guideBody(i) {
     wrap.append(h('g1t'), p('g1p'), lay);
   } else if (i === 1) {   // flow
     const steps = [['cards', 'g2a'], ['rows', 'g2b'], ['check', 'g2c'], ['eye', 'g2d'], ['zap', 'g2e']];
-    const flow = el('div', { class: 'gflow' });
-    steps.forEach(([ic, k], n) => { flow.append(el('div', { class: 'gf' }, el('span', { class: 'gf-i' }, icon(ic, 26)), el('span', {}, t(k)))); if (n < steps.length - 1) flow.append(el('span', { class: 'gf-a' }, '›')); });
-    wrap.append(h('g2t'), flow, el('ol', { class: 'glist' }, ...[1, 2, 3, 4, 5].map((n) => el('li', {}, t('g2l' + n)))));
+    wrap.append(h('g2t'), el('div', { class: 'gsteps' }, ...steps.map(([ic, k], n) => el('div', { class: 'gstep' }, el('span', { class: 'gf-i' }, icon(ic, 24), el('span', { class: 'gst-n' }, String(n + 1))), el('div', { class: 'gst-t' }, el('b', {}, t(k)), el('small', {}, t('g2l' + (n + 1))))))));
   } else if (i === 2) {   // placing cards
     const slots = el('div', { class: 'gmini' }, el('div', { class: 'gslots r1' }, gslot('7H')), el('div', { class: 'gslots r1' }, gslot()), el('div', { class: 'gslots r2' }, gslot(), gslot()), el('div', { class: 'gslots r3' }, gslot(), gslot(), gslot()));
     const hand = el('div', { class: 'ghand' }, el('div', { class: 'ghand-l' }, t('gHand')), gcards(['KS', '3D', '9C']), el('div', { class: 'gtapmark iconlabel' }, icon('hand', 16), t('gTap')));
