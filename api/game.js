@@ -28,7 +28,7 @@ const GIFT_USES = 3;   // one purchase = three throws
 const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(process.env.TESTER_NAME).trim().toLowerCase();
 const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
-const PRED_WP = 3, PRED_PENALTY = 1, PRED_MS = 6000;   // points for calling who loses a row, lost for a wrong call, and how long the guessing lasts
+const PRED_WP = 3, PRED_PENALTY = 1, PRED_MS = 15000;   // points for calling who loses a row, lost for a wrong call, and how long the guessing lasts
 const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
@@ -342,19 +342,17 @@ function sysChat(room, o) {
   room.chat = [...(room.chat || []), { n: room.chatN, sys: true, ...o, at: Date.now() }].slice(-60);
 }
 const CHAT_REACTS = ['heart', 'laugh', 'up', 'fire', 'wow'];
-// the short guessing window before each row opens: it starts once the last verdict (or the "everyone is ready" banner) has been seen,
+// one guessing window before row 1 opens: everyone calls the loser of all four rows (or skips a row) at once,
 // and nobody can turn cards over until it is done
 function predWindow(room) {
   if (globalThis.__predOff) return null;   // the tests switch the window off, except in the test of the window itself
   const row = currentRowOf(room), active = activeOf(room);
   if (room.phase !== 'dealt' || row >= ROW_SIZES.length || active.length < 2 || !active.every((p) => p.ready)) return null;
-  // row 1: a moment after the "everyone is ready" banner. Later rows: when the host's phone says the strike and the verdict are over
-  // (or, if it never says so, a while after the result)
-  const prev = room.results && room.results[row - 1];
-  const from = row === 0 ? (room.allReady && room.allReady.at ? room.allReady.at + 1000 : null) : prev ? ((room.predStart && room.predStart[row]) || prev.at + 15000) : null;
+  // a moment after the "everyone is ready" banner; the later rows have no window of their own
+  const from = row === 0 && room.allReady && room.allReady.at ? room.allReady.at + 1000 : null;
   if (!from) return null;
-  // everybody has called: no need to sit out the clock (a beat is kept so the last pick is seen)
-  const early = room.predEnd && room.predEnd[row];
+  // everybody has decided every row: no need to sit out the clock (a beat is kept so the last pick is seen)
+  const early = room.predEnd && room.predEnd[0];
   return { from, until: early ? Math.min(from + PRED_MS, Math.max(early + 700, from + 1200)) : from + PRED_MS };
 }
 function storeResults(room) {
@@ -368,7 +366,7 @@ function storeResults(room) {
     if (!r.tie) for (const id of r.losers) { const a = room.rl[id] = room.rl[id] || [0, 0, 0, 0]; a[r.row]++; }
     if (!r.tie && r.losers.length === 1) room.results[r.row].streak = { name: names[0], n: room.rl[r.losers[0]][r.row] };
     // predictions: whoever named a loser of this row earns a few points
-    const pr = (room.preds && room.preds[r.row]) || {};
+    const pr = Object.fromEntries(Object.entries((room.preds && room.preds[r.row]) || {}).filter(([, tgt]) => tgt));   // a skipped row is stored as null
     room.results[r.row].called = Object.keys(pr).length;
     room.results[r.row].picks = { ...pr };   // who named whom, shown on the tiles once the row is open
     if (!r.tie) {
@@ -470,9 +468,9 @@ function view(room, pid, seen, cn) {
     rowResults: Object.values(room.results || {}).sort((a, b) => a.row - b.row),
     currentRow: currentRowOf(room),
     predWin: predWindow(room),
-    pred: (room.preds && room.preds[currentRowOf(room)] && room.preds[currentRowOf(room)][me.id]) || null,
-    predPicks: (() => { const w = predWindow(room); return w && Date.now() < w.until ? null : (room.preds && room.preds[currentRowOf(room)]) || {}; })(),   // everybody's calls, only once the guessing is over
-    predN: Object.keys((room.preds && room.preds[currentRowOf(room)]) || {}).length,
+    myPreds: [0, 1, 2, 3].map((r) => { const m = room.preds && room.preds[r]; return m && me.id in m ? (m[me.id] || '-') : null; }),   // a player id, '-' for a skipped row, null while undecided
+    predPicks: (() => { const w = predWindow(room); if (w && Date.now() < w.until) return null; const m = (room.preds && room.preds[currentRowOf(room)]) || {}; return Object.fromEntries(Object.entries(m).filter(([, tgt]) => tgt)); })(),   // everybody's calls, only once the guessing is over
+    predN: activeOf(room).filter((p) => [0, 1, 2, 3].every((r) => room.preds && room.preds[r] && p.id in room.preds[r])).length,   // players who have decided every row
     predWp: PRED_WP,
     predPen: PRED_PENALTY,
     meId: me.id,
@@ -613,7 +611,7 @@ async function handle(action, b, query, ctx = {}) {
       room.deck = deck; // leftovers, for players who join mid-round
       room.results = {};
       room.preds = {};
-      room.predStart = {};
+      room.predEnd = {};
       room.deadline = set.timer ? Date.now() + set.timer * 1000 : null;
       room.phase = 'dealt';
       room.allReady = null;
@@ -748,29 +746,22 @@ async function handle(action, b, query, ctx = {}) {
       break;
     }
 
-    case 'predict': {   // call who will lose the row that is about to open: right = +3 points, wrong = -1, no call = nothing
-      const w = predWindow(room), now = Date.now(), row = currentRowOf(room);
-      need(w && Number(b.row) === row && now >= w.from - 1500 && now <= w.until + 800, 409, 'Guessing is closed');
+    case 'predict': {   // call who will lose each row: right = +3 points, wrong = -1, a skipped row = nothing
+      const w = predWindow(room), now = Date.now(), row = Number(b.row);
+      need(w && now >= w.from - 1500 && now <= w.until + 800, 409, 'Guessing is closed');
+      need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       room.preds = room.preds || {};
       room.preds[row] = room.preds[row] || {};
-      if (b.target === '') { delete room.preds[row][pid]; break; }   // taking the call back
-      const tgt = active.find((p) => p.id === String(b.target));
-      need(tgt && tgt.id !== pid, 400, 'Pick another player');
-      room.preds[row][pid] = tgt.id;
-      if (active.every((p) => room.preds[row][p.id])) { room.predEnd = room.predEnd || {}; room.predEnd[row] = room.predEnd[row] || now; }   // all called: the window closes early
+      if (b.target === '') delete room.preds[row][pid];   // undecided again
+      else if (b.target === '-') room.preds[row][pid] = null;   // skip this row
+      else { const tgt = active.find((p) => p.id === String(b.target)); need(tgt && tgt.id !== pid, 400, 'Pick another player'); room.preds[row][pid] = tgt.id; }
+      if (active.every((p) => [0, 1, 2, 3].every((r) => room.preds[r] && p.id in room.preds[r]))) { room.predEnd = room.predEnd || {}; room.predEnd[0] = room.predEnd[0] || now; }   // everyone has decided every row: the window closes early
+      else if (room.predEnd) delete room.predEnd[0];
       break;
     }
 
-    case 'predStart': {   // the host's phone: the verdict has been seen, the guessing for the next row can begin
-      need(room.hostId === pid, 403, 'Only the host can do that');
-      const row = currentRowOf(room);
-      need(row > 0 && row < ROW_SIZES.length && Number(b.row) === row, 409, 'Not now');
-      need(room.results && room.results[row - 1], 409, 'Not now');
-      room.predStart = room.predStart || {};
-      if (room.predStart[row]) return viewFor(room, pid, cnOf);   // already started
-      room.predStart[row] = Date.now();
-      break;
-    }
+    case 'predStart':   // older phones still send this; the later rows no longer have a guessing window of their own
+      return viewFor(room, pid, cnOf);
 
     case 'creact': {   // one reaction per player per chat message; tapping the same one again takes it back
       need(CHAT_REACTS.includes(b.e), 400, 'Unknown reaction');

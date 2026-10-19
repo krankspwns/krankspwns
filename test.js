@@ -319,17 +319,19 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'flip', code: pa.code, pid: pa.meId, slot: 0 })).s, 409, 'no turning cards over while guesses are coming');
   globalThis.__rooms.get(pa.code).allReady.at = Date.now() - 3000;   // now inside the window
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pa.meId })).s, 400, 'not yourself');
-  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 1, target: pb.meId })).s, 409, 'only the row that is next');
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 7, target: pb.meId })).s, 400, 'only rows 1 to 4');
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 0, target: pb.meId })).s, 200);
+  assert.equal((await post({ action: 'predict', code: pa.code, pid: pa.meId, row: 2, target: pc.meId })).s, 200, 'every row is called in the same window');
   assert.equal((await post({ action: 'predict', code: pb.meId && pa.code, pid: pb.meId, row: 0, target: pa.meId })).s, 200);
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pb.meId, row: 0, target: '' })).s, 200, 'a guess can be taken back');
   assert.equal((await post({ action: 'predict', code: pa.code, pid: pc.meId, row: 0, target: pa.meId })).s, 200);
   const pv0 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j;
-  assert.equal(pv0.pred, pb.meId); assert.equal(pv0.predN, 2); assert.ok(pv0.predWin && pv0.predWin.until > Date.now(), 'the window comes with the state');
-  assert.ok(pv0.predWin.until - Date.now() > 2500, 'with a pick missing the clock runs on');
-  assert.equal((await post({ action: 'predict', code: pa.code, pid: pb.meId, row: 0, target: pa.meId })).s, 200);
+  assert.deepEqual(pv0.myPreds, [pb.meId, null, pc.meId, null]); assert.equal(pv0.predN, 0, 'nobody has decided every row yet'); assert.ok(pv0.predWin && pv0.predWin.until > Date.now(), 'the window comes with the state');
+  assert.ok(pv0.predWin.until - Date.now() > 2500, 'with picks missing the clock runs on');
+  for (const [pid, picks] of [[pa.meId, { 1: '-', 3: '-' }], [pb.meId, { 0: pa.meId, 1: '-', 2: '-', 3: pc.meId }], [pc.meId, { 1: '-', 2: '-', 3: '-' }]]) for (const [row, target] of Object.entries(picks)) assert.equal((await post({ action: 'predict', code: pa.code, pid, row: +row, target })).s, 200);
   const pvAll = (await call('GET', null, { code: pa.code, pid: pa.meId })).j;
-  assert.ok(pvAll.predWin.until - Date.now() < 1500, 'once everybody has called, the window closes early');
+  assert.deepEqual(pvAll.myPreds, [pb.meId, '-', pc.meId, '-'], 'a skipped row reads as "-"'); assert.equal(pvAll.predN, 3);
+  assert.ok(pvAll.predWin.until - Date.now() < 1500, 'once everybody has decided every row, the window closes early');
   globalThis.__rooms.get(pa.code).allReady.at = Date.now() - 20000;   // the window is over
   for (const pl of globalThis.__rooms.get(pa.code).players) pl.board[0].up = true;
   await post({ action: 'emote', code: pa.code, pid: pa.meId, e: 'gg' });   // any action stores the finished row
@@ -340,15 +342,9 @@ const post = (b) => call('POST', b, {});
   assert.equal(pr0.streak.n, 1);
   assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.wallet.pts, 3);
 
-  // the next row's guessing starts when the host's phone says the verdict is over (or a while after the result)
-  { const r = globalThis.__rooms.get(pa.code); r.results[0].at = Date.now() - 2000; }
-  const w1 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j.predWin;
-  assert.ok(w1 && w1.from > Date.now() + 5000, 'row 2: the window waits for the host');
-  assert.equal((await post({ action: 'predStart', code: pa.code, pid: pb.meId, row: 1 })).s, 403, 'only the host starts it');
-  assert.equal((await post({ action: 'predStart', code: pa.code, pid: pa.meId, row: 2 })).s, 409, 'only the next row');
-  assert.equal((await post({ action: 'predStart', code: pa.code, pid: pa.meId, row: 1 })).s, 200);
-  const w2 = (await call('GET', null, { code: pa.code, pid: pa.meId })).j.predWin;
-  assert.ok(w2 && w2.from <= Date.now() && w2.until > Date.now(), 'row 2: guessing is open now');
+  // the later rows have no window of their own: the calls were all made before row 1
+  assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.predWin, null, 'row 2 opens without a new window');
+  assert.deepEqual(globalThis.__rooms.get(pa.code).results[0].picks, { [pa.meId]: pb.meId, [pb.meId]: pa.meId, [pc.meId]: pa.meId });
   globalThis.__predOff = true;
   // ---- security ----
   const sa = (await post({ action: 'create', name: 'SecA' })).j, sb = (await post({ action: 'join', code: sa.code, name: 'SecB' })).j;
