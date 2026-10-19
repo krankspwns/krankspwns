@@ -442,6 +442,15 @@
   @keyframes nbpulse { 0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 18px rgba(242,193,78,.3); } 50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 26px rgba(242,193,78,.6), 0 0 0 4px rgba(242,193,78,.12); } }
   @keyframes nbsheen { 0% { transform: translateX(-130%); } 35%, 100% { transform: translateX(130%); } }
   @keyframes nbpop { 0% { transform: scale(.9); } 100% { transform: none; } }
+  .nbbtn.just { animation: nbjump .5s cubic-bezier(.2,1.6,.4,1), nbwave .8s ease-out; }   /* a ring of light bursts out from the button (a shadow, so the sheen stays clipped inside) */
+  @keyframes nbwave { 0% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 0 rgba(111,224,160,.85); } 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 18px rgba(111,224,160,0); } }
+  @keyframes nbjump { 0% { transform: scale(.88); } 55% { transform: scale(1.07); } 100% { transform: none; } }
+  .nb-av { position: relative; } .nb-av.just { animation: nbavpop .6s cubic-bezier(.2,1.7,.4,1); }
+  .nb-av.just::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2.5px solid #6fcf97; animation: nbring .7s ease-out forwards; pointer-events: none; }
+  .nb-spark { position: absolute; right: -5px; top: -6px; width: 12px; height: 12px; background: #eafff2; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 3px #6fcf97); animation: nbspark .8s ease-out forwards; pointer-events: none; }
+  @keyframes nbavpop { 0% { transform: scale(.6) translateY(6px); } 50% { transform: scale(1.2) translateY(-5px); } 100% { transform: none; } }
+  @keyframes nbring { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.9); } }
+  @keyframes nbspark { 0% { opacity: 0; transform: scale(.2) rotate(0); } 30% { opacity: 1; transform: scale(1.2) rotate(45deg); } 100% { opacity: 0; transform: scale(.6) rotate(90deg) translate(3px, -4px); } }
   .rejoin { min-height: 62vh; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; animation: lbin .4s ease both; }
   .rj-ic { width: 88px; height: 88px; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 1px rgba(var(--gold-rgb),.35), 0 14px 40px rgba(0,0,0,.5), 0 0 50px rgba(var(--gold-rgb),.25); animation: rjpulse 1.8s ease-in-out infinite; margin-bottom: 8px; } .rj-ic img { width: 100%; height: 100%; display: block; }
   .rj-t { font-size: 13px; font-weight: 700; letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; color: var(--gold-hi); opacity: .85; }
@@ -4346,13 +4355,15 @@ const NB_SVG = {
 };
 function nbIcon(on) { const w = el('span', { class: 'nbi' }); w.innerHTML = uniqSvg(`<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">${NB_SVG[on ? 'tick' : 'cards']}</svg>`); return w; }
 // everyone taps Ready for another round; when the last one does, the next round is dealt (the host can still deal straight away from the top)
+let nbSeen = { round: -1, ids: new Set() };
 function nextRoundBar(active) {
   const me = active.find((p) => p.id === st.meId); if (!me) return '';
-  const n = active.filter((p) => p.nextReady).length, mine = me.nextReady;
+  const n = active.filter((p) => p.nextReady).length, mine = me.nextReady, wasMine = nbSeen.round === st.round && nbSeen.ids.has(me.id);
+  queueMicrotask(() => { nbSeen = { round: st.round, ids: new Set(active.filter((p) => p.nextReady).map((p) => p.id)) }; });   // remembered after drawing, so only new arrivals celebrate
   return el('div', { class: 'nextbar' + (mine ? ' on' : '') },
     el('div', { class: 'nb-l' }, el('b', {}, t('nextT')), el('small', {}, el('b', { class: 'nb-n' }, t('nextN', { n, of: active.length })), ' · ', t('nextHint'))),
-    el('div', { class: 'nb-avs' }, ...active.map((p) => el('span', { class: 'nb-av' + (p.nextReady ? ' r' : ''), title: p.name }, avatarEl(p.avatar, 26, '', p.acc, p.bd)))),
-    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : ''), 'aria-pressed': String(!!mine), onclick: () => { me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, nbIcon(mine), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
+    el('div', { class: 'nb-avs' }, ...active.map((p) => { const fresh = p.nextReady && nbSeen.round === st.round && !nbSeen.ids.has(p.id); return el('span', { class: 'nb-av' + (p.nextReady ? ' r' : '') + (fresh ? ' just' : ''), title: p.name }, avatarEl(p.avatar, 26, '', p.acc, p.bd), fresh ? el('i', { class: 'nb-spark' }) : ''); })),
+    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : '') + (mine && !wasMine && nbSeen.round === st.round ? ' just' : ''), 'aria-pressed': String(!!mine), onclick: () => { me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, nbIcon(mine), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
 }
 let finalOpen = false;
 
