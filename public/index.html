@@ -1115,8 +1115,16 @@ const SND = (() => {
     boom: () => { noise({ dur: 0.8, vol: 0.3, type: 'lowpass', f: 900, f2: 70 }); tone({ f: 95, f2: 32, dur: 0.7, vol: 0.32 }); },
     pop: () => { tone({ f: 520, f2: 1150, dur: 0.1, vol: 0.12, type: 'triangle' }); noise({ dur: 0.12, vol: 0.12, type: 'highpass', f: 4000 }); tone({ f: 880, at: 0.1, dur: 0.22, vol: 0.08, type: 'triangle' }); },
     chime: () => [784, 1046, 1318].forEach((f, i) => tone({ f, at: i * 0.09, dur: 0.45, vol: 0.1, type: 'triangle' })),
+    // a row's best card or pattern has been placed: a different little flourish for each tier
+    prime_top: () => { [1046, 1318, 1568, 2093].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.3, vol: 0.09, type: 'triangle' })); tone({ f: 3136, at: 0.28, dur: 0.25, vol: 0.04, type: 'sine' }); },
+    prime_pair: () => { tone({ f: 880, dur: 0.18, vol: 0.09, type: 'sine' }); tone({ f: 1175, at: 0.1, dur: 0.26, vol: 0.09, type: 'sine' }); },
+    prime_straight: () => [659, 784, 988].forEach((f, i) => tone({ f, at: i * 0.1, dur: 0.22, vol: 0.09, type: 'triangle' })),
+    prime_flush: () => { noise({ dur: 0.5, vol: 0.05, type: 'bandpass', f: 1500, f2: 5200, q: 1.2 }); [880, 1319, 1760].forEach((f, i) => tone({ f, at: 0.06 + i * 0.08, dur: 0.3, vol: 0.07, type: 'sine' })); },
+    prime_triple: () => { [523, 659, 784].forEach((f) => tone({ f, dur: 0.5, vol: 0.08, type: 'triangle', lp: 2600 })); tone({ f: 1046, at: 0.12, dur: 0.4, vol: 0.08, type: 'triangle' }); tone({ f: 131, dur: 0.3, vol: 0.14 }); },
+    prime_sflush: () => { [523, 659, 784, 1046, 1319].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.4, vol: 0.08, type: 'triangle' })); [2349, 2794, 3136].forEach((f, i) => tone({ f, at: 0.35 + i * 0.07, dur: 0.2, vol: 0.04, type: 'sine' })); noise({ at: 0.25, dur: 0.5, vol: 0.04, type: 'highpass', f: 6000 }); },
+    prime_royal: () => { tone({ f: 98, dur: 0.5, vol: 0.18 }); [523, 659, 784, 1046, 1319, 1568].forEach((f, i) => tone({ f, at: i * 0.075, dur: 0.55, vol: 0.085, type: 'triangle' })); [1046, 1319, 1568].forEach((f) => tone({ f, at: 0.5, dur: 0.7, vol: 0.07, type: 'triangle', lp: 3000 })); [2093, 2637, 3136, 3951].forEach((f, i) => tone({ f, at: 0.55 + i * 0.07, dur: 0.22, vol: 0.04, type: 'sine' })); noise({ at: 0.45, dur: 0.7, vol: 0.05, type: 'highpass', f: 6500 }); },
     // balloons rising: a soft airy lift, rubbery squeaks and a sparkle of glitter
-    lift: () => { noise({ dur: 1.6, vol: 0.07, type: 'bandpass', f: 350, f2: 1600, q: 0.9 }); [0, 0.18, 0.37, 0.55, 0.8, 1.05].forEach((at, i) => tone({ f: 640 + (i * 137) % 420, f2: 980 + (i * 91) % 380, at, dur: 0.12, vol: 0.05, type: 'sine' })); [0.5, 0.7, 0.95, 1.2, 1.45].forEach((at, i) => tone({ f: 2100 + i * 260, at, dur: 0.16, vol: 0.035, type: 'triangle' })); },
+    balloons: () => { noise({ dur: 1.6, vol: 0.07, type: 'bandpass', f: 350, f2: 1600, q: 0.9 }); [0, 0.18, 0.37, 0.55, 0.8, 1.05].forEach((at, i) => tone({ f: 640 + (i * 137) % 420, f2: 980 + (i * 91) % 380, at, dur: 0.12, vol: 0.05, type: 'sine' })); [0.5, 0.7, 0.95, 1.2, 1.45].forEach((at, i) => tone({ f: 2100 + i * 260, at, dur: 0.16, vol: 0.035, type: 'triangle' })); },
     boing: () => { tone({ f: 300, f2: 700, dur: 0.14, vol: 0.09, type: 'triangle' }); tone({ f: 700, f2: 420, at: 0.12, dur: 0.12, vol: 0.06, type: 'triangle' }); },
     morph: () => {   // a rising sparkle as the joker turns into its card
       [660, 830, 988, 1244, 1568, 1976].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.22, vol: 0.07, type: 'triangle' }));
@@ -2244,7 +2252,7 @@ function playGift(g) {
       later(260, () => { SND.play('pop'); burstConfetti(); });
       later(560, () => SND.play('chime'));
       // balloons floating up with a sway, each with a highlight and a string
-      later(350, () => SND.play('lift'));
+      later(350, () => SND.play('balloons'));
       const bcols = ['#ff5a8a', '#4fb4ff', '#ffd23f', '#7be08f', '#b77bff', '#ff8a1f'];
       for (let i = 0; i < 8; i++) {
         const bx2 = W * (0.08 + (0.84 * i) / 7) + rnd(-18, 18), bw = rnd(46, 64), c = bcols[i % bcols.length], dur = rnd(2800, 3800), sw = rnd(14, 28);
@@ -2876,6 +2884,8 @@ function pairMask(cs) {
   if (j >= 0) { const o = [0, 1, 2].filter((x) => x !== j).sort((a, b) => crank(cs[b]) - crank(cs[a]))[0]; return cs.map((_, x) => x === j || x === o); }
   return ranks.map((r) => ranks.filter((q) => q === r).length === 2);
 }
+let primeMemo = {};   // the tier each of your rows had last time it was drawn, so its flourish plays once
+const PRIME_RANK = { top: 1, pair: 1, straight: 2, flush: 3, triple: 4, sflush: 5, royal: 6 };
 let tipRow = null;   // which row's criteria tip is open
 document.addEventListener('click', (e) => { if (tipRow !== null && !(e.target.closest && e.target.closest('.rowtip, .rowinfo'))) { tipRow = null; render(); } });
 function boardEl(board, mine, pid) {
@@ -2888,7 +2898,13 @@ function boardEl(board, mine, pid) {
     const row = el('div', { class: 'r' });
     const rw = el('div', { class: 'rw' }, row);
     const rowSlots = board.slice(i, i + n), shown = (q) => q && q.c !== '?' && (mine ? (!me.ready || q.up) : q.up);
-    const prime = rowSlots.every(shown) ? rowPrime(rowIdx, rowSlots.map((q) => q.c)) : '', pmask = prime === 'pair' ? pairMask(rowSlots.map((q) => q.c)) : null;   // only when every card of the row is on show, so nothing hidden is given away
+    const prime = rowSlots.every(shown) ? rowPrime(rowIdx, rowSlots.map((q) => q.c)) : '', pmask = prime === 'pair' ? pairMask(rowSlots.map((q) => q.c)) : null;
+    if (mine && canMove) {   // placing: a flourish the moment a row first earns its sparkle (or earns a better one)
+      const memo = primeMemo.round === st.round ? primeMemo : (primeMemo = { round: st.round });
+      const was = memo[rowIdx];
+      if (was !== undefined && prime && prime !== was && (was === '' || PRIME_RANK[prime] > PRIME_RANK[was])) SND.play('prime_' + prime);
+      memo[rowIdx] = prime;
+    }   // only when every card of the row is on show, so nothing hidden is given away
     rw.dataset.n = String(rowIdx + 1);
     for (let k = 0; k < n; k++, i++) {
       const slot = i, s = board[slot];
