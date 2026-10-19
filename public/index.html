@@ -3648,7 +3648,11 @@ function endTex(kind) {
       return [consumed ? 0 : 1, q > -22 ? [10 + 22 * (1 - char), 6 + 10 * (1 - char), 4, clamp01(char * 0.94 + speck)] : null, rim > 0.04 ? [255, 110 + 120 * rim, 24 + 60 * rim, rim] : null];
     });
   } else if (kind === 'crater') {
-    pix(burnAround(168, 44, 118, 1, 34, 11));
+    const cx = 122, cy = 118;
+    og.save(); og.translate(cx, cy); og.rotate(Math.atan2(-40 - cy, 230 - cx)); const tl = 260, tr = og.createLinearGradient(0, 0, tl, 0); tr.addColorStop(0, 'rgba(14,8,4,.75)'); tr.addColorStop(0.6, 'rgba(14,8,4,.25)'); tr.addColorStop(1, 'rgba(14,8,4,0)'); og.fillStyle = tr; og.beginPath(); og.moveTo(0, -40); og.quadraticCurveTo(tl * 0.5, -22, tl, -6); og.lineTo(tl, 6); og.quadraticCurveTo(tl * 0.5, 22, 0, 40); og.closePath(); og.filter = 'blur(6px)'; og.fill(); og.filter = 'none'; og.restore();
+    gg.save(); gg.translate(cx, cy); gg.rotate(Math.atan2(-40 - cy, 230 - cx)); const gt = gg.createLinearGradient(0, 0, 170, 0); gt.addColorStop(0, 'rgba(255,150,50,.55)'); gt.addColorStop(1, 'rgba(255,150,50,0)'); gg.fillStyle = gt; gg.filter = 'blur(5px)'; gg.fillRect(0, -9, 170, 18); gg.filter = 'none'; gg.restore();
+    pix(burnAround(cx, cy, 40, 0.5, 26, 11));
+    for (let i = 0; i < 7; i++) { const a = rnd() * 6.283; crackTree(og, gg, cx + Math.cos(a) * 46, cy + Math.sin(a) * 46, a, 70, 2.2, 2); }
   } else if (kind === 'hole') {
     pix(burnAround(104, 150, 66, 1, 36, 17));
     og.save(); og.globalCompositeOperation = 'source-over'; for (let i = 0; i < 14; i++) { const a = rnd() * 6.283, r0 = 70 + rnd() * 14, r1 = r0 + 20 + rnd() * 36; og.strokeStyle = 'rgba(15,8,4,.55)'; og.lineWidth = 1.2 + rnd() * 1.6; og.beginPath(); og.moveTo(104 + Math.cos(a) * r0, 150 + Math.sin(a) * r0); og.lineTo(104 + Math.cos(a + (rnd() - 0.5) * 0.3) * r1, 150 + Math.sin(a + (rnd() - 0.5) * 0.3) * r1); og.stroke(); } og.restore();
@@ -3667,7 +3671,7 @@ function endTex(kind) {
     });
     for (let k = 0; k < 8; k++) { const a0 = k / 8 * 6.283 + rnd() * 0.4; crackTree(og, gg, 100 + Math.cos(a0) * 30, 150 + Math.sin(a0) * 30, a0, 150, 4.4, 3); }
   } else if (kind === 'claws') {
-    const gashes = [[[58, -2], [76, 130], [86, 288]], [[102, -2], [118, 134], [130, 286]], [[146, 4], [158, 96], [166, 212]]];
+    const gashes = [[[52, 46], [72, 146], [86, 252]], [[98, 30], [116, 142], [130, 262]], [[144, 52], [156, 132], [164, 214]]];
     for (const [a0, a1, a2] of gashes) {
       const pts = []; for (let i = 0; i <= 28; i++) { const t = i / 28, u = 1 - t, x = u * u * a0[0] + 2 * u * t * a1[0] + t * t * a2[0], y = u * u * a0[1] + 2 * u * t * a1[1] + t * t * a2[1]; pts.push({ x, y, w: 0.8 + 3.4 * Math.pow(Math.sin(Math.PI * Math.min(1, t * 0.96 + 0.02)), 0.7) }); }
       pts.forEach((q, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1; q.nx = -dy / l; q.ny = dx / l; });
@@ -3693,7 +3697,7 @@ function endTex(kind) {
     feather(150, 236, -0.55, 74); feather(40, 66, 2.45, 60);
   } else if (kind === 'zap') {
     const spots = [[58, 120, 11], [148, 96, 14], [120, 198, 16], [50, 226, 9], [154, 164, 10], [98, 72, 8], [86, 150, 7]];   // where the current punched through
-    const fns = [burnAround(100, 0, 40, 1, 26, 31), burnAround(104, CH, 28, 1, 22, 33), ...spots.map((sp, i) => burnAround(sp[0], sp[1], sp[2], 1, 13, 50 + i * 3))];
+    const fns = [burnAround(100, 0, 40, 1, 26, 31), burnAround(84, CH, 24, 1, 20, 33), ...spots.map((sp, i) => burnAround(sp[0], sp[1], sp[2], 1, 13, 50 + i * 3))];
     pix((x, y, d) => {
       let m = 1, sh = null, gl = null; const halo = clamp01(1 - Math.hypot(x - 100, y - 150) / 190);
       for (const f of fns) { const r = f(x, y, d); m = Math.min(m, r[0]); if (r[1] && (!sh || r[1][3] > sh[3])) sh = r[1]; if (r[2] && (!gl || r[2][3] > gl[3])) gl = r[2]; }
@@ -3713,7 +3717,7 @@ function endTex(kind) {
         x = nx; y = ny; w *= 0.96; if (tx !== undefined && Math.hypot(tx - x, ty - y) < 8) break; if (x < -10 || x > CW + 10 || y < -10 || y > CH + 10) break;
       }
     };
-    bolt(98, 2, 1.57, 360, 5.6, 3, 104, CH - 6);
+    bolt(102, 2, 1.62, 360, 5.6, 3, 80, CH - 6);
     bolt(110, 4, 1.5, 200, 2.6, 2);
     for (let i = 0; i < spots.length - 1; i += 1) { const a = spots[i], b = spots[(i + 2) % spots.length]; if (rnd() < 0.7) bolt(a[0], a[1], Math.atan2(b[1] - a[1], b[0] - a[0]), Math.hypot(b[0] - a[0], b[1] - a[1]) * 1.1, 1.8, 0, b[0], b[1]); }   // arcs jumping from hole to hole
     for (const sp of spots) { const sg = tg.createRadialGradient(sp[0], sp[1], 0, sp[0], sp[1], sp[2] * 2.4); sg.addColorStop(0, 'rgba(255,255,255,.85)'); sg.addColorStop(1, 'rgba(120,175,255,0)'); tg.fillStyle = sg; tg.beginPath(); tg.arc(sp[0], sp[1], sp[2] * 2.4, 0, 6.283); tg.fill(); }
@@ -4665,7 +4669,7 @@ function atkEngine() {
     beam(x0, y0, x1, y1, o = {}) { const { w = 26, col = [255, 190, 70], ms = 80 } = o; beams.push({ x0, y0, x1, y1, w, col, life: ms, max: ms }); },
     speed(x, y, dx, dy, n = 4) { const l = Math.hypot(dx, dy) || 1; for (let i = 0; i < n; i++) { emit({ x: x + rnd(-90, 90), y: y + rnd(-90, 90), vx: (-dx / l) * 900, vy: (-dy / l) * 900, g: 0, life: 260, s: 3, s1: 1, col: [230, 240, 255], col1: [150, 190, 255], drag: 1 }); } },
     // the big one: a fireball with a flash, shockwaves, sparks, smoke and embers
-    explosion(x, y, power = 1) { api.burst(x, y, 6, { spd: [0, 30], life: [160, 260], s: [90 * power, 150 * power], col: [255, 255, 235], col1: [255, 200, 90], g: 0 }); api.burst(x, y, 46 * power, { spd: [120, 560], life: [500, 1100], s: [14, 34], col: [255, 200, 80], col1: [190, 30, 0], g: 160 }); api.burst(x, y, 30 * power, { spd: [200, 700], life: [350, 800], s: [2, 5], col: [255, 245, 200], col1: [255, 120, 30], g: 260 }); api.smoke(x, y, 12 * power); api.ring(x, y, 220 * power, [255, 220, 140], 560, 10); api.ring(x, y, 140 * power, [255, 150, 60], 420, 6); },
+    explosion(x, y, power = 1) { api.burst(x, y, 4, { spd: [0, 30], life: [90, 170], s: [55 * power, 95 * power], col: [255, 250, 225], col1: [255, 170, 60], g: 0 }); api.burst(x, y, 46 * power, { spd: [120, 560], life: [500, 1100], s: [14, 34], col: [255, 200, 80], col1: [190, 30, 0], g: 160 }); api.burst(x, y, 30 * power, { spd: [200, 700], life: [350, 800], s: [2, 5], col: [255, 245, 200], col1: [255, 120, 30], g: 260 }); api.smoke(x, y, 12 * power); api.ring(x, y, 220 * power, [255, 220, 140], 560, 10); api.ring(x, y, 140 * power, [255, 150, 60], 420, 6); },
     layer(fn) { layers.push(fn); return () => { const i = layers.indexOf(fn); if (i >= 0) layers.splice(i, 1); }; },   // draw anything each frame, under the particles
     stop() { alive = false; cv.remove(); },
   };
