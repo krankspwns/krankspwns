@@ -1,6 +1,6 @@
 {
   "name": "Row of Reckoning",
-  "short_name": "Reckoning",
+  "short_name": "ROR",
   "description": "A multiplayer card game: arrange seven cards, win the rows, call who loses.",
   "start_url": "/",
   "display": "standalone",
