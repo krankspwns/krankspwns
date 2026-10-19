@@ -282,7 +282,7 @@
   .hstats .sep { opacity: .4; }
   /* who: name + tags */
   .who { flex: 1; min-width: 0; margin-bottom: 4px; }
-  .wname { font-weight: 600; font-size: 16px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wname { font-weight: 600; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 8px; min-width: 0; } .wname .av { flex: none; } .wtxt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .wtags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 5px; }
   .wtags .tag, .wtags .pill { margin: 0; }
   /* row buttons: fixed size so Flip up / Flip down don't shift */
@@ -2990,9 +2990,9 @@ function renderWaitingRoom() {
 }
 
 // player label: name on one line, status tags underneath so it never wraps messily
-function who(p, label) {
+function who(p, label, size = 26) {
   return el('div', { class: 'who' },
-    el('div', { class: 'wname' }, label),
+    el('div', { class: 'wname' }, avatarEl(p.avatar, size, '', p.acc, p.bd), el('span', { class: 'wtxt' }, label)),
     el('div', { class: 'wtags' }, p.isHost ? el('span', { class: 'tag' }, t('host')) : '', pill(p)));
 }
 
@@ -3423,7 +3423,7 @@ function renderGame() {
 
   app.append(el('div', panel(1, 'ownpanel' + (me.ready ? ' is-ready' : '')),
     el('div', { class: 'row' },
-      who(me, me.name + t('you')),
+      who(me, me.name + t('you'), 34),
       readyBtn),
     inProgress ? '' : me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, icon('tick', 15)),
       el('div', {}, t('youReady'), el('small', {}, t('waitMore', { n: active.length - readyCount })))) : '',
