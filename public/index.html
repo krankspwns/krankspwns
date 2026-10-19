@@ -2197,8 +2197,71 @@ function queueGift(g) {
 function runGiftQ() {
   if (giftRun || !giftQ.length) return;
   const g = giftQ.shift(); giftRun = true;
-  giftBanner(g); playGift(g);
-  setTimeout(() => { giftRun = false; runGiftQ(); }, (GIFT_MS[g.item] || 3000) + (giftQ.length ? 250 : 0));
+  const mini = giftIsMini(g);
+  giftBanner(g); if (mini) playGiftMini(g); else playGift(g);
+  setTimeout(() => { giftRun = false; runGiftQ(); }, (mini ? 1900 : GIFT_MS[g.item] || 3000) + (giftQ.length ? 250 : 0));
+}
+
+// a throw at somebody else: a small projectile flies from the thrower to that player and lands with a tiny version of the effect (the target itself gets the full show)
+const giftIsMini = (g) => !!st && g.to !== 'all' && g.to !== st.meId;
+function giftAnchor(pid) {
+  if (!/^[\w-]+$/.test(String(pid))) return null;
+  for (const sel of [`.tile[data-pid="${pid}"] .tname .av`, `.who[data-pid="${pid}"] .av`]) {
+    for (const n of document.querySelectorAll(sel)) { const r = n.getBoundingClientRect(); if (r.width && r.bottom > 0 && r.top < window.innerHeight) return n; }
+  }
+  return null;
+}
+function playGiftMini(g) {
+  const art = GIFT_ART[g.item] || GIFT_ART.tomato, kind = art[1], color = art[2] || '#fff';
+  const W = window.innerWidth, H = window.innerHeight, rnd = (a, b) => a + Math.random() * (b - a), pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const mid = (n, fb) => { if (!n) return fb; const r = n.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const tEl = giftAnchor(g.to), mineThrow = g.from === st.meId;
+  const fEl = mineThrow ? document.getElementById('giftFab') : giftAnchor(g.from);
+  const [x1, y1] = mid(tEl, [W / 2, H * 0.3]);
+  const [x0, y0] = mid(fEl, mineThrow ? [W - 44, H - 70] : [x1 < W / 2 ? W + 30 : -30, y1 + 90]);
+  const impactSnd = kind === 'boom' ? 'boom' : kind === 'petals' ? 'chime' : kind === 'splat' ? 'splat' : 'pop';
+  SND.play('throw');
+  const dist = Math.hypot(x1 - x0, y1 - y0), dur = Math.round(Math.min(760, Math.max(420, dist * 0.9)));
+  const hit = () => {   // the target flinches
+    if (!tEl) return;
+    const tile = tEl.closest('.tile, .who') || tEl;
+    try { tile.animate([{ transform: 'none' }, { transform: 'translateX(-5px) rotate(-1.5deg)' }, { transform: 'translateX(5px) rotate(1.5deg)' }, { transform: 'translateX(-3px)' }, { transform: 'none' }], { duration: 420 }); } catch {}
+    tEl.classList.add('hop'); setTimeout(() => tEl.classList.remove('hop'), 720);
+  };
+  if (ui.calm) { setTimeout(() => { SND.play(impactSnd); hit(); }, dur); return; }
+  const fx = el('div', { class: 'giftfx' }); document.body.append(fx);
+  const anim = (n, frames, opt) => { try { return n.animate(frames, opt); } catch { return null; } };
+  const box = (css, html = '') => { const d = el('i', { class: 'giftbit' }); d.style.cssText = 'position:fixed;left:0;top:0;pointer-events:none;' + css; if (html) d.innerHTML = html; fx.append(d); return d; };
+  // little particles that fly out and fall
+  const spray = (n, o = {}) => { const { cols = [color], spd = [60, 150], life = [500, 900], size = [4, 8], g: grav = 140, round = true, rect = false } = o;
+    for (let i = 0; i < n; i++) { const a = rnd(0, Math.PI * 2), v = rnd(spd[0], spd[1]), L = rnd(life[0], life[1]), sz = rnd(size[0], size[1]);
+      const d = box(`width:${rect ? sz * 1.6 : sz}px;height:${sz}px;background:${pick(cols)};border-radius:${round ? '50%' : '2px'}`);
+      const dx = Math.cos(a) * v, dy = Math.sin(a) * v;
+      anim(d, [{ transform: `translate(${x1}px,${y1}px) rotate(0)`, opacity: 1 }, { transform: `translate(${x1 + dx}px,${y1 + dy + grav * 0.5}px) rotate(${rnd(-360, 360)}deg)`, opacity: 0 }], { duration: L, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' }); } };
+  const ring = (c, sz = 70, ms = 420) => { const d = box(`width:${sz}px;height:${sz}px;margin:${-sz / 2}px 0 0 ${-sz / 2}px;border-radius:50%;border:3px solid ${c}`); anim(d, [{ transform: `translate(${x1}px,${y1}px) scale(.2)`, opacity: .9 }, { transform: `translate(${x1}px,${y1}px) scale(1)`, opacity: 0 }], { duration: ms, easing: 'ease-out', fill: 'forwards' }); };
+  const blob = (c, sz = 46, stay = 1300) => { const d = box(`width:${sz}px;height:${sz * 0.9}px;margin:${-sz / 2}px 0 0 ${-sz / 2}px;border-radius:48% 52% 45% 55% / 55% 45% 55% 45%;background:radial-gradient(circle at 35% 30%, #fff8, ${c} 55%)`);
+    anim(d, [{ transform: `translate(${x1}px,${y1}px) scale(.2)`, opacity: 1 }, { transform: `translate(${x1}px,${y1}px) scale(1.15)`, opacity: 1, offset: .22 }, { transform: `translate(${x1}px,${y1 + 6}px) scale(1)`, opacity: 1, offset: .75 }, { transform: `translate(${x1}px,${y1 + 14}px) scale(.95)`, opacity: 0 }], { duration: stay, fill: 'forwards' }); };
+  const impact = () => {
+    SND.play(impactSnd); hit();
+    if (kind === 'splat') { blob(color); spray(7, { cols: [color], spd: [50, 110], size: [3, 7], g: 120 }); }
+    else if (kind === 'petals') { spray(9, { cols: ['#ff4d6d', '#ff8fb8', '#ffc2d4'], spd: [30, 80], life: [900, 1400], size: [5, 9], g: 90, round: false }); const h = box('font-size:22px;line-height:1', '❤️'); anim(h, [{ transform: `translate(${x1 - 11}px,${y1 - 11}px) scale(.3)`, opacity: 1 }, { transform: `translate(${x1 - 11}px,${y1 - 46}px) scale(1.1)`, opacity: 0 }], { duration: 1000, easing: 'ease-out', fill: 'forwards' }); }
+    else if (kind === 'confetti') spray(16, { cols: ['#ffd23f', '#ff5a8a', '#4fc3ff', '#7be08f', '#b77bff'], spd: [70, 170], life: [800, 1300], size: [4, 7], g: 160, rect: true, round: false });
+    else if (kind === 'boom') { ring('#ffb02e', 80, 380); blob('#ff7a1f', 44, 500); spray(9, { cols: ['#ffd23f', '#ff7a1f', '#555'], spd: [70, 150], g: 80 }); }
+    else if (kind === 'rocket') { ring('#ffd23f', 70, 420); spray(10, { cols: ['#ffd23f', '#ff9a1f', '#fff'], spd: [60, 160], g: 100 }); }
+    else if (kind === 'fireworks') { ring('#fff', 56, 380); spray(14, { cols: ['#ff4d8d', '#ffd23f', '#4fc3ff', '#fff'], spd: [70, 140], g: 60, size: [3, 6] }); }
+    else spray(8, {});
+  };
+  const proj = giftEl(g.item, 34); proj.style.cssText += ';position:fixed;left:0;top:0;pointer-events:none;will-change:transform;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))';
+  fx.append(proj);
+  const dx = x1 - x0, dy = y1 - y0, arc = -Math.min(110, dist * 0.3);
+  anim(proj, [
+    { transform: `translate(${x0 - 17}px,${y0 - 17}px) scale(.55) rotate(0deg)`, opacity: 1 },
+    { transform: `translate(${x0 + dx * .5 - 17}px,${y0 + dy * .5 + arc - 17}px) scale(1) rotate(180deg)`, opacity: 1, offset: .5 },
+    { transform: `translate(${x1 - 17}px,${y1 - 17}px) scale(.8) rotate(360deg)`, opacity: 1 }], { duration: dur, easing: 'cubic-bezier(.35,.05,.65,1)', fill: 'forwards' });
+  // a short trail behind it
+  for (let i = 1; i <= 4; i++) setTimeout(() => { const px = x0 + dx * (i / 5), py = y0 + dy * (i / 5) + arc * 4 * (i / 5) * (1 - i / 5); const d = box(`width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;background:${color};opacity:.5`); anim(d, [{ transform: `translate(${px}px,${py}px) scale(1)`, opacity: .5 }, { transform: `translate(${px}px,${py}px) scale(.2)`, opacity: 0 }], { duration: 320, fill: 'forwards' }); }, (dur * i) / 5.5);
+  setTimeout(() => { proj.remove(); impact(); }, dur);
+  setTimeout(() => fx.remove(), dur + 1700);
 }
 function playGift(g) {
   if (!st) return;
@@ -3139,9 +3202,11 @@ function renderWaitingRoom() {
 
 // player label: name on one line, status tags underneath so it never wraps messily
 function who(p, label, size = 26) {
-  return el('div', { class: 'who' },
+  const w = el('div', { class: 'who' },
     el('div', { class: 'wname' }, avatarEl(p.avatar, size, '', p.acc, p.bd), el('span', { class: 'wtxt' }, label)),
     el('div', { class: 'wtags' }, p.isHost ? el('span', { class: 'tag' }, t('host')) : '', pill(p)));
+  w.dataset.pid = p.id;   // so a thrown gift knows where to fly
+  return w;
 }
 
 function pill(p) {
@@ -3466,6 +3531,7 @@ function stagePanel(active) {
         mine && isCurrent && !res ? el('button', { class: 'ghost tflip', disabled: guessing, onclick: flipMine }, allUp ? t('flipDown') : t('flipUp')) : '')));
   });
 
+  [...grid.children].forEach((c, i) => { if (ordered[i]) c.dataset.pid = ordered[i].id; });
   return el('div', { class: 'panel stage' + (stageEnter ? ' stage-enter' : ''), style: `--cw:${cw}px` },
     head, control, grid);
 }
