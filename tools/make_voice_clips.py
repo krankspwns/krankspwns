@@ -14,14 +14,14 @@ tts=sherpa_onnx.OfflineTts(cfg)
 # speakers: 18 am_puck (an upbeat young man) for the gaming calls, 16 am_michael (deeper) for the smug EZ,
 # 49 zm_yunjian for the Singlish ones (a low man's voice whose English has the accent), 14 am_fenrir for the Oof
 # the model varies a little from run to run: listen, and keep the take you like
-# 'dipm' = the third tone pitched for a man's voice
+# 'dipm' = the third tone pitched for a man's voice; 'swell' = the last syllable drawn out with one gentle rise and fall (the yo of aiyo)
 clips={
   'gg':[('Good game!',18,1.0,'hype')],
   'ez':[('Easy!',16,0.9,'drawl')],
   'gl':[('Good luck!',18,1.0,'hype')],
   'wp':[('Well played!',18,1.0,'hype')],
   'faster':[('Faster leh!',49,1.1)],
-  'aiyo':[('爱',49,1.15),('Yo!',49,1.0,'wave')],
+  'aiyo':[('哎哟',49,0.95,'swell')],   # the real Mandarin interjection in one go (a spliced 爱 + English Yo, or a wobbling yo, sounded Korean)
   'steady':[('Steady lah!',49,1.0)],
   'oof':[('Oof.',14,0.85)],
 }
@@ -76,6 +76,17 @@ SHAPES={
     'wave':dict(points=[(0,1.0),(0.2,1.06),(0.4,1.3),(0.62,0.98),(0.8,1.22),(1,0.82)],stretch=(0.2,1.0,2.6)),   # the yo of aiyo: yoOoO
     'hype':dict(points=[(0,1.0),(0.2,1.18),(0.6,1.05),(1,0.85)]),                  # a bright, up-beat call
 }
+def swell(x,sr,frac=0.55,factor=3.0,peak=1.18,end=0.85):
+    """Draw out the last part of the voicing (frac of it) with one gentle rise and fall: yo-o-O-o. The start is left as spoken."""
+    import parselmouth
+    from parselmouth.praat import call
+    snd=parselmouth.Sound(x.astype(np.float64),sampling_frequency=sr)
+    p=snd.to_pitch(time_step=0.01,pitch_floor=60,pitch_ceiling=500); fr=p.selected_array['frequency']
+    v=[p.xs()[i] for i,f in enumerate(fr) if f>0]; t0,t1=v[0],v[-1]; ta=t0+(1-frac)*(t1-t0)
+    m=call(snd,'To Manipulation',0.01,60,500); pt=call(m,'Extract pitch tier'); base=call(pt,'Get value at time',ta)
+    call(pt,'Remove points between',ta+0.0001,t1+0.0001); call(pt,'Add point',ta+0.45*(t1-ta),base*peak); call(pt,'Add point',t1,base*end); call([m,pt],'Replace pitch tier')
+    du=call(m,'Extract duration tier'); call(du,'Add point',ta-0.001,1.0); call(du,'Add point',ta,factor); call(du,'Add point',t1,factor); call(du,'Add point',t1+0.001,1.0); call([m,du],'Replace duration tier')
+    return np.array(call(m,'Get resynthesis (overlap-add)').values[0],dtype=np.float32)
 def join(pieces,sr):
     n=int(OVERLAP*sr); x=pieces[0]
     for q in pieces[1:]:
@@ -90,6 +101,7 @@ for k,parts in clips.items():
         if 'dipm' in fx: x=dip(x,sr,start=150,low=112,end=195,stretch=2.3)
         for e in fx:
             if e in SHAPES: x=shape(x,sr,**SHAPES[e])
+            if e=='swell': x=swell(x,sr)
         pieces.append(x)
     x=join(pieces,sr)
     f=int(.012*sr); x[:f]*=np.linspace(0,1,f); x[-f:]*=np.linspace(1,0,f)
