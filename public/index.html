@@ -3594,7 +3594,14 @@ function bannerTick() {
   const b = document.getElementById('lastbanner');
   if (!b || document.hidden) return setTimeout(bannerTick, 1000);
   const left = bannerRemaining();
-  if (left <= 0) { safeRender(); return setTimeout(bannerTick, 1000); }
+  if (left <= 0) {
+    // never pull the page out from under a strike or a verdict: wait until they are over
+    if (document.querySelector('.atkfx, .resfx')) return setTimeout(bannerTick, 400);
+    const r = b.getBoundingClientRect(), cs = getComputedStyle(b), h = r.height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
+    if (r.bottom < 60) { safeRender(); window.scrollBy(0, -h); }   // scrolled out of sight: take it away and keep everything on screen exactly where it was
+    else { b.style.overflow = 'hidden'; const an = b.animate([{ height: r.height + 'px', opacity: 1 }, { height: '0px', opacity: 0, marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' }], { duration: 380, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); an.onfinish = () => safeRender(); }   // in view: it folds away
+    return setTimeout(bannerTick, 1000);
+  }
   document.getElementById('lb-sec').textContent = t('secs', { n: Math.ceil(left) });
   document.getElementById('lb-fill').style.width = (left / BANNER_SECONDS) * 100 + '%';
   setTimeout(bannerTick, 500);
@@ -4989,17 +4996,66 @@ function paintUfo(g, x, y, s, rot, t, ch = 0) {
   const at = (Math.floor(t / 420) % 2) ? 1 : 0.25; g.save(); g.globalCompositeOperation = 'lighter'; const ag = g.createRadialGradient(0, -67, 0, 0, -67, 7); ag.addColorStop(0, `rgba(255,120,120,${at})`); ag.addColorStop(1, 'rgba(255,80,80,0)'); g.fillStyle = ag; g.beginPath(); g.arc(0, -67, 7, 0, 6.283); g.fill(); g.restore();
   g.restore();
 }
-function paintShark(g, x, y, s, rot, flip, open) {
+// the bite point (where the teeth meet) sits at local (SHARK_BITE_X, SHARK_BITE_Y); half the gape at full open is about SHARK_GAPE
+const SHARK_BITE_X = 112, SHARK_BITE_Y = 13, SHARK_GAPE = 27;
+function paintShark(g, x, y, s, rot, flip, open, chunk = 0) {
   g.save(); g.translate(x, y); g.rotate(rot * 0.0174533); g.scale(s * flip, s);
-  const body = g.createLinearGradient(0, -44, 0, 36); body.addColorStop(0, '#2f4a6b'); body.addColorStop(0.45, '#6f8eae'); body.addColorStop(0.62, '#b7cadd'); body.addColorStop(0.78, '#f3f7fb'); body.addColorStop(1, '#dfe8f1');
-  g.fillStyle = '#3b5878'; g.beginPath(); g.moveTo(-60, -2); g.lineTo(-108, -50); g.lineTo(-92, 0); g.lineTo(-104, 40); g.closePath(); g.fill();   // tail
-  g.fillStyle = '#2f4a6b'; g.beginPath(); g.moveTo(-6, -36); g.quadraticCurveTo(-18, -78, -48, -86); g.quadraticCurveTo(-36, -50, -40, -30); g.closePath(); g.fill();   // dorsal fin
-  g.fillStyle = body; g.beginPath(); g.moveTo(104, 4); g.bezierCurveTo(70, -40, -10, -48, -72, -14); g.lineTo(-72, 14); g.bezierCurveTo(-10, 40, 64, 30, 104, 4); g.closePath(); g.fill();
-  g.fillStyle = '#4a6482'; g.beginPath(); g.moveTo(8, 18); g.quadraticCurveTo(-8, 56, -40, 60); g.quadraticCurveTo(-22, 38, -24, 20); g.closePath(); g.fill();   // pectoral fin
-  g.strokeStyle = 'rgba(30,50,80,.5)'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(34 - i * 8, -12); g.quadraticCurveTo(30 - i * 8, -2, 34 - i * 8, 8); g.stroke(); }   // gills
-  g.fillStyle = '#0b1220'; g.beginPath(); g.arc(70, -9, 5.5, 0, 6.283); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(72, -11, 2, 0, 6.283); g.fill();
-  const gape = open * 20; g.fillStyle = '#5a0f1a'; g.beginPath(); g.moveTo(104, 8); g.quadraticCurveTo(80, 12 + gape * 0.6, 54, 12 + gape); g.quadraticCurveTo(80, 6, 104, 8); g.fill();
-  g.fillStyle = '#fff'; for (let i = 0; i < 8; i++) { const tx = 98 - i * 6, ty = 9 + i * 0.5 + gape * (i / 8) * 0.9; g.beginPath(); g.moveTo(tx, 8 + i * 0.3); g.lineTo(tx - 3, ty + 7); g.lineTo(tx - 6, 8 + i * 0.3); g.closePath(); g.fill(); }
+  const t = performance.now();
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const fin = (pts, c0, c1) => { const gr = g.createLinearGradient(pts[0][0], pts[0][1], pts[2][0], pts[2][1]); gr.addColorStop(0, c0); gr.addColorStop(1, c1); g.fillStyle = gr; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); g.quadraticCurveTo(pts[1][0], pts[1][1], pts[2][0], pts[2][1]); g.quadraticCurveTo(pts[3][0], pts[3][1], pts[4][0], pts[4][1]); g.closePath(); g.fill(); };
+  // tail (the upper lobe longer), sweeping slightly
+  const sw = Math.sin(t / 120) * 4;
+  fin([[-126, -2], [-150, -30], [-188, -66 + sw], [-160, -26], [-142, 0]], '#4c6683', '#26384f');
+  fin([[-136, 2], [-152, 16], [-172, 36 + sw * 0.6], [-152, 14], [-128, 6]], '#4c6683', '#2c3f58');
+  // second dorsal and pelvic fins, far side pectoral
+  fin([[-84, -22], [-92, -36], [-102, -38], [-96, -26], [-94, -18]], '#40597a', '#26384f');
+  fin([[-70, 20], [-82, 34], [-96, 38], [-88, 26], [-84, 18]], '#5d7796', '#3a5170');
+  // body: a torpedo, countershaded (slate-blue back, white belly with a crisp waterline)
+  const body = () => { g.beginPath(); g.moveTo(132, 6); g.bezierCurveTo(124, -14, 92, -32, 40, -38); g.bezierCurveTo(-20, -42, -80, -28, -132, -2); g.lineTo(-132, 4); g.bezierCurveTo(-80, 22, -20, 32, 40, 32); g.bezierCurveTo(84, 30, 116, 22, 132, 6); g.closePath(); };
+  const bg = g.createLinearGradient(0, -40, 0, 20); bg.addColorStop(0, '#2b3f58'); bg.addColorStop(0.5, '#4f6c8c'); bg.addColorStop(1, '#6f8aa6'); g.fillStyle = bg; body(); g.fill();
+  g.save(); body(); g.clip();
+  g.fillStyle = '#eef3f8'; g.beginPath(); g.moveTo(140, 8); g.bezierCurveTo(90, 4, 60, 10, 30, 6); g.bezierCurveTo(0, 2, -20, 12, -50, 10); g.bezierCurveTo(-80, 8, -110, 4, -140, 4); g.lineTo(-140, 50); g.lineTo(140, 50); g.closePath(); g.fill();
+  const bs = g.createLinearGradient(0, 4, 0, 34); bs.addColorStop(0, 'rgba(255,255,255,0)'); bs.addColorStop(1, 'rgba(120,140,165,.45)'); g.fillStyle = bs; g.fillRect(-140, 4, 280, 40);   // the belly turns away from the light
+  const rim = g.createLinearGradient(0, -40, 0, -20); rim.addColorStop(0, 'rgba(200,225,255,.45)'); rim.addColorStop(1, 'rgba(200,225,255,0)'); g.fillStyle = rim; g.fillRect(-140, -44, 280, 26);   // light catching the back
+  g.strokeStyle = 'rgba(20,32,48,.55)'; g.lineWidth = 1.6; for (let i = 0; i < 5; i++) { const gx = 52 - i * 7; g.beginPath(); g.moveTo(gx, -16 + i); g.quadraticCurveTo(gx - 5, -2, gx + 1, 12 - i * 0.5); g.stroke(); }   // five gill slits
+  g.restore();
+  // dorsal fin, swept back, and the near pectoral fin
+  fin([[18, -36], [-2, -70], [-34, -92], [-26, -56], [-44, -34]], '#3d5677', '#1f2f45');
+  fin([[34, 18], [14, 44], [-18, 66], [-2, 40], [6, 20]], '#4c6683', '#2a3d56');
+  // the head ahead of the hinge: the snout lifts as the jaw opens, the lower jaw drops
+  const hx = 62, hy = 12, up = -0.16 * open, down = 0.62 * open;
+  // the open mouth: dark gullet first
+  if (open > 0.02) {
+    g.save(); g.translate(hx, hy);
+    const ut = [Math.cos(up) * 58 - Math.sin(up) * -2, Math.sin(up) * 58 + Math.cos(up) * -2], lt = [Math.cos(down) * 52 - Math.sin(down) * 8, Math.sin(down) * 52 + Math.cos(down) * 8];
+    const mg = g.createRadialGradient(10, 4, 4, 18, 4, 60); mg.addColorStop(0, '#2a0508'); mg.addColorStop(0.6, '#6b1220'); mg.addColorStop(1, '#a8394a');
+    g.fillStyle = mg; g.beginPath(); g.moveTo(-4, 0); g.lineTo(ut[0], ut[1]); g.quadraticCurveTo((ut[0] + lt[0]) / 2 + 6, (ut[1] + lt[1]) / 2, lt[0], lt[1]); g.closePath(); g.fill();
+    g.restore();
+  }
+  // lower jaw
+  g.save(); g.translate(hx, hy); g.rotate(down);
+  const lj = g.createLinearGradient(0, 0, 0, 18); lj.addColorStop(0, '#f2f6fa'); lj.addColorStop(1, '#b9c7d6'); g.fillStyle = lj;
+  g.beginPath(); g.moveTo(-6, 2); g.quadraticCurveTo(26, 12, 50, 10); g.quadraticCurveTo(56, 9, 58, 6); g.quadraticCurveTo(30, 4, -6, -1); g.closePath(); g.fill();
+  if (open > 0.05) { g.fillStyle = '#c2475a'; g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(28, 2, 54, 5); g.lineTo(54, 8); g.quadraticCurveTo(28, 6, 0, 3); g.closePath(); g.fill(); }   // gum
+  g.fillStyle = '#fbfaf3'; for (let i = 0; i < 9; i++) { const tx = 8 + i * 5.4, ty = 3 + i * 0.25; g.beginPath(); g.moveTo(tx - 2.2, ty); g.lineTo(tx + 0.4, ty - 5.5 - (i % 2)); g.lineTo(tx + 2.4, ty); g.closePath(); g.fill(); }   // lower teeth, pointing up
+  g.restore();
+  // upper jaw / snout
+  g.save(); g.translate(hx, hy); g.rotate(up);
+  const sn = g.createLinearGradient(0, -40, 0, 0); sn.addColorStop(0, '#2b3f58'); sn.addColorStop(0.55, '#55728f'); sn.addColorStop(1, '#e6edf4'); g.fillStyle = sn;
+  g.beginPath(); g.moveTo(-14, -44); g.bezierCurveTo(26, -42, 62, -24, 70, -6); g.quadraticCurveTo(70, 0, 62, 0); g.quadraticCurveTo(30, -2, -4, 0); g.closePath(); g.fill();
+  if (open > 0.05) { g.fillStyle = '#c2475a'; g.beginPath(); g.moveTo(-2, -1); g.quadraticCurveTo(30, -3, 60, -1); g.lineTo(60, 2); g.quadraticCurveTo(30, 1, -2, 2); g.closePath(); g.fill(); }
+  g.fillStyle = '#fbfaf3'; for (let i = 0; i < 10; i++) { const tx = 6 + i * 5.3, ty = -0.5; g.beginPath(); g.moveTo(tx - 2.4, ty); g.lineTo(tx + 0.2, ty + 6.5 + (i % 2) * 1.2); g.lineTo(tx + 2.6, ty); g.closePath(); g.fill(); }   // upper teeth, serrated triangles pointing down
+  // the eye: dark, round, a cold glint; the nostril
+  g.fillStyle = '#05070c'; g.beginPath(); g.ellipse(36, -14, 4.6, 4.2, 0, 0, 6.283); g.fill(); g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(37.6, -15.6, 1.4, 0, 6.283); g.fill();
+  g.strokeStyle = 'rgba(15,25,40,.6)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(58, -10); g.quadraticCurveTo(62, -8, 64, -10); g.stroke();
+  g.restore();
+  // a torn piece of the card held in its teeth
+  if (chunk > 0.01) {
+    g.save(); g.translate(SHARK_BITE_X - 4, SHARK_BITE_Y); g.rotate(0.1); g.globalAlpha = chunk;
+    g.fillStyle = '#f7f3ea'; g.strokeStyle = 'rgba(80,70,60,.5)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-4, -20); g.quadraticCurveTo(14, -14, 18, 0); g.quadraticCurveTo(14, 14, -4, 20); for (let i = 0; i < 6; i++) g.lineTo(i % 2 ? 2 : -3, 20 - (i + 1) * 6.6); g.closePath(); g.fill(); g.stroke();
+    g.restore();
+  }
   g.restore();
 }
 function paintHammer(g, x, y, s, rot, glow = 0) {
@@ -5097,12 +5153,12 @@ function paintCannon(g, x, y, ang, rec, spin, fuse, t) {
 }
 
 async function runShowdown(res) {
-  const release = (id) => {   // the verdict lands on that tile: the card tears, the tile turns red, the tag says LOST
+  const release = (id, keepCards = false) => {   // the verdict lands on that tile: the card tears, the tile turns red, the tag says LOST
     atkHeld.delete(id);
     const tile = document.querySelector(`.tile[data-pid="${id}"]`), e = res.entries.find((x) => x.id === id);
     if (!tile || !e) return;
     tile.classList.add('lose');
-    const cards = tile.querySelector('.tcards'); if (cards) { cards.replaceChildren(...e.cards.map((c, ci) => tornCard(c, true, e.as ? e.as[ci] : null, 0, atkStyleOf(res)))); cards.querySelectorAll('.tcard.end').forEach((n) => n.classList.add('hitin')); }
+    const cards = tile.querySelector('.tcards'); if (cards && !keepCards) { cards.replaceChildren(...e.cards.map((c, ci) => tornCard(c, true, e.as ? e.as[ci] : null, 0, atkStyleOf(res)))); cards.querySelectorAll('.tcard.end').forEach((n) => n.classList.add('hitin')); }
     const tag = tile.querySelector('.tstat'); if (tag) tag.replaceWith(el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')));
     if (!res.losers.some((x) => atkHeld.has(x))) document.querySelectorAll('.tile .tstat.pend').forEach((n) => n.replaceWith(el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag'))));   // the last strike landed: everyone else is safe
   };
@@ -5458,23 +5514,50 @@ async function runShowdown(res) {
           await tween(320, (k) => { F.dy = k * 46; F.a = 1 - k; });   // it dives: the water goes still
           E.burst(F.x, wy, 10, { spd: [20, 100], life: [500, 900], s: [4, 8], col: [215, 240, 255], col1: [100, 170, 235], g: -60, add: false, up: 0 });
           await wait(380);
-          const Sk = { x: -999, y: -999, s: 1, rot: 0, flip: 1, o: 0 }, dropShark = E.layer((g) => paintShark(g, Sk.x, Sk.y, Sk.s, Sk.rot, Sk.flip, Sk.o));
-          const xs = T.x - mv * 150, xe = T.x + mv * 150, yb = wy + 140, ya = Math.max(110, T.y - 60);
+          // the bite on the card is a crescent cut from its right edge (see endTex 'bitten'): its front sits at 75% of the width,
+          // centred at 44% of the height, spanning 48% of it. The jaws snap shut exactly there, so the mark appears where the teeth met.
+          const Sk = { x: -999, y: -999, s: 1, rot: 0, o: 0, chunk: 0 }, dropShark = E.layer((g) => paintShark(g, Sk.x, Sk.y, Sk.s, Sk.rot, -1, Sk.o, Sk.chunk));
+          const ent = res.entries.find((x) => x.id === tgt.id), cardEls = () => [...tTile.querySelectorAll('.tcards > *')];
+          const biteAt = (el2) => { const q = el2.getBoundingClientRect(), half = q.height * 70 / 290, sc = half / SHARK_GAPE; return { s: sc, x: q.left + q.width * 0.75 + SHARK_BITE_X * sc, y: q.top + q.height * 128 / 290 - SHARK_BITE_Y * sc }; };   // where the shark must be (it faces left)
           const water = (x, n, big) => { for (let i = 0; i < n; i++) E.emit({ x: x + rnd(-40, 40), y: wy + rnd(-6, 10), vx: rnd(-160, 160), vy: -rnd(300, big ? 1000 : 700), g: 900, life: rnd(700, 1400), s: rnd(4, 11), s1: 1, col: [235, 248, 255], col1: [110, 175, 235], add: false, drag: 0.995 }); E.ring(x, wy, big ? 300 : 200, [220, 242, 255], 620, big ? 9 : 6); E.ring(x, wy + 10, big ? 200 : 130, [255, 255, 255], 440, 4); };
-          water(xs, 70, true); SND.play('splat'); SND.play('boom'); flash('#bfe6ff', 0.4, 320); shake(14, 420);
-          let bit = false, trail = 0;
-          await tween(1250, (k) => {
-            const kk = k + 0.06 * Math.sin(k * 6.283 * 1) * (k < 0.5 ? 1 : -0.6), x = xs + (xe - xs) * kk, y = yb - 4 * (yb - ya) * kk * (1 - kk), dyk = -4 * (yb - ya) * (1 - 2 * kk);
-            Sk.x = x; Sk.y = y; Sk.s = 1.0 + 0.5 * Math.sin(Math.PI * Math.min(1, kk * 1.02)); Sk.rot = Math.atan2(dyk, 300) * 57.3 * mv * 0.85; Sk.flip = mv > 0 ? 1 : -1;
-            Sk.o = kk < 0.5 ? Math.max(0, Math.min(1, (kk - 0.12) / 0.3)) : Math.max(0, 1 - (kk - 0.5) / 0.06);
-            const now = performance.now(); if (now - trail > 30) { trail = now; for (let i = 0; i < 3; i++) E.emit({ x: x - mv * rnd(20, 90), y: y + rnd(-20, 30), vx: rnd(-60, 60), vy: rnd(0, 120), g: 700, life: rnd(500, 900), s: rnd(3, 8), s1: 1, col: [235, 248, 255], col1: [110, 175, 235], add: false }); }
-            if (!bit && kk >= 0.5) {
-              bit = true; E.freeze(170); SND.play('impact'); SND.play('tear'); flash('#d9f0ff', 0.5, 340);
-              [[-0.55, -22], [0.55, 22]].forEach(([a, o]) => E.slash(T.x + o, T.y + o * 0.4, a, 360, { ms: 460, w: 18, col: [255, 255, 255] }));
-              E.burst(T.x, T.y, 46, { spd: [140, 560], life: [600, 1200], s: [5, 12], col: [235, 248, 255], col1: [90, 160, 230], g: 700, add: false, up: 200 }); E.ring(T.x, T.y, 280, [200, 235, 255], 520, 8);
-              shake(28, 660); punch(T.x, T.y, 1.12, 440); popT(T.x, T.y, pen, '#9fd8ff', 150); hurt(tTile); scorch(tTile, 'rgba(10,40,90,.5)'); release(tgt.id);
-            }
+          const order = cardEls().map((_, i) => i).reverse();   // right to left, one chomp per card
+          { const y0 = window.scrollY, y1 = Math.max(0, Math.min(maxScroll(), tdoc().y - H * 0.45)); if (Math.abs(y1 - y0) > 4) await tween(520, (k) => { scrollNow = y0 + (y1 - y0) * ease(k); window.scrollTo(0, scrollNow); }); }   // bring the loser's card fully into view first; the page then stays still for the strike
+          let P = biteAt(cardEls()[order[0]]);
+          const startX = Math.max(P.x + 160 * P.s, W + 60 * P.s), startY = wy + 90 * P.s;
+          Sk.x = startX; Sk.y = startY; Sk.s = P.s; Sk.rot = -24;
+          water(Math.min(W - 20, P.x + 40 * P.s), 70, true); SND.play('splat'); SND.play('boom'); flash('#bfe6ff', 0.3, 280); shake(12, 380);
+          // 1) the breach: it surges up out of the water, mouth gaping, and hangs just short of the card
+          let trail = 0;
+          await tween(620, (k) => {
+            P = biteAt(cardEls()[order[0]]); Sk.s = P.s;   // measured every frame, in case anything still moves
+            const pre = { x: P.x + 46 * P.s, y: P.y - 6 * P.s }, e = 1 - Math.pow(1 - k, 3), x = startX + (pre.x - startX) * e, y = startY + (pre.y - startY) * e - Math.sin(Math.PI * k) * 40 * P.s;
+            Sk.x = x; Sk.y = y; Sk.rot = -24 * (1 - e) + 6 * Math.sin(Math.PI * k); Sk.o = Math.min(1, k * 1.6);
+            const now = performance.now(); if (now - trail > 30) { trail = now; for (let i = 0; i < 3; i++) E.emit({ x: x + rnd(20, 110) * P.s, y: y + rnd(-10, 30) * P.s, vx: rnd(-40, 80), vy: rnd(0, 140), g: 700, life: rnd(500, 900), s: rnd(3, 8), s1: 1, col: [235, 248, 255], col1: [110, 175, 235], add: false }); }
           });
+          // 2) the bites: lunge, snap shut on the exact spot, the mark appears; then the next card
+          for (let bi = 0; bi < order.length; bi++) {
+            const idx = order[bi], card = cardEls()[idx]; if (!card) continue;
+            const fx = Sk.x, fy = Sk.y, fr = Sk.rot;
+            await tween(bi ? 200 : 150, (k) => { P = biteAt(card); Sk.s = P.s; const e = k * k; Sk.x = fx + (P.x - fx) * e; Sk.y = fy + (P.y - fy) * e; Sk.rot = fr * (1 - e); Sk.o = 1; });
+            await tween(80, (k) => { P = biteAt(card); Sk.x = P.x; Sk.y = P.y; Sk.o = 1 - k; });   // SNAP, on the spot
+            P = biteAt(card); Sk.x = P.x; Sk.y = P.y; Sk.rot = 0; Sk.o = 0;
+            E.freeze(120); SND.play('impact'); SND.play('tear'); shake(18 - bi * 4, 360);
+            const mouth = { x: P.x - SHARK_BITE_X * P.s, y: P.y + SHARK_BITE_Y * P.s };
+            E.burst(mouth.x, mouth.y, 22, { spd: [120, 420], life: [500, 1000], s: [3, 7], col: [250, 248, 240], col1: [200, 190, 170], g: 600, add: false, up: 120 });   // shreds of card
+            E.ring(mouth.x, mouth.y, 120 * P.s, [210, 240, 255], 360, 4);
+            const torn = tornCard(ent.cards[idx], true, ent.as ? ent.as[idx] : null, 0, 'shark'); torn.classList.add('hitin'); card.replaceWith(torn);   // the bite mark, exactly under the teeth
+            if (bi === 0) { punch(mouth.x, mouth.y, 1.06, 300); popT(T.x, T.y, pen, '#9fd8ff', 300); }
+            await wait(110);
+            if (bi < order.length - 1) await tween(160, (k) => { Sk.x = P.x + 34 * P.s * k; Sk.y = P.y - 4 * P.s * k; Sk.o = k; Sk.chunk = 0; });   // lets go and opens again for the next card
+          }
+          // 3) it shakes its head with the piece in its teeth
+          Sk.chunk = 1; hurt(tTile); scorch(tTile, 'rgba(10,40,90,.4)');
+          await tween(420, (k) => { Sk.rot = Math.sin(k * Math.PI * 5) * 7 * (1 - k); Sk.x = P.x + Math.sin(k * Math.PI * 5) * 6 * P.s; });
+          release(tgt.id, true);
+          // 4) and drops back into the water with it
+          const bx = Sk.x, by0 = Sk.y, endX = bx + 150 * P.s, endY = wy + 140 * P.s;
+          await tween(560, (k) => { const e = k * k; Sk.x = bx + (endX - bx) * k; Sk.y = by0 + (endY - by0) * e - Math.sin(Math.PI * k) * 30 * P.s; Sk.rot = 34 * e; });
+          const xe = Math.min(W - 20, Sk.x - 60 * P.s);
           water(xe, 50, true); SND.play('splat'); shake(10, 360);
           await tween(500, (k) => { Wt.a = 1 - k; });
           dropShark(); dropWater(); dropFin();
