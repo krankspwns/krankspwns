@@ -808,8 +808,8 @@
   .tvv { display: inline-flex; align-items: center; gap: 2px; padding: 1px 7px 1px 5px; border-radius: 99px; font-size: 10.5px; font-weight: 800; } .tvv .ic { color: currentColor !important; }
   .tvotes.right .tvv { background: #2fa866; color: #fff; } .tvotes.wrong { opacity: .75; } .tvotes.wrong .tvv { background: rgba(255,107,94,.18); color: #ff8a80; }
   @keyframes tvin { from { opacity: 0; transform: translateY(4px) scale(.9); } }
-  .rs { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px 2px; padding-top: 10px; margin-bottom: -4px; border-top: 1px solid var(--line); }
-  .rsp { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 76px; padding: 4px 2px; border-radius: 12px; cursor: default; -webkit-tap-highlight-color: transparent; }
+  .rs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(var(--per, 4), minmax(0, 76px)); justify-content: center; gap: 6px 2px; padding-top: 10px; margin-bottom: -4px; border-top: 1px solid var(--line); }
+  .rsp { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; min-width: 0; padding: 4px 2px; border-radius: 12px; cursor: default; -webkit-tap-highlight-color: transparent; }
   .rsp.hit { cursor: pointer; } .rsp.hit:active .rsav { transform: scale(.92); }
   .rsav { display: grid; place-items: center; padding: 3px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); transition: border-color .25s, box-shadow .25s, transform .15s; }
   .rsp.ready .rsav { border-color: var(--green); box-shadow: 0 0 10px rgba(111,207,151,.55); }
@@ -4805,7 +4805,11 @@ function rosterStrip() {
   const list = activePlayers();
   if (list.length < 1 || list.every((p) => p.ready) && Math.min(stageRow ?? st.currentRow ?? 0, 4) >= 4) return null;   // not on the Hall of Fame
   const canThrow = giftTotal() > 0;
-  return el('div', { class: 'rs' }, ...list.map((p) => {
+  // balanced rows: as many per row as fit, then spread evenly (5 → one row of 5, 7 on a phone → 4 + 3, never 4 + 1)
+  const rs = el('div', { class: 'rs', style: `--per:${Math.min(list.length, 5)}` });
+  const fit = () => { const w = rs.clientWidth; if (!w) return; const max = Math.max(3, Math.floor((w + 2) / 66)), rows = Math.ceil(list.length / max); rs.style.setProperty('--per', Math.ceil(list.length / rows)); };
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(rs);
+  rs.append(...list.map((p) => {
     const me = p.id === st.meId;
     const b = el('button', { type: 'button', class: 'rsp' + (p.ready ? ' ready' : '') + (me ? ' me' : '') + (canThrow && !me ? ' hit' : ''), 'data-pid': p.id, title: p.name + (p.ready ? ' · ' + t('pillReady') : ''),
       onclick: (e) => { if (me || !canThrow) return; e.stopPropagation(); giftTarget = p.id; giftPick = null; giftTrayOpen = true; syncEmoteUi(); } },
@@ -4814,6 +4818,7 @@ function rosterStrip() {
       el('span', { class: 'rsw' + (p.wins ? '' : ' zero'), title: t('hallWins', { n: p.wins || 0 }) }, icon('trophy', 11), '×' + (p.wins || 0)));
     return b;
   }));
+  return rs;
 }
 let readyStripSeen = -1;
 function renderGame() {
