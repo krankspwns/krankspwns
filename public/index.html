@@ -128,7 +128,7 @@
   .card.morph { animation: jkglow 1.5s .55s ease-out; }
   .gjk { margin: 6px 0 12px; padding: 10px 12px; border-radius: 14px; background: rgba(182,120,255,.1); border: 1px solid rgba(182,120,255,.4); } .gjk-t { color: #d9b8ff; margin-bottom: 4px; }
   .gjk .gcards { --cw: 27px; } .gjk-r { display: grid; gap: 4px; margin-top: 10px; } .gjk-c { display: flex; align-items: center; gap: 8px; } .gjk-a { font-size: 20px; color: #d9b8ff; } .gjk-l { font-size: 13px; line-height: 1.3; } .gjk .gcards { flex: none; }
-  .mc.jk { background: linear-gradient(90deg, #fff4cf, #e5ccff); color: #4b1f9e; }
+  .cchip.jk { background: linear-gradient(180deg, #fff8e0, #e9d6ff); color: #4b1f9e; }
   @keyframes jkshimmer { from { background-position: 150% 0; } to { background-position: -100% 0; } }
   @keyframes jkcover { 0% { opacity: 1; transform: none; } 25% { transform: rotate(-6deg) scale(1.06); } 45% { opacity: 1; transform: rotate(5deg) scale(1.1); filter: brightness(1.5); } 100% { opacity: 0; transform: scale(1.35) rotate(0); filter: brightness(2) blur(3px); } }
   @keyframes jkreveal { 0%, 45% { opacity: 0; transform: scale(.5); } 100% { opacity: .9; transform: none; } }
@@ -353,7 +353,7 @@
   .rtip { font-size: 11px; opacity: .5; text-align: center; margin-top: 8px; }
   .rd { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
   .rd.lose { background: rgba(var(--gold-rgb),.1); box-shadow: inset 3px 0 0 var(--gold); } .rd.lose .rdn { color: var(--gold-hi); }
-  .rdn { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rdn { flex: 0 0 auto; max-width: 38%; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rdv { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
   .rdv em { font-style: normal; opacity: .75; } .rdv .bad { color: #ff9b94; }
   .resk { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #ff9b94; font-weight: 700; margin-right: 2px; }
@@ -365,8 +365,8 @@
   .respen.big.none { font-size: clamp(22px, 6vw, 34px); padding: 8px 22px; }
   .rdv { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
   .rdv em { font-style: normal; opacity: .75; } .rdv .bad { color: #ff9b94; }
-  .mc { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--ivory); color: var(--ink); font-weight: 700; font-size: 12px; }
-  .mc.red { color: var(--red); }
+  .cchip { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; padding: 3px 7px; border-radius: 6px; background: linear-gradient(180deg, #fffdf6, #efe6d2); color: #1d1a22; font-weight: 800; font-size: 13.5px; line-height: 1.15; box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 2px 5px rgba(0,0,0,.35); }   /* a little playing card: ivory face, dark or red ink */
+  .cchip.red { color: #d0242f; } .rdv .tstep.rdhand { margin-left: 4px; white-space: nowrap; }
   /* announcement pop-up */
   .resfx { position: fixed; inset: 0; z-index: 85; display: grid; place-content: center; pointer-events: none; animation: resfx 3.6s ease forwards; background: radial-gradient(circle, rgba(6,9,20,.78), rgba(6,9,20,0) 72%); padding: 16px; overflow: hidden; }
   .resbox { text-align: center; padding: 22px 34px 26px; border-radius: 20px; background: rgba(var(--panel),.94); border: 2px solid #ff9b94; box-shadow: 0 0 60px rgba(255,120,110,.35), 0 20px 60px rgba(0,0,0,.6); max-width: 92vw; }
@@ -5207,10 +5207,10 @@ function face(view, p, s) {
 
 // ---- row results (computed by the server once everyone's row is face up) ----
 function cardChip(id, as) {
-  if (as && id === 'JK') return el('span', { class: 'mc jk' }, '★→' + as.slice(0, -1) + SUIT[as.slice(-1)]);
-  if (id === 'JK') return el('span', { class: 'mc jk' }, '★');
+  if (as && id === 'JK') return el('span', { class: 'cchip jk' }, '★→' + as.slice(0, -1) + SUIT[as.slice(-1)]);
+  if (id === 'JK') return el('span', { class: 'cchip jk' }, '★');
   const suit = id.slice(-1);
-  return el('span', { class: 'mc' + (suit === 'H' || suit === 'D' ? ' red' : '') }, id.slice(0, -1) + SUIT[suit]);
+  return el('span', { class: 'cchip' + (suit === 'H' || suit === 'D' ? ' red' : '') }, id.slice(0, -1) + SUIT[suit]);
 }
 const effOf = (r, id, i) => { const e = r.entries.find((x) => x.id === id); return e && e.as ? e.as[i] : null; };
 function loserNames(r) { return r.losers.map((id) => r.entries.find((e) => e.id === id).name); }
@@ -5251,7 +5251,7 @@ function resultsPanel() {
         const lose = r.losers.includes(e.id);
         const value = el('span', { class: 'rdv' }, ...e.cards.map((c, ci) => cardChip(c, e.as ? e.as[ci] : null)));
         if (r.row === 2) value.append(el('b', { class: e.bust ? 'bad' : '' }, ` ${e.total}`), e.bust ? el('em', {}, ` ${t('bust')}`) : '');
-        if (r.row === 3) value.append(el('em', {}, ` ${t('h_' + e.hand)}`));
+        if (r.row === 3) value.append(el('span', { class: 'tstep rdhand' + (e.hand === 'none' ? ' bad' : ' tt-' + e.hand) }, t('gh_' + e.hand)));   // the same pattern pill as the row 4 tip
         detail.append(el('div', { class: 'rd' + (lose ? ' lose' : '') }, el('span', { class: 'rdn' }, e.name), value));
       });
       item.append(detail);
