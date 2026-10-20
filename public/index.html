@@ -1428,6 +1428,14 @@ const SND = (() => {
     impact: () => { noise({ dur: 0.35, vol: 0.2, type: 'lowpass', f: 1600, f2: 150 }); tone({ f: 130, f2: 50, dur: 0.3, vol: 0.28 }); },
     // balloons rising: a soft airy lift, rubbery squeaks and a sparkle of glitter
     balloons: () => { noise({ dur: 1.6, vol: 0.07, type: 'bandpass', f: 350, f2: 1600, q: 0.9 }); [0, 0.18, 0.37, 0.55, 0.8, 1.05].forEach((at, i) => tone({ f: 640 + (i * 137) % 420, f2: 980 + (i * 91) % 380, at, dur: 0.12, vol: 0.05, type: 'sine' })); [0.5, 0.7, 0.95, 1.2, 1.45].forEach((at, i) => tone({ f: 2100 + i * 260, at, dur: 0.16, vol: 0.035, type: 'triangle' })); },
+    gulp: () => {   // three swallows as the glass tips back, then the empty glass set down with a clink
+      for (const [at, k] of [[0.18, 1], [0.46, 0.92], [0.74, 0.85]]) {
+        tone({ f: 230 * k, f2: 85 * k, at, dur: 0.13, vol: 0.24, lp: 700 });   // the swallow
+        tone({ f: 110 * k, f2: 260 * k, at: at + 0.09, dur: 0.06, vol: 0.12, lp: 900 });   // the little 'glk'
+        noise({ at: at + 0.02, dur: 0.1, vol: 0.07, type: 'lowpass', f: 900, f2: 250 });   // liquid going down
+      }
+      tone({ f: 2500, at: 1.02, dur: 0.22, vol: 0.045, type: 'triangle' }); tone({ f: 3700, at: 1.03, dur: 0.16, vol: 0.025, type: 'sine' });
+    },
     boing: () => { tone({ f: 300, f2: 700, dur: 0.14, vol: 0.09, type: 'triangle' }); tone({ f: 700, f2: 420, at: 0.12, dur: 0.12, vol: 0.06, type: 'triangle' }); },
     morph: () => {   // a rising sparkle as the joker turns into its card
       [660, 830, 988, 1244, 1568, 1976].forEach((f, i) => tone({ f, at: i * 0.07, dur: 0.22, vol: 0.07, type: 'triangle' }));
@@ -5342,7 +5350,7 @@ function syncDrinkUi() {
   const nDone = ids.filter((id) => done[id]).length, mine = owed[st.meId], meDone = !!done[st.meId];
   const justDone = drinkSeen.row === row ? ids.filter((id) => done[id] && !drinkSeen.done[id]) : [];
   drinkSeen = { row, done: { ...done } };
-  if (justDone.length) SND.play('pop');
+  if (justDone.length) SND.play('gulp');
   const waitNames = ids.filter((id) => !done[id]).map((id) => dkName(id));
   const people = ids.map((id, i) => {
     const [n] = owed[id], ok = !!done[id], shown = Math.min(n, 8);
@@ -5355,7 +5363,7 @@ function syncDrinkUi() {
       el('span', { class: 'dkn' + (ok ? ' ok' : '') }, ok ? t('drinkFin') : t('drinksN', { n })));
   });
   const foot = mine && !meDone
-    ? el('button', { type: 'button', class: 'dkbtn', onclick: () => { st.drunk = st.drunk || {}; st.drunk[row] = { ...(st.drunk[row] || {}), [st.meId]: true }; SND.play('ready'); buzz(30); act('drank', { row }); syncDrinkUi(); } }, el('span', { class: 'dkbic' }, icon('tick', 16)), t('drinkBtn'))
+    ? el('button', { type: 'button', class: 'dkbtn', onclick: () => { st.drunk = st.drunk || {}; st.drunk[row] = { ...(st.drunk[row] || {}), [st.meId]: true }; buzz(30); act('drank', { row }); syncDrinkUi(); } }, el('span', { class: 'dkbic' }, icon('tick', 16)), t('drinkBtn'))
     : el('div', { class: 'dkwait' }, el('span', { class: 'dot' }), !waitNames.length ? t('drinkAllDone') : mine ? t('drinkMeDone') : t('drinkWait', { names: waitNames.join(', ') }));
   const box = el('div', { class: 'dkbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('drinkT') },
     el('div', { class: 'dkglow' }),
