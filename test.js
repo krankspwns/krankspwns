@@ -398,6 +398,26 @@ const post = (b) => call('POST', b, {});
     assert.equal(sw.wallet.pts, 25, 'the creator starts with 25 WP'); assert.equal(sj.wallet.pts, 25, 'so does everyone who joins');
     globalThis.__startWp = 0;
   }
+  { // ---- a Ready that lands as the arranging clock runs out: that player was on time; the ones the clock arranged are the late ones ----
+    const setup = async () => {
+      const a = (await post({ action: 'create', name: 'TA' })).j, bb = (await post({ action: 'join', code: a.code, name: 'TB' })).j, c = (await post({ action: 'join', code: a.code, name: 'TC' })).j;
+      await post({ action: 'settings', code: a.code, pid: a.meId, timer: 30 });
+      await post({ action: 'deal', code: a.code, pid: a.meId });
+      for (let i = 0; i < 7; i++) { const v = (await call('GET', null, { code: a.code, pid: a.meId })).j; await post({ action: 'place', code: a.code, pid: a.meId, card: v.hand[0], slot: i }); }
+      return { a, bb, c };
+    };
+    let { a, bb, c } = await setup();
+    globalThis.__rooms.get(a.code).deadline = Date.now() - 1200;   // A's Ready was sent in time but arrives just after the deadline
+    let v = (await post({ action: 'ready', code: a.code, pid: a.meId, ready: true })).j;
+    assert.ok(v.allReady && v.allReady.timer, 'the clock did the rest');
+    assert.deepEqual([...v.allReady.ids].sort(), [bb.meId, c.meId].sort(), 'only the ones it arranged are late');
+    assert.ok(!(a.meId in (v.latePen || {})), 'A carries no late point');
+    ({ a, bb, c } = await setup());
+    globalThis.__rooms.get(a.code).deadline = Date.now() - 8000;   // well after the deadline: the clock got to A too
+    v = (await post({ action: 'ready', code: a.code, pid: a.meId, ready: true })).j;
+    assert.ok(v.allReady && v.allReady.timer, 'a late Ready never replaces the clock\'s list with just that player');
+    assert.equal(v.allReady.ids.length, 3, 'everyone it arranged is listed');
+  }
   { // ---- drink mode: the next row waits until every loser of the last one has finished their drinks ----
     const da = (await post({ action: 'create', name: 'DA' })).j, db = (await post({ action: 'join', code: da.code, name: 'DB' })).j;
     await post({ action: 'settings', code: da.code, pid: da.meId, drink: true });

@@ -142,6 +142,7 @@ async function saveRoom(room) {
 }
 
 // host-controlled game settings
+const READY_GRACE_MS = 3000;   // a Ready this soon after the deadline still counts as in time (the request can be on its way when the clock runs out)
 const TIMERS = [0, 30, 45, 60, 90, 120];   // seconds to arrange; 0 = no timer
 const MULTS = [0.5, 1, 2, 3];   // penalty multiplier; a fractional result is rounded up (1 x 0.5 = 1, 3 x 0.5 = 2)
 const PRED_SECS = [7, 10, 15, 20, 25, 30];   // how long the guessing window lasts
@@ -641,6 +642,11 @@ async function handle(action, b, query, ctx = {}) {
   if (!room) { need(!(await strike(ctx.ip, 'nf', 30, 600)), 429, 'Too many tries. Wait a few minutes.'); throw new HttpError(404, 'Room not found'); }
   if (room.deadline && Date.now() >= room.deadline && room.phase === 'dealt') {   // time is up: arrange the stragglers' cards
     if (action === 'state') room = await loadRoom(code);
+    // a Ready pressed as the clock ran out (it may reach us a moment late): that player was on time, not arranged by the timer
+    if (room && action === 'ready' && b.ready && Date.now() - room.deadline < READY_GRACE_MS) {
+      const pl = room.players.find((q) => q.id === String(b.pid || query.pid || ''));
+      if (pl && tokenOk(pl, ctx.tok) && !pl.ready && !pl.spectator && pl.board.every(Boolean)) { pl.ready = true; for (const c of pl.board) c.up = false; }
+    }
     if (room && enforceTimer(room)) { storeResults(room); await saveRoom(room); }
     need(room, 404, 'Room not found');
   }
@@ -821,6 +827,7 @@ async function handle(action, b, query, ctx = {}) {
       need(room.phase === 'dealt', 409, 'No cards dealt');
       // Once everyone is ready the round is under way: no taking it back until a new deal.
       need(b.ready || !active.every((p) => p.ready), 409, 'Game in progress');
+      if (b.ready && room.allReady && room.allReady.timer) break;   // the clock has already settled who was late: a Ready now changes nothing
       me.ready = !!b.ready;
       if (me.ready) {
         need(me.board.every(Boolean), 409, 'Place all 7 cards in the rows first');
