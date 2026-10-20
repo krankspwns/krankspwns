@@ -4019,12 +4019,12 @@ function timerBar() {
   return el('div', { class: 'timerbar', id: 'timerbar' }, icon('clock', 18), el('b', { id: 'tm-t' }, fmtLeft(left)), el('div', { class: 'tm-bar' }, el('i', { id: 'tm-f', style: `width:${Math.max(0, Math.min(100, (left / total) * 100))}%` })));
 }
 const fmtLeft = (l) => { if (l <= 0) return t('timesUp'); const secs = Math.ceil(l); return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0'); };
-let lastTick = -1, timeUpPolled = false;
+let lastTick = -1;
 function timerTick() {
   if (document.hidden) return setTimeout(timerTick, 1000);
   const left = timerLeft();
   const bar = document.getElementById('timerbar');
-  if (left === null) { timeUpPolled = false; if (bar) bar.remove(); return setTimeout(timerTick, 1000); }
+  if (left === null) { if (bar) bar.remove(); return setTimeout(timerTick, 1000); }
   if (!bar) return setTimeout(timerTick, 500);
   const total = (st.settings && st.settings.timer) || 60;
   const secs = Math.max(0, Math.ceil(left));
@@ -4032,10 +4032,19 @@ function timerTick() {
   document.getElementById('tm-f').style.width = Math.max(0, Math.min(100, (left / total) * 100)) + '%';
   bar.classList.toggle('urgent', left <= 10);
   if (left <= 5 && left > 0 && secs !== lastTick) { lastTick = secs; SND.play('tick'); buzz(15); }
-  if (left <= 0 && !timeUpPolled) { timeUpPolled = true; setTimeout(() => resync(), 250); }   // the first phone to ask makes the server arrange the stragglers
   setTimeout(timerTick, 250);
 }
 timerTick();
+// when the arranging clock runs out, the server arranges the stragglers the moment any phone asks: every phone asks (with or without
+// the countdown on screen, a moment apart so they don't collide) and keeps asking until it has happened
+let deadlineAsk = 0, deadlineTries = 0;
+setInterval(() => {
+  if (!session || !st || st.phase !== 'dealt' || !st.deadline || st.allReady) { deadlineTries = 0; return; }
+  const over = serverNow() - st.deadline;
+  if (over < 150 + (st.isHost ? 0 : 250 + Math.random() * 400) || deadlineTries >= 12 || Date.now() - deadlineAsk < 1500) return;
+  deadlineAsk = Date.now(); deadlineTries++;
+  clearTimeout(timer); poll(true, true).then(() => { if (session) startPolling(); });
+}, 250);
 // what the host has switched on, visible to everyone
 function settingChips() {
   const g = st.settings; if (!g) return null;
@@ -4705,14 +4714,26 @@ function predSchedule(win) {
   if (predTick.key === key) return;
   predTick.timers.forEach(clearTimeout); predTick = { key, timers: [] };
   if (!win) return;
+  // each step waits for the moment on the server's clock; the clock estimate can be refined meanwhile, so a timer that wakes a little
+  // early simply waits for the rest instead of leaving the screen stuck on the picker
+  const at = (target, fn) => { const wait = target - serverNow(); if (wait > 0) predTick.timers.push(setTimeout(() => (predTick.key === key ? at(target, fn) : null), wait + 20)); else fn(); };
   const now = serverNow();
-  if (win.from - 200 > now) predTick.timers.push(setTimeout(() => { if (st) render(); }, win.from - 200 - now + 20));
-  if (win.until > now) predTick.timers.push(setTimeout(() => {
+  if (win.from - 200 > now) at(win.from - 200, () => { if (st) render(); });
+  if (win.until > now) at(win.until, () => {
     const pnl = document.querySelector('.predpanel');
     const go = () => { screenAnim = true; if (st) render(); };   // the cards come in one after another
     if (pnl) { pnl.classList.add('pp-out'); setTimeout(go, 240); } else go();
-  }, win.until - now + 20));
+  });
 }
+// a safety net for the guessing screens: if what is shown no longer matches the clock (a missed timer, a phone that slept), redraw
+setInterval(() => {
+  if (!st || !st.predWin || document.hidden || st.phase !== 'dealt' || (st.currentRow ?? 0) !== 0) return;
+  const w = st.predWin, now = serverNow(), want = now < w.from - 200 ? 'ready' : now < w.until ? 'open' : 'done';
+  const shown = document.querySelector('.predready') ? 'ready' : document.querySelector('.predpanel:not(.pp-out)') ? 'open' : 'done';
+  const k = want + ':' + w.from + ':' + w.until;
+  if (want !== shown && !(want === 'open' && shown === 'ready' && now < w.from) && predFixed !== k) { predFixed = k; render(); }   // once per step: never a redraw loop
+}, 600);
+let predFixed = '';
 let predAwait = 0;
 // the four calls you made before row 1, ticked off as each row is revealed
 function myCallsStrip(cur) {
