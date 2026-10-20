@@ -174,7 +174,9 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'settings', code: hs.code, pid: hp.meId, timer: 30 })).s, 403, 'only the host changes settings');
   assert.equal((await post({ action: 'settings', code: hs.code, pid: hs.meId, timer: 33 })).s, 400, 'unknown timer rejected');
   const st1 = (await post({ action: 'settings', code: hs.code, pid: hs.meId, timer: 30, jokers: false, mult: 2 })).j;
-  assert.deepEqual(st1.settings, { timer: 30, jokers: false, mult: 2, chat: true });
+  assert.deepEqual(st1.settings, { timer: 30, jokers: false, mult: 2, chat: true, predSec: 15, drink: false });
+  assert.equal((await post({ action: 'settings', code: hs.code, pid: hs.meId, predSec: 11 })).s, 400, 'guessing time from the list only');
+  assert.equal((await post({ action: 'settings', code: hs.code, pid: hs.meId, predSec: 25 })).j.settings.predSec, 25);
   const d1 = (await post({ action: 'deal', code: hs.code, pid: hs.meId })).j;
   assert.ok(d1.deadline > Date.now() + 25000 && d1.deadline <= Date.now() + 30500, 'deadline set from the timer');
   const rm = globalThis.__rooms.get(hs.code);
@@ -395,6 +397,34 @@ const post = (b) => call('POST', b, {});
     const sw = (await post({ action: 'create', name: 'Starter' })).j, sj = (await post({ action: 'join', code: sw.code, name: 'Joiner' })).j;
     assert.equal(sw.wallet.pts, 25, 'the creator starts with 25 WP'); assert.equal(sj.wallet.pts, 25, 'so does everyone who joins');
     globalThis.__startWp = 0;
+  }
+  { // ---- drink mode: the next row waits until every loser of the last one has finished their drinks ----
+    const da = (await post({ action: 'create', name: 'DA' })).j, db = (await post({ action: 'join', code: da.code, name: 'DB' })).j;
+    await post({ action: 'settings', code: da.code, pid: da.meId, drink: true });
+    await post({ action: 'deal', code: da.code, pid: da.meId });
+    for (const pid of [da.meId, db.meId]) { for (let i = 0; i < 7; i++) { const v = (await call('GET', null, { code: da.code, pid })).j; await post({ action: 'place', code: da.code, pid, card: v.hand[0], slot: i }); } await post({ action: 'ready', code: da.code, pid, ready: true }); }
+    const droom = globalThis.__rooms.get(da.code);
+    const rig = (pl, cs) => cs.forEach((c, i) => (pl.board[i].c = c));
+    rig(droom.players[0], ['3S', '4S', '10S', 'QH', '2S', '3S', '4S']); rig(droom.players[1], ['KH', 'KD', '3C', '4D', '7H', '7C', '7D']);
+    droom.allReady = { id: db.meId, name: 'DB', at: Date.now() };   // DB was last to get ready: one more drink with row 1
+    await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 0, up: true });
+    let v = (await call('GET', null, { code: da.code, pid: da.meId })).j;
+    assert.deepEqual(v.rowResults[0].losers, [da.meId], 'DA loses row 1 with the 3');
+    assert.equal((await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 1, up: true })).s, 409, 'row 2 waits for the drinks');
+    assert.equal((await post({ action: 'flipRow', code: da.code, pid: db.meId, row: 1, up: true })).s, 409, 'for everyone');
+    assert.equal((await post({ action: 'drank', code: da.code, pid: da.meId, row: 0 })).s, 200);
+    assert.equal((await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 1, up: true })).s, 409, 'the last-ready drink is still owed');
+    assert.equal((await post({ action: 'drank', code: da.code, pid: db.meId, row: 0 })).s, 200);
+    v = (await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 1, up: true })).j;
+    assert.deepEqual(v.drunk[0], { [da.meId]: true, [db.meId]: true }, 'the view says who has drunk');
+    const l2 = v.rowResults[1].losers[0], w2 = [da.meId, db.meId].find((id) => id !== l2);
+    assert.equal((await post({ action: 'drank', code: da.code, pid: w2, row: 1 })).s, 400, 'only the losers drink');
+    assert.equal((await post({ action: 'drank', code: da.code, pid: db.meId, row: 1, all: true })).s, 403, 'only the host waves a row through');
+    assert.equal((await post({ action: 'drank', code: da.code, pid: da.meId, row: 1, all: true })).s, 200, 'the host waves it through');
+    for (const row of [2, 3]) { await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row, up: true }); if (row < 3) await post({ action: 'drank', code: da.code, pid: da.meId, row, all: true }); }
+    assert.equal((await post({ action: 'nextReady', code: da.code, pid: db.meId })).s, 409, 'no next round while drinks are owed');
+    await post({ action: 'drank', code: da.code, pid: da.meId, row: 3, all: true });
+    assert.equal((await post({ action: 'nextReady', code: da.code, pid: db.meId })).s, 200);
   }
   { // ---- renaming: yourself any time, anyone if you are the host; names stay unique ----
     const ra = (await post({ action: 'create', name: 'Ann' })).j, rb = (await post({ action: 'join', code: ra.code, name: 'Bea' })).j;
