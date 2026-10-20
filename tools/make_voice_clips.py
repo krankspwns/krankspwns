@@ -11,16 +11,18 @@ tts=sherpa_onnx.OfflineTts(cfg)
 # a clip is one phrase, or a list of phrases joined together: (text, speaker id, speed[, effect])
 # effects: 'dip' = Mandarin third tone; 'rise' / 'fall' = the Singlish particle at the end lilts up (leh) or drops (lah);
 # 'drawl' = a smug, drawn-out ending (Eeasyyy); 'hype' = a lift on the stressed word for a cheer
-# speakers: 18 am_puck (an upbeat young man) for the gaming calls, 50 zm_yunxi for the Singlish ones (his English has the accent), 14 am_fenrir for the Oof
+# speakers: 18 am_puck (an upbeat young man) for the gaming calls, 16 am_michael (deeper) for the smug EZ,
+# 49 zm_yunjian for the Singlish ones (a low man's voice whose English has the accent), 14 am_fenrir for the Oof
+# the model varies a little from run to run: listen, and keep the take you like
 # 'dipm' = the third tone pitched for a man's voice
 clips={
   'gg':[('Good game!',18,1.0,'hype')],
-  'ez':[('Easy!',18,0.9,'drawl')],
+  'ez':[('Eeeasy!',16,0.8)],   # the spelling draws it out; shaping it on top blurred the word
   'gl':[('Good luck!',18,1.0,'hype')],
   'wp':[('Well played!',18,1.0,'hype')],
-  'faster':[('Faster leh!',50,1.1)],
-  'aiyo':[('爱',50,1.15),('Yo!',50,1.2,'dipm')],
-  'steady':[('Steady lah!',50,1.0)],
+  'faster':[('Faster leh!',49,1.1)],
+  'aiyo':[('爱',49,1.15),('Yo!',49,1.0,'wave')],
+  'steady':[('Steady lah!',49,1.0)],
   'oof':[('Oof.',14,0.85)],
 }
 OVERLAP=0.055   # seconds two parts overlap, so a clip made of several parts runs together instead of sounding like separate words
@@ -70,7 +72,8 @@ def shape(x,sr,points,stretch=None):
 SHAPES={
     'rise':dict(points=[(0,1.0),(0.55,0.95),(0.72,1.0),(1,1.32)]),                 # leh: the particle climbs
     'fall':dict(points=[(0,1.05),(0.6,1.0),(1,0.72)]),                             # lah / oof: drops away
-    'drawl':dict(points=[(0,0.95),(0.25,1.2),(0.55,1.05),(1,0.78)],stretch=(0.5,1.0,1.9)),   # Eeasyyy
+    'drawl':dict(points=[(0,0.95),(0.25,1.08),(0.55,0.98),(1,0.78)],stretch=(0.5,1.0,1.9)),   # Eeasyyy, kept low so it stays a man's voice
+    'wave':dict(points=[(0,1.0),(0.18,1.06),(0.3,1.3),(0.42,0.98),(0.54,1.3),(0.66,0.98),(0.78,1.25),(1,0.82)],stretch=(0.2,1.0,3.4)),   # the yo of aiyo: yoOoOoO
     'hype':dict(points=[(0,1.0),(0.2,1.18),(0.6,1.05),(1,0.85)]),                  # a bright, up-beat call
 }
 def join(pieces,sr):
