@@ -2,6 +2,19 @@
 const reduceFx = () => ui.calm || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);   // no big effects for calm mode or a phone set to reduce motion
 const atkHeld = new Set();   // losers whose verdict is still being held back until the creature arrives
 const ATK_STYLES = ['dragon', 'eagle', 'thunder', 'comet', 'meteors', 'shark', 'ninja', 'blackhole', 'fist', 'ice', 'cannon', 'ufo'];
+// Ease into the attack framing instead of moving a large fraction on the first frame.
+async function panAttackCamera(docY, height, tween) {
+  const start = window.scrollY;
+  const visibleY = docY - start;
+  if (visibleY >= height * .25 && visibleY <= height * .7) return;
+  const end = Math.max(0, Math.min(document.documentElement.scrollHeight - height, docY - height * .45));
+  if (Math.abs(end - start) < 4) return;
+  const duration = Math.min(1000, Math.max(650, Math.abs(end - start) * .7));
+  await tween(duration, (progress) => {
+    const eased = progress * progress * (3 - 2 * progress);
+    window.scrollTo({ top: start + (end - start) * eased, behavior: 'instant' });
+  });
+}
 function strengthOf(res, e) {   // bigger = stronger, for whatever that row rewards
   if (res.row === 0) return e.val;
   if (res.row === 1) return -e.val;
@@ -426,7 +439,7 @@ async function runShowdown(res) {
     const charge = async () => {
       const cs = [...new Map(pairs.map((p) => [p.champ.id, p.champ])).values()];
       const tl0 = tileOf(cs[0].id) || champTile;
-      await tween(420, () => follow(docPos(tl0).y, 0.3));
+      await panAttackCamera(docPos(tl0).y, H, tween); scrollNow = window.scrollY;
       for (const c of cs) {
         const tl = tileOf(c.id); if (!tl) continue;
         anim(tl, [{ boxShadow: '0 0 0 0 rgba(255,207,64,0)' }, { boxShadow: '0 0 0 5px rgba(255,207,64,.98), 0 0 70px rgba(255,207,64,.95)', offset: .4 }, { boxShadow: '0 0 0 0 rgba(255,207,64,0)' }], { duration: 950 });
@@ -641,7 +654,7 @@ async function runShowdown(res) {
         await wait(ti < shown.length - 1 ? 520 : 760);
       } else {
         // from the sky: the screen goes to the loser first
-        await tween(520, () => follow(tdoc().y, 0.28));
+        await panAttackCamera(tdoc().y, H, tween); scrollNow = window.scrollY;
         const T = vp(tdoc());
         if (style === 'thunder') {
           // a real storm cloud: dark puffs painted on the canvas, rolling in from the side, rain falling, lit from inside by every strike
@@ -1090,7 +1103,7 @@ async function runClash(res) {
     if (!blocked) {
       first = tiles[0]; last = tiles[tiles.length - 1];
       const midY = (docY(first) + docY(last)) / 2;
-      await tween(380, () => follow(docY(first), 0.32));
+      await panAttackCamera(docY(first), H, tween); scrollNow = window.scrollY;
       anim(first, [{ boxShadow: '0 0 0 0 rgba(255,207,64,0)' }, { boxShadow: '0 0 0 4px rgba(255,207,64,.95), 0 0 46px rgba(255,207,64,.8)', offset: .4 }, { boxShadow: '0 0 0 0 rgba(255,207,64,0)' }], { duration: 800 });
       anim(last, [{ boxShadow: '0 0 0 0 rgba(255,207,64,0)' }, { boxShadow: '0 0 0 4px rgba(255,207,64,.95), 0 0 46px rgba(255,207,64,.8)', offset: .4 }, { boxShadow: '0 0 0 0 rgba(255,207,64,0)' }], { duration: 800 });
       cap.classList.add('on');
