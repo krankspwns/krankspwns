@@ -252,7 +252,7 @@
   .pill.go { background: linear-gradient(180deg, #8fe0ae, #52b97c); color: #06210f; box-shadow: 0 0 14px rgba(111,207,151,.55); animation: pillpop .5s cubic-bezier(.2,1.5,.4,1) backwards; }
   @keyframes pillpop { from { transform: scale(.5); opacity: 0; } }
   .panel.is-ready { border-color: #6fcf97; background: linear-gradient(180deg, rgba(111,207,151,.14), rgba(111,207,151,.04)); box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(111,207,151,.5), 0 0 26px rgba(111,207,151,.22); }
-  .readystrip { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; margin: 4px 0 10px; border-radius: 12px; background: rgba(111,207,151,.18); border: 1px solid rgba(111,207,151,.55); color: #b9f0cd; font-weight: 700; text-align: center; animation: rise .4s ease-out backwards; }
+  .readystrip { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; margin: 4px 0 10px; border-radius: 12px; background: rgba(111,207,151,.18); border: 1px solid rgba(111,207,151,.55); color: #b9f0cd; font-weight: 700; text-align: center; } .readystrip.anim { animation: rise .4s ease-out backwards; }   /* slides in once, not on every redraw */
   .readystrip .tick { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #52b97c; color: #06210f; font-size: 15px; flex: none; }
   .readystrip small { display: block; font-weight: 500; opacity: .8; font-size: 12px; }
 
@@ -4477,6 +4477,7 @@ function rosterStrip() {
     return b;
   }));
 }
+let readyStripSeen = -1;
 function renderGame() {
   if (err) app.append(el('div', { class: 'err' }, tErr(err)));
   if (st.phase === 'lobby') return renderWaitingRoom();
@@ -4535,11 +4536,12 @@ function renderGame() {
     : el('button', { class: 'readybtn', disabled: placed < total, style: `--p:${(placed / total) * 100}%`, onclick: () => act('ready', { ready: true }) },
         placed < total ? t('placeAll', { p: placed, t: total }) : t('imReady'));
 
+  if (!me.ready && readyStripSeen === st.round) readyStripSeen = -1;   // unready: it may slide in again next time
   app.append(el('div', panel(1, 'ownpanel' + (me.ready ? ' is-ready' : '')),
     el('div', { class: 'row' },
       who(me, me.name + t('you'), 34),
       readyBtn),
-    inProgress ? '' : me.ready ? el('div', { class: 'readystrip' }, el('span', { class: 'tick' }, icon('tick', 15)),
+    inProgress ? '' : me.ready ? el('div', { class: 'readystrip' + (readyStripSeen === st.round ? '' : (readyStripSeen = st.round, ' anim')) }, el('span', { class: 'tick' }, icon('tick', 15)),
       el('div', {}, t('youReady'), el('small', {}, t('waitMore', { n: active.length - readyCount })))) : '',
     boardEl(me.board, true, me.id),
     el('div', { class: 'hint' }, inProgress
