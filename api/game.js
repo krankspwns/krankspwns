@@ -545,6 +545,7 @@ function view(room, pid, seen, cn) {
         nextReady: !!(room.nextReady && room.nextReady[p.id]),
         sess: (room.sess && room.sess[p.id]) || null,
         title: (room.titles && room.titles[p.id]) || '',
+        released: !!p.released,
         isHost: p.id === room.hostId,
         ready: p.ready,
         spectator: !!p.spectator,
@@ -596,19 +597,20 @@ async function handle(action, b, query, ctx = {}) {
   if (action === 'join') {
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
-    need(room.players.length < MAX_PLAYERS, 409, `Room is full (${MAX_PLAYERS} players)`);
     // same name as someone who has gone quiet = that player coming back (lost phone data, new browser): hand their seat back
     const same = room.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
     if (same) {
-      // only a seat that has been silent for a good while can be taken back (the owner would still hold the old token otherwise)
-      const ts = (await readPresence(code))[same.id];
-      need(!ts || Date.now() - ts > 120000, 409, 'Name already taken');
+      // a seat the host has set inactive can be taken straight away; otherwise only one that has been silent for a good while
+      // (the owner would still hold the old token otherwise)
+      if (!same.released) { const ts = (await readPresence(code))[same.id]; need(!ts || Date.now() - ts > 120000, 409, 'Name already taken'); }
+      delete same.released;
       const tok = issueToken(same);   // the old token stops working
       await saveRoom(room);
       seenThrottle.delete(code + ':' + same.id);
       await touchPresence(code, same.id);
       return { ...(await viewFor(room, same.id)), tok };
     }
+    need(room.players.length < MAX_PLAYERS, 409, `Room is full (${MAX_PLAYERS} players)`);   // checked after a rejoin, which takes no new seat
     const p = { id: crypto.randomUUID(), name, avatar: pickAvatar(b.avatar, room.players.map((q) => q.avatar)), hand: [], board: Array(SLOTS).fill(null), ready: false };
     if (room.phase === 'dealt') {
       if (activeOf(room).every((q) => q.ready)) {
@@ -892,6 +894,14 @@ async function handle(action, b, query, ctx = {}) {
       break;
     }
 
+    case 'release': {   // the host sets a player inactive: their seat, cards and points stay, and whoever joins next with that name takes it over
+      need(room.hostId === pid, 403, 'Only the host can do that');
+      const target = room.players.find((q) => q.id === String(b.target));
+      need(target, 404, 'Player not found');
+      need(target.id !== pid, 400, 'You can’t do that to yourself');
+      if (b.on === false) delete target.released; else target.released = true;
+      break;
+    }
     case 'kick': {
       // The host removes a player (for example someone who lost their connection and can't get back in).
       need(room.hostId === pid, 403, 'Only the host can do that');

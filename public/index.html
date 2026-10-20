@@ -957,6 +957,9 @@
   .ptags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; } .ptags .pill, .ptags .tag { margin: 0; }
   .pdot { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; } .pdot.on { background: rgba(111,207,151,.18); color: #8fe0ae; } .pdot.off { background: rgba(255,90,80,.25); color: #ffd2cd; }
   .kickbtn.busy { opacity: .85; cursor: default; display: inline-flex; align-items: center; gap: 8px; } .kickbtn .spin { width: 14px; height: 14px; border-width: 2px; }
+  .pacts { display: grid; gap: 6px; justify-items: stretch; } .pacts > button { justify-content: center; }
+  .relbtn { padding: 8px 12px; font-size: 12px; white-space: nowrap; background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--line); box-shadow: none; } .relbtn.on { background: rgba(111,207,151,.16); color: #b9f0cd; border-color: rgba(111,207,151,.55); }
+  .prow.released { opacity: .8; } .prow.released .av { filter: grayscale(.8); } .relnote { font-size: 11.5px; color: #ffd56b; margin: 2px 0; }
   .kickbtn { padding: 8px 14px; font-size: 12px; background: rgba(255,90,80,.16); color: #ffd2cd; border: 1px solid rgba(255,120,110,.6); box-shadow: none; white-space: nowrap; }
   .kickbtn:hover { background: rgba(255,90,80,.3); filter: none; transform: none; }
   .kickbtn.armed { background: linear-gradient(180deg, #ff7a6e, #e0483b); color: #fff; border-color: #ff5a4d; animation: readypulse 1s infinite; }
@@ -2878,7 +2881,7 @@ const I18N = {
     g8t: 'Good to know', g8a: 'If every player would lose a row (everyone has the same), it’s a tie — no penalty for anyone.', g8b: 'Penalties start fresh on every row; they don’t add up across rows.',
     gjkT: 'Joker (wild card)', gjkP: 'Each deck has one joker. It turns into the best card for the row it is in, and morphs when the row is opened.', gjk1: 'Row 1: Ace', gjk2: 'Row 2: 2 (lowest wins)', gjk3: 'Row 3: the value closest to 10.5', gjk4: 'Row 4: whatever makes the strongest hand',g8c: 'After row 4 a final board shows all rows, coloured by who lost what.', g8d: 'Joined while a game is in progress? You watch until the next round, then you’re dealt in.', g8e: 'Pop-ups, torn cards and the “You lose!” screen are just for fun — the rules above decide who loses.', g8f: 'The last player to get ready (or anyone the timer has to arrange) gets 1 penalty point added to their round total.',
     sndMode0: 'Sound Off', sndMode1: 'Sound Effects On', sndMode2: 'Effects + Music On',
-    playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', kickWorking: 'Removing…', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
+    playersBtn: 'Players', playersTitle: (v) => `Players (${v.n})`, kick: 'Kick', kickSure: 'Tap again to kick', relBtn: 'Set Inactive', relUndo: 'Set Active', relTip: (v) => `Keep ${v.name}'s seat, cards and points, and let them rejoin from another browser with the same name`, relUndoTip: () => 'Only the player can use this seat again', relNote: (v) => `Inactive · join with the name “${v.name}” to take this seat back`, kickWorking: 'Removing…', online: 'Online', offlineAgo: (v) => `Offline · ${v.n}s`, offlineTag: 'offline', plReady: 'Ready',
     kickHint: 'Players who lost their connection show as offline. Kicked players can rejoin with the room code.', hostOnlyHint: 'Only the host can remove players.',
     e_moved: 'You joined another room in another tab, so you left this one.', e_removed: 'You were removed from the room by the host', e_nop: 'Player not found', e_self: 'You can’t remove yourself — use Leave',
     invitedTo: (v) => `You’re invited to room ${v.code}`, leftOld: 'You left your previous room.', joinRoomN: (v) => `Join room ${v.code}`, otherCode: 'Use a different code', createOwn: 'or start your own room',
@@ -2960,7 +2963,7 @@ const I18N = {
     gh_none: '散牌', gh_pair: '对子', gh_straight: '顺子', gh_flush: '同花', gh_triple: '三条', gh_sflush: '同花顺', gh_royal: '皇家同花顺',
     g8t: '小提示', g8a: '如果这一行所有人都会输（所有人都一样），就是平局——没有人受惩罚。', g8b: '每一行的惩罚单独计算，不会跨行累加。',
     gjkT: '鬼牌（万能牌）', gjkP: '每副牌有一张鬼牌。它会变成所在行里最有利的牌，并在该行翻开时变形。', gjk1: '第 1 行：变成 A', gjk2: '第 2 行：变成 2（最小者赢）', gjk3: '第 3 行：变成最接近 10.5 的点数', gjk4: '第 4 行：变成能组成最强牌型的牌',g8c: '第 4 行结束后会显示最终结果，用颜色标出每个人输了哪几行。', g8d: '在游戏进行中加入的玩家先观战，下一轮会一起发牌。', g8e: '弹出提示、撕牌和“你输了！”画面只是为了好玩——谁输由上面的规则决定。', g8f: '最后一个准备好的玩家（或被计时自动摆牌的玩家）本回合总罚分加 1。',
-    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', kickWorking: '正在移出…', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
+    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再点一次确认', relBtn: '设为离线', relUndo: '恢复', relTip: (v) => `保留 ${v.name} 的座位、牌和分数，让他用同样的名字从其他浏览器重新加入`, relUndoTip: () => '只有该玩家本人可以继续使用这个座位', relNote: (v) => `已设为离线 · 用名字「${v.name}」加入即可接回这个座位`, kickWorking: '正在移出…', online: '在线', offlineAgo: (v) => `离线 · ${v.n} 秒`, offlineTag: '离线', plReady: '已准备',
     kickHint: '断线的玩家会显示为离线。被移出的玩家可以用房间代码重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '声音已关闭', sndMode1: '音效已开启', sndMode2: '音效 + 音乐已开启',
     e_moved: '你在另一个标签页加入了其他房间，因此已离开这个房间。', e_removed: '你已被房主移出房间', e_nop: '找不到该玩家', e_self: '不能移出自己——请点“离开”',
@@ -3043,7 +3046,7 @@ const I18N = {
     gh_none: '散牌', gh_pair: '對子', gh_straight: '順子', gh_flush: '同花', gh_triple: '三條', gh_sflush: '同花順', gh_royal: '皇家同花順',
     g8t: '小提示', g8a: '如果這一行所有人都會輸（所有人都一樣），就是平局——沒有人受懲罰。', g8b: '每一行的懲罰單獨計算，不會跨行累加。',
     gjkT: '鬼牌（萬能牌）', gjkP: '每副牌有一張鬼牌。它會變成所在行裡最有利的牌，並在該行翻開時變形。', gjk1: '第 1 行：變成 A', gjk2: '第 2 行：變成 2（最小者贏）', gjk3: '第 3 行：變成最接近 10.5 的點數', gjk4: '第 4 行：變成能組成最強牌型的牌',g8c: '第 4 行結束後會顯示最終結果，用顏色標出每個人輸了哪幾行。', g8d: '在遊戲進行中加入的玩家先觀戰，下一輪會一起發牌。', g8e: '彈出提示、撕牌和「你輸了！」畫面只是為了好玩——誰輸由上面的規則決定。', g8f: '最後一個準備好的玩家（或被計時自動擺牌的玩家）本回合總罰分加 1。',
-    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', kickWorking: '正在移出…', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
+    playersBtn: '玩家', playersTitle: (v) => `玩家（${v.n}）`, kick: '移出', kickSure: '再點一次確認', relBtn: '設為離線', relUndo: '恢復', relTip: (v) => `保留 ${v.name} 的座位、牌和分數，讓他用同樣的名字從其他瀏覽器重新加入`, relUndoTip: () => '只有該玩家本人可以繼續使用這個座位', relNote: (v) => `已設為離線 · 用名字「${v.name}」加入即可接回這個座位`, kickWorking: '正在移出…', online: '在線', offlineAgo: (v) => `離線 · ${v.n} 秒`, offlineTag: '離線', plReady: '已準備',
     kickHint: '斷線的玩家會顯示為離線。被移出的玩家可以用房間代碼重新加入。', hostOnlyHint: '只有房主可以移出玩家。',
     sndMode0: '聲音已關閉', sndMode1: '音效已開啟', sndMode2: '音效 + 音樂已開啟',
     e_moved: '你在另一個分頁加入了其他房間，因此已離開這個房間。', e_removed: '你已被房主移出房間', e_nop: '找不到該玩家', e_self: '不能移出自己——請點「離開」',
@@ -6241,15 +6244,17 @@ function renderPlayers() {
     const armed = kickArm === p.id;
     const presence = st.isHost && p.online !== undefined && !me
       ? el('span', { class: 'pdot ' + (p.online ? 'on' : 'off') }, p.online ? t('online') : t('offlineAgo', { n: p.seenAgo ?? '?' })) : '';
-    return el('div', { class: 'prow' + (p.online === false ? ' offline' : '') },
+    const relBtn = canKick ? el('button', { class: 'relbtn' + (p.released ? ' on' : ''), title: t(p.released ? 'relUndoTip' : 'relTip', { name: p.name }), onclick: () => { p.released = !p.released; renderPlayers(); act('release', { target: p.id, on: p.released }); } }, withIcon('swap', t(p.released ? 'relUndo' : 'relBtn'), 14)) : '';
+    return el('div', { class: 'prow' + (p.online === false ? ' offline' : '') + (p.released ? ' released' : '') },
       me
         ? editableAvatar(p.avatar, 40, setMyAvatar, p.acc, p.bd)
         : avatarEl(p.avatar, 40, '', p.acc, p.bd),
       el('div', { class: 'pinfo' },
         el('div', { class: 'pname' }, p.name + (me ? t('you') : ''), p.isHost ? el('span', { class: 'tag' }, t('host')) : ''),
+        p.released ? el('div', { class: 'relnote' }, t('relNote', { name: p.name })) : '',
         el('div', { class: 'ptags' }, status, presence, el('span', { class: 'wpchip sm', title: t('shopPtsHint') }, icon('trophy', 12), t('wpN', { n: p.wp || 0 }))),
         playerInv(p)),
-      canKick ? (kickBusy === p.id
+      canKick ? el('div', { class: 'pacts' }, relBtn, kickBusy === p.id
         ? el('button', { class: 'kickbtn armed busy', disabled: true }, el('i', { class: 'spin' }), t('kickWorking'))
         : el('button', { class: 'kickbtn' + (armed ? ' armed' : ''), onclick: () => {
             if (armed) { kickArm = null; clearTimeout(kickTimer); kickBusy = p.id; renderPlayers(); setTimeout(() => { if (kickBusy === p.id) { kickBusy = null; if (document.querySelector('.pl-ov')) renderPlayers(); } }, 7000); act('kick', { target: p.id }); }
