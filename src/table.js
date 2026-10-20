@@ -270,6 +270,7 @@ function renderRejoin() {
   clearTimeout(rejoinT); if (!slow) rejoinT = setTimeout(() => { if (session && !st) render(); }, 7050 - (Date.now() - rejoinAt));
 }
 function render() {
+  const reveals = captureRevealAnimations(app);
   const focus = focusSnapshot(app);
   if (!st || st.phase !== 'dealt' || st.players.find((p) => p.id === st.meId)?.ready) keyboardPick = null;
   const keepY = window.scrollY;
@@ -278,6 +279,7 @@ function render() {
   if (!session) renderLobby();
   else if (!st) renderRejoin();   // a saved room: show that we are getting back in, never the home page first
   else renderGame();
+  restoreRevealAnimations(app, reveals);
   fx = {}; newSeats.clear(); screenAnim = false; dealAnim = false; tearRows.clear(); stageEnter = false;
   renderPlayers();   // keep an open player list in step with the room
   renderSettings();

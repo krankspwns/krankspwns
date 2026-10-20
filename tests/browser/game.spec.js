@@ -188,3 +188,57 @@ test('a rejected optimistic move is reconciled even if the first fresh read fail
   expect(ids).toHaveLength(3);
   expect(new Set(ids).size).toBe(1);
 });
+
+test('host opens confirmed cards once and refreshes preserve reveal progress', async ({ page, browser }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const code = await create(page);
+  const context = await browser.newContext();
+  const guest = await context.newPage();
+  try {
+    await setup(guest);
+    await guest.getByLabel('Your name', { exact: true }).fill('Guest');
+    await guest.getByLabel('Room code', { exact: true }).fill(code);
+    await guest.getByRole('button', { name: 'Join', exact: true }).click();
+    await expect(page.locator('.seat:not(.empty)')).toHaveCount(2);
+    await page.locator('.waitroom > button.big').click();
+    await expect(page.locator('.hand .card')).toHaveCount(7);
+    await expect(guest.locator('.hand .card')).toHaveCount(7);
+    await placeCards(page); await placeCards(guest);
+    await page.locator('.readybtn').click(); await guest.locator('.readybtn').click();
+    await expect(page.locator('.stcontrol button.big')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('.stcontrol button.big')).toBeEnabled();
+    // Hold the reveal before the server receives it, representing a slow connection.
+    await page.evaluate(() => { clearTimeout(timer); rtClose(); });
+    let release, received;
+    const gate = new Promise(resolve => { release = resolve; });
+    const request = new Promise(resolve => { received = resolve; });
+    await page.route('**/api/game', async route => {
+      if (route.request().method() === 'POST' && route.request().postDataJSON()?.action === 'flipRowAll') {
+        received(); await gate;
+      }
+      await route.continue();
+    });
+    await page.locator('.stcontrol button.big').click(); await request;
+    await expect(page.locator('.stcontrol button.big')).toBeDisabled();
+    await expect(page.locator('.stage .fx-flip')).toHaveCount(0);
+    expect(await page.evaluate(() => st.players.filter(p => !p.spectator).every(p => !p.board[0].up))).toBe(true);
+    release();
+    await page.waitForFunction(() => !!document.querySelector('.stage [data-reveal-key].fx-flip'));
+    const progress = await page.evaluate(() => {
+      const card = document.querySelector('.stage [data-reveal-key].fx-flip');
+      const key = card.dataset.revealKey;
+      const animation = card.getAnimations().find(a => a.animationName === 'flipin');
+      const before = animation.currentTime, delay = animation.effect.getTiming().delay;
+      render();
+      const replacement = [...document.querySelectorAll('[data-reveal-key]')].find(n => n.dataset.revealKey === key);
+      const continued = replacement.getAnimations().find(a => a.animationName === 'flipin');
+      return { before, after: continued.currentTime, delay, afterDelay: continued.effect.getTiming().delay };
+    });
+    expect(progress.after).toBeCloseTo(progress.before, 1);
+    expect(progress.afterDelay).toBe(progress.delay);
+    await page.waitForTimeout(1250);
+    await page.evaluate(() => render());
+    await expect(page.locator('.stage .fx-flip')).toHaveCount(0);
+    expect(await page.evaluate(() => st.rowResults.length)).toBe(1);
+  } finally { await context.close(); }
+});

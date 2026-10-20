@@ -35,12 +35,9 @@ function predict(action, x) {
       for (let i = start; i < start + ROWS[x.row]; i++) if (me.board[i]) me.board[i].up = !!x.up;
       return next;
     }
-    case 'flipRowAll': {
-      if (!next.players.filter((p) => !p.spectator).every((p) => p.ready)) return null;
-      const start = ROWS.slice(0, x.row).reduce((a, n) => a + n, 0);
-      for (const pl of next.players.filter((p) => !p.spectator)) for (let i = start; i < start + ROWS[x.row]; i++) if (pl.board[i]) pl.board[i].up = !!x.up;
-      return next;
-    }
+    // Other players' hidden card identities arrive with the server response.
+    // Predicting this reveal flips placeholders, then replaces them mid-animation.
+    case 'flipRowAll': return null;
     case 'ready':
       if (x.ready && !me.board.every(Boolean)) return null;
       if (!x.ready && next.players.filter((p) => !p.spectator).every((p) => p.ready)) return null;   // game in progress
@@ -51,7 +48,7 @@ function predict(action, x) {
   return null;
 }
 
-const ACT_SOUND = { predict: '', place: 'place', move: 'place', unplace: 'return', flip: 'flip', flipRow: 'flip', flipRowAll: 'flip', kick: 'kick' };
+const ACT_SOUND = { predict: '', place: 'place', move: 'place', unplace: 'return', flip: 'flip', flipRow: 'flip', flipRowAll: '', kick: 'kick' };
 function act(action, extra = {}) {
   if (!session) return;
   const mine = session;

@@ -685,7 +685,7 @@ function stagePanel(active) {
   } else if (isCurrent && !guessing) {   // while the guesses are being made the guessing panel says it all
     const drinkWait = lateDrinkPending() || (drinkPendingRow() >= 0 && drinkPendingRow() < row);
     control = el('div', { class: 'stcontrol' },
-      st.isHost ? el('button', { class: 'big', disabled: guessing || drinkWait, onclick: () => act('flipRowAll', { row, up: true }) }, guessing ? t('predWaitHost') : drinkWait ? t('drinkHold') : t('stageHost', { n: row + 1 })) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), drinkWait ? t('drinkHold') : t(guessing ? 'predWaitHost' : 'stageWaitHost')),
+      st.isHost ? el('button', { class: 'big', disabled: guessing || drinkWait || pending > 0, onclick: (event) => { event.currentTarget.disabled = true; event.currentTarget.setAttribute('aria-busy', 'true'); act('flipRowAll', { row, up: true }); } }, guessing ? t('predWaitHost') : drinkWait ? t('drinkHold') : t('stageHost', { n: row + 1 })) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), drinkWait ? t('drinkHold') : t(guessing ? 'predWaitHost' : 'stageWaitHost')),
       el('div', { class: 'scount' }, t('openedN', { n: openedN, total: active.length })),
       );
   }
@@ -709,7 +709,7 @@ function stagePanel(active) {
       const fxCls = f ? 'fx-' + f : '';
       const as = vis && res ? effOf(res, p.id, i) : null;   // a joker turns into its best card once the row is scored
       if (vis && lose) cards.append(tornCard(cell.c, tearNow, as, tearNow ? cascadeOf(active.length) : 0, res ? atkStyleOf(res) : ''));
-      else if (vis) { const cn = cardEl(cell.c, { up: true, extra: fxCls, as, morph: !!as && tearNow, prime: tiers[i] }); if (f === 'flip') cn.style.animationDelay = Math.min(idx * CASCADE_STEP, CASCADE_MAX) + 'ms'; cards.append(cn); }
+      else if (vis) { const cn = cardEl(cell.c, { up: true, extra: fxCls, as, morph: !!as && tearNow, prime: tiers[i] }); cn.dataset.revealKey = [st.code, st.round, p.id, start + i, cell.c, as || ''].join(':'); if (f === 'flip') cn.style.animationDelay = Math.min(idx * CASCADE_STEP, CASCADE_MAX) + 'ms'; cards.append(cn); }
       else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
     });
     const status = res

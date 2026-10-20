@@ -60,7 +60,7 @@
   @keyframes cardglint { 0% { transform: translateX(-120%); } 35% { transform: translateX(120%); } 100% { transform: translateX(120%); } }
   @keyframes primepulse { 0%, 100% { box-shadow: 0 0 0 1.5px rgb(var(--pc)), 0 0 10px rgba(var(--pc),.55), 0 4px 12px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 0 1.5px rgb(var(--pc)), 0 0 20px rgba(var(--pc),.95), 0 4px 12px rgba(0,0,0,.45); } }
   @keyframes primeroyal { 0% { box-shadow: 0 0 0 2px #ffd23f, 0 0 20px rgba(255,210,63,.95), 0 4px 12px rgba(0,0,0,.45); } 33% { box-shadow: 0 0 0 2px #ff7ad9, 0 0 20px rgba(255,122,217,.95), 0 4px 12px rgba(0,0,0,.45); } 66% { box-shadow: 0 0 0 2px #6fe3ff, 0 0 20px rgba(111,227,255,.95), 0 4px 12px rgba(0,0,0,.45); } 100% { box-shadow: 0 0 0 2px #ffd23f, 0 0 20px rgba(255,210,63,.95), 0 4px 12px rgba(0,0,0,.45); } }
-  body.calm .card.prime, body.autocalm .card.prime, body.calm .card.prime .cglint, body.autocalm .card.prime .cglint, body.calm .cstar, body.autocalm .cstar { animation: none; }
+  body.calm .card.prime:not(.fx-flip), body.autocalm .card.prime:not(.fx-flip), body.calm .card.prime .cglint, body.autocalm .card.prime .cglint, body.calm .cstar, body.autocalm .cstar { animation: none; }
   .card.shared::after { content:''; position:absolute; right:5px; top:5px; width:8px; height:8px; border-radius:50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); }
   .others .card.shared::after { display:none; }
   .roomcode { display:flex; align-items:baseline; gap:10px; }
@@ -168,7 +168,7 @@
   @keyframes deal { 0% { opacity: 0; transform: translate(var(--dx, 0), calc(var(--dy, -60%) - 30%)) rotate(var(--dr, -8deg)) scale(.82); } 18% { opacity: 1; } 60% { transform: translate(0, -6%) rotate(0) scale(1.06); box-shadow: 0 14px 26px rgba(0,0,0,.5); } 100% { opacity: 1; transform: none; } }
   @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
   .fx-pop { animation: pop .5s cubic-bezier(.2,1.4,.4,1) backwards; }
-  .fx-flip { animation: flipin .45s ease-out backwards; }
+  .card.fx-flip { animation: flipin .45s ease-out backwards; }
   .fx-deal { animation: deal .62s cubic-bezier(.22,.9,.3,1) backwards; }
   .fx-in { animation: rise .55s ease-out backwards; }
 

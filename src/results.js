@@ -176,8 +176,7 @@ function syncDrinkUi() {
   node.dataset.row = String(row); node.classList.remove('cheers', 'out'); node.classList.toggle('fresh', fresh);
   node.replaceChildren(box);
   if (!ov) { document.body.append(node); SND.play('pop'); }
-  if (closing && late) { drinkCheer = node; setTimeout(() => { node.classList.add('out'); setTimeout(() => { node.remove(); drinkCheer = null; }, 380); }, 950); }   // the guessing is about to open: the glasses drain and the popup gets out of the way
-  else if (closing) { drinkCheer = node; setTimeout(() => { node.classList.add('cheers'); SND.play('chime'); setTimeout(() => { node.classList.add('out'); setTimeout(() => { node.remove(); drinkCheer = null; }, 380); }, 1100); }, 1100); }   // the glasses drain, then Cheers!
+  if (closing) { drinkCheer = node; setTimeout(() => { node.classList.add('cheers'); SND.play('chime'); setTimeout(() => { node.classList.add('out'); setTimeout(() => { node.remove(); drinkCheer = null; }, 380); }, 1100); }, 1100); }   // every drink penalty ends with draining glasses, then Cheers!
 }
 setInterval(() => { if (st && (drinkOn() || document.querySelector('.drinkfx'))) syncDrinkUi(); }, 400);
 

@@ -54,6 +54,27 @@ function cardEl(id, { up = true, src = null, onclick = null, extra = '', shared 
   return e;
 }
 
+// Table renders replace card nodes. Carry an unfinished reveal through that replacement.
+function captureRevealAnimations(root) {
+  const reveals = new Map();
+  for (const card of root.querySelectorAll('[data-reveal-key].fx-flip')) {
+    const flip = card.getAnimations().find((animation) => animation.animationName === 'flipin' && animation.playState === 'running');
+    if (flip && typeof flip.currentTime === 'number') reveals.set(card.dataset.revealKey, { time: flip.currentTime, delay: flip.effect.getTiming().delay });
+  }
+  return reveals;
+}
+function restoreRevealAnimations(root, reveals) {
+  if (!reveals.size) return;
+  for (const card of root.querySelectorAll('[data-reveal-key]')) {
+    const reveal = reveals.get(card.dataset.revealKey);
+    if (!reveal) continue;
+    card.classList.add('fx-flip');
+    card.style.animationDelay = reveal.delay + 'ms';
+    const flip = card.getAnimations().find((animation) => animation.animationName === 'flipin');
+    if (flip) flip.currentTime = reveal.time;
+  }
+}
+
 // ---- pointer-based drag & drop (works with mouse and touch) ----
 let dragging = false;
 let touchDrag = false;   // true once a finger has picked a card up: only then do we stop the page from scrolling
