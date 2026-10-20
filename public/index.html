@@ -2115,7 +2115,7 @@ function qrSvg(text) {
 }
 async function openQR() {
   if (!st || document.querySelector('.qr-ov')) return;
-  const link = `${location.origin}/?room=${st.code}`;
+  const link = `${shareOrigin()}/?room=${st.code}`;
   const close = () => { ov.remove(); if (!document.querySelector('.guide-ov')) document.body.classList.remove('noscroll'); };
   const box = el('div', { class: 'avbox qrbox', role: 'dialog', 'aria-modal': 'true' },
     el('div', { class: 'avtitle' }, t('qrTitle')),
@@ -3110,6 +3110,9 @@ const ROWS = [1, 1, 2, 3];
 const POLL_MS = 1500;
 const app = document.getElementById('app');
 let session = load();   // {code, pid}
+// invite links always use the public address: a per-deploy Vercel link (opened from the dashboard or a notification) asks friends to log in to Vercel
+const PUBLIC_HOST = 'krankspwns.vercel.app';
+const shareOrigin = () => (location.hostname.endsWith('.vercel.app') && location.hostname !== PUBLIC_HOST ? 'https://' + PUBLIC_HOST : location.origin);
 // Opened via an invite link (?room=CODE): if we were in a different room, leave it and offer to join the new one instead.
 const invitedCode = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
 let inviteCode = '', leftOld = false;
@@ -3425,7 +3428,7 @@ function waitSettings() {
 }
 // one Invite button for everything: copy the room code, copy the link, or show a QR code
 function inviteControl() {
-  const link = `${location.origin}/?room=${st.code}`;
+  const link = `${shareOrigin()}/?room=${st.code}`;
   const close = () => { inviteOpen = false; render(); };
   const copyItem = (icon_, label, text) => { const b = el('button', { type: 'button', role: 'menuitem', onclick: () => { copyText(text, b); setTimeout(() => { if (inviteOpen) close(); }, 900); } }, withIcon(icon_, label)); return b; };
   const menu = el('div', { class: 'invmenu', role: 'menu', onclick: (e) => e.stopPropagation() },
@@ -3439,7 +3442,7 @@ function inviteControl() {
 }
 
 function renderWaitingRoom() {
-  const link = `${location.origin}/?room=${st.code}`;
+  const link = `${shareOrigin()}/?room=${st.code}`;
 
   const seats = el('div', { class: 'seats' });
   for (let i = 0; i < st.maxPlayers; i++) {
@@ -6160,7 +6163,7 @@ async function scoreboardImage(data) {
   });
   // footer: the app icon and where to play
   const fy = 1800; if (icon) { g.save(); rr(W / 2 - 250, fy - 46, 92, 92, 22); g.clip(); g.drawImage(icon, W / 2 - 250, fy - 46, 92, 92); g.restore(); }
-  g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = f(800, 34); g.fillText(fit(t('sbPlay'), 380), W / 2 - 140, fy - 4); g.fillStyle = 'rgba(255,226,140,.85)'; g.font = f(600, 28); g.fillText(fit(location.host, 380), W / 2 - 140, fy + 36);
+  g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = f(800, 34); g.fillText(fit(t('sbPlay'), 380), W / 2 - 140, fy - 4); g.fillStyle = 'rgba(255,226,140,.85)'; g.font = f(600, 28); g.fillText(fit(location.hostname.endsWith('.vercel.app') ? PUBLIC_HOST : location.host, 380), W / 2 - 140, fy + 36);
   return new Promise((res) => cv.toBlob(res, 'image/png'));
 }
 async function shareScoreboard(btn, ready) {
