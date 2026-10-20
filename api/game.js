@@ -385,8 +385,12 @@ function predWindow(room) {
   const row = currentRowOf(room), active = activeOf(room);
   if (room.phase !== 'dealt' || row >= ROW_SIZES.length || active.length < 2 || !active.every((p) => p.ready)) return null;
   // a moment after the "everyone is ready" banner; the later rows have no window of their own
-  const from = row === 0 && room.allReady && room.allReady.at ? room.allReady.at + 1000 : null;
+  let from = row === 0 && room.allReady && room.allReady.at ? room.allReady.at + 1000 : null;
   if (!from) return null;
+  if (settingsOf(room).drink && Object.keys(drinksFor(room, 'late')).length) {   // drink mode: the late drinkers drink first, then the guessing opens
+    if (lateDrinkPending(room)) return null;
+    from = Math.max(from, (room.drunkLateAt || 0) + 2600);   // after the glasses drain and the cheers
+  }
   // everybody has decided every row: no need to sit out the clock (a beat is kept so the last pick is seen)
   const early = room.predEnd && room.predEnd[0];
   const ms = settingsOf(room).predSec * 1000;
@@ -436,14 +440,19 @@ function latePenOf(room) {
   const ids = a.timer ? (a.ids || []) : [a.id];
   return Object.fromEntries(ids.filter((id) => room.players.some((p) => p.id === id)).map((id) => [id, LATE_PEN]));
 }
-// drink mode: what each player owes for a row (its losers drink the penalty; the last to get ready adds theirs to row 1)
+// drink mode: what each player owes for a row (its losers drink the penalty), or for 'late': the last to get ready, before the guessing
 function drinksFor(room, row) {
-  const r = room.results && room.results[row]; if (!r) return {};
   const out = {};
-  if (!r.tie) for (const id of r.losers) out[id] = (out[id] || 0) + r.penalty;
-  if (row === 0) for (const [id, n] of Object.entries(latePenOf(room))) out[id] = (out[id] || 0) + n;
+  if (row === 'late') { if (room.phase === 'dealt' && room.allReady) Object.assign(out, latePenOf(room)); }
+  else { const r = room.results && room.results[row]; if (!r) return {}; if (!r.tie) for (const id of r.losers) out[id] = (out[id] || 0) + r.penalty; }
   const act = new Set(activeOf(room).map((p) => p.id));
   return Object.fromEntries(Object.entries(out).filter(([id]) => act.has(id)));   // someone who has left or been set inactive never holds the table up
+}
+// the last to get ready still owe their drink (nothing else happens until they have had it)
+function lateDrinkPending(room) {
+  if (!settingsOf(room).drink || room.phase !== 'dealt' || !room.allReady) return false;
+  const done = (room.drunk && room.drunk.late) || {};
+  return Object.keys(drinksFor(room, 'late')).some((id) => !done[id]);
 }
 // the first row whose drinkers have not all finished, or -1
 function drinksPending(room) {
@@ -721,7 +730,7 @@ async function handle(action, b, query, ctx = {}) {
       room.deck = deck; // leftovers, for players who join mid-round
       room.results = {};
       room.preds = {};
-      room.drunk = {};
+      room.drunk = {}; room.drunkLateAt = 0;
       room.predEnd = {};
       room.deadline = set.timer ? Date.now() + set.timer * 1000 : null;
       room.phase = 'dealt';
@@ -770,7 +779,7 @@ async function handle(action, b, query, ctx = {}) {
       const slot = slotOf(b.slot);
       need(me.board[slot], 400, 'Nothing there');
       need(rowOfSlot(slot) <= currentRowOf(room), 409, 'Not this row yet');
-      { const dp = drinksPending(room); need(me.board[slot].up || dp < 0 || dp >= rowOfSlot(slot), 409, 'Finish the drinks first'); }
+      { const dp = drinksPending(room); need(me.board[slot].up || (!lateDrinkPending(room) && (dp < 0 || dp >= rowOfSlot(slot))), 409, 'Finish the drinks first'); }
       me.board[slot].up = !me.board[slot].up;
       break;
     }
@@ -783,7 +792,7 @@ async function handle(action, b, query, ctx = {}) {
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       need(row <= currentRowOf(room), 409, 'Not this row yet');
-      { const dp = drinksPending(room); need(!(action === 'flipRowUp' || b.up) || dp < 0 || dp >= row, 409, 'Finish the drinks first'); }
+      { const dp = drinksPending(room); need(!(action === 'flipRowUp' || b.up) || (!lateDrinkPending(room) && (dp < 0 || dp >= row)), 409, 'Finish the drinks first'); }
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
       const up = action === 'flipRowUp' ? true : !!b.up;
       for (let i = start; i < start + ROW_SIZES[row]; i++) if (me.board[i]) me.board[i].up = up;
@@ -799,7 +808,7 @@ async function handle(action, b, query, ctx = {}) {
       const row = Number(b.row);
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       need(row <= currentRowOf(room), 409, 'Not this row yet');
-      { const dp = drinksPending(room); need(!b.up || dp < 0 || dp >= row, 409, 'Finish the drinks first'); }
+      { const dp = drinksPending(room); need(!b.up || (!lateDrinkPending(room) && (dp < 0 || dp >= row)), 409, 'Finish the drinks first'); }
       const start = ROW_SIZES.slice(0, row).reduce((a, n) => a + n, 0);
       for (const pl of active) {
         for (let i = start; i < start + ROW_SIZES[row]; i++) if (pl.board[i]) pl.board[i].up = !!b.up;
@@ -964,12 +973,13 @@ async function handle(action, b, query, ctx = {}) {
       break;
     }
     case 'drank': {   // drink mode: a loser says they have finished; the host can wave a row through for everyone
-      const row = Number(b.row);
-      need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length && room.results && room.results[row], 400, 'Bad row');
+      const row = b.row === 'late' ? 'late' : Number(b.row);
+      need(row === 'late' ? !!room.allReady : Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length && room.results && room.results[row], 400, 'Bad row');
       const owed = drinksFor(room, row);
       room.drunk = room.drunk || {}; room.drunk[row] = room.drunk[row] || {};
       if (b.all) { need(room.hostId === pid, 403, 'Only the host can do that'); for (const id of Object.keys(owed)) room.drunk[row][id] = true; }
       else { need(owed[pid], 400, 'Nothing to drink this row'); room.drunk[row][pid] = true; }
+      if (row === 'late' && !room.drunkLateAt && !lateDrinkPending(room)) room.drunkLateAt = Date.now();   // the guessing opens a beat after the last of them
       break;
     }
     case 'release': {   // the host sets a player inactive: their seat, cards and points stay, and whoever joins next with that name takes it over

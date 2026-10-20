@@ -406,17 +406,20 @@ const post = (b) => call('POST', b, {});
     const droom = globalThis.__rooms.get(da.code);
     const rig = (pl, cs) => cs.forEach((c, i) => (pl.board[i].c = c));
     rig(droom.players[0], ['3S', '4S', '10S', 'QH', '2S', '3S', '4S']); rig(droom.players[1], ['KH', 'KD', '3C', '4D', '7H', '7C', '7D']);
-    droom.allReady = { id: db.meId, name: 'DB', at: Date.now() };   // DB was last to get ready: one more drink with row 1
+    droom.allReady = { id: db.meId, name: 'DB', at: Date.now() };   // DB was last to get ready: a drink of their own before anything else
+    assert.equal((await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 0, up: true })).s, 409, 'row 1 waits for the last-ready drink');
+    assert.equal((await post({ action: 'drank', code: da.code, pid: da.meId, row: 'late' })).s, 400, 'only the late one drinks it');
+    assert.equal((await post({ action: 'drank', code: da.code, pid: db.meId, row: 'late' })).s, 200);
+    assert.ok(globalThis.__rooms.get(da.code).drunkLateAt, 'the guessing can open now');
     await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 0, up: true });
     let v = (await call('GET', null, { code: da.code, pid: da.meId })).j;
     assert.deepEqual(v.rowResults[0].losers, [da.meId], 'DA loses row 1 with the 3');
     assert.equal((await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 1, up: true })).s, 409, 'row 2 waits for the drinks');
     assert.equal((await post({ action: 'flipRow', code: da.code, pid: db.meId, row: 1, up: true })).s, 409, 'for everyone');
+    assert.equal((await post({ action: 'drank', code: da.code, pid: db.meId, row: 0 })).s, 400, 'the late drink is not part of row 1 any more');
     assert.equal((await post({ action: 'drank', code: da.code, pid: da.meId, row: 0 })).s, 200);
-    assert.equal((await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 1, up: true })).s, 409, 'the last-ready drink is still owed');
-    assert.equal((await post({ action: 'drank', code: da.code, pid: db.meId, row: 0 })).s, 200);
     v = (await post({ action: 'flipRowAll', code: da.code, pid: da.meId, row: 1, up: true })).j;
-    assert.deepEqual(v.drunk[0], { [da.meId]: true, [db.meId]: true }, 'the view says who has drunk');
+    assert.deepEqual(v.drunk[0], { [da.meId]: true }, 'the view says who has drunk');
     const l2 = v.rowResults[1].losers[0], w2 = [da.meId, db.meId].find((id) => id !== l2);
     assert.equal((await post({ action: 'drank', code: da.code, pid: w2, row: 1 })).s, 400, 'only the losers drink');
     assert.equal((await post({ action: 'drank', code: da.code, pid: db.meId, row: 1, all: true })).s, 403, 'only the host waves a row through');
