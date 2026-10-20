@@ -1103,6 +1103,16 @@
     .handhead { margin-bottom: 4px; } .handhead small { font-size: 11px; }
     .stage .tstat { font-size: 9px; letter-spacing: .2px; padding: 2px 6px; } .stage .tflip { padding: 4px 8px; font-size: 10px; white-space: nowrap; } .stage .tn { font-size: 13px; }
   }
+  /* popups are sized by the part of the screen you can actually see: on iPhone browsers (Brave, Safari, Chrome) "vh" includes the area
+     under the address bar, which pushed the top of a popup (the shop's WP, the close button) out of sight */
+  .guide-ov { padding-top: max(12px, env(safe-area-inset-top)); }
+  @supports (height: 100dvh) {
+    .guide { max-height: min(92dvh, 900px); } .shopbox { max-height: min(88dvh, 720px); } .setbox { max-height: min(88dvh, 700px); }
+    .avbox { max-height: 90dvh; } .sbbox { max-height: 92dvh; } .guide.chatbox { height: min(82dvh, 620px); }
+    @media (max-width: 520px) { .guide { max-height: calc(100dvh - max(12px, env(safe-area-inset-top))); } }
+    @media (orientation: landscape) and (max-height: 520px) { .guide { max-height: calc(100dvh - 12px); } }
+  }
+  @supports not (height: 100dvh) { @media (max-width: 520px) { .guide { max-height: calc(100vh - 110px); } } }   /* older iPhones: keep well clear of the toolbars */
 </style>
 <!-- Vercel Web Analytics: page views only, no cookies. It starts reporting once Analytics is switched on for the project in the Vercel dashboard. -->
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
