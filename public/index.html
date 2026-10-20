@@ -4042,6 +4042,8 @@ function lastChips(size, cls) {
   if (!ids.length) return el('div', { class: 'lpeople ' + cls }, el('b', {}, st.allReady.timer ? t('timesUp') : st.allReady.name));
   return el('div', { class: 'lpeople ' + cls + (ids.length === 1 ? ' one' : '') }, ...ids.map((id) => el('span', { class: 'lpc' }, avatarEl(avOf(id), ids.length === 1 ? size : Math.round(size * 0.7), 'sad', accOf(id), bdOf(id)), el('b', {}, dkName(id)))));
 }
+// the New Round shine runs on the page's clock: a redrawn button picks the sweep up exactly where it was instead of starting over
+const nrSheen = (b) => { requestAnimationFrame(() => { if (b.isConnected) for (const a of b.getAnimations({ subtree: true })) if (a.animationName === 'sheen') a.startTime = 0; }); return b; };
 function lastBanner() {
   const left = bannerRemaining();
   if (left <= 0) return null;
@@ -5017,7 +5019,7 @@ function renderGame() {
     el('div', { class: 'roomcode' }, el('span', { class: 'kicker' }, t('room')), el('span', { class: 'code' }, st.code)),
     el('div', { class: 'hstats' }, t('playersN', { n: st.players.length, max: st.maxPlayers }), el('span', { class: 'sep' }, '·'),
       ...(readyCount < active.length ? [el('b', { style: 'color:#8fe0ae' }, t('readyN', { r: readyCount, n: active.length })), el('span', { class: 'sep' }, '·')] : []), t('roundN', { n: st.round })),   // the ready count only matters while cards are being arranged
-    el('div', { class: 'hactions' + (st.isHost ? '' : ' even') }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? el('button', { class: 'nrbtn', onclick: () => act('deal') }, el('span', { class: 'nric' }, icon('shuffle', 15)), el('span', {}, t('reset'))) : ''),
+    el('div', { class: 'hactions' + (st.isHost ? '' : ' even') }, el('button', { class: 'ghost', onclick: openPlayers }, withIcon('users', t('playersBtn'))), invite, st.isHost ? nrSheen(el('button', { class: 'nrbtn', onclick: () => act('deal') }, el('span', { class: 'nric' }, icon('shuffle', 15)), el('span', {}, t('reset')))) : ''),
     el('button', { class: 'ghost leavebtn', onclick: confirmLeave }, withIcon('logout', t('leave'))));
   const strip = rosterStrip(); if (strip) head.append(strip);   // inside the same card as the room code and buttons
   app.append(head);
