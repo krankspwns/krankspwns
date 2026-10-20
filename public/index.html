@@ -2413,12 +2413,17 @@ function queueGift(g) {
 function runGiftQ() {
   if (giftRun || !giftQ.length) return;
   const g = giftQ.shift(); giftRun = true;
-  const mini = giftIsMini(g), atMe = !!st && g.to === st.meId && g.from !== st.meId, lead = atMe ? 600 : 0;
+  const all = g.to === 'all' && !!st, others = all ? st.players.filter((p) => p.id !== g.from).map((p) => p.id) : [];
+  const mini = giftIsMini(g), atMe = !!st && g.from !== st.meId && (g.to === st.meId || (all && others.includes(st.meId))), lead = atMe ? 600 : 0;
   giftBanner(g);
-  if (mini) playGiftMini(g);
-  else if (atMe) { playGiftMini(g); setTimeout(() => playGift(g), lead); }   // aimed at me: I see it fly from the thrower's avatar onto mine, then the full show
-  else playGift(g);
-  setTimeout(() => { giftRun = false; runGiftQ(); }, (mini ? 1900 : lead + (GIFT_MS[g.item] || 3000)) + (giftQ.length ? 250 : 0));
+  let ms;
+  if (all && g.from === st.meId && others.length) {   // I threw at everyone: one throw flies to each of them, one after another
+    others.forEach((id, i) => setTimeout(() => playGiftMini({ ...g, to: id }), i * 140)); ms = 1900 + (others.length - 1) * 140;
+  } else if (atMe) {   // aimed at me (alone or with everyone): it flies from the thrower's avatar onto mine, then the full show
+    playGiftMini({ ...g, to: st.meId }); setTimeout(() => playGift(g), lead); ms = lead + (GIFT_MS[g.item] || 3000);
+  } else if (mini) { playGiftMini(g); ms = 1900; }
+  else { playGift(g); ms = GIFT_MS[g.item] || 3000; }
+  setTimeout(() => { giftRun = false; runGiftQ(); }, ms + (giftQ.length ? 250 : 0));
 }
 
 // a throw at somebody else: a small projectile flies from the thrower to that player and lands with a tiny version of the effect (the target itself gets the full show)
