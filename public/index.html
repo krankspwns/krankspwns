@@ -4364,14 +4364,30 @@ const NB_SVG = {
 function nbIcon(on) { const w = el('span', { class: 'nbi' }); w.innerHTML = uniqSvg(`<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">${NB_SVG[on ? 'tick' : 'cards']}</svg>`); return w; }
 // everyone taps Ready for another round; when the last one does, the next round is dealt (the host can still deal straight away from the top)
 let nbSeen = { round: -1, ids: new Set() }, nbPressAt = 0;
+// Ready can be tapped as often as anyone likes: only the final choice is sent, once taps have settled, one request at a time,
+// and the phone keeps listening to the room meanwhile (nothing is queued, so the next round is never held back)
+let nbWant = null, nbRound = -1, nbTimer = null, nbBusy = false;
+function nbSend() {
+  nbRound = st.round; clearTimeout(nbTimer);
+  nbTimer = setTimeout(async () => {
+    if (nbBusy || nbWant === null || !st || st.round !== nbRound) return;
+    const want = nbWant; nbBusy = true;
+    try { const j = await api('nextReady', { ready: want }); if (adopt(j)) safeRender(); } catch {}   // a late tap after the deal is simply dropped
+    nbBusy = false;
+    if (nbWant !== null && nbWant !== want && st && st.round === nbRound) nbSend();   // changed their mind while it was on its way
+    else if (nbWant === want) nbWant = null;   // the room now says what we wanted
+  }, 250);
+}
 function nextRoundBar(active) {
   const me = active.find((p) => p.id === st.meId); if (!me) return '';
-  const n = active.filter((p) => p.nextReady).length, mine = me.nextReady, pressAge = Date.now() - nbPressAt;   // the press keeps playing through the redraw the server's reply causes
-  queueMicrotask(() => { nbSeen = { round: st.round, ids: new Set(active.filter((p) => p.nextReady).map((p) => p.id)) }; });   // remembered after drawing, so only new arrivals celebrate
+  if (nbWant !== null && nbRound !== st.round) nbWant = null;   // a new round was dealt: forget any tap still settling
+  const shown = (p) => (p.id === st.meId && nbWant !== null ? nbWant : p.nextReady);
+  const n = active.filter(shown).length, mine = shown(me), pressAge = Date.now() - nbPressAt;   // the press keeps playing through the redraw the server's reply causes
+  queueMicrotask(() => { nbSeen = { round: st.round, ids: new Set(active.filter(shown).map((p) => p.id)) }; });   // remembered after drawing, so only new arrivals celebrate
   return el('div', { class: 'nextbar' + (mine ? ' on' : '') },
     el('div', { class: 'nb-l' }, el('b', {}, t('nextT')), el('small', {}, el('b', { class: 'nb-n' }, t('nextN', { n, of: active.length })), ' · ', t('nextHint'))),
-    el('div', { class: 'nb-avs' }, ...active.map((p) => { const fresh = p.nextReady && nbSeen.round === st.round && !nbSeen.ids.has(p.id); return el('span', { class: 'nb-av' + (p.nextReady ? ' r' : '') + (fresh ? ' just' : ''), title: p.name }, avatarEl(p.avatar, 26, '', p.acc, p.bd), fresh ? el('i', { class: 'nb-spark' }) : ''); })),
-    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : '') + (pressAge < 600 ? ' just' : ''), style: pressAge < 600 ? `animation-delay:-${pressAge}ms` : '', 'aria-pressed': String(!!mine), onclick: () => { nbPressAt = Date.now(); me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, nbIcon(mine), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
+    el('div', { class: 'nb-avs' }, ...active.map((p) => { const r = shown(p), fresh = r && nbSeen.round === st.round && !nbSeen.ids.has(p.id); return el('span', { class: 'nb-av' + (r ? ' r' : '') + (fresh ? ' just' : ''), title: p.name }, avatarEl(p.avatar, 26, '', p.acc, p.bd), fresh ? el('i', { class: 'nb-spark' }) : ''); })),
+    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : '') + (pressAge < 600 ? ' just' : ''), style: pressAge < 600 ? `animation-delay:-${pressAge}ms` : '', 'aria-pressed': String(!!mine), onclick: () => { nbPressAt = Date.now(); nbWant = !mine; nbRound = st.round; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); nbSend(); } }, nbIcon(mine), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
 }
 let finalOpen = false;
 
