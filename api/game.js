@@ -324,6 +324,7 @@ function tallyWins(room) {
   const act = activeOf(room);
   const tot = Object.fromEntries(act.map((p) => [p.id, 0]));
   for (const r of Object.values(room.results)) if (!r.tie) for (const id of r.losers) if (id in tot) tot[id] += r.penalty;
+  for (const [id, n] of Object.entries(latePenOf(room))) if (id in tot) tot[id] += n;   // the last to get ready carries a point too
   const vals = Object.values(tot);
   room.winnersRound = room.round;
   room.winners = [];
@@ -407,18 +408,25 @@ function storeResults(room) {
   tallyWins(room);   // `at` lets every phone advance to the next row at the same moment
 }
 // When the arranging time runs out, anyone who is not ready gets their cards placed in order and is marked ready.
+// one penalty point for being last to get ready, or for every player the clock had to arrange
+const LATE_PEN = 1;
+function latePenOf(room) {
+  const a = room.allReady; if (!a) return {};
+  const ids = a.timer ? (a.ids || []) : [a.id];
+  return Object.fromEntries(ids.filter((id) => room.players.some((p) => p.id === id)).map((id) => [id, LATE_PEN]));
+}
 function enforceTimer(room) {
   if (room.phase !== 'dealt' || !room.deadline || Date.now() < room.deadline) return false;
   room.deadline = null;
   const active = activeOf(room);
   let last = null;
-  const late = [];   // everyone who ran out of time
+  const late = [], lateIds = [];   // everyone who ran out of time
   for (const p of active) {
     if (p.ready) continue;
     for (let i = 0; i < p.board.length && p.hand.length; i++) if (!p.board[i]) p.board[i] = { c: p.hand.shift(), up: false };
-    if (p.board.every(Boolean)) { for (const c of p.board) c.up = false; p.ready = true; last = p; late.push(p.name); }
+    if (p.board.every(Boolean)) { for (const c of p.board) c.up = false; p.ready = true; last = p; late.push(p.name); lateIds.push(p.id); }
   }
-  if (last && active.length > 1 && active.every((p) => p.ready)) room.allReady = { id: last.id, name: last.name, names: late, at: Date.now(), timer: true };
+  if (last && active.length > 1 && active.every((p) => p.ready)) room.allReady = { id: last.id, name: last.name, names: late, ids: lateIds, at: Date.now(), timer: true };
   return true;
 }
 
@@ -500,6 +508,7 @@ function view(room, pid, seen, cn) {
     maxPlayers: MAX_PLAYERS,
     now: Date.now(),
     allReady: room.allReady || null,
+    latePen: latePenOf(room),
     settings: settingsOf(room),
     gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
     giftN: room.giftN || 0,

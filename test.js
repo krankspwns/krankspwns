@@ -305,7 +305,7 @@ const post = (b) => call('POST', b, {});
   for (let row = 0; row < 4; row++) await post({ action: 'flipRowAll', code: hr.code, pid: hr.meId, row, up: true });
   const hv = (await call('GET', null, { code: hr.code, pid: hr.meId })).j;
   assert.deepEqual(hv.rowResults.map((r) => r.penalty), [1, 1, 1, 2], 'x0.5: a penalty of 1 stays 1 and 3 becomes 2 (rounded up)');
-  { const sx = hv.players.map((q) => q.sess); const lost = (id) => hv.rowResults.filter((r) => !r.tie && r.losers.includes(id)).reduce((t, r) => t + r.penalty, 0);
+  { const sx = hv.players.map((q) => q.sess); const lost = (id) => hv.rowResults.filter((r) => !r.tie && r.losers.includes(id)).reduce((t, r) => t + r.penalty, 0) + ((hv.latePen || {})[id] || 0);
     assert.ok(sx.every((x) => x && x.rounds === 1), 'the session scoreboard counts the finished round');
     assert.deepEqual(hv.players.map((q) => q.sess.pen), hv.players.map((q) => lost(q.id)), 'and each player\'s total penalty'); }
   { // ---- ready for the next round: once every player is, the next round is dealt ----
@@ -364,6 +364,19 @@ const post = (b) => call('POST', b, {});
   assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.predWin, null, 'row 2 opens without a new window');
   assert.deepEqual(globalThis.__rooms.get(pa.code).results[0].picks, { [pa.meId]: pb.meId, [pb.meId]: pa.meId, [pc.meId]: pa.meId });
   globalThis.__predOff = true;
+  { // ---- the last to get ready carries one penalty point into the round total ----
+    const la = (await post({ action: 'create', name: 'LA' })).j, lb = (await post({ action: 'join', code: la.code, name: 'LB' })).j;
+    await post({ action: 'deal', code: la.code, pid: la.meId });
+    for (const pid of [la.meId, lb.meId]) { for (let i = 0; i < 7; i++) await post({ action: 'place', code: la.code, pid, card: (await call('GET', null, { code: la.code, pid })).j.hand[0], slot: i }); await post({ action: 'ready', code: la.code, pid, ready: true }); }
+    const lv = (await call('GET', null, { code: la.code, pid: la.meId })).j;
+    assert.deepEqual(lv.latePen, { [lb.meId]: 1 }, 'LB was last to get ready');
+    const lroom = globalThis.__rooms.get(la.code);
+    lroom.players[0].board.forEach((c, i) => (c.c = ['5S', '5H', '5D', '5C', '6S', '6H', '6D'][i])); lroom.players[1].board.forEach((c, i) => (c.c = ['5S', '5H', '5D', '5C', '6S', '6H', '6D'][i]));   // identical boards: every row a tie
+    for (let row = 0; row < 4; row++) await post({ action: 'flipRowAll', code: la.code, pid: la.meId, row, up: true });
+    const lw = (await call('GET', null, { code: la.code, pid: la.meId })).j;
+    assert.deepEqual(lw.winners, [la.meId], 'all rows tied, so the late point decides the round');
+    assert.equal(lw.players.find((p) => p.id === lb.meId).sess.pen, 1);
+  }
   { // ---- every player starts with 25 WP ----
     delete globalThis.__startWp;
     const sw = (await post({ action: 'create', name: 'Starter' })).j, sj = (await post({ action: 'join', code: sw.code, name: 'Joiner' })).j;
