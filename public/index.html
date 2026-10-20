@@ -927,7 +927,7 @@
   .gtitle b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1407; font-size: 15px; }
   .gcount { font-size: 12px; opacity: .6; }
   .gx { padding: 6px 11px; font-size: 14px; }
-  .gscroll { overflow-y: auto; padding: 16px 18px 8px; -webkit-overflow-scrolling: touch; }
+  .gscroll { overflow-y: auto; padding: 16px 18px 8px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }   /* the swipe stays in the popup instead of moving the page behind it */
   .gbody h3 { margin: 0 0 8px; font-size: 22px; color: var(--gold-hi); }
   .gbody p { margin: 0 0 14px; font-size: 15px; line-height: 1.55; opacity: .9; }
   .gbody .gnote { margin: 12px 0 8px; font-weight: 600; }
@@ -5381,7 +5381,8 @@ function syncDrinkUi() {
   node.dataset.row = String(row); node.classList.remove('cheers', 'out'); node.classList.toggle('fresh', fresh);
   node.replaceChildren(box);
   if (!ov) { document.body.append(node); SND.play('pop'); }
-  if (closing) { drinkCheer = node; setTimeout(() => { node.classList.add('cheers'); SND.play('chime'); setTimeout(() => { node.classList.add('out'); setTimeout(() => { node.remove(); drinkCheer = null; }, 380); }, 1100); }, 1100); }   // the glasses drain, then Cheers!
+  if (closing && late) { drinkCheer = node; setTimeout(() => { node.classList.add('out'); setTimeout(() => { node.remove(); drinkCheer = null; }, 380); }, 950); }   // the guessing is about to open: the glasses drain and the popup gets out of the way
+  else if (closing) { drinkCheer = node; setTimeout(() => { node.classList.add('cheers'); SND.play('chime'); setTimeout(() => { node.classList.add('out'); setTimeout(() => { node.remove(); drinkCheer = null; }, 380); }, 1100); }, 1100); }   // the glasses drain, then Cheers!
 }
 setInterval(() => { if (st && (drinkOn() || document.querySelector('.drinkfx'))) syncDrinkUi(); }, 400);
 
@@ -5757,7 +5758,7 @@ function paintCannon(g, x, y, ang, rec, spin, fuse, t) {
 // while a strike is playing the page holds still: the creatures are aimed at where the loser's card is, and a finger scroll would make them miss
 // (the attack moves the camera itself; the Skip button still works)
 { const busy = () => !!document.querySelector('.atkfx');
-  const stop = (e) => { if (busy() && !(e.target.closest && e.target.closest('.atkskip, button'))) e.preventDefault(); };
+  const stop = (e) => { if (busy() && !(e.target.closest && e.target.closest('.atkskip, button, .guide-ov, .drinkfx, .shop-ov, .set-ov'))) e.preventDefault(); };   // an open popup (the shop, settings, chat…) still scrolls
   for (const ev of ['wheel', 'touchmove']) document.addEventListener(ev, stop, { passive: false });
   document.addEventListener('keydown', (e) => { if (busy() && ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) e.preventDefault(); }); }
 async function runShowdown(res) {

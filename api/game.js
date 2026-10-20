@@ -390,7 +390,7 @@ function predWindow(room) {
   if (!from) return null;
   if (settingsOf(room).drink && Object.keys(drinksFor(room, 'late')).length) {   // drink mode: the late drinkers drink first, then the guessing opens
     if (lateDrinkPending(room)) return null;
-    from = Math.max(from, (room.drunkLateAt || 0) + 2600);   // after the glasses drain and the cheers
+    from = Math.max(from, (room.drunkLateAt || 0) + 1000);   // a beat after the last glass is down
   }
   // everybody has decided every row: no need to sit out the clock (a beat is kept so the last pick is seen)
   const early = room.predEnd && room.predEnd[0];
@@ -876,7 +876,7 @@ async function handle(action, b, query, ctx = {}) {
 
     case 'predict': {   // call who will lose each row: right = +3 points, wrong = -1, a skipped row = nothing
       const w = predWindow(room), now = Date.now(), row = Number(b.row);
-      need(w && now >= w.from - 1500 && now <= w.until + 800, 409, 'Guessing is closed');
+      need(w && now >= w.from - 1500 && now <= w.until + 1500, 409, 'Guessing is closed');   // a pick made in time on a slow connection still counts
       need(Number.isInteger(row) && row >= 0 && row < ROW_SIZES.length, 400, 'Bad row');
       room.preds = room.preds || {};
       room.preds[row] = room.preds[row] || {};
