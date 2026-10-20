@@ -21,7 +21,7 @@ clips={
   'gl':[('Good luck!',18,1.0,'hype')],
   'wp':[('Well played!',18,1.0,'hype')],
   'faster':[('Faster leh!',49,1.1)],
-  'aiyo':[('爱',45,1.2),('Yo!',45,1.3,'dip')],   # the original: zf_xiaobei, 爱 then a long yo with the third-tone dip (the favourite)
+  'aiyo':[('爱',49,1.15),('Yo!',49,1.0,'wave')],   # the favourite: zm_yunjian, 爱 then a yo that waves up and down (yoOoO)
   'steady':[('Steady lah!',49,1.0)],
   'oof':[('Oof.',14,0.85)],
 }
