@@ -621,7 +621,7 @@
   .e-fold .fp1 .card, .e-fold .fp2 .card, .e-fold .fp3 .card { filter: grayscale(.25) brightness(.92) contrast(1.05); }
   .e-fold .dogear { position: absolute; left: 76%; top: 0; width: 24%; height: 16%; clip-path: polygon(0 0, 100% 100%, 0 100%); background: repeating-linear-gradient(45deg, #1d2f66 0 3px, #2c4690 3px 6px); box-shadow: -3px 3px 6px rgba(0,0,0,.5); filter: drop-shadow(-2px 2px 2px rgba(0,0,0,.5)); }
   .tcard.e-fold.tearing .fp { animation: fpin 1s calc(.4s + var(--cd, 0s)) cubic-bezier(.22,.8,.3,1) backwards; } @keyframes fpin { from { transform: none; } }
-  .e-frozen .endc { filter: hue-rotate(185deg) saturate(.75) brightness(1.1); } .tcard.end.e-frozen .tfx, .tcard.end.e-frozen .tfg { inset: auto; left: -25%; top: -19%; width: 150%; height: 137.9%; } .e-frozen .tfg { animation: lavapulse 1.3s ease-in-out infinite alternate; }
+  .e-frozen .endc { filter: saturate(.62) brightness(1.04) contrast(.93) blur(.4px); } .tcard.end.e-frozen .tfx, .tcard.end.e-frozen .tfg { inset: auto; left: -25%; top: -19%; width: 150%; height: 137.9%; } .e-frozen .tfg { animation: lavapulse 2.6s ease-in-out infinite alternate; }
   .tcard.tearing .card.half { animation: tear .9s calc(.5s + var(--cd, 0s)) cubic-bezier(.2,1.5,.4,1) backwards; }
   @keyframes tear { from { transform: none; filter: none; } 30% { transform: translate(0, -4px) scale(1.04); filter: none; } }
   /* "you lose" pop-up: red flash, spiky burst, slam and shake */
@@ -4381,32 +4381,68 @@ function endTex(kind) {
     for (let i = 0; i < 16; i++) { const a = 1.7 + rnd() * 2.9, [x, y] = edge(a, 10 + rnd() * 34), r = 2 + rnd() * 4.5; if (x < 4 || y > CH - 8) continue; const dg = og.createRadialGradient(x - r * 0.3, y - r * 0.35, 0, x, y, r); dg.addColorStop(0, 'rgba(255,255,255,.95)'); dg.addColorStop(0.35, 'rgba(200,230,255,.4)'); dg.addColorStop(1, 'rgba(25,70,140,.5)'); og.fillStyle = dg; og.beginPath(); og.ellipse(x, y, r * 0.85, r, 0, 0, 6.283); og.fill(); }
     for (const a of [2.15, 2.6]) { const [x, y] = edge(a, 2); const len = 40 + rnd() * 30, gr = og.createLinearGradient(0, y, 0, y + len); gr.addColorStop(0, 'rgba(40,90,160,.45)'); gr.addColorStop(1, 'rgba(40,90,160,0)'); og.fillStyle = gr; og.beginPath(); og.moveTo(x - 2.5, y); og.quadraticCurveTo(x - 1, y + len * 0.6, x, y + len); og.quadraticCurveTo(x + 1, y + len * 0.6, x + 2.5, y); og.fill(); og.fillStyle = 'rgba(220,240,255,.85)'; og.beginPath(); og.arc(x, y + len - 2, 2.6, 0, 6.283); og.fill(); }
   } else if (kind === 'frozen') {
-    const X0 = 50, Y0 = 55, X1 = 250, Y1 = 345;   // the card sits in the middle of the canvas, the crystals grow out past its edges
-    pix((x, y) => {
-      const dd = Math.min(x - X0, X1 - x, y - Y0, Y1 - y); if (dd < 0) return [1, null, null];
-      const n = nzF(x / 9, y / 9, 6), rime = clamp01(1 - dd / (16 + 46 * n)), cry = nzF(x / 3, y / 3, 13) > 0.6 ? 1 : 0, gloss = Math.exp(-Math.pow(((x - y * 0.6) - 40) / 34, 2)) * 0.18;
-      const glow = clamp01(1 - dd / 26) * 0.28, a = clamp01(0.08 + rime * (0.5 + cry * 0.28) + glow + gloss), w = clamp01(rime * 0.9 + gloss * 2);
-      return [1, [150 + 105 * w, 205 + 50 * w, 250 + 5 * w, a], null];
-    });
-    const fern = (x, y, ang, len, w, depth) => { if (depth <= 0 || len < 4) return; const nx = x + Math.cos(ang) * len, ny = y + Math.sin(ang) * len; og.strokeStyle = 'rgba(255,255,255,.9)'; og.lineWidth = w; og.lineCap = 'round'; og.beginPath(); og.moveTo(x, y); og.lineTo(nx, ny); og.stroke(); for (const sd of [-1, 1]) { fern(x + Math.cos(ang) * len * 0.35, y + Math.sin(ang) * len * 0.35, ang + sd * 1.0, len * 0.46, w * 0.7, depth - 1); fern(x + Math.cos(ang) * len * 0.7, y + Math.sin(ang) * len * 0.7, ang + sd * 0.85, len * 0.36, w * 0.7, depth - 1); } fern(nx, ny, ang + (rnd() - 0.5) * 0.2, len * 0.6, w * 0.8, depth - 1); };
-    for (let i = 0; i < 12; i++) { const side = i % 4, px = side === 0 ? X0 + 20 + rnd() * 160 : side === 1 ? X1 : side === 2 ? X0 + 20 + rnd() * 160 : X0, py = side === 0 ? Y0 : side === 1 ? Y0 + 20 + rnd() * 250 : side === 2 ? Y1 : Y0 + 20 + rnd() * 250; fern(px, py, Math.atan2((Y0 + Y1) / 2 - py, (X0 + X1) / 2 - px) + (rnd() - 0.5) * 0.7, 40 + rnd() * 30, 1.7, 4); }
-    const crystal = (x, y, ang, len, w) => {
-      const ca = Math.cos(ang), sa = Math.sin(ang), nx = -sa, ny = ca, tip = [x + ca * len, y + sa * len], sh = [x + ca * len * 0.72, y + sa * len * 0.72];
-      const pL = [x + nx * w / 2, y + ny * w / 2], pR = [x - nx * w / 2, y - ny * w / 2], sL = [sh[0] + nx * w * 0.42, sh[1] + ny * w * 0.42], sR = [sh[0] - nx * w * 0.42, sh[1] - ny * w * 0.42], mid = [sh[0] + nx * w * 0.05, sh[1] + ny * w * 0.05];
-      og.save(); og.shadowColor = 'rgba(40,90,160,.55)'; og.shadowBlur = 7; og.shadowOffsetY = 3;
-      const poly = (pts, g1, g2, a1, a2) => { const gr = og.createLinearGradient(x, y, tip[0], tip[1]); gr.addColorStop(0, g1); gr.addColorStop(1, g2); og.fillStyle = gr; og.beginPath(); pts.forEach((q, i) => (i ? og.lineTo(q[0], q[1]) : og.moveTo(q[0], q[1]))); og.closePath(); og.fill(); };
-      poly([pL, sL, tip, [x, y]], 'rgba(245,253,255,.97)', 'rgba(190,228,255,.92)');   // the lit facet
-      og.shadowBlur = 0; og.shadowOffsetY = 0;
-      poly([[x, y], tip, sR, pR], 'rgba(120,180,242,.94)', 'rgba(175,218,252,.9)');   // the shaded facet
-      poly([sL, tip, sR, mid], 'rgba(255,255,255,.95)', 'rgba(220,242,255,.9)');   // the bright tip facet
-      og.strokeStyle = 'rgba(255,255,255,.95)'; og.lineWidth = 1.3; og.lineJoin = 'round'; og.beginPath(); og.moveTo(pL[0], pL[1]); og.lineTo(sL[0], sL[1]); og.lineTo(tip[0], tip[1]); og.lineTo(sR[0], sR[1]); og.lineTo(pR[0], pR[1]); og.stroke();
-      og.strokeStyle = 'rgba(255,255,255,.9)'; og.lineWidth = 1.1; og.beginPath(); og.moveTo(x, y); og.lineTo(tip[0], tip[1]); og.stroke(); og.beginPath(); og.moveTo(sL[0], sL[1]); og.lineTo(mid[0], mid[1]); og.lineTo(sR[0], sR[1]); og.stroke();
-      og.restore();
+    // the card sealed in a block of clear ice: thicker (bluer) toward the edges, a bevelled glassy rim, milky patches, frost
+    // feathering in from the sides, fractures from a knock, trapped air bubbles and icicles hanging off the bottom
+    const X0 = 50, Y0 = 55, X1 = 250, Y1 = 345, CX = (X0 + X1) / 2, CY = (Y0 + Y1) / 2;
+    const blockSd = (x, y) => {   // signed distance to the chunky block (negative inside)
+      const pad = 9 + 7 * nzF(x / 26, y / 26, 41, 2), hx = (X1 - X0) / 2 + pad, hy = (Y1 - Y0) / 2 + pad, R = 18;
+      const qx = Math.abs(x - CX) - hx + R, qy = Math.abs(y - CY) - hy + R;
+      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - R;
     };
-    const cluster = (x, y, base, n, spread, l0, l1, w0) => { const arr = []; for (let i = 0; i < n; i++) arr.push({ a: base + (n > 1 ? (i / (n - 1) - 0.5) * spread : 0) + (rnd() - 0.5) * 0.18, l: l0 + rnd() * (l1 - l0), w: w0 * (0.75 + rnd() * 0.5) }); arr.sort((p1, p2) => p2.l - p1.l).forEach((c) => crystal(x + (rnd() - 0.5) * 8, y + (rnd() - 0.5) * 8, c.a, c.l, c.w)); };
-    cluster(X0 + 8, Y1 - 6, 3.4, 6, 1.5, 36, 92, 24); cluster(X1 - 8, Y1 - 4, 0.9, 5, 1.5, 34, 80, 22); cluster(X1 - 4, Y0 + 40, -0.5, 4, 1.2, 28, 62, 19); cluster(X0 + 2, Y0 + 130, 3.9, 3, 0.9, 24, 48, 16); cluster(X0 + 70, Y0 + 2, -1.7, 3, 1.1, 20, 44, 15);
-    for (let i = 0; i < 28; i++) { const x = X0 + 14 + rnd() * 172, y = Y0 + 14 + rnd() * 262; if (Math.min(x - X0, X1 - x, y - Y0, Y1 - y) > 44) continue; og.fillStyle = 'rgba(255,255,255,.14)'; og.beginPath(); og.arc(x, y, 1.4 + rnd() * 3.6, 0, 6.283); og.fill(); og.strokeStyle = 'rgba(255,255,255,.65)'; og.lineWidth = 0.9; og.stroke(); }
-    for (let i = 0; i < 18; i++) { const x = 30 + rnd() * 240, y = 40 + rnd() * 330, r = 4 + rnd() * 9; gg.strokeStyle = 'rgba(255,255,255,.95)'; gg.lineWidth = 1.5; gg.beginPath(); gg.moveTo(x - r, y); gg.lineTo(x + r, y); gg.moveTo(x, y - r); gg.lineTo(x, y + r); gg.stroke(); const sg = gg.createRadialGradient(x, y, 0, x, y, r * 1.8); sg.addColorStop(0, 'rgba(255,255,255,.6)'); sg.addColorStop(1, 'rgba(255,255,255,0)'); gg.fillStyle = sg; gg.beginPath(); gg.arc(x, y, r * 1.8, 0, 6.283); gg.fill(); }
+    pix((x, y) => {
+      const sd = blockSd(x, y); if (sd > 0) return [1, null, null];
+      const dd = -sd, edge = clamp01(1 - dd / 46), n = nzF(x / 10, y / 10, 6), fine = nzF(x / 2.6, y / 2.6, 13, 3);
+      // the ice body: cool and fairly clear in the middle, deeper blue where it is thick at the sides
+      const depth = clamp01((y - Y0) / (Y1 - Y0)) * 0.25;   // a little deeper toward the bottom, for volume
+      let r = 178 - 95 * edge - 40 * depth, g = 222 - 55 * edge - 20 * depth, b = 250 - 10 * edge, a = 0.07 + 0.46 * edge * edge + 0.06 * depth;
+      const milk = clamp01((nzF(x / 34, y / 34, 23) - 0.56) * 3.2) * 0.12;   // cloudy patches frozen in
+      // hoarfrost: feathery white creeping in from the edges, heaviest in the corners
+      const corner = clamp01(1 - Math.min(Math.hypot(x - X0, y - Y0), Math.hypot(x - X1, y - Y0), Math.hypot(x - X0, y - Y1), Math.hypot(x - X1, y - Y1)) / 90);
+      const frost = clamp01(1 - dd / (4 + 26 * n * n + 58 * corner * corner)) * clamp01(fine * 1.5 - 0.2) * (0.55 + 0.45 * corner);   // patchy along the sides, thick in the corners
+      // the bevelled rim: light catches the top-left edge, the bottom-right sits in shade
+      const rim = clamp01(1 - dd / 5), lit = clamp01(((CX - x) / 100 + (CY - y) / 145) * 0.8 + 0.4);
+      const gloss = Math.exp(-Math.pow(((x - y * 0.55) - 30) / 22, 2)) * 0.2 + Math.exp(-Math.pow(((x - y * 0.55) - 72) / 7, 2)) * 0.14;   // a broad and a sharp streak of reflected light
+      const w = clamp01(milk + frost * 0.85 + gloss + rim * lit * 0.9);
+      r = r + (255 - r) * w; g = g + (255 - g) * w; b = b + (255 - b) * w;
+      a = clamp01(a + milk + frost * 0.7 + gloss + rim * (0.35 + 0.5 * lit));
+      if (rim > 0 && lit < 0.35) { r *= 0.7; g *= 0.8; a = Math.max(a, 0.55 * rim); }   // the shaded side of the rim
+      return [1, [r, g, b, a], null];
+    });
+    // fractures from a knock near the top-right corner: a dark seam, a bright edge beside it, and a faint plane of broken ice
+    const kx = X1 - 34, ky = Y0 + 48;
+    const crack = (x, y, ang, len, dep) => {
+      const pts = [[x, y]]; let cx = x, cy = y, a = ang;
+      for (let i = 0; i < 6; i++) { a += (rnd() - 0.5) * 0.5; cx += Math.cos(a) * len / 6; cy += Math.sin(a) * len / 6; pts.push([cx, cy]); }
+      const line = (col, w, ox = 0, oy = 0) => { og.strokeStyle = col; og.lineWidth = w; og.lineJoin = 'round'; og.lineCap = 'round'; og.beginPath(); pts.forEach((q, i) => (i ? og.lineTo(q[0] + ox, q[1] + oy) : og.moveTo(q[0] + ox, q[1] + oy))); og.stroke(); };
+      og.fillStyle = 'rgba(255,255,255,.06)'; og.beginPath(); og.moveTo(x, y); pts.forEach((q) => og.lineTo(q[0], q[1])); og.lineTo(pts[pts.length - 1][0] + Math.cos(ang + 1.3) * len * 0.22, pts[pts.length - 1][1] + Math.sin(ang + 1.3) * len * 0.22); og.closePath(); og.fill();
+      line('rgba(40,95,150,.32)', 2.4, 1, 1.2); line('rgba(255,255,255,.35)', 3.2); line('rgba(255,255,255,.92)', 1);
+      if (dep > 0) for (let i = 2; i < 6; i += 2) if (rnd() < 0.75) crack(pts[i][0], pts[i][1], a + (rnd() < 0.5 ? -1 : 1) * (0.5 + rnd() * 0.5), len * 0.45, dep - 1);
+    };
+    for (let i = 0; i < 6; i++) crack(kx, ky, Math.PI * 0.55 + i * 0.32 + (rnd() - 0.5) * 0.2, 70 + rnd() * 90, 1);
+    { const cg = og.createRadialGradient(kx, ky, 0, kx, ky, 11); cg.addColorStop(0, 'rgba(255,255,255,.85)'); cg.addColorStop(1, 'rgba(255,255,255,0)'); og.fillStyle = cg; og.beginPath(); og.arc(kx, ky, 11, 0, 6.283); og.fill(); }   // the small white chip where it was struck
+    // air bubbles trapped in streams as the water froze
+    for (let s = 0; s < 5; s++) {
+      let bx = X0 + 20 + rnd() * 160, by = Y1 - 10 - rnd() * 60;
+      const n = 5 + Math.floor(rnd() * 7);
+      for (let i = 0; i < n; i++) {
+        const rr = 0.8 + rnd() * (i < 2 ? 3.6 : 2.2); bx += (rnd() - 0.5) * 8; by -= 6 + rnd() * 14;
+        if (blockSd(bx, by) > -6) continue;
+        og.fillStyle = 'rgba(255,255,255,.1)'; og.beginPath(); og.arc(bx, by, rr, 0, 6.283); og.fill();
+        og.strokeStyle = 'rgba(255,255,255,.6)'; og.lineWidth = 0.8; og.stroke();
+        og.fillStyle = 'rgba(255,255,255,.95)'; og.beginPath(); og.arc(bx - rr * 0.35, by - rr * 0.35, Math.max(0.5, rr * 0.28), 0, 6.283); og.fill();
+      }
+    }
+    // icicles hanging off the bottom of the block, each with a drop at the tip
+    const yb = (x) => { let y = Y1; while (y < CH - 2 && blockSd(x, y) < 0) y++; return y - 2; };
+    for (let i = 0; i < 9; i++) {
+      const x = X0 + 6 + (i + 0.5) / 9 * (X1 - X0 - 12) + (rnd() - 0.5) * 10, top = yb(x), len = 12 + rnd() * (i % 3 === 1 ? 34 : 20), w = 5 + rnd() * 5;
+      const gr = og.createLinearGradient(x - w, 0, x + w, 0); gr.addColorStop(0, 'rgba(120,180,230,.55)'); gr.addColorStop(0.35, 'rgba(240,250,255,.9)'); gr.addColorStop(0.6, 'rgba(170,215,248,.7)'); gr.addColorStop(1, 'rgba(110,165,220,.6)');
+      og.fillStyle = gr; og.beginPath(); og.moveTo(x - w, top - 3); og.quadraticCurveTo(x - w * 0.5, top + len * 0.5, x + (rnd() - 0.5) * 2, top + len); og.quadraticCurveTo(x + w * 0.45, top + len * 0.45, x + w, top - 3); og.closePath(); og.fill();
+      og.strokeStyle = 'rgba(255,255,255,.75)'; og.lineWidth = 1; og.beginPath(); og.moveTo(x - w * 0.35, top); og.quadraticCurveTo(x - w * 0.2, top + len * 0.45, x, top + len * 0.85); og.stroke();
+      if (rnd() < 0.6) { og.fillStyle = 'rgba(220,240,255,.85)'; og.beginPath(); og.ellipse(x, top + len + 3, 1.8, 2.5, 0, 0, 6.283); og.fill(); }
+    }
+    // a few cold glints on the surface
+    for (let i = 0; i < 6; i++) { const x = X0 + rnd() * (X1 - X0), y = Y0 + rnd() * (Y1 - Y0), r = 3 + rnd() * 6; gg.strokeStyle = 'rgba(255,255,255,.95)'; gg.lineWidth = 1.2; gg.beginPath(); gg.moveTo(x - r, y); gg.lineTo(x + r, y); gg.moveTo(x, y - r); gg.lineTo(x, y + r); gg.stroke(); const sg = gg.createRadialGradient(x, y, 0, x, y, r * 1.6); sg.addColorStop(0, 'rgba(255,255,255,.55)'); sg.addColorStop(1, 'rgba(255,255,255,0)'); gg.fillStyle = sg; gg.beginPath(); gg.arc(x, y, r * 1.6, 0, 6.283); gg.fill(); }
   } else if (kind === 'crushed') {
     const rectSd = (x, y) => { const qx = Math.abs(x - 100) - 72, qy = Math.abs(y - 150) - 40; return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - 9; };   // < 0 inside the imprint of the hammer head
     const hgt = (x, y) => {
@@ -5700,32 +5736,61 @@ function paintShark(g, x, y, s, rot, flip, open, chunk = 0) {
   g.restore();
 }
 function paintHammer(g, x, y, s, rot, glow = 0) {
+  // a forged war hammer: steel head shaded like real metal (sky above, dark horizon, ground below), worn bevels, an engraved
+  // knotwork panel, a dark iron collar, a stitched leather grip over an ash shaft and an iron pommel with a strap
   g.save(); g.translate(x, y); g.rotate(rot * 0.0174533); g.scale(s, s);
-  if (glow > 0.02) { g.globalCompositeOperation = 'lighter'; const ag = g.createRadialGradient(0, 0, 10, 0, 0, 190); ag.addColorStop(0, `rgba(255,190,90,${0.5 * glow})`); ag.addColorStop(1, 'rgba(255,120,30,0)'); g.fillStyle = ag; g.beginPath(); g.arc(0, 0, 190, 0, 6.283); g.fill(); g.globalCompositeOperation = 'source-over'; }
+  if (glow > 0.02) { g.globalCompositeOperation = 'lighter'; const ag = g.createRadialGradient(0, 0, 20, 0, 0, 170); ag.addColorStop(0, `rgba(255,200,120,${0.32 * glow})`); ag.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = ag; g.beginPath(); g.arc(0, 0, 170, 0, 6.283); g.fill(); g.globalCompositeOperation = 'source-over'; }
   const rr = (x0, y0, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x0, y0, w, h, r) : g.rect(x0, y0, w, h); };
-  // handle: dark oak with grain, a diagonal leather wrap and a gold pommel with a strap loop
-  const wood = g.createLinearGradient(-14, 0, 14, 0); wood.addColorStop(0, '#3d2410'); wood.addColorStop(0.4, '#8f5f30'); wood.addColorStop(0.6, '#a26d38'); wood.addColorStop(1, '#341e0d');
-  g.fillStyle = wood; rr(-14, -318, 28, 340, 9); g.fill();
-  g.strokeStyle = 'rgba(40,22,8,.45)'; g.lineWidth = 1.2; for (let i = -9; i <= 9; i += 6) { g.beginPath(); g.moveTo(i, -310); g.bezierCurveTo(i + 3, -250, i - 3, -150, i + 1, 10); g.stroke(); }
-  for (let i = 0; i < 12; i++) { const yy = -70 - i * 17; const lg = g.createLinearGradient(-14, 0, 14, 0); lg.addColorStop(0, '#1c1108'); lg.addColorStop(0.5, '#4a2f17'); lg.addColorStop(1, '#1c1108'); g.fillStyle = lg; g.beginPath(); g.moveTo(-14, yy + 6); g.lineTo(14, yy - 5); g.lineTo(14, yy + 4); g.lineTo(-14, yy + 15); g.closePath(); g.fill(); }
-  const gold = g.createLinearGradient(-20, 0, 20, 0); gold.addColorStop(0, '#7a4e0c'); gold.addColorStop(0.3, '#ffe9a0'); gold.addColorStop(0.55, '#d9a21b'); gold.addColorStop(1, '#6e4608');
-  g.fillStyle = gold; rr(-19, -336, 38, 24, 7); g.fill(); g.strokeStyle = gold; g.lineWidth = 5; g.beginPath(); g.ellipse(0, -349, 11, 10, 0, 0, 6.283); g.stroke();
-  g.fillStyle = gold; rr(-20, -62, 40, 16, 5); g.fill();
-  // head: chamfered steel block with a bevel, gold end bands, an engraved rune row and a glowing gem
-  const HW = 100, HH = 56, poly = (i) => [[-HW + 12 + i, -HH + i], [HW - 12 - i, -HH + i], [HW - i, -HH + 12 + i], [HW - i, HH - 12 - i], [HW - 12 - i, HH - i], [-HW + 12 + i, HH - i], [-HW + i, HH - 12 - i], [-HW + i, -HH + 12 + i]];
-  const path = (pts) => { g.beginPath(); pts.forEach((q, j) => (j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.closePath(); };
-  const o = g.createLinearGradient(0, -HH, 0, HH); o.addColorStop(0, '#eef3fa'); o.addColorStop(0.2, '#aab7c8'); o.addColorStop(0.65, '#4d5869'); o.addColorStop(1, '#1b212c');
-  g.fillStyle = o; path(poly(0)); g.fill(); g.strokeStyle = 'rgba(10,14,22,.9)'; g.lineWidth = 3; g.stroke();
-  const inn = g.createLinearGradient(0, -HH, 0, HH); inn.addColorStop(0, '#c9d4e2'); inn.addColorStop(0.45, '#7d8b9f'); inn.addColorStop(1, '#374153');
-  g.fillStyle = inn; path(poly(9)); g.fill();
-  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-HW + 24, -HH + 10); g.lineTo(HW - 24, -HH + 10); g.stroke();
-  g.strokeStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.moveTo(-HW + 24, HH - 10); g.lineTo(HW - 24, HH - 10); g.stroke();
-  for (const sx of [-1, 1]) { const ex = sx * (HW - 34); const eg = g.createLinearGradient(0, -HH, 0, HH); eg.addColorStop(0, '#5f6b7e'); eg.addColorStop(1, '#222a37'); g.fillStyle = eg; g.fillRect(Math.min(ex, sx * HW), -HH + 12, 34, 2 * HH - 24); g.fillStyle = gold; g.fillRect(ex - 2, -HH + 9, 4, 2 * HH - 18); }
-  g.fillStyle = gold; g.fillRect(-20, -HH + 6, 40, 2 * HH - 12);
-  g.strokeStyle = `rgba(255,200,90,${0.55 + 0.45 * glow})`; g.lineWidth = 2.2; g.lineCap = 'round';
-  for (const k of [-68, -52, 52, 68]) { g.beginPath(); g.moveTo(k, -18); g.lineTo(k + 7, -6); g.lineTo(k - 5, 2); g.lineTo(k + 7, 16); g.stroke(); }
-  const gm = g.createRadialGradient(0, 0, 0, 0, 0, 15); gm.addColorStop(0, '#ffffff'); gm.addColorStop(0.4, `rgba(120,230,255,${0.8 + 0.2 * glow})`); gm.addColorStop(1, 'rgba(30,120,200,.9)'); g.fillStyle = gm; g.beginPath(); g.arc(0, 0, 13, 0, 6.283); g.fill(); g.strokeStyle = '#6b4a10'; g.lineWidth = 2.5; g.stroke();
-  g.fillStyle = '#e9eef7'; for (const [rx, ry] of [[-HW + 18, -HH + 18], [HW - 18, -HH + 18], [-HW + 18, HH - 18], [HW - 18, HH - 18]]) { g.beginPath(); g.arc(rx, ry, 4, 0, 6.283); g.fill(); }
+  const cyl = (x0, w, stops) => { const gr = g.createLinearGradient(x0, 0, x0 + w, 0); stops.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; };   // round things are lit from the left
+  // ---- the shaft: pale ash with grain, then a leather grip wound in a spiral and stitched ----
+  g.fillStyle = cyl(-13, 26, [[0, '#4a3420'], [0.3, '#a58457'], [0.55, '#c49f6c'], [1, '#3e2b19']]); rr(-13, -320, 26, 330, 6); g.fill();
+  g.strokeStyle = 'rgba(60,38,18,.35)'; g.lineWidth = 0.9; for (let i = -10; i <= 10; i += 4) { g.beginPath(); g.moveTo(i, -320); g.bezierCurveTo(i + 2, -240, i - 2, -120, i + 1, 10); g.stroke(); }
+  for (let i = 0; i < 11; i++) {   // overlapping leather bands: each one darker at its lower edge where it tucks under the next
+    const yy = -86 - i * 19, band = new Path2D(); band.moveTo(-14.5, yy + 9); band.lineTo(14.5, yy - 4); band.lineTo(14.5, yy + 13); band.lineTo(-14.5, yy + 26); band.closePath();
+    g.fillStyle = cyl(-14.5, 29, [[0, '#2a170c'], [0.35, '#6e4426'], [0.5, '#80522e'], [1, '#22130a']]); g.fill(band);
+    g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(-14.5, yy + 26); g.lineTo(14.5, yy + 13); g.stroke();
+    g.strokeStyle = 'rgba(230,200,150,.55)'; g.lineWidth = 0.9; g.setLineDash([2.2, 2.4]); g.beginPath(); g.moveTo(-12, yy + 13); g.lineTo(12, yy + 2); g.stroke(); g.setLineDash([]);
+  }
+  // iron pommel with a leather strap loop
+  g.strokeStyle = '#3b2412'; g.lineWidth = 5.5; g.beginPath(); g.ellipse(0, -352, 12, 15, 0, 0, 6.283); g.stroke(); g.strokeStyle = 'rgba(160,110,70,.5)'; g.lineWidth = 1.2; g.stroke();
+  g.fillStyle = cyl(-18, 36, [[0, '#1f242c'], [0.3, '#8e98a8'], [0.45, '#d3dae4'], [0.7, '#59626f'], [1, '#161a20']]); rr(-18, -338, 36, 22, 6); g.fill(); g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 1.5; g.stroke();
+  // the dark iron collar where the shaft goes into the head
+  g.fillStyle = cyl(-19, 38, [[0, '#14181e'], [0.35, '#5c6573'], [0.5, '#8a93a1'], [1, '#101318']]); rr(-19, -70, 38, 16, 3); g.fill(); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(-19, -56, 38, 2);
+  // ---- the head ----
+  const HW = 100, HH = 56, C = 14;
+  const outline = new Path2D(); outline.moveTo(-HW + C, -HH); outline.lineTo(HW - C, -HH); outline.lineTo(HW, -HH + C); outline.lineTo(HW, HH - C); outline.lineTo(HW - C, HH); outline.lineTo(-HW + C, HH); outline.lineTo(-HW, HH - C); outline.lineTo(-HW, -HH + C); outline.closePath();
+  g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 18; g.shadowOffsetY = 8; g.fillStyle = '#2a3039'; g.fill(outline); g.restore();
+  const steel = g.createLinearGradient(0, -HH, 0, HH);   // polished steel mirrors its surroundings: bright sky, a sharp dark horizon, the ground
+  steel.addColorStop(0, '#f4f7fb'); steel.addColorStop(0.16, '#c2cbd7'); steel.addColorStop(0.42, '#7b8696'); steel.addColorStop(0.5, '#2c333d'); steel.addColorStop(0.56, '#4a5361'); steel.addColorStop(0.8, '#69727f'); steel.addColorStop(1, '#22272f');
+  g.fillStyle = steel; g.fill(outline);
+  g.save(); g.clip(outline);
+  for (let i = 0; i < 70; i++) { const yy = -HH + ((i * 37) % 112) + (i % 3) * 0.4; g.strokeStyle = i % 2 ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)'; g.lineWidth = 0.7; g.beginPath(); g.moveTo(-HW, yy); g.lineTo(HW, yy + 0.6); g.stroke(); }   // brushed grain
+  for (const sx of [-1, 1]) {   // the striking faces: separate thick plates, a touch darker and battered
+    const fx = sx > 0 ? HW - 26 : -HW, fg = g.createLinearGradient(0, -HH, 0, HH); fg.addColorStop(0, '#dfe5ed'); fg.addColorStop(0.45, '#5c6573'); fg.addColorStop(0.52, '#232931'); fg.addColorStop(1, '#3a414c');
+    g.fillStyle = fg; g.fillRect(fx, -HH, 26, 2 * HH); g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(sx > 0 ? fx : fx + 24, -HH, 2, 2 * HH); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(sx > 0 ? fx + 2 : fx + 22, -HH, 1, 2 * HH);
+    for (let k = 0; k < 6; k++) { const dx = fx + 4 + ((k * 7) % 18), dy = -HH + 10 + ((k * 29) % 90); g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(dx, dy, 3, 2, 0.4, 0, 6.283); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(dx - 1, dy - 1, 2, 1, 0.4, 0, 6.283); g.fill(); }   // hammer marks
+  }
+  // the engraved panel: a recessed field with knotwork cut into it (dark groove, light lip below it)
+  const PW = 52, PH = 34; g.fillStyle = 'rgba(10,14,20,.35)'; rr(-PW, -PH, PW * 2, PH * 2, 5); g.fill(); g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-PW + 4, PH); g.lineTo(PW - 4, PH); g.stroke(); g.strokeStyle = 'rgba(0,0,0,.6)'; g.beginPath(); g.moveTo(-PW + 4, -PH); g.lineTo(PW - 4, -PH); g.stroke();
+  const knot = new Path2D(); for (let i = 0; i < 4; i++) { const cx = -36 + i * 24; knot.moveTo(cx - 12, -16); knot.bezierCurveTo(cx - 2, -30, cx + 14, -2, cx + 12, 16); knot.moveTo(cx - 12, 16); knot.bezierCurveTo(cx - 2, 30, cx + 14, 2, cx + 12, -16); } knot.moveTo(-48, 0); knot.bezierCurveTo(-30, -26, 30, 26, 48, 0); knot.moveTo(-48, 0); knot.bezierCurveTo(-30, 26, 30, -26, 48, 0);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  g.save(); g.translate(0, 1.2); g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 3.4; g.stroke(knot); g.restore();
+  g.strokeStyle = 'rgba(12,16,22,.85)'; g.lineWidth = 3; g.stroke(knot);
+  if (glow > 0.05) { g.strokeStyle = `rgba(255,170,80,${0.75 * glow})`; g.lineWidth = 1.6; g.stroke(knot); }   // the engraving glows when it is charged
+  // wear: fine scratches and nicks along the edges
+  for (let i = 0; i < 26; i++) { const sx2 = -HW + ((i * 53) % 190) + 5, sy2 = -HH + ((i * 31) % 104) + 4, l = 6 + (i % 5) * 4, a = (i % 7) * 0.35 - 1; g.strokeStyle = i % 2 ? 'rgba(255,255,255,.28)' : 'rgba(0,0,0,.25)'; g.lineWidth = 0.6; g.beginPath(); g.moveTo(sx2, sy2); g.lineTo(sx2 + Math.cos(a) * l, sy2 + Math.sin(a) * l); g.stroke(); }
+  g.restore();
+  // bevels: a bright catch of light on the upper chamfers and the top edge, shade on the lower ones
+  g.lineJoin = 'round';
+  g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-HW, -HH + C); g.lineTo(-HW + C, -HH); g.lineTo(HW - C, -HH); g.lineTo(HW, -HH + C); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-HW + C + 2, -HH + 4); g.lineTo(HW - C - 2, -HH + 4); g.stroke();
+  g.strokeStyle = 'rgba(0,0,0,.7)'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-HW, HH - C); g.lineTo(-HW + C, HH); g.lineTo(HW - C, HH); g.lineTo(HW, HH - C); g.stroke();
+  g.strokeStyle = 'rgba(8,10,14,.9)'; g.lineWidth = 1.5; g.stroke(outline);
+  if (glow > 0.05) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(255,190,110,${0.5 * glow})`; g.lineWidth = 3; g.stroke(outline); g.restore(); }   // heat at the rim on impact
+  // a sliver of the top face, seen from a little above: the head reads as a solid block, not a plate
+  const top = new Path2D(); top.moveTo(-HW + C, -HH); top.lineTo(-HW + C + 10, -HH - 11); top.lineTo(HW - C - 10, -HH - 11); top.lineTo(HW - C, -HH); top.closePath();
+  const tg = g.createLinearGradient(0, -HH - 11, 0, -HH); tg.addColorStop(0, '#8d98a8'); tg.addColorStop(1, '#e6ecf3'); g.fillStyle = tg; g.fill(top); g.strokeStyle = 'rgba(8,10,14,.8)'; g.lineWidth = 1.3; g.stroke(top);
+  g.fillStyle = cyl(-17, 34, [[0, '#14181e'], [0.35, '#5c6573'], [0.5, '#8a93a1'], [1, '#101318']]); rr(-17, -HH - 22, 34, 14, 3); g.fill();   // the collar sits on top of it
   g.restore();
 }
 function paintNinja(g, x, y, s, a, t) {
