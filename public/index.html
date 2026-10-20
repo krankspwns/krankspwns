@@ -2438,7 +2438,7 @@ function giftBanner(g) {
   setTimeout(() => { ban.classList.add('out'); setTimeout(() => { ban.remove(); if (!lane.children.length) lane.remove(); }, 450); }, 3600);
 }
 // throws that arrive together play one after another instead of piling up on top of each other
-const GIFT_MS = { tomato: 2900, pie: 2900, snowball: 3900, rose: 4400, popper: 3300, rocket: 3600, bomb: 5200, fireworks: 5200, balloon: 3400, kiss: 3500, ghost: 3600, zap: 3200, disco: 4600, cash: 4300 };
+const GIFT_MS = { tomato: 2900, pie: 2900, snowball: 3900, rose: 4400, popper: 3300, rocket: 3600, bomb: 5200, fireworks: 5200, balloon: 3400, kiss: 3500, ghost: 3800, zap: 3200, disco: 4600, cash: 4300 };
 let giftQ = [], giftRun = false;
 function queueGift(g) {
   if (giftQ.length >= 4) giftQ.shift();   // a flood: the oldest waiting effect is skipped
@@ -2926,21 +2926,83 @@ function playGift(g) {
     };
     requestAnimationFrame(frame);
     keepFor(DUR + 200);
-  } else if (kind === 'ghost') {   // the lights dip, a ghost drifts in on a wobbling path and lunges: BOO!
-    const dim = node('inset:0;left:0;top:0;width:100%;height:100%;background:rgba(10,14,40,.55);opacity:0', 'giftbit'); anim(dim, [{ opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .6 }, { opacity: 0 }], { duration: 3200, fill: 'forwards' });
-    SND.play('whoosh');
-    const gs = toMe ? 150 : 90, gh = node(`width:${gs}px;height:${gs}px;left:0;top:0;opacity:0;filter:drop-shadow(0 0 18px rgba(200,215,255,.8))`, 'giftbit', `<svg viewBox="0 0 48 48" width="100%" height="100%">${GIFT_SVG.ghost}</svg>`);
-    const sx = fromX < W / 2 ? -gs : W + gs * 0.2, fr = [];
-    for (let i = 0; i <= 20; i++) { const k = i / 20, x = sx + (tx - gs / 2 - sx) * k, y = H * 0.55 + (ty - gs / 2 - H * 0.55) * k + Math.sin(k * 9) * 30; fr.push({ transform: `translate(${x}px,${y}px) rotate(${Math.sin(k * 9) * 10}deg) scale(${0.7 + 0.2 * k})`, opacity: Math.min(0.85, k * 3) }); }
-    anim(gh, fr, { duration: 1300, easing: 'ease-in-out', fill: 'forwards' });
-    later(1300, () => {   // the lunge
-      SND.play('roar'); shake(toMe ? 320 : 220); flash('#e8eeff', 0.35, 260);
-      anim(gh, [{ transform: `translate(${tx - gs / 2}px,${ty - gs / 2}px) scale(.9)`, opacity: .85 }, { transform: `translate(${tx - gs / 2}px,${ty - gs / 2}px) scale(${toMe ? 2.4 : 1.6})`, opacity: 1, offset: .25 }, { transform: `translate(${tx - gs / 2}px,${ty - gs / 2 - 120}px) scale(${toMe ? 2 : 1.3})`, opacity: 0 }], { duration: 1400, easing: 'ease-out', fill: 'forwards' });
-      pop(toMe ? W / 2 : tx, toMe ? H * 0.2 : ty - 90, 'BOO!', '#8f9bd6', toMe ? 64 : 40, -4, 80);
-      for (let i = 0; i < 18; i++) part(tx, ty, { ang: rnd(0, 6.28), spd: rnd(60, 260), g: -120, life: rnd(900, 1500), size: rnd(10, 20), color: 'rgba(235,240,255,.6)', end: 1.8 });
-      for (let i = 0; i < 4; i++) { const sg = node(`width:34px;height:34px;opacity:0`, 'giftbit', `<svg viewBox="0 0 48 48" width="100%" height="100%">${GIFT_SVG.ghost}</svg>`); const x = rnd(W * .1, W * .9); anim(sg, [{ transform: `translate(${x}px,${H}px)`, opacity: .7 }, { transform: `translate(${x + rnd(-40, 40)}px,${H * rnd(.1, .4)}px) rotate(${rnd(-20, 20)}deg)`, opacity: 0 }], { duration: rnd(1600, 2200), delay: i * 120, easing: 'ease-out', fill: 'forwards' }); }
-    });
-    keepFor(3600);
+  } else if (kind === 'ghost') {   // a haunting: moonlit dark, fog rolls in, the lights flicker, a ghost drifts in, stares, then rushes the screen: BOO! and leaves frosty handprints
+    const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const T0 = performance.now(), DUR = 3700, LUNGE = 2150, cx = toMe ? W / 2 : tx, cy = toMe ? H * 0.46 : ty, S = toMe ? Math.min(W, H) * 0.34 : 64;
+    const fog = Array.from({ length: toMe ? 22 : 9 }, () => ({ x: toMe ? rnd(-100, W + 100) : cx + rnd(-130, 130), y: toMe ? rnd(H * 0.62, H * 1.05) : cy + rnd(10, 60), r: rnd(90, 210) * (toMe ? 1 : 0.45), v: rnd(-26, 26), ph: rnd(0, 6.28) }));
+    const wisps = [], prints = [], trail = [];
+    const side = fromX < W / 2 ? -1 : 1;
+    const ghost = (x, y, s, a, ph, mouth, eyes, reach) => {
+      g.save(); g.translate(x, y); g.globalAlpha = a;
+      g.shadowColor = 'rgba(160,195,255,.95)'; g.shadowBlur = s * 0.35;
+      const body = new Path2D(), hw = s * 0.5, top = -s * 0.62, hem = s * 0.58;
+      body.moveTo(-hw, -s * 0.1); body.bezierCurveTo(-hw, top - s * 0.05, hw, top - s * 0.05, hw, -s * 0.1);
+      body.bezierCurveTo(hw * 1.04, hem * 0.4, hw * 1.12, hem * 0.75, hw * 1.15, hem);
+      for (let i = 0; i < 5; i++) { const x0 = hw * 1.15 - (i + 0.5) * (hw * 2.3 / 5), x1 = hw * 1.15 - (i + 1) * (hw * 2.3 / 5), dip = hem + s * (0.12 + 0.05 * Math.sin(ph * 3 + i * 1.7)) * (i % 2 ? -0.5 : 1); body.quadraticCurveTo(x0, dip, x1, hem + s * 0.04 * Math.sin(ph * 3 + i)); }
+      body.bezierCurveTo(-hw * 1.12, hem * 0.75, -hw * 1.04, hem * 0.4, -hw, -s * 0.1); body.closePath();
+      const bg = g.createRadialGradient(-s * 0.12, -s * 0.3, s * 0.05, 0, 0, s * 0.85); bg.addColorStop(0, 'rgba(255,255,255,.98)'); bg.addColorStop(0.55, 'rgba(232,240,255,.9)'); bg.addColorStop(1, 'rgba(170,190,240,.55)');
+      g.fillStyle = bg; g.fill(body);
+      // arms: drifting at its sides, reaching out for the lunge
+      for (const sd of [-1, 1]) { g.beginPath(); const ax = sd * hw * 0.95, ay = s * 0.05; g.moveTo(ax, ay - s * 0.12); g.quadraticCurveTo(ax + sd * s * (0.28 + reach * 0.25), ay - s * (0.1 + reach * 0.35) + Math.sin(ph * 2 + sd) * s * 0.05, ax + sd * s * (0.32 + reach * 0.3), ay - s * (0.02 + reach * 0.4)); g.quadraticCurveTo(ax + sd * s * 0.12, ay + s * 0.08, ax, ay + s * 0.12); g.fill(); }
+      g.shadowBlur = 0;
+      // hollow eyes that glow before the lunge, and a mouth that opens into a howl
+      for (const sd of [-1, 1]) { g.fillStyle = '#10162e'; g.beginPath(); g.ellipse(sd * s * 0.17, -s * 0.2, s * 0.085, s * (0.12 + mouth * 0.03), sd * 0.12, 0, 6.283); g.fill();
+        if (eyes > 0) { const eg = g.createRadialGradient(sd * s * 0.17, -s * 0.2, 0, sd * s * 0.17, -s * 0.2, s * 0.16); eg.addColorStop(0, `rgba(160,255,240,${eyes})`); eg.addColorStop(0.35, `rgba(90,220,255,${eyes * 0.6})`); eg.addColorStop(1, 'rgba(90,220,255,0)'); g.fillStyle = eg; g.beginPath(); g.arc(sd * s * 0.17, -s * 0.2, s * 0.16, 0, 6.283); g.fill(); } }
+      g.fillStyle = '#10162e'; g.beginPath(); g.ellipse(0, s * 0.06, s * (0.06 + mouth * 0.08), s * (0.05 + mouth * 0.2), 0, 0, 6.283); g.fill();
+      if (mouth > 0.3) { g.fillStyle = 'rgba(60,30,80,.6)'; g.beginPath(); g.ellipse(0, s * (0.1 + mouth * 0.08), s * mouth * 0.05, s * mouth * 0.06, 0, 0, 6.283); g.fill(); }
+      g.restore();
+    };
+    const hand = (x, y, s, rot, a) => {   // a frosty handprint left on the glass
+      g.save(); g.translate(x, y); g.rotate(rot); g.globalAlpha = a; g.shadowColor = 'rgba(200,225,255,.9)'; g.shadowBlur = s * 0.15; g.fillStyle = 'rgba(225,238,255,.42)';
+      g.beginPath(); g.ellipse(0, s * 0.18, s * 0.34, s * 0.38, 0, 0, 6.283); g.fill();
+      [[-0.32, -0.28, 0.1, 0.36, -0.28], [-0.12, -0.5, 0.1, 0.42, -0.08], [0.08, -0.54, 0.1, 0.44, 0.04], [0.26, -0.44, 0.09, 0.38, 0.18], [0.42, 0.02, 0.09, 0.3, 0.9]].forEach(([fx2, fy2, rw, rh, fr]) => { g.save(); g.translate(fx2 * s, fy2 * s); g.rotate(fr); g.beginPath(); g.ellipse(0, 0, rw * s, rh * s, 0, 0, 6.283); g.fill(); g.restore(); });
+      g.shadowBlur = 0; g.fillStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < 9; i++) { g.beginPath(); g.arc(rnd(-s * 0.3, s * 0.3), rnd(-s * 0.2, s * 0.45), rnd(1, 2.5), 0, 6.283); g.fill(); }
+      g.restore();
+    };
+    SND.play('whoosh'); later(500, () => SND.play('swoop'));
+    let last = T0, booed = false;
+    const frame = (now) => {
+      const t = now - T0, dt = Math.min(0.05, (now - last) / 1000); last = now; if (t > DUR) { cv.remove(); return; }
+      g.clearRect(0, 0, W, H);
+      const A = Math.min(1, t / 450) * (t > DUR - 700 ? (DUR - t) / 700 : 1);
+      // moonlit dark with a heavy vignette (only around the target when it is aimed at someone else)
+      if (toMe) { g.fillStyle = `rgba(6,10,30,${0.55 * A})`; g.fillRect(0, 0, W, H); const vg = g.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.2, W / 2, H * 0.45, Math.max(W, H) * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(0,0,12,${0.6 * A})`); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+        const mg = g.createRadialGradient(W * 0.82, H * 0.1, 0, W * 0.82, H * 0.1, W * 0.5); mg.addColorStop(0, `rgba(170,200,255,${0.22 * A})`); mg.addColorStop(1, 'rgba(170,200,255,0)'); g.fillStyle = mg; g.fillRect(0, 0, W, H); }
+      else { const vg = g.createRadialGradient(cx, cy, 20, cx, cy, 190); vg.addColorStop(0, `rgba(6,10,30,${0.5 * A})`); vg.addColorStop(1, 'rgba(6,10,30,0)'); g.fillStyle = vg; g.fillRect(cx - 200, cy - 200, 400, 400); }
+      // fog creeping in from below
+      const fk = Math.min(1, t / 1200);
+      for (const f of fog) { const x = f.x + Math.sin(t / 1400 + f.ph) * 30 + f.v * t / 1000, y = f.y + (1 - fk) * 140 * (toMe ? 1 : 0.3); const fgr = g.createRadialGradient(x, y, 0, x, y, f.r); fgr.addColorStop(0, `rgba(190,205,240,${0.2 * A * fk})`); fgr.addColorStop(1, 'rgba(190,205,240,0)'); g.fillStyle = fgr; g.beginPath(); g.arc(x, y, f.r, 0, 6.283); g.fill(); }
+      // the ghost
+      let gx, gy, gs = S, ga = 0.78, mouth = 0, eyes = 0, reach = 0;
+      if (t < 500) ga = 0;
+      else if (t < 1900) { const k = (t - 500) / 1400, e = 1 - Math.pow(1 - k, 2);
+        if (toMe) { gx = side < 0 ? -S + (cx + S) * e : W + S - (W + S - cx) * e; gy = cy + Math.sin(k * 7) * S * 0.25; }
+        else { const ang = side < 0 ? Math.PI + k * Math.PI * 2.2 : -k * Math.PI * 2.2, rr = 70 * (1 - k * 0.4); gx = cx + Math.cos(ang) * rr; gy = cy - 30 + Math.sin(ang) * rr * 0.6; }
+        ga = 0.78 * Math.min(1, (t - 500) / 400); }
+      else if (t < LUNGE) { const k = (t - 1900) / 250; gx = cx; gy = toMe ? cy : cy - 34; gs = S * (1 - 0.1 * k); eyes = k; }
+      else { const k = Math.min(1, (t - LUNGE) / 300), e = 1 - Math.pow(1 - k, 3); gx = cx; gy = (toMe ? cy : cy - 34) + e * S * 0.2; gs = S * (0.9 + e * (toMe ? 2.6 : 1.1)); ga = 0.78 + 0.22 * e; mouth = e; eyes = 1; reach = e;
+        if (t > LUNGE + 380) ga = Math.max(0, 1 - (t - LUNGE - 380) / 300); }
+      if (gx !== undefined && ga > 0.01) {
+        trail.push([gx, gy, gs]); if (trail.length > 6) trail.shift();
+        if (t < LUNGE) trail.forEach(([x, y, s2], i) => ghost(x, y, s2, ga * A * 0.08 * i, (t - 40 * (6 - i)) / 300, 0, 0, 0));
+        ghost(gx, gy, gs, ga * A, t / 300, mouth, eyes, reach);
+      }
+      // BOO! the lunge: shake, a cold flash, wisps tear off, handprints slap onto the glass
+      if (!booed && t >= LUNGE + 120) { booed = true; SND.play('roar'); shake(toMe ? 380 : 240); flash('#dfe8ff', toMe ? 0.5 : 0.3, 280);
+        pop(toMe ? W / 2 : cx, toMe ? H * 0.16 : cy - 92, 'BOO!', '#7d8fe0', toMe ? 72 : 42, -5);
+        for (let i = 0; i < (toMe ? 46 : 18); i++) { const a2 = rnd(0, 6.283), v = rnd(80, 380) * (toMe ? 1 : 0.5); wisps.push({ x: cx + Math.cos(a2) * S * 0.3, y: cy + Math.sin(a2) * S * 0.3, vx: Math.cos(a2) * v, vy: Math.sin(a2) * v - 60, r: rnd(10, 28) * (toMe ? 1 : 0.5), life: rnd(900, 1500), t: 0, cu: rnd(-3, 3) }); }
+        if (toMe) [[0.2, 0.3, -0.35], [0.8, 0.55, 0.3], [0.32, 0.74, 0.12], [0.7, 0.22, -0.18]].forEach(([px, py, r2], i) => later(140 + i * 120, () => { prints.push({ x: W * px, y: H * py, rot: r2, s: Math.min(W, H) * rnd(0.17, 0.22), at: performance.now() - T0 }); SND.play('splat'); }));
+        else prints.push({ x: cx + 26, y: cy - 6, rot: 0.2, s: 44, at: t });
+      }
+      for (const p of prints) { const k = (t - p.at) / 160; hand(p.x, p.y, p.s * (k < 1 ? 1.25 - 0.25 * k : 1), p.rot, A * Math.min(1, k) * Math.max(0, Math.min(1, (DUR - 300 - t) / 900))); }
+      for (const w of wisps) { w.t += dt * 1000; if (w.t > w.life) continue; w.vx *= Math.pow(0.15, dt); w.vy = w.vy * Math.pow(0.2, dt) - 40 * dt; w.x += (w.vx + Math.sin(w.t / 160 + w.cu) * 30) * dt; w.y += w.vy * dt; const a2 = 0.35 * A * (1 - w.t / w.life), r = w.r * (1 + w.t / w.life); const wg = g.createRadialGradient(w.x, w.y, 0, w.x, w.y, r); wg.addColorStop(0, `rgba(235,242,255,${a2})`); wg.addColorStop(1, 'rgba(235,242,255,0)'); g.fillStyle = wg; g.beginPath(); g.arc(w.x, w.y, r, 0, 6.283); g.fill(); }
+      // the lights flicker as it arrives
+      if (toMe && t > 250 && t < 1200 && Math.sin(t / 37) * Math.sin(t / 91) > 0.55) { g.fillStyle = `rgba(0,0,6,${0.55 * A})`; g.fillRect(0, 0, W, H); }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    keepFor(DUR + 200);
   } else if (kind === 'zap') {   // a storm: the sky darkens, rain sweeps in, clouds roll and flicker, then a huge bolt cracks down
     const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
     const g = cv.getContext('2d'); g.scale(dpr, dpr);
@@ -3000,22 +3062,68 @@ function playGift(g) {
     };
     requestAnimationFrame(frame);
     keepFor(DUR + 200);
-  } else if (kind === 'disco') {   // a disco ball drops in, the room lights up with sweeping coloured beams
-    const bs = toMe ? 120 : 80, bx = toMe ? W / 2 : tx, by = toMe ? H * 0.22 : Math.max(70, ty - 110);
-    const str = node(`left:${bx - 1}px;top:0;width:2px;height:${by - bs / 2}px;background:#9aa6c2;transform-origin:50% 0;opacity:0`, 'giftbit');
-    const ball = node(`left:${bx - bs / 2}px;top:${by - bs / 2}px;width:${bs}px;height:${bs}px;opacity:0;filter:drop-shadow(0 0 20px rgba(220,230,255,.8))`, 'giftbit', `<svg viewBox="0 0 48 48" width="100%" height="100%">${GIFT_SVG.disco}</svg>`);
-    anim(str, [{ transform: 'scaleY(0)', opacity: 1 }, { transform: 'scaleY(1)', opacity: 1, offset: .12 }, { transform: 'scaleY(1)', opacity: 1, offset: .88 }, { transform: 'scaleY(0)', opacity: 1 }], { duration: 4300, fill: 'forwards' });
-    anim(ball, [{ transform: `translateY(${-by}px)`, opacity: 1 }, { transform: 'translateY(0)', opacity: 1, offset: .12 }, { transform: 'translateY(0) rotate(0)', opacity: 1, offset: .2 }, { transform: 'translateY(0) rotate(360deg)', opacity: 1, offset: .88 }, { transform: `translateY(${-by}px) rotate(400deg)`, opacity: 1 }], { duration: 4300, fill: 'forwards' });
-    SND.play('whoosh');
-    later(520, () => {
-      SND.play('balloons');
-      const beams = node(`left:${bx - 1200}px;top:${by - 1200}px;width:2400px;height:2400px;border-radius:50%;opacity:0;mix-blend-mode:screen;background:conic-gradient(from 0deg, rgba(255,90,200,.0) 0deg, rgba(255,90,200,.35) 8deg, transparent 16deg, transparent 40deg, rgba(90,220,255,.35) 48deg, transparent 56deg, transparent 80deg, rgba(255,220,90,.35) 88deg, transparent 96deg, transparent 120deg, rgba(140,255,160,.32) 128deg, transparent 136deg, transparent 160deg, rgba(190,130,255,.35) 168deg, transparent 176deg, transparent 200deg, rgba(255,90,200,.35) 208deg, transparent 216deg, transparent 240deg, rgba(90,220,255,.35) 248deg, transparent 256deg, transparent 280deg, rgba(255,220,90,.35) 288deg, transparent 296deg, transparent 320deg, rgba(140,255,160,.32) 328deg, transparent 336deg, transparent 360deg)`, 'giftbit');
-      anim(beams, [{ transform: 'rotate(0deg)', opacity: 0 }, { transform: 'rotate(40deg)', opacity: toMe ? 1 : .7, offset: .1 }, { transform: 'rotate(280deg)', opacity: toMe ? 1 : .7, offset: .85 }, { transform: 'rotate(320deg)', opacity: 0 }], { duration: 3300, easing: 'linear', fill: 'forwards' });
-      for (let i = 0; i < 30; i++) later(i * 90, () => { const a = rnd(0, 6.28), d = rnd(40, toMe ? 260 : 140); part(bx + Math.cos(a) * d, by + Math.sin(a) * d, { ang: rnd(0, 6.28), spd: rnd(10, 40), g: 30, life: rnd(500, 900), size: rnd(4, 8), color: pick(['#ff8fe0', '#7fe3ff', '#ffe27a', '#ffffff', '#b77bff']), end: 0.1, glow: true }); });
-      for (let i = 0; i < 6; i++) later(i * 380, () => { const n2 = node('font-size:26px;line-height:1;opacity:0', 'giftbit'); n2.textContent = pick(['♪', '♫', '♬']); n2.style.color = pick(['#ff8fe0', '#7fe3ff', '#ffe27a']); const x = bx + rnd(-140, 140); anim(n2, [{ transform: `translate(${x}px,${by + 40}px) scale(.6)`, opacity: 1 }, { transform: `translate(${x + rnd(-30, 30)}px,${by - 120}px) scale(1.2) rotate(${rnd(-25, 25)}deg)`, opacity: 0 }], { duration: 1500, easing: 'ease-out', fill: 'forwards' }); });
-      pop(toMe ? W / 2 : tx, toMe ? H * 0.42 : ty + 10, 'DANCE!', '#ff5ad0', toMe ? 56 : 36, -6, 200);
-    });
-    keepFor(4600);
+  } else if (kind === 'disco') {   // the club opens: lights drop, a mirrored ball lowers on its chain and spins, beams sweep, light spots race across everything, the floor lights up to the beat
+    const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const T0 = performance.now(), DUR = 4400, BEAT = 470, R = toMe ? Math.min(W, H) * 0.13 : 30, bx = toMe ? W / 2 : tx, by = toMe ? H * 0.24 : Math.max(60, ty - 95);
+    const COLS = [[255, 70, 200], [80, 220, 255], [255, 215, 80], [150, 255, 140], [180, 120, 255]];
+    const spots = Array.from({ length: toMe ? 150 : 40 }, () => ({ lon: rnd(0, 6.283), lat: rnd(-1.2, 1.2), s: rnd(2, 6), c: Math.random() < 0.6 ? [255, 255, 255] : pick(COLS) }));
+    const sparks = [];
+    const ballY = (t) => { const k = Math.min(1, t / 700); return by - Math.pow(1 - k, 3) * (by + R * 2) + (k === 1 ? Math.sin((t - 700) / 140) * Math.max(0, 1 - (t - 700) / 600) * 6 : 0); };   // lowered in, with a little bounce on the chain
+    const drawBall = (x, y, rot, pulse) => {
+      g.save(); g.translate(x, y);
+      const sg = g.createRadialGradient(-R * 0.35, -R * 0.4, R * 0.1, 0, 0, R); sg.addColorStop(0, '#d9dfef'); sg.addColorStop(0.6, '#6a7390'); sg.addColorStop(1, '#232a3f'); g.fillStyle = sg; g.beginPath(); g.arc(0, 0, R, 0, 6.283); g.fill();
+      g.beginPath(); g.arc(0, 0, R, 0, 6.283); g.clip();
+      const rows = 12, cols = 24;   // mirror tiles on a turning sphere: each one catches the light as it comes round
+      for (let i = 0; i < rows; i++) { const la = -Math.PI / 2 + (i + 0.5) * Math.PI / rows, cy2 = Math.sin(la) * R, rr = Math.cos(la) * R, th = R * Math.PI / rows * 0.86;
+        for (let j = 0; j < cols; j++) { const lo = j / cols * 6.283 + rot, z = Math.cos(lo); if (z <= 0.02) continue; const cx2 = Math.sin(lo) * rr, tw = rr * 6.283 / cols * z * 0.86;
+          const hash = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453, rn = hash - Math.floor(hash), lit = Math.pow(Math.max(0, 0.45 * z - 0.35 * Math.sin(la) + 0.25 * Math.sin(lo + 0.6)), 1.4) + (rn > 0.86 ? 0.5 + 0.5 * Math.sin(rot * 9 + j) : 0);
+          const tint = COLS[(i + j) % COLS.length], tm = pulse * 0.35 * (rn > 0.5 ? 1 : 0), v = Math.min(255, 70 + lit * 200);
+          g.fillStyle = `rgb(${Math.round(v * (1 - tm) + tint[0] * tm)},${Math.round(v * (1 - tm) + tint[1] * tm)},${Math.round(v * 1.04 * (1 - tm) + tint[2] * tm)})`; g.fillRect(cx2 - tw / 2, cy2 - th / 2, tw, th); } }
+      g.restore();
+      g.save(); g.translate(x, y); g.globalCompositeOperation = 'lighter'; const hl = g.createRadialGradient(-R * 0.4, -R * 0.45, 0, -R * 0.4, -R * 0.45, R * 0.55); hl.addColorStop(0, 'rgba(255,255,255,.65)'); hl.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = hl; g.beginPath(); g.arc(-R * 0.4, -R * 0.45, R * 0.55, 0, 6.283); g.fill();
+      const halo = g.createRadialGradient(0, 0, R * 0.9, 0, 0, R * 1.9); halo.addColorStop(0, `rgba(220,230,255,${0.25 + pulse * 0.25})`); halo.addColorStop(1, 'rgba(220,230,255,0)'); g.fillStyle = halo; g.beginPath(); g.arc(0, 0, R * 1.9, 0, 6.283); g.fill(); g.restore();
+    };
+    const floorY = H * 0.7;
+    const drawFloor = (beat, A, pulse) => {   // a lit dance floor in perspective
+      const rows = 5, cols = 7, vx = W / 2, vy = H * 0.35;
+      for (let r = 0; r < rows; r++) { const y0 = floorY + Math.pow(r / rows, 1.6) * (H - floorY) * 1.05, y1 = floorY + Math.pow((r + 1) / rows, 1.6) * (H - floorY) * 1.05;
+        for (let c = 0; c < cols; c++) { const xAt = (y, cc) => vx + ((cc / cols) * W * 1.9 - W * 0.95) * ((y - vy) / (H - vy)); const on = (r + c + beat) % 3 === 0 || (r * 3 + c * 5 + beat * 7) % 11 === 0; const col = COLS[(r * 2 + c + beat) % COLS.length];
+          g.fillStyle = on ? `rgba(${col[0]},${col[1]},${col[2]},${(0.4 + pulse * 0.3) * A})` : `rgba(20,16,40,${0.55 * A})`;
+          g.beginPath(); g.moveTo(xAt(y0, c) + 1, y0 + 1); g.lineTo(xAt(y0, c + 1) - 1, y0 + 1); g.lineTo(xAt(y1, c + 1) - 1, y1 - 1); g.lineTo(xAt(y1, c) + 1, y1 - 1); g.closePath(); g.fill(); } }
+      const fg = g.createLinearGradient(0, floorY - 20, 0, floorY + 60); fg.addColorStop(0, `rgba(10,6,24,${0.9 * A})`); fg.addColorStop(1, 'rgba(10,6,24,0)'); g.fillStyle = fg; g.fillRect(0, floorY - 20, W, 80);
+    };
+    SND.play('whoosh'); later(700, () => { SND.play('balloons'); SND.play('chime'); });
+    for (let i = 0; i < 8; i++) later(700 + i * BEAT, () => SND.play(i % 2 ? 'tick' : 'pop'));
+    pop(toMe ? W / 2 : tx, toMe ? H * 0.5 : ty + 16, 'DANCE!', '#ff4fd0', toMe ? 64 : 38, -6, 760);
+    let last = T0, lastBeat = -1;
+    const frame = (now) => {
+      const t = now - T0, dt = Math.min(0.05, (now - last) / 1000); last = now; if (t > DUR) { cv.remove(); return; }
+      g.clearRect(0, 0, W, H);
+      const A = Math.min(1, t / 400) * (t > DUR - 700 ? (DUR - t) / 700 : 1), on = t > 700, bt = Math.max(0, t - 700), beat = Math.floor(bt / BEAT), pulse = on ? Math.exp(-(bt % BEAT) / 140) : 0, rot = t / 650;
+      if (beat !== lastBeat && on) { lastBeat = beat; for (let i = 0; i < (toMe ? 14 : 5); i++) { const a2 = rnd(0, 6.283), v = rnd(120, 340); sparks.push({ x: bx, y: by, vx: Math.cos(a2) * v, vy: Math.sin(a2) * v, c: pick(COLS), life: 700, t: 0 }); } }
+      // the room goes dark, washed in the colour of the beat
+      if (toMe) { g.fillStyle = `rgba(8,4,22,${0.72 * A})`; g.fillRect(0, 0, W, H); if (on) { const wc = COLS[beat % COLS.length], wash = g.createRadialGradient(W / 2, H * 0.55, 0, W / 2, H * 0.55, Math.max(W, H) * 0.8); wash.addColorStop(0, `rgba(${wc[0]},${wc[1]},${wc[2]},${0.16 * pulse * A})`); wash.addColorStop(1, `rgba(${wc[0]},${wc[1]},${wc[2]},0)`); g.fillStyle = wash; g.fillRect(0, 0, W, H); } drawFloor(beat, A * (on ? 1 : 0.3), pulse); }
+      else { const vg = g.createRadialGradient(bx, by + 60, 10, bx, by + 60, 200); vg.addColorStop(0, `rgba(8,4,22,${0.55 * A})`); vg.addColorStop(1, 'rgba(8,4,22,0)'); g.fillStyle = vg; g.fillRect(bx - 210, by - 150, 420, 420); }
+      const y = ballY(t);
+      // sweeping beams from the ball
+      if (on) { g.save(); g.globalCompositeOperation = 'lighter'; const n = toMe ? 6 : 4, L = toMe ? Math.hypot(W, H) : 190;
+        for (let i = 0; i < n; i++) { const a2 = Math.PI / 2 + Math.sin(t / 900 + i * 1.3) * 1.25, c = COLS[(i + beat) % COLS.length], w = 0.07 + 0.03 * pulse; const bg = g.createLinearGradient(bx, y, bx + Math.cos(a2) * L, y + Math.sin(a2) * L); bg.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.42 * A})`); bg.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`); g.fillStyle = bg; g.beginPath(); g.moveTo(bx, y); g.lineTo(bx + Math.cos(a2 - w) * L, y + Math.sin(a2 - w) * L); g.lineTo(bx + Math.cos(a2 + w) * L, y + Math.sin(a2 + w) * L); g.closePath(); g.fill(); }
+        // the classic: hundreds of reflected light spots sliding across the room as the ball turns
+        for (const s of spots) { const lo = s.lon + rot * 1.6, z = Math.cos(lo); if (z < 0.1) continue; const sx = toMe ? W / 2 + Math.sin(lo) * W * 0.75 : bx + Math.sin(lo) * 150, sy = toMe ? y + R + (s.lat + 1.25) * (H - y) * 0.42 : y + R * 0.8 + (s.lat + 1.25) * 50, a2 = A * Math.min(1, z * 2) * (0.55 + 0.45 * pulse);
+          const sg = g.createRadialGradient(sx, sy, 0, sx, sy, s.s * 2.4); sg.addColorStop(0, `rgba(${s.c[0]},${s.c[1]},${s.c[2]},${a2})`); sg.addColorStop(0.4, `rgba(${s.c[0]},${s.c[1]},${s.c[2]},${a2 * 0.5})`); sg.addColorStop(1, `rgba(${s.c[0]},${s.c[1]},${s.c[2]},0)`); g.fillStyle = sg; g.beginPath(); g.ellipse(sx, sy, s.s * 2.4 * (0.5 + 0.5 * z), s.s * 2.4, 0, 0, 6.283); g.fill(); }
+        g.restore(); }
+      // the chain and the ball
+      g.globalAlpha = A; g.strokeStyle = '#8c94ad'; g.lineWidth = toMe ? 3 : 2; g.setLineDash([5, 3]); g.beginPath(); g.moveTo(bx, 0); g.lineTo(bx, y - R); g.stroke(); g.setLineDash([]);
+      drawBall(bx, y, rot, pulse); g.globalAlpha = 1;
+      // a glint flaring on the ball each beat, and sparks thrown off
+      if (on) { g.save(); g.globalCompositeOperation = 'lighter'; const gx = bx - R * 0.3, gy = y - R * 0.35, gl = R * (0.9 + pulse * 1.4); g.strokeStyle = `rgba(255,255,255,${0.85 * pulse * A})`; g.lineWidth = 2; g.beginPath(); g.moveTo(gx - gl, gy); g.lineTo(gx + gl, gy); g.moveTo(gx, gy - gl); g.lineTo(gx, gy + gl); g.stroke();
+        for (const s of sparks) { s.t += dt * 1000; if (s.t > s.life) continue; s.vx *= Math.pow(0.2, dt); s.vy = s.vy * Math.pow(0.2, dt) + 120 * dt; s.x += s.vx * dt; s.y += s.vy * dt; const a2 = A * (1 - s.t / s.life); g.fillStyle = `rgba(${s.c[0]},${s.c[1]},${s.c[2]},${a2})`; g.beginPath(); g.arc(s.x, s.y, 2.6, 0, 6.283); g.fill(); }
+        g.restore(); }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    keepFor(DUR + 200);
   } else if (kind === 'cash') {   // jackpot: money guns fire banknotes from the bottom corners, coins rain and bounce, a giant gold coin spins
     const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
     const g = cv.getContext('2d'); g.scale(dpr, dpr);
