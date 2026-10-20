@@ -508,7 +508,8 @@
   .tstat.wait { background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
   .tstat.open { background: rgba(111,207,151,.18); color: #8fe0ae; }
   .tstat.lost { background: rgba(255,90,80,.3); color: #ffd2cd; }
-  .tstat.safe { background: rgba(111,207,151,.22); color: #b9f0cd; }
+  .tstat.safe { background: rgba(111,207,151,.22); color: #b9f0cd; animation: tvin .35s ease backwards; } .tstat.lost { animation: tvin .35s ease backwards; }
+  .tstat.pend { display: inline-flex; gap: 3px; padding: 6px 10px; } .tstat.pend i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: rjdot 1.1s ease-in-out infinite; } .tstat.pend i:nth-child(2) { animation-delay: .15s; } .tstat.pend i:nth-child(3) { animation-delay: .3s; }   /* judging: the same for everyone until the strike lands */
   .tflip { padding: 6px 14px; font-size: 11px; }
   /* big cards on the stage / small ones on the final board are sized from --cw */
   .stage .card, .final .card, .resbox .card { width: var(--cw); height: calc(var(--cw) * 1.45); border-radius: calc(var(--cw) * .11); }
@@ -4278,15 +4279,12 @@ function stagePanel(active) {
   const picks = res ? res.picks : isCurrent ? st.predPicks : null;   // who thinks who will lose
   const grid = el('div', { class: 'tiles', style: `grid-template-columns: repeat(${cols}, minmax(0, 1fr))` });
   const ordered = [...active].sort((a, b) => (b.id === st.meId) - (a.id === st.meId));   // you first
-  if (res && !res.tie) {   // once the row is scored the table is ranked: strongest at the top, weakest at the bottom
-    const sc = (p) => { const e = res.entries.find((x) => x.id === p.id); return e ? strengthOf(res, e) : -1e9; };
-    ordered.sort((a, b) => sc(b) - sc(a));
-  }
   ordered.forEach((p, idx) => {
     const mine = p.id === st.meId;
     const loseReal = !!res && !res.tie && res.losers.includes(p.id);
-    const lose = loseReal && !atkHeld.has(p.id);   // while the creature is still on its way the loser looks like everyone else
-    const safe = !!res && !res.tie && !loseReal;
+    const held = !!res && res.losers.some((id) => atkHeld.has(id));   // the creature is still on its way: nobody is marked yet, so nothing gives the loser away
+    const lose = loseReal && !held;
+    const safe = !!res && !res.tie && !loseReal && !held;
     const cells = cellsOf(p), allUp = upOf(p);
     const flipMine = () => act('flipRow', { row, up: !allUp });
     const cards = el('div', { class: 'tcards' });
@@ -4301,7 +4299,7 @@ function stagePanel(active) {
       else cards.append(cardEl(cell && cell.c !== '?' ? cell.c : '?', { up: false, extra: fxCls, onclick: mine && isCurrent && !res ? flipMine : null }));
     });
     const status = res
-      ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : el('span', { class: 'tstat wait' }, '…'))
+      ? (lose ? el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')) : safe ? el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag')) : el('span', { class: 'tstat wait pend', 'aria-label': '…' }, el('i'), el('i'), el('i')))
       : el('span', { class: 'tstat ' + (allUp ? 'open' : 'wait') }, ...(allUp ? [icon('tick', 12), t('openedState')] : [t('hiddenState')]));
     const voters = picks ? active.filter((q) => picks[q.id] === p.id) : [];
     // who called this player as the loser, and once the row is scored whether they were right
@@ -5105,6 +5103,7 @@ async function runShowdown(res) {
     tile.classList.add('lose');
     const cards = tile.querySelector('.tcards'); if (cards) { cards.replaceChildren(...e.cards.map((c, ci) => tornCard(c, true, e.as ? e.as[ci] : null, 0, atkStyleOf(res)))); cards.querySelectorAll('.tcard.end').forEach((n) => n.classList.add('hitin')); }
     const tag = tile.querySelector('.tstat'); if (tag) tag.replaceWith(el('span', { class: 'tstat lost' }, icon('x', 12), t('lostTag')));
+    if (!res.losers.some((x) => atkHeld.has(x))) document.querySelectorAll('.tile .tstat.pend').forEach((n) => n.replaceWith(el('span', { class: 'tstat safe' }, icon('tick', 12), t('safeTag'))));   // the last strike landed: everyone else is safe
   };
   const releaseAll = () => res.losers.slice().forEach(release);
   let E = null;
