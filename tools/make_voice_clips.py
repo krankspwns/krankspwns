@@ -17,7 +17,7 @@ tts=sherpa_onnx.OfflineTts(cfg)
 # 'dipm' = the third tone pitched for a man's voice
 clips={
   'gg':[('Good game!',18,1.0,'hype')],
-  'ez':[('Eeeasy!',16,0.8)],   # the spelling draws it out; shaping it on top blurred the word
+  'ez':[('Easy!',16,0.9,'drawl')],
   'gl':[('Good luck!',18,1.0,'hype')],
   'wp':[('Well played!',18,1.0,'hype')],
   'faster':[('Faster leh!',49,1.1)],
@@ -72,8 +72,8 @@ def shape(x,sr,points,stretch=None):
 SHAPES={
     'rise':dict(points=[(0,1.0),(0.55,0.95),(0.72,1.0),(1,1.32)]),                 # leh: the particle climbs
     'fall':dict(points=[(0,1.05),(0.6,1.0),(1,0.72)]),                             # lah / oof: drops away
-    'drawl':dict(points=[(0,0.95),(0.25,1.08),(0.55,0.98),(1,0.78)],stretch=(0.5,1.0,1.9)),   # Eeasyyy, kept low so it stays a man's voice
-    'wave':dict(points=[(0,1.0),(0.18,1.06),(0.3,1.3),(0.42,0.98),(0.54,1.3),(0.66,0.98),(0.78,1.25),(1,0.82)],stretch=(0.2,1.0,3.4)),   # the yo of aiyo: yoOoOoO
+    'drawl':dict(points=[(0,1.0),(0.3,1.12),(0.65,1.0),(1,0.84)],stretch=(0.65,1.0,1.3)),   # Easyy: one smooth rise and fall (a sharp pitch drop between the syllables sounds like a second speaker)
+    'wave':dict(points=[(0,1.0),(0.2,1.06),(0.4,1.3),(0.62,0.98),(0.8,1.22),(1,0.82)],stretch=(0.2,1.0,2.6)),   # the yo of aiyo: yoOoO
     'hype':dict(points=[(0,1.0),(0.2,1.18),(0.6,1.05),(1,0.85)]),                  # a bright, up-beat call
 }
 def join(pieces,sr):
