@@ -17,7 +17,11 @@ function pickAvatar(want, taken = []) {
 }
 // ---- the shop: every round won earns win points; points are spent on accessories, special avatars and throwable gifts ----
 // Spending lowers the points, never the win count. Everything lives with the player inside the room.
-const WP_PER_WIN = 10;
+const WP_PER_WIN = 10;   // what a round win was worth before the rewards scaled with the table (rooms older than wpv 2 still count it)
+// the top three of a round earn WP, more at a bigger table: 1st gets 10 at up to 3 players and 5 more for every 3 players after that
+// (4-6: 15 / 10 / 5, 7-9: 20 / 15 / 10, 10-12: 25 / 20 / 15); 2nd and 3rd get 5 and 10 less
+const placeWpFor = (n) => { const first = 5 + 5 * Math.ceil(Math.max(n, 1) / 3); return [first, first - 5, first - 10].map((v) => Math.max(v, 0)); };
+const predWpFor = (n) => Math.max(n, 2);   // a correct call is worth one WP per player at the table
 const ACC_PRICE = { hat: 10, shades: 20, mustache: 20, flower: 20, headphones: 30, horns: 30, crown: 40, halo: 50 };
 const PREMIUM = { dragon: 30, robot: 30, alien: 30, ghost: 30, wizard: 40, ninja: 40, phoenix: 150, shadowphoenix: 200, moonwolf: 150, samurai: 150, thundertiger: 150, goldlion: 200, reaper: 200 };   // the last six are the legendary ones
 const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, balloon: 10, kiss: 10, pie: 15, ghost: 15, rocket: 20, bomb: 20, zap: 20, fireworks: 25, disco: 25, cash: 25 };
@@ -28,10 +32,10 @@ const GIFT_USES = 3;   // one purchase = three throws
 const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(process.env.TESTER_NAME).trim().toLowerCase();
 const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
-const PRED_WP = 3, PRED_PENALTY = 1, PRED_MS = 15000;   // points for calling who loses a row, lost for a wrong call, and how long the guessing lasts
+const PRED_PENALTY = 1, PRED_MS = 15000;   // points lost for a wrong call, and how long the guessing lasts
 const START_WP = 25;   // every player starts with a little to spend in the shop
 const startWp = () => (globalThis.__startWp ?? START_WP);   // the tests of the shop start from zero
-const balanceOf = (room, pid) => startWp() + (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
+const balanceOf = (room, pid) => startWp() + (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + (room.wpv === 2 ? 0 : ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN) + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
@@ -328,12 +332,26 @@ function tallyWins(room) {
   const vals = Object.values(tot);
   room.winnersRound = room.round;
   room.winners = [];
+  room.placeWp = {};
   if (vals.length && Math.max(...vals) !== Math.min(...vals)) {
-    const best = Math.min(...vals);
+    const best = Math.min(...vals), worst = Math.max(...vals);
     room.wins = room.wins || {};
     for (const p of act) if (tot[p.id] === best) {
       room.winners.push(p.id);
       room.wins[p.id] = (room.wins[p.id] || 0) + 1;
+    }
+    // WP for the top three places; tied players share a place (1, 1, 3) and each gets its full reward; last place earns nothing
+    if (room.wpv !== 2) {   // an older room: its round wins were worth 10 each, keep what they already earned
+      room.bonus = room.bonus || {};
+      for (const [id, n] of Object.entries(room.wins)) room.bonus[id] = (room.bonus[id] || 0) + (id in tot && tot[id] === best ? n - 1 : n) * WP_PER_WIN;
+      room.wpv = 2;
+    }
+    const prize = placeWpFor(act.length);
+    room.bonus = room.bonus || {};
+    for (const p of act) {
+      const place = 1 + vals.filter((v) => v < tot[p.id]).length;
+      const n = tot[p.id] === worst || place > 3 ? 0 : prize[place - 1];
+      if (n) { room.placeWp[p.id] = n; room.bonus[p.id] = (room.bonus[p.id] || 0) + n; }
     }
   }
   // the session scoreboard and the titles shown next round
@@ -387,6 +405,7 @@ function storeResults(room) {
     room.results[r.row].called = Object.keys(pr).length;
     room.results[r.row].picks = { ...pr };   // who named whom, shown on the tiles once the row is open
     if (!r.tie) {
+      const PRED_WP = room.results[r.row].wp = predWpFor(activeOf(room).length);
       const hit = Object.entries(pr).filter(([pid, tgt]) => r.losers.includes(tgt) && room.players.some((q) => q.id === pid));
       const miss = Object.entries(pr).filter(([pid, tgt]) => !r.losers.includes(tgt) && room.players.some((q) => q.id === pid) && balanceOf(room, pid) >= PRED_PENALTY);   // a wrong call costs a point, never below zero
       if (miss.length) {
@@ -513,10 +532,11 @@ function view(room, pid, seen, cn) {
     gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
     giftN: room.giftN || 0,
     wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
-    prices: { wp: WP_PER_WIN, acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES, test: isTester(me) },
+    prices: { wp: placeWpFor(activeOf(room).length)[0], place: placeWpFor(activeOf(room).length), acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES, test: isTester(me) },
     chatN: room.chatN || 0,
     chatR: room.chatR || {},
-    winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,   // who won the round that just finished ([] = a full tie, null = not finished)
+    winners: room.winnersRound === room.round && room.round ? room.winners || [] : null,
+    placeWp: room.winnersRound === room.round && room.round ? room.placeWp || {} : null,   // WP each player earned for their place this round   // who won the round that just finished ([] = a full tie, null = not finished)
     // chat: only what this phone hasn't got yet (its last seen number comes with every request)
     chat: (room.chat || []).filter((m) => m.n > (Number.isFinite(cn) ? cn : (room.chatN || 0) - 30)),
     deadline: room.deadline || null,
@@ -526,7 +546,7 @@ function view(room, pid, seen, cn) {
     myPreds: [0, 1, 2, 3].map((r) => { const m = room.preds && room.preds[r]; return m && me.id in m ? (m[me.id] || '-') : null; }),   // a player id, '-' for a skipped row, null while undecided
     predPicks: (() => { const w = predWindow(room); if (w && Date.now() < w.until) return null; const m = (room.preds && room.preds[currentRowOf(room)]) || {}; return Object.fromEntries(Object.entries(m).filter(([, tgt]) => tgt)); })(),   // everybody's calls, only once the guessing is over
     predN: activeOf(room).filter((p) => [0, 1, 2, 3].every((r) => room.preds && room.preds[r] && p.id in room.preds[r])).length,   // players who have decided every row
-    predWp: PRED_WP,
+    predWp: predWpFor(activeOf(room).length),
     predPen: PRED_PENALTY,
     meId: me.id,
     isHost: room.hostId === me.id,
@@ -578,7 +598,7 @@ async function handle(action, b, query, ctx = {}) {
     while (await loadRoom(code));
     const host = { id: crypto.randomUUID(), name, avatar: pickAvatar(b.avatar), hand: [], board: Array(SLOTS).fill(null), ready: false };
     const tok = issueToken(host);
-    const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0 };
+    const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0, wpv: 2 };
     await saveRoom(room);
     await touchPresence(code, host.id);
     return { ...(await viewFor(room, host.id)), tok };
@@ -977,3 +997,6 @@ module.exports.evaluateRow = evaluateRow;
 module.exports.handOf = handOf;
 module.exports.cleanName = cleanName;
 module.exports.enforceTimer = enforceTimer;
+module.exports.placeWpFor = placeWpFor;
+module.exports.predWpFor = predWpFor;
+module.exports.tallyWins = tallyWins;

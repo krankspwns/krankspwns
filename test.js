@@ -207,7 +207,7 @@ const post = (b) => call('POST', b, {});
   const winner = wv.players.find((p) => p.wins === 1);
   assert.equal(winner.acc, '', 'nothing is handed out automatically any more: accessories are bought');
   assert.deepEqual(wv.winners, [winner.id], 'the view says who won the round');
-  // the shop: 1 win = 10 win points; spending lowers the points but never the win count
+  // the shop: winning a 2-player round = 10 win points; spending lowers the points but never the win count
   const loserId = wv.players.find((p) => p.wins === 0).id;
   const wal = async (pid) => (await call('GET', null, { code: wr.code, pid })).j;
   assert.equal((await wal(winner.id)).wallet.pts, 10, 'a win is worth 10 points'); assert.equal((await wal(loserId)).wallet.pts, 0);
@@ -223,14 +223,14 @@ const post = (b) => call('POST', b, {});
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, acc: '' })).j.players.find((p) => p.id === winner.id).acc, '', 'and taken off');
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, avatar: 'dragon' })).s, 403, 'special avatars must be bought');
   // avatar borders
-  globalThis.__rooms.get(wr.code).wins[winner.id] = 14;
+  globalThis.__rooms.get(wr.code).bonus[winner.id] = 140;
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, bd: 'gold' })).s, 403, 'border must be bought first');
   const bdv = (await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'bd', key: 'gold' })).j;
   assert.deepEqual(bdv.wallet.owned.bd, ['gold']);
   assert.equal((await post({ action: 'avatar', code: wr.code, pid: winner.id, bd: 'gold' })).j.players.find((p) => p.id === winner.id).bd, 'gold', 'border worn and visible to everyone');
   assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'bd', key: 'gold' })).s, 409, 'already owned');
   // gifts: three throws per purchase, throttled, only at another player
-  const wroom2 = globalThis.__rooms.get(wr.code); wroom2.wins[winner.id] = 14;   // 140 points to play with
+  const wroom2 = globalThis.__rooms.get(wr.code); wroom2.bonus[winner.id] = 140;   // 140 points to play with
   assert.equal((await post({ action: 'throw', code: wr.code, pid: winner.id, item: 'tomato', target: loserId })).s, 403, 'nothing bought yet');
   assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).j.wallet.gifts.tomato, 3);
   assert.equal((await post({ action: 'buy', code: wr.code, pid: winner.id, kind: 'gift', key: 'tomato' })).j.wallet.gifts.tomato, 6, 'buying again adds another pack');
@@ -395,6 +395,30 @@ const post = (b) => call('POST', b, {});
     const sw = (await post({ action: 'create', name: 'Starter' })).j, sj = (await post({ action: 'join', code: sw.code, name: 'Joiner' })).j;
     assert.equal(sw.wallet.pts, 25, 'the creator starts with 25 WP'); assert.equal(sj.wallet.pts, 25, 'so does everyone who joins');
     globalThis.__startWp = 0;
+  }
+  { // ---- WP rewards scale with the number of players ----
+    const { placeWpFor, predWpFor, tallyWins } = require('./api/game.js');
+    assert.deepEqual([2, 3, 4, 6, 7, 9, 10, 12].map((n) => placeWpFor(n)), [[10, 5, 0], [10, 5, 0], [15, 10, 5], [15, 10, 5], [20, 15, 10], [20, 15, 10], [25, 20, 15], [25, 20, 15]]);
+    assert.deepEqual([2, 3, 5, 12].map(predWpFor), [2, 3, 5, 12], 'a correct call is worth one WP per player');
+    // a finished round where player i lost pens[i] one-point rows (rows 1-3 tied, the extra keys stand for row 0 lost by several players)
+    const mk = (pens, extra = {}) => {
+      const tie = (row) => ({ row, tie: true, losers: [] });
+      const room = { round: 1, players: pens.map((_, i) => ({ id: 'p' + i, name: 'P' + i, board: [] })), results: { 0: tie(0), 1: tie(1), 2: tie(2), 3: tie(3) }, wpv: 2, ...extra };
+      let k = 0; pens.forEach((n, i) => { for (let j = 0; j < n; j++) room.results['x' + k++] = { row: 0, tie: false, losers: ['p' + i], penalty: 1 }; });
+      tallyWins(room); return room;
+    };
+    let r = mk([0, 1, 2, 3, 4]);   // 5 players: 15 / 10 / 5, nothing for 4th and last
+    assert.deepEqual(r.placeWp, { p0: 15, p1: 10, p2: 5 }); assert.deepEqual(r.bonus, { p0: 15, p1: 10, p2: 5 }); assert.deepEqual(r.winners, ['p0']);
+    r = mk([0, 0, 1, 2, 2, 2, 3]);   // 7 players, shared places: 1st, 1st, 3rd
+    assert.deepEqual(r.placeWp, { p0: 20, p1: 20, p2: 10 });
+    r = mk([0, 1]);   // 2 players: the loser gets nothing
+    assert.deepEqual(r.placeWp, { p0: 10 });
+    r = mk([0, 0, 1, 1]);   // tied for last earns nothing
+    assert.deepEqual(r.placeWp, { p0: 15, p1: 15 });
+    r = mk([2, 2, 2]);   // a full tie: no winner, no WP
+    assert.deepEqual(r.placeWp, {}); assert.equal(r.bonus, undefined);
+    r = mk([0, 1, 2], { wpv: undefined, wins: { p0: 2, p1: 1 } });   // an older room keeps the 10 WP per earlier win
+    assert.equal(r.wpv, 2); assert.deepEqual(r.bonus, { p0: 20 + 10, p1: 10 + 5 }); assert.deepEqual(r.wins, { p0: 3, p1: 1 });
   }
   // ---- security ----
   const sa = (await post({ action: 'create', name: 'SecA' })).j, sb = (await post({ action: 'join', code: sa.code, name: 'SecB' })).j;
