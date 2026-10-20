@@ -21,7 +21,7 @@ clips={
   'gl':[('Good luck!',18,1.0,'hype')],
   'wp':[('Well played!',18,1.0,'hype')],
   'faster':[('Faster leh!',49,1.1)],
-  'aiyo':[('哎哟',49,0.95,'swell')],   # the real Mandarin interjection in one go (a spliced 爱 + English Yo, or a wobbling yo, sounded Korean)
+  'aiyo':[('爱',45,1.2),('Yo!',45,1.3,'dip')],   # the original: zf_xiaobei, 爱 then a long yo with the third-tone dip (the favourite)
   'steady':[('Steady lah!',49,1.0)],
   'oof':[('Oof.',14,0.85)],
 }
