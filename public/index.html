@@ -324,35 +324,38 @@
 
   /* row results */
   .reshead { display: flex; align-items: center; justify-content: space-between; gap: 10px; } .reshead .name { margin-bottom: 0; }
-  .resprog { display: inline-flex; gap: 5px; } .resprog i { width: 18px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.12); transition: background .3s; } .resprog i.on { background: linear-gradient(90deg, var(--gold-hi), var(--gold)); box-shadow: 0 0 6px rgba(var(--gold-rgb), .5); }
+  .rc1 { --rcol: 80,205,255; } .rc2 { --rcol: 175,135,255; } .rc3 { --rcol: 255,184,77; } .rc4 { --rcol: 255,105,170; }   /* each row has its own colour */
+  .resprog { display: inline-flex; gap: 5px; } .resprog i { width: 18px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.12); transition: background .3s; } .resprog i.on { background: rgb(var(--rcol)); box-shadow: 0 0 8px rgba(var(--rcol), .6); }
   .results .reshead { margin-bottom: 12px; }
-  .lastready { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px; margin: 2px 0 10px; border-radius: 10px; background: rgba(var(--gold-rgb),.14); border: 1px solid rgba(var(--gold-rgb),.5); }
-  .lrk { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-hi); font-weight: 700; }
-  .lrn { font-size: 17px; font-weight: 800; } .lrpen { margin-left: auto; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 800; background: rgba(255,255,255,.08); color: var(--gold-hi); border: 1px solid rgba(var(--gold-rgb),.45); }
+  .lastready { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin: 2px 0 12px; border-radius: 14px; background: linear-gradient(110deg, rgba(255,140,60,.26), rgba(255,80,130,.16) 60%, rgba(255,255,255,.04)); border: 1px solid rgba(255,160,90,.55); box-shadow: 0 6px 18px rgba(255,110,60,.12); }
+  .lrav { display: flex; flex: none; } .lrav .av + .av { margin-left: -12px; } .lrclock { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.9); }
+  .lrtxt { display: grid; gap: 1px; min-width: 0; flex: 1; }
+  .lrk { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #ffc59a; font-weight: 800; }
+  .lrn { font-size: 18px; font-weight: 800; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .rpen.lrpen { flex: none; --rcol: 255,150,80; }
   /* row results scoreboard */
   .rlist { display: grid; gap: 8px; }
-  .ritem { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding: 11px 12px; border-radius: 14px; background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.03)); border: 1px solid rgba(255,255,255,.08); cursor: pointer; transition: background .15s, border-color .15s; }
-  .ritem:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); } .ritem.open { border-color: rgba(var(--gold-rgb),.35); }
-  .ritem.tie .rnum { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); color: #fff; }
+  .ritem { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding: 11px 12px; border-radius: 14px; background: linear-gradient(105deg, rgba(var(--rcol),.16), rgba(var(--rcol),.04) 45%, rgba(255,255,255,.03)); border: 1px solid rgba(var(--rcol),.28); cursor: pointer; transition: background .15s, border-color .15s; }
+  .ritem:hover { border-color: rgba(var(--rcol),.5); } .ritem.open { border-color: rgba(var(--rcol),.6); box-shadow: 0 0 0 1px rgba(var(--rcol),.15), 0 8px 22px rgba(var(--rcol),.1); }
+
   .ritem.pending { cursor: default; opacity: .5; border-style: dashed; background: transparent; }
-  .ritem.pending:hover { background: transparent; border-color: rgba(255,255,255,.08); }
-  .rnum { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: var(--gold-hi); background: rgba(var(--gold-rgb),.1); border: 1.5px solid rgba(var(--gold-rgb),.55); }
-  .ritem.pending .rnum { background: transparent; border-color: rgba(255,255,255,.2); color: rgba(255,255,255,.6); }
+  .ritem.pending, .ritem.pending:hover { border-color: rgba(var(--rcol),.25); box-shadow: none; }
+  .rnum { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #10131f; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(var(--rcol),1) 55%); box-shadow: 0 0 12px rgba(var(--rcol),.45); }
+  .ritem.pending .rnum { background: transparent; border: 1.5px solid rgba(var(--rcol),.5); color: rgb(var(--rcol)); box-shadow: none; }
   .rbody { min-width: 0; }
-  .rrule { font-size: 11px; opacity: .6; letter-spacing: .2px; }
+  .rrule { font-size: 11px; letter-spacing: .2px; color: rgb(var(--rcol)); opacity: .9; font-weight: 600; }
   .rwait { font-size: 13px; opacity: .8; margin-top: 2px; }
   .rchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .rside { display: flex; align-items: center; gap: 8px; }
   .rpen { min-width: 44px; text-align: center; padding: 4px 10px; border-radius: 10px; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; color: rgba(255,255,255,.88); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); white-space: nowrap; }
-  .rpen.mid { color: var(--gold-hi); background: rgba(var(--gold-rgb),.12); border-color: rgba(var(--gold-rgb),.5); }
-  .rpen.big { color: #1a1407; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: transparent; box-shadow: 0 2px 10px rgba(var(--gold-rgb),.35); }
+  .rpen.mid { color: rgb(var(--rcol, var(--gold-rgb))); background: rgba(var(--rcol, var(--gold-rgb)),.14); border-color: rgba(var(--rcol, var(--gold-rgb)),.6); }
+  .rpen.big { color: #10131f; background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0)) , rgb(var(--rcol, var(--gold-rgb))); border-color: transparent; box-shadow: 0 2px 12px rgba(var(--rcol, var(--gold-rgb)),.45); }
   .rpen.none { min-width: 0; color: rgba(255,255,255,.75); font-size: 12px; font-weight: 700; padding: 6px 10px; }
   .rcaret { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; opacity: .55; transform: rotate(45deg) translate(-2px, -2px); transition: transform .2s; }
   .ritem.open .rcaret { transform: rotate(-135deg) translate(-2px, -2px); }
-  .rdet { grid-column: 1 / -1; display: grid; gap: 3px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); cursor: default; }
+  .rdet { grid-column: 1 / -1; display: grid; gap: 3px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(var(--rcol),.25); cursor: default; }
   .rtip { font-size: 11px; opacity: .5; text-align: center; margin-top: 8px; }
   .rd { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
-  .rd.lose { background: rgba(var(--gold-rgb),.1); box-shadow: inset 3px 0 0 var(--gold); } .rd.lose .rdn { color: var(--gold-hi); }
+  .rd.lose { background: rgba(var(--rcol),.13); box-shadow: inset 3px 0 0 rgb(var(--rcol)); } .rd.lose .rdn { color: rgb(var(--rcol)); }
   .rdn { flex: 0 0 auto; max-width: 38%; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rdv { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
   .rdv em { font-style: normal; opacity: .75; } .rdv .bad { color: #ff9b94; }
@@ -5222,9 +5225,13 @@ function resultsPanel() {
   const list = st.rowResults || [];
   if (!list.length && !st.allReady) return null;
   const byRow = Object.fromEntries(list.filter((r) => !r.losers.some((id) => atkHeld.has(id)) && !(r.tie && atkHeld.has('tie:' + r.row))).map((r) => [r.row, r]));   // a row whose creature is still flying stays a secret
-  const box = el('div', { class: 'panel results' }, el('div', { class: 'reshead' }, el('div', { class: 'name' }, t('resTitle')), el('span', { class: 'resprog' }, ...[0, 1, 2, 3].map((i) => el('i', { class: byRow[i] ? 'on' : '' })))));
+  const box = el('div', { class: 'panel results' }, el('div', { class: 'reshead' }, el('div', { class: 'name' }, t('resTitle')), el('span', { class: 'resprog' }, ...[0, 1, 2, 3].map((i) => el('i', { class: 'rc' + (i + 1) + (byRow[i] ? ' on' : '') })))));
   if (st.allReady) {   // stays visible after the banner is gone
-    box.append(el('div', { class: 'lastready' }, el('span', { class: 'lrk' }, t('lastReady')), el('span', { class: 'lrn' }, lastNames()), Object.keys(st.latePen || {}).length ? el('span', { class: 'lrpen', title: t('latePenTip') }, '+' + Object.values(st.latePen)[0] + ' ' + t('latePenUnit')) : ''));
+    const a = st.allReady, ids = (a.timer ? a.ids || [] : [a.id]).filter(Boolean).slice(0, 3);
+    box.append(el('div', { class: 'lastready' },
+      el('span', { class: 'lrav' }, ...(ids.length ? ids.map((id) => avatarEl(avOf(id), 34, 'sad', accOf(id), bdOf(id))) : [el('span', { class: 'lrclock' }, icon('clock', 22))])),
+      el('span', { class: 'lrtxt' }, el('span', { class: 'lrk' }, icon('clock', 12, 'mono'), t('lastReady')), el('span', { class: 'lrn' }, lastNames())),
+      Object.keys(st.latePen || {}).length ? el('span', { class: 'rpen mid lrpen', title: t('latePenTip') }, '+' + Object.values(st.latePen)[0]) : ''));
   }
   const board = el('div', { class: 'rlist' });
   for (let row = 0; row < 4; row++) {
@@ -5232,12 +5239,12 @@ function resultsPanel() {
     const num = el('div', { class: 'rnum' }, String(row + 1));
     const rule = el('div', { class: 'rrule' }, t('rule' + (row + 1)));
     if (!r) {   // not opened yet: a quiet placeholder so the layout never jumps around
-      board.append(el('div', { class: 'ritem pending' }, num, el('div', { class: 'rbody' }, rule, el('div', { class: 'rwait' }, t('notOpened'))), el('div')));
+      board.append(el('div', { class: 'ritem pending rc' + (row + 1) }, num, el('div', { class: 'rbody' }, rule, el('div', { class: 'rwait' }, t('notOpened'))), el('div')));
       continue;
     }
     const names = loserNames(r);
     const open = openRows.has(row);
-    const item = el('div', { class: 'ritem ' + (r.tie ? 'tie' : 'lose') + (open ? ' open' : ''), role: 'button', tabindex: 0,
+    const item = el('div', { class: 'ritem rc' + (row + 1) + ' ' + (r.tie ? 'tie' : 'lose') + (open ? ' open' : ''), role: 'button', tabindex: 0,
       onclick: () => { open ? openRows.delete(row) : openRows.add(row); render(); } },
       num,
       el('div', { class: 'rbody' }, rule,
