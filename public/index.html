@@ -6240,7 +6240,10 @@ function act(action, extra = {}) {
   // Requests go out one at a time, in order, so quick successive moves can't overtake each other.
   queue = queue
     .then(async () => {
-      try { const j = await api(action, extra); if (!best || j.version > best.version) best = j; }
+      try {
+        let j; for (let k = 0; ; k++) { try { j = await api(action, extra); break; } catch (e) { if (e.status !== 503 || k >= 3) throw e; await new Promise((r) => setTimeout(r, 250 + k * 350)); } }   // the server was busy with others' moves: try again quietly instead of losing this one
+        if (!best || j.version > best.version) best = j;
+      }
       catch (e) { err = e.message; failed = true; SND.play('error'); }
     })
     .then(async () => {
@@ -6343,7 +6346,7 @@ async function poll(force = false, fresh = false) {
     if (!r.ok) throw new Error('bad');
     noteClock(j.now, t0, Date.now());
     if (connFails) { connFails = 0; setConn(false); }
-    if (j.same) return;
+    if (j.same) { if (st && j.emotes) handleEmotes({ ...j, meId: st.meId }); return; }   // reactions arrive even when the room itself has not changed
     if (dragging || pending > 0) return;
     // the host's online/offline dots change without the room itself changing, so look for those too
     const presenceSig = (v) => v.players.map((q) => q.id + (q.online === false ? 'x' : '')).join();

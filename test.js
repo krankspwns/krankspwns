@@ -347,7 +347,11 @@ const post = (b) => call('POST', b, {});
   assert.ok(pvAll.predWin.until - Date.now() < 1500, 'once everybody has decided every row, the window closes early');
   globalThis.__rooms.get(pa.code).allReady.at = Date.now() - 20000;   // the window is over
   for (const pl of globalThis.__rooms.get(pa.code).players) pl.board[0].up = true;
-  await post({ action: 'emote', code: pa.code, pid: pa.meId, e: 'gg' });   // any action stores the finished row
+  { const v0 = globalThis.__rooms.get(pa.code).version; const er = await post({ action: 'emote', code: pa.code, pid: pa.meId, e: 'gg' });
+    assert.equal(globalThis.__rooms.get(pa.code).version, v0, 'a reaction never changes the room, so it cannot collide with a move');
+    assert.ok(er.j.emotes.some((x) => x.id === pa.meId && x.e === 'gg'), 'it still reaches everyone');
+    await post({ action: 'emote', code: pa.code, pid: pa.meId, e: 'ez' }); assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.emotes.filter((x) => x.id === pa.meId).length, 1, 'one per second'); }
+  await post({ action: 'avatar', code: pa.code, pid: pa.meId, avatar: 'cat' });   // any saved action stores the finished row
   const pr0 = globalThis.__rooms.get(pa.code).results[0];
   assert.deepEqual(pr0.losers, [pb.meId]); assert.deepEqual(pr0.hits, ['PA'], 'only the right guess counts');
   assert.equal(globalThis.__rooms.get(pa.code).bonus[pa.meId], 3, 'a right guess earns points');

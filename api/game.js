@@ -48,8 +48,8 @@ const rtChannel = (code) => 'room-' + code;
 // the announcement is just the version, plus any gift or reaction from the last few seconds so everyone can play it without waiting for a fetch
 function rtData(room) {
   const now = Date.now();
-  const g = (room.gifts || []).filter((x) => now - x.at < 3000), e = (room.emotes || []).filter((x) => now - x.at < 3000);
-  return g.length || e.length ? JSON.stringify({ v: room.version, ...(g.length && { g }), ...(e.length && { e }) }) : String(room.version);
+  const g = (room.gifts || []).filter((x) => now - x.at < 3000);
+  return g.length ? JSON.stringify({ v: room.version, g }) : String(room.version);
 }
 // let the response go out first and finish the push afterwards (Vercel keeps the function alive for waitUntil); elsewhere just wait for it
 function background(promise) {
@@ -447,12 +447,44 @@ async function readPresence(code) {
     return o;
   } catch { return {}; }
 }
+// ---- reactions: kept apart from the room (like presence), so a burst of them never competes with real moves ----
+const emoMem = (globalThis.__emo = globalThis.__emo || new Map());   // code -> { n, list } (local testing only)
+const EMO_LUA = `
+local items = redis.call('LRANGE', KEYS[1], 0, 11)
+local now = tonumber(ARGV[3])
+for _, raw in ipairs(items) do local o = cjson.decode(raw); if o.id == ARGV[1] and now - tonumber(o.at) < 900 then return 0 end end
+local n = redis.call('INCR', KEYS[2])
+redis.call('LPUSH', KEYS[1], cjson.encode({ id = ARGV[1], e = ARGV[2], at = now, n = n }))
+redis.call('LTRIM', KEYS[1], 0, 11)
+redis.call('EXPIRE', KEYS[1], ARGV[4]) redis.call('EXPIRE', KEYS[2], ARGV[4])
+return n`;
+async function pushEmote(code, pid, e) {   // the new reaction, or null when this player sent one less than a second ago
+  const now = Date.now();
+  if (!REDIS_URL) {
+    const m = emoMem.get(code) || { n: 0, list: [] };
+    if (m.list.some((x) => x.id === pid && now - x.at < 900)) return null;
+    const it = { id: pid, e, at: now, n: ++m.n }; m.list = [it, ...m.list].slice(0, 12); emoMem.set(code, m); return it;
+  }
+  const n = await redis(['EVAL', EMO_LUA, '2', `emo:${code}`, `emon:${code}`, pid, e, String(now), String(TTL_SECONDS)]);
+  return n ? { id: pid, e, at: now, n: Number(n) } : null;
+}
+async function readEmotes(code) {
+  if (!REDIS_URL) { const m = emoMem.get(code) || { n: 0, list: [] }; return { emoteN: m.n, emotes: m.list.filter((x) => Date.now() - x.at < 8000).reverse() }; }
+  try {
+    const all = ((await redis(['LRANGE', `emo:${code}`, '0', '11'])) || []).map((r) => JSON.parse(r));   // one call per poll: the newest number comes from the list itself
+    return { emoteN: all.reduce((m, x) => Math.max(m, x.n), 0), emotes: all.filter((x) => Date.now() - x.at < 8000).reverse() };
+  } catch { return { emoteN: 0, emotes: [] }; }
+}
+async function rtPublishEmote(room, it) {
+  if (!ABLY_KEY) return;
+  try { await fetch(`${ABLY_REST}/channels/${rtChannel(room.code)}/messages`, { method: 'POST', headers: { Authorization: 'Basic ' + Buffer.from(ABLY_KEY).toString('base64'), 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'v', data: JSON.stringify({ v: room.version, e: [it] }) }), signal: AbortSignal.timeout(1500) }); } catch {}
+}
 const hostFull = (globalThis.__hostFull = globalThis.__hostFull || new Map());
 const OFFLINE_AFTER_MS = 45000;
 // only the host gets the presence info (it is what the kick button is for)
 async function viewFor(room, pid, cn) {
-  const seen = room.hostId === pid ? await readPresence(room.code) : null;
-  return view(room, pid, seen, cn);
+  const [seen, emo] = await Promise.all([room.hostId === pid ? readPresence(room.code) : null, readEmotes(room.code)]);
+  return { ...view(room, pid, seen, cn), ...emo };
 }
 
 function view(room, pid, seen, cn) {
@@ -467,8 +499,6 @@ function view(room, pid, seen, cn) {
     now: Date.now(),
     allReady: room.allReady || null,
     settings: settingsOf(room),
-    emotes: (room.emotes || []).filter((x) => Date.now() - x.at < 8000),
-    emoteN: room.emoteN || 0,
     gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
     giftN: room.giftN || 0,
     wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
@@ -606,9 +636,9 @@ async function handle(action, b, query, ctx = {}) {
       // nothing new for a non-host: a tiny reply keeps slow connections quick
       if (query.v && Number(query.v) === room.version) {
         // the host also needs fresh online/offline marks, so it gets the full view only every 10 s; in between it can take the tiny reply too
-        if (room.hostId !== pid) return { same: true, version: room.version, now: Date.now() };
+        if (room.hostId !== pid) return { same: true, version: room.version, now: Date.now(), ...(await readEmotes(code)) };   // reactions are not part of the version, so they ride along
         const hk = code + ':host', last = hostFull.get(hk) || 0;
-        if (Date.now() - last < 10000) return { same: true, version: room.version, now: Date.now() };
+        if (Date.now() - last < 10000) return { same: true, version: room.version, now: Date.now(), ...(await readEmotes(code)) };
         hostFull.set(hk, Date.now());
       }
       return viewFor(room, pid, cnOf);
@@ -746,16 +776,11 @@ async function handle(action, b, query, ctx = {}) {
       break;
     }
 
-    case 'emote': {
+    case 'emote': {   // stored and pushed on their own: the room itself is not touched
       need(EMOTES.includes(b.e), 400, 'Unknown reaction');
-      const now = Date.now();
-      room.emoteN = (room.emoteN || 0) + 1;
-      const recent = (room.emotes || []).filter((x) => now - x.at < 8000);
-      // one reaction per player per second, so nobody can flood the table
-      if (recent.some((x) => x.id === pid && now - x.at < 900)) return viewFor(room, pid, cnOf);
-      recent.push({ id: pid, e: b.e, at: now, n: room.emoteN });
-      room.emotes = recent.slice(-12);
-      break;
+      const it = await pushEmote(code, pid, b.e);   // one reaction per player per second, so nobody can flood the table
+      if (it) await background(rtPublishEmote(room, it));
+      return viewFor(room, pid, cnOf);
     }
 
     case 'chat': {
@@ -914,7 +939,8 @@ module.exports = async (req, res) => {
         result = await handle(action, body, query, { ip, tok });
         break;
       } catch (e) {
-        if (!(e instanceof Conflict) || attempt >= 8) throw e;
+        if (!(e instanceof Conflict) || attempt >= 10) throw e;
+        await new Promise((r) => setTimeout(r, 15 + Math.random() * 35 * (attempt + 1)));
       }
     }
     res.status(200).json(result);
