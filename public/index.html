@@ -2860,15 +2860,17 @@ function playGift(g) {
   } else if (kind === 'zap') {   // a storm: the sky darkens, rain sweeps in, clouds roll and flicker, then a huge bolt cracks down
     const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
     const g = cv.getContext('2d'); g.scale(dpr, dpr);
-    const T0 = performance.now(), DUR = 3200, hitAt = 1250, hx = tx, hy = toMe ? H * 0.64 : ty;   // aimed at you it splits the whole screen
+    const T0 = performance.now(), DUR = 3200, hitAt = 1250, hx = tx, hy = toMe ? H * 0.8 : ty;   // aimed at you it splits the whole screen
     const drops = Array.from({ length: 160 }, () => ({ x: rnd(-W * 0.3, W * 1.1), y: rnd(-H, H), v: rnd(900, 1500), l: rnd(14, 30) }));
     const base = H * (toMe ? 0.2 : 0.14), clouds = Array.from({ length: 34 }, (_, i) => { const x = (i / 33) * (W + 120) - 60; return { side: x < W / 2 ? -1 : 1, x, y: base - rnd(10, 70) - (i % 3) * 18, r: rnd(46, 92), ph: rnd(0, 6.28) }; }).sort((p, q) => p.y - q.y);   // one continuous bank of storm cloud across the top
     let flx = W / 2;
     const jag = (x0, y0, x1, y1, disp, depth) => { let pts = [[x0, y0], [x1, y1]]; for (let k = 0; k < depth; k++) { const n = []; for (let i = 0; i < pts.length - 1; i++) { const [ax, ay] = pts[i], [bx, by] = pts[i + 1], mx = (ax + bx) / 2, my = (ay + by) / 2, dx = by - ay, dy = ax - bx, l = Math.hypot(dx, dy) || 1, o = rnd(-disp, disp); n.push(pts[i], [mx + dx / l * o, my + dy / l * o]); } n.push(pts[pts.length - 1]); pts = n; disp *= 0.55; } return pts; };
     let bolt = null, branches = [], arcs = [], flick = 0, lastFl = 0;
+    // from the very top of the screen, through the clouds, down to the target; aimed at you it carries on to the bottom edge
+    const mkBolt = () => { const x0 = hx + rnd(-W * 0.18, W * 0.18), main = jag(x0, -30, hx, hy, Math.max(80, hy) * 0.16, 8); return toMe ? main.concat(jag(hx, hy, hx + rnd(-60, 60), H + 30, 40, 6).slice(1)) : main; };
     const strikeNow = () => {
-      bolt = jag(hx + rnd(-60, 60), base - 20, hx, hy, Math.max(60, (hy - base)) * 0.22, 7); flx = hx; flick = 1;
-      branches = []; for (let i = 0; i < 9; i++) { const q = bolt[Math.floor(rnd(4, bolt.length - 14))], a2 = Math.PI / 2 + rnd(-1.2, 1.2); branches.push(jag(q[0], q[1], q[0] + Math.cos(a2) * rnd(60, 200), q[1] + Math.sin(a2) * rnd(40, 160), 26, 5)); }
+      bolt = mkBolt(); flx = hx; flick = 1;
+      branches = []; for (let i = 0; i < 12; i++) { const q = bolt[Math.floor(rnd(6, bolt.length - 10))], a2 = Math.PI / 2 + rnd(-1.2, 1.2), L = rnd(80, 260); branches.push(jag(q[0], q[1], q[0] + Math.cos(a2) * L, q[1] + Math.sin(a2) * L * 0.8, 30, 5)); }
       SND.play('thunder'); SND.play('impact'); SND.play('boom'); shake(toMe ? 520 : 300);
       if (toMe) { const a2 = document.getElementById('app'); if (a2) { a2.animate([{ filter: 'invert(1) hue-rotate(180deg)' }, { filter: 'none', offset: .3 }, { filter: 'invert(1) hue-rotate(180deg)', offset: .5 }, { filter: 'none' }], { duration: 260 }); } }
       for (let i = 0; i < 40; i++) part(hx, hy, { ang: rnd(0, 6.28), spd: rnd(200, 700), g: 900, life: rnd(400, 900), size: rnd(2, 5), color: pick(['#fff6b0', '#ffffff', '#9fd6ff']), end: 0.2, glow: true });
@@ -2876,7 +2878,7 @@ function playGift(g) {
       for (let i = 0; i < 10; i++) part(hx + rnd(-20, 20), hy, { ang: -Math.PI / 2 + rnd(-.6, .6), spd: rnd(40, 120), g: -60, life: rnd(1200, 2000), size: rnd(14, 26), color: 'rgba(70,70,85,.45)', end: 2.2 });
       pop(toMe ? W / 2 : hx, toMe ? H * 0.3 : hy - 80, 'ZAP!', '#ffe14d', toMe ? 72 : 44, -8);
     };
-    later(hitAt, strikeNow); later(hitAt + 260, () => { bolt = jag(hx + rnd(-50, 50), base - 20, hx, hy, Math.max(60, (hy - base)) * 0.2, 7); flick = 1; SND.play('crackle'); });   // it re-strikes once
+    later(hitAt, strikeNow); later(hitAt + 260, () => { bolt = mkBolt(); flick = 1; SND.play('crackle'); });   // it re-strikes once
     const edgeArc = () => { const side = Math.floor(rnd(0, 4)), L = rnd(80, 200), p0 = side < 2 ? [rnd(0, W - L), side ? H - 4 : 4] : [side === 2 ? 4 : W - 4, rnd(0, H - L)], p1 = side < 2 ? [p0[0] + L, p0[1]] : [p0[0], p0[1] + L]; arcs.push({ pts: jag(p0[0], p0[1], p1[0], p1[1], 16, 5), life: 160 }); };
     SND.play('whoosh');
     const frame = (now) => {
