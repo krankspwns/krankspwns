@@ -610,6 +610,7 @@
   .tcard.e-shatter .shd { position: absolute; inset: 0; } .tcard.e-shatter .shd .card.half { position: absolute; inset: 0; box-shadow: none; animation: none !important; filter: grayscale(.3); }
   .tcard.e-shatter.tearing .shd { animation: shin 1s calc(.4s + var(--cd, 0s)) cubic-bezier(.22,.8,.3,1) backwards; } @keyframes shin { from { transform: none !important; } }
   .e-crushed .endc, .e-crushed .tfx, .e-crushed .tfg { transform: scaleY(.7) translateY(20%); transform-origin: 50% 100%; } .e-crushed .endc { filter: grayscale(.35) brightness(.85); }
+  .e-smashed .endc, .e-smashed .tfx, .e-smashed .tfg { transform: scale(.97, .95) rotate(-1.2deg); } .e-smashed .endc { filter: saturate(.85) brightness(.96); }
   .e-punched .endc { filter: grayscale(.3) brightness(.88); } .e-crumple .endc { transform: scale(.88, .82) rotate(-2deg); filter: grayscale(.3) brightness(.92); } .e-crumple .tfx, .e-crumple .tfg { transform: scale(.88, .82) rotate(-2deg); }
   .tcard.e-fold { perspective: 520px; }
   .e-fold .fp { position: absolute; inset: 0; } .e-fold .fp .card { position: absolute; inset: 0; box-shadow: none; } .e-fold .fsh { position: absolute; inset: 0; }
@@ -4456,6 +4457,40 @@ function endTex(kind) {
       return [a, shade, null];
     });
     for (const [x0, y0] of [[28, 110], [172, 110], [28, 190], [172, 190]]) { const dir = Math.atan2(y0 - 150, x0 - 100); crackTree(og, null, x0, y0, dir + (rnd() - 0.5) * 0.4, 90, 1.7, 2); }
+  } else if (kind === 'smashed') {
+    // a paper card that took a hammer blow: a shallow dent the shape of the hammer's face with soft walls and a raised lip,
+    // creases running from it to the edges, fine wrinkles, steel scuffs in the dent and a tear where the paper split
+    const IX = 100, IY = 138, HX = 60, HY = 36, R = 9;
+    const rectSd = (x, y) => { const qx = Math.abs(x - IX) - HX + R, qy = Math.abs(y - IY) - HY + R; return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - R; };
+    const smooth = (e0, e1, v) => { const t = clamp01((v - e0) / (e1 - e0)); return t * t * (3 - 2 * t); };
+    const creases = [];   // from the corners and sides of the dent out to the card's edge: alternately a fold up (ridge) and a fold down (valley)
+    for (const [sx, sy, ex, ey] of [[IX - HX, IY - HY, 4, 30], [IX + HX, IY - HY, 196, 22], [IX - HX, IY + HY, 6, 262], [IX + HX, IY + HY, 194, 270], [IX - 18, IY - HY, 70, 4], [IX + HX, IY + 6, 198, 150], [IX - HX, IY - 4, 2, 128], [IX + 22, IY + HY, 140, 288]]) {
+      const mx = (sx + ex) / 2 + (rnd() - 0.5) * 26, my = (sy + ey) / 2 + (rnd() - 0.5) * 26; creases.push({ pts: [[sx, sy], [mx, my], [ex, ey]], s: creases.length % 2 ? 1 : -1, w: 0.8 + rnd() * 0.7 });
+    }
+    const segD = (x, y, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], t = clamp01(((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy)); return [Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t), t]; };
+    const hgt = (x, y) => {
+      const sd = rectSd(x, y);
+      let h = -2.2 * (1 - smooth(-10, 0, sd)) + 0.5 * Math.exp(-Math.pow((sd - 3) / 4.5, 2));   // the dent and the lip pushed up round it
+      if (sd < 0) h -= 0.1 * nzF(x / 5, y / 5, 9, 2);   // the floor is compressed, faintly grainy
+      for (const c of creases) { const [d1, t1] = segD(x, y, c.pts[0], c.pts[1]), [d2, t2] = segD(x, y, c.pts[1], c.pts[2]), dd = Math.min(d1, d2), along = d1 < d2 ? t1 * 0.5 : 0.5 + t2 * 0.5; if (dd < 6) h += c.s * c.w * Math.exp(-dd * dd / 3.2) * (1 - along * 0.75) * smooth(-2, 6, sd); }
+      const rid = 1 - Math.abs(2 * nzF(x / 52, y / 52, 4) - 1); h += 0.13 * rid * rid * rid;   // a few soft wrinkles
+      return h;
+    };
+    const tear = [[124, 290]]; { let tx = 124, ty = 290; while (ty > IY + HY + 2) { ty -= 7 + rnd() * 6; tx += (rnd() - 0.5) * 9; tear.push([tx, Math.max(ty, IY + HY + 2)]); } }
+    const tearD = (x, y) => { let best = 1e9, at = 0; for (let i = 0; i < tear.length - 1; i++) { const [d, t] = segD(x, y, tear[i], tear[i + 1]); if (d < best) { best = d; at = (i + t) / (tear.length - 1); } } return [best, at]; };
+    pix((x, y) => {
+      const l = (hgt(x + 1.5, y + 1.5) - hgt(x - 1.5, y - 1.5)) * 1.15, sd = rectSd(x, y);   // lit from the top left: a slope rising toward the bottom right faces the light
+      const [td, tat] = tearD(x, y), gap = 2.6 * (1 - tat) + 0.4;   // the split is widest at the edge and closes up toward the dent
+      if (td < gap) return [0, null, null];
+      if (td < gap + 1.4) return [1, [250, 246, 236, 0.95], null];   // torn fibres along the split
+      const ao = sd < 0 ? 0.16 * (1 - smooth(-12, 0, -sd)) : 0;   // darker in the dent's corners and walls
+      const scuff = sd < 0 ? clamp01((nzF(x / 9, y / 3, 17) - 0.55) * 2.2) * 0.22 : 0;   // steel scuffs, dragged sideways
+      const shade = l > 0 ? [255, 251, 242, Math.min(0.7, l * 0.75)] : [26, 18, 12, Math.min(0.5, -l * 0.7 + ao + scuff)];   // a shallow dent in card: soft shadows, never a black bar
+      if (l > 0 && (ao || scuff)) return [1, [70, 66, 64, clamp01(ao + scuff)], null];
+      const tearSh = td < gap + 6 && x > tear[0][0] - 2 ? 0.25 * (1 - (td - gap) / 6) : 0;   // one side of the split curls up a little and throws a shadow
+      if (tearSh > 0) return [1, [26, 18, 12, clamp01(shade[3] + tearSh)], null];
+      return [1, shade, null];
+    });
   } else if (kind === 'punched') {
     const rectSd = (x, y) => { const qx = Math.abs(x - 100) - 64, qy = Math.abs(y - 150) - 30; return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0); };   // the hammer-head sized hole
     pix((x, y, d) => {
@@ -4603,7 +4638,7 @@ function endTex(kind) {
   return (ENDTEX[kind] = { mask: mask.toDataURL(), ov: ov.toDataURL(), gl: gl.toDataURL(), rt: kind === 'glyph2' ? rt.toDataURL() : '', ex: extra.map((c) => c.toDataURL()) });
 }
 let UFO_END = 9;   // the saucer's mark: 1 vaporised pixels, 2 abducted, 3 glyph circle, 4 melted goo, 5 glitch
-let FIST_END = 2;   // which look the hammer leaves behind: 1 folded, 2 shattered, 3 squashed with a hammer imprint, 4 punched through, 5 crumpled
+let FIST_END = 6;   // which look the hammer leaves behind: 1 folded, 2 shattered, 3 squashed with a hammer imprint, 4 punched through, 5 crumpled, 6 smashed (dented, creased, torn)
 function glitchCard2(id, animate, as, cascade) {
   const tex = endTex('glitch2'), box = el('div', { class: 'tcard end e-glitch2' + (animate ? ' tearing' : '') });
   let sd = 31; const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
@@ -4659,7 +4694,7 @@ function foldedCard(id, animate, as, cascade) {
 function tornCard(id, animate, as = null, cascade = 0, style = '') {
   let kind = ATK_ENDS[style];
   if (kind === 'vapor' && UFO_END > 1) kind = ['vapor', 'abduct', 'glyph', 'melt', 'glitch', 'glyph2', 'glitch2', 'hud', 'beam'][UFO_END - 1];
-  if (kind === 'crushed' && FIST_END === 4) kind = 'punched'; else if (kind === 'crushed' && FIST_END === 5) kind = 'crumple';
+  if (kind === 'crushed' && FIST_END === 4) kind = 'punched'; else if (kind === 'crushed' && FIST_END === 5) kind = 'crumple'; else if (kind === 'crushed' && FIST_END === 6) kind = 'smashed';
   if (kind === 'glitch') return glitchCard(id, animate, as, cascade);
   if (kind === 'glitch2') return glitchCard2(id, animate, as, cascade);
   if (kind === 'crushed' && FIST_END === 1) return foldedCard(id, animate, as, cascade);
