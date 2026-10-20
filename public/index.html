@@ -2360,10 +2360,11 @@ function renderShop() {
       return card(own, avatarEl(k, 58, '', me.acc, me.bd), t('av_' + k), own ? (using ? t('shopInUse') : t('shopOwned')) : t('wpN', { n: pr.av[k] }),
         own ? el('button', { type: 'button', class: 'ghost', disabled: using, onclick: () => setMyAvatar(k) }, using ? t('shopInUse') : t('shopUse')) : buy('av', k, pr.av[k]), 'av:' + k);
     };
-    items = [...PREMIUM_KEYS.map(avCard), el('div', { class: 'shopsub legend' }, icon('zap', 14), t('shopLegend')), ...LEGEND_KEYS.map(avCard)];
+    const byPrice = (keys) => [...keys].sort((a, b) => (pr.av[a] || 0) - (pr.av[b] || 0));   // cheapest first (a stable sort keeps the usual order within a price)
+    items = [...byPrice(PREMIUM_KEYS).map(avCard), el('div', { class: 'shopsub legend' }, icon('zap', 14), t('shopLegend')), ...byPrice(LEGEND_KEYS).map(avCard)];
   } else {
     note = t('shopGiftNote', { n: pr.uses });
-    items = GIFT_KEYS.map((k) => {
+    items = [...GIFT_KEYS].sort((a, b) => (pr.gift[a] || 0) - (pr.gift[b] || 0)).map((k) => {   // cheapest first
       const left = w.gifts[k] || 0;
       return card(left > 0, giftEl(k, 60), t('gift_' + k), left > 0 ? t('giftLeft', { n: left }) : t('shopPack', { n: pr.uses }),
         left > 0 ? el('div', { class: 'btnrow two' }, buy('gift', k, pr.gift[k]), el('button', { type: 'button', class: 'ghost throwbtn', onclick: () => { ov.close(); openGiftTray(k); } }, colorIcon(GIFT_ICON, 17), el('span', {}, t('giftThrowShort')))) : buy('gift', k, pr.gift[k]), 'gift:' + k);
