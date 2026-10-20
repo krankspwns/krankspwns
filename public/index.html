@@ -354,7 +354,10 @@
   .dkbtn:active { transform: scale(.97); } @keyframes dkbreathe { 50% { box-shadow: 0 8px 30px rgba(35,162,90,.65) !important; } }
   .dkbic { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.25); } .dkbic svg * { stroke: #fff !important; stroke-width: 3; }
   .dkwait { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.8); border-radius: 14px; background: rgba(255,255,255,.05); }
-  .dkskip { margin-top: 10px; width: 100%; padding: 9px; font-size: 12.5px; opacity: .8; }
+  .dkskip { margin-top: 10px; width: 100%; display: flex !important; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px !important; font-size: 14px !important; font-weight: 700; color: #ffe2b8 !important; border-radius: 14px !important; background: rgba(255,170,70,.1) !important; border: 1.5px solid rgba(255,180,90,.55) !important; box-shadow: 0 4px 12px rgba(0,0,0,.25) !important; transition: background .15s, transform .1s; }
+  .dkskip:hover { background: rgba(255,170,70,.18) !important; } .dkskip:active { transform: scale(.97); }
+  .dkskic { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; background: rgba(255,190,110,.22); line-height: 0; } .dkskic svg { width: 13px; height: 13px; }
+  .dkhost { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; color: #2a1a06; background: linear-gradient(180deg, #ffd27a, #e8a33a); }
   .dkcheer { position: absolute; inset: 0; display: grid; place-items: center; font-size: 46px; font-weight: 900; color: #fff3d0; text-shadow: 0 6px 30px rgba(255,170,60,.7); background: rgba(30,20,30,.92); border-radius: 22px; opacity: 0; pointer-events: none; }
   .drinkfx.cheers .dkcheer { animation: dkcheer 1.1s cubic-bezier(.2,1.4,.4,1) both; } @keyframes dkcheer { 0% { opacity: 0; transform: scale(.6); } 30% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
   .nrbtn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; padding-left: 8px !important; padding-right: 10px !important; color: #fff !important; background: linear-gradient(135deg, #8b5cff 0%, #c04cf0 50%, #ff5fa2 100%) !important; border: 1px solid rgba(255,200,240,.45) !important; box-shadow: 0 6px 18px rgba(170,70,240,.35), inset 0 1px 0 rgba(255,255,255,.35) !important; text-shadow: 0 1px 1px rgba(60,0,80,.35); font-weight: 800; }
@@ -5396,7 +5399,7 @@ function syncDrinkUi() {
       el('div', { class: 'dkprog' }, el('span', { class: 'dkbar' }, el('i', { style: `width:${ids.length ? (nDone / ids.length) * 100 : 0}%` })), el('span', {}, t('drinkProg', { d: nDone, n: ids.length })))),
     el('div', { class: 'dklist' }, ...people),
     foot,
-    st.isHost ? el('button', { type: 'button', class: 'ghost dkskip', onclick: () => { st.drunk = st.drunk || {}; st.drunk[row] = Object.fromEntries(ids.map((id) => [id, true])); act('drank', { row, all: true }); syncDrinkUi(); } }, t('drinkSkip')) : '',
+    st.isHost ? el('button', { type: 'button', class: 'ghost dkskip', onclick: () => { st.drunk = st.drunk || {}; st.drunk[row] = Object.fromEntries(ids.map((id) => [id, true])); act('drank', { row, all: true }); syncDrinkUi(); } }, (() => { const s = el('span', { class: 'dkskic' }); s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5v13l8.5-6.5z M12.5 5.5v13l8.5-6.5z" fill="#ffc27a"/></svg>'; return s; })(),el('span', {}, t('drinkSkip')), el('em', { class: 'dkhost' }, t('host'))) : '',
     el('div', { class: 'dkcheer' }, t('drinkCheers')));
   const node = ov || el('div', { class: 'drinkfx' });
   node.dataset.row = String(row); node.classList.remove('cheers', 'out'); node.classList.toggle('fresh', fresh);
