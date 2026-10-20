@@ -155,7 +155,8 @@ function renderLobby() {
     el('div', { class: 'err' }, tErr(err)));
   const recoveryInput = el('input', { id: 'seat-recovery', type: 'password', autocomplete: 'off', maxLength: 24, value: formRecovery, 'aria-label': t('recoveryLabel'), oninput: (e) => { formRecovery = e.target.value.trim(); } });
   form.append(el('details', { class: 'recovery-form', open: !!formRecovery || err.startsWith('Recovery code') },
-    el('summary', {}, t('recoveryOptional')), el('label', { htmlFor: 'seat-recovery' }, t('recoveryLabel')), recoveryInput));
+    el('summary', {}, t('recoveryOptional')),
+    el('div', { class: 'recovery-fields' }, el('label', { htmlFor: 'seat-recovery' }, t('recoveryLabel')), recoveryInput)));
   const jb = form.querySelector('.row .big'); if (jb) jb.style.cssText = 'width:auto;padding:12px 22px;font-size:14px';
 
   app.append(el('div', { class: 'landing' + (invited ? ' invited' : '') }, hero, form));
