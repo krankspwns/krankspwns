@@ -2432,7 +2432,7 @@ function giftBanner(g) {
   setTimeout(() => { ban.classList.add('out'); setTimeout(() => { ban.remove(); if (!lane.children.length) lane.remove(); }, 450); }, 3600);
 }
 // throws that arrive together play one after another instead of piling up on top of each other
-const GIFT_MS = { tomato: 2900, pie: 2900, snowball: 3900, rose: 4400, popper: 3300, rocket: 3600, bomb: 5200, fireworks: 5200, balloon: 3300, kiss: 3200, ghost: 3600, zap: 3200, disco: 4600, cash: 4300 };
+const GIFT_MS = { tomato: 2900, pie: 2900, snowball: 3900, rose: 4400, popper: 3300, rocket: 3600, bomb: 5200, fireworks: 5200, balloon: 3400, kiss: 3500, ghost: 3600, zap: 3200, disco: 4600, cash: 4300 };
 let giftQ = [], giftRun = false;
 function queueGift(g) {
   if (giftQ.length >= 4) giftQ.shift();   // a flood: the oldest waiting effect is skipped
@@ -2814,34 +2814,112 @@ function playGift(g) {
       later(250, () => SND.play('crackle')); later(900, () => SND.play('crackle')); keepFor(3600);
     });
     keepFor(LAND + FUSE + 3800);
-  } else if (kind === 'splash') {   // a water balloon: it wobbles through the air, bursts in a sheet of water, and the screen runs wet
-    const wb = el('span', { class: 'giftfly' }, giftEl('balloon', 70)); fx.append(wb);
-    const fl = anim(wb, [{ transform: `translate(${fromX - 35}px,${fromY - 35}px) scale(.7,.75) rotate(-20deg)` }, { transform: `translate(${(fromX + tx) / 2 - 35}px,${Math.min(fromY, ty) - H * 0.22 - 35}px) scale(1.15,.92) rotate(10deg)`, offset: .5 }, { transform: `translate(${tx - 35}px,${ty - 35}px) scale(${toMe ? 2.2 : 1.5},${toMe ? 1.9 : 1.3}) rotate(30deg)` }], { duration: 640, easing: 'cubic-bezier(.35,.6,.5,1)', fill: 'forwards' });
-    later(640, () => {
-      wb.remove(); SND.play('splat'); SND.play('pop'); if (toMe) shake(260);
-      const R = toMe ? Math.min(W, H) * 0.45 : 110;
-      ring(tx, ty, '#bfe6ff', R, 520, 7); ring(tx, ty, '#ffffff', R * 0.7, 420, 4, 60); glowAt(tx, ty, '#8fd0ff', R * 1.6, 600);
-      for (let i = 0; i < (toMe ? 70 : 40); i++) part(tx, ty, { ang: rnd(0, 6.28), spd: rnd(200, toMe ? 900 : 600), g: 1300, life: rnd(700, 1300), size: rnd(5, 13), color: pick(['rgba(58,168,255,.85)', 'rgba(143,208,255,.9)', 'rgba(255,255,255,.95)']), end: 0.6 });
-      // runs of water sliding down the glass
-      const runs = toMe ? 14 : 5;
-      for (let i = 0; i < runs; i++) { const x = toMe ? W * (0.05 + 0.9 * i / (runs - 1)) + rnd(-12, 12) : tx + rnd(-60, 60), y0 = toMe ? rnd(-10, H * 0.25) : ty + rnd(-10, 20), len = rnd(H * 0.25, H * 0.6), w = rnd(6, 14), d = rnd(0, 260);
-        const r = node(`left:${x - w / 2}px;top:${y0}px;width:${w}px;height:${len}px;border-radius:${w}px;background:linear-gradient(180deg, rgba(160,215,255,0), rgba(160,215,255,.55) 30%, rgba(220,240,255,.85));box-shadow:inset 2px 0 2px rgba(255,255,255,.7);transform-origin:50% 0;opacity:0`, 'giftbit');
-        anim(r, [{ transform: 'scaleY(0)', opacity: 0.9 }, { transform: 'scaleY(1)', opacity: 0.9, offset: .55 }, { transform: 'scaleY(1) translateY(30px)', opacity: 0 }], { duration: 2200, delay: d, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }); }
-      if (toMe) { const sheet = node('inset:0;left:0;top:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 40%, rgba(120,190,255,.0), rgba(80,150,230,.35));opacity:0', 'giftbit'); anim(sheet, [{ opacity: 0 }, { opacity: 1, offset: .1 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' }); }
-      pop(toMe ? W / 2 : tx, toMe ? H * 0.14 : ty - 90, 'SPLOOSH!', '#2f8fff', toMe ? 50 : 34);
-    });
-    keepFor(3300);
-  } else if (kind === 'kiss') {   // a big lipstick kiss is stamped on, hearts flutter up
-    const spots = toMe ? [[W * 0.3, H * 0.3, -14], [W * 0.68, H * 0.5, 12], [W * 0.38, H * 0.72, -6]] : [[tx, ty, -10]];
-    SND.play('whoosh');
-    spots.forEach(([x, y, rot], i) => later(250 + i * 260, () => {
-      SND.play('chime'); const sz = toMe ? Math.min(W, H) * 0.34 : 110;
-      const k = node(`left:${x - sz / 2}px;top:${y - sz / 2}px;width:${sz}px;height:${sz}px;opacity:0;filter:drop-shadow(0 4px 6px rgba(120,0,40,.35))`, 'giftbit', `<svg viewBox="0 0 48 48" width="100%" height="100%">${GIFT_SVG.kiss}</svg>`);
-      anim(k, [{ transform: `rotate(${rot}deg) scale(2.4)`, opacity: 0 }, { transform: `rotate(${rot}deg) scale(.92)`, opacity: 1, offset: .14 }, { transform: `rotate(${rot}deg) scale(1)`, opacity: 1, offset: .22 }, { transform: `rotate(${rot}deg) scale(1)`, opacity: 0.95, offset: .78 }, { transform: `rotate(${rot}deg) scale(1.03)`, opacity: 0 }], { duration: 2600, easing: 'ease-out', fill: 'forwards' });
-      later(330, () => { ring(x, y, '#ff8fb8', sz * 0.7, 460, 4); for (let j = 0; j < 8; j++) { const h = node(`width:22px;height:22px;opacity:0`, 'giftbit', '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M12 21C4 15 2 11 2 8a5 5 0 019-3 5 5 0 019 3c0 3-2 7-8 13z" fill="#ff4d8d"/></svg>'); const dx = rnd(-70, 70); anim(h, [{ transform: `translate(${x - 11}px,${y - 11}px) scale(.3)`, opacity: 1 }, { transform: `translate(${x - 11 + dx}px,${y - 11 - rnd(90, 180)}px) scale(${rnd(.8, 1.3)}) rotate(${rnd(-30, 30)}deg)`, opacity: 0 }], { duration: rnd(1100, 1700), delay: j * 50, easing: 'ease-out', fill: 'forwards' }); } });
-    }));
-    pop(toMe ? W / 2 : tx, toMe ? H * 0.12 : ty - 90, 'MWAH!', '#ff3d7f', toMe ? 50 : 34, -6, 300);
-    keepFor(3300);
+  } else if (kind === 'splash') {   // a water balloon: it swells and wobbles, bursts, a wave crashes down and the screen is left beaded with water
+    const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const T0 = performance.now(), DUR = 3300, FLY = 560, SWELL = 420, POP = FLY + SWELL, sc = toMe ? 1 : 0.45;
+    const cx = toMe ? W / 2 : tx, cy = toMe ? H * 0.45 : ty, R0 = 34, R1 = toMe ? Math.min(W, H) * 0.34 : 70;
+    const shreds = [], drops = [], spray = [];
+    let popped = false, last = T0;
+    SND.play('throw');
+    const burst = () => {
+      popped = true; SND.play('splat'); SND.play('pop'); SND.play('boom'); if (toMe) shake(320);
+      for (let i = 0; i < 9; i++) { const a2 = (i / 9) * 6.283 + rnd(-.2, .2); shreds.push({ x: cx + Math.cos(a2) * R1 * .9, y: cy + Math.sin(a2) * R1 * .9, vx: Math.cos(a2) * rnd(500, 900) * sc, vy: Math.sin(a2) * rnd(500, 900) * sc - 200, rot: rnd(0, 6), vr: rnd(-12, 12), w: rnd(22, 40) * (toMe ? 1 : .5) }); }
+      for (let i = 0; i < (toMe ? 260 : 90); i++) { const a2 = rnd(0, 6.283), v = rnd(200, 1300) * sc; spray.push({ x: cx + Math.cos(a2) * R1 * rnd(.2, .9), y: cy + Math.sin(a2) * R1 * rnd(.2, .9), vx: Math.cos(a2) * v, vy: Math.sin(a2) * v - 150, r: rnd(2, 7) * (toMe ? 1 : .6), life: rnd(500, 1100), t: 0 }); }
+      // water left on the glass: beads of every size that slowly slide down
+      const nd = toMe ? 70 : 18;
+      for (let i = 0; i < nd; i++) { const r = toMe ? (Math.random() < .2 ? rnd(14, 26) : rnd(4, 12)) : rnd(3, 9); drops.push({ x: toMe ? rnd(0, W) : cx + rnd(-90, 90), y: toMe ? rnd(0, H) : cy + rnd(-60, 70), r, v: r > 10 ? rnd(30, 90) : rnd(0, 18), delay: rnd(0, 400), trail: [] }); }
+      pop(toMe ? W / 2 : cx, toMe ? H * 0.16 : cy - 90, 'SPLOOSH!', '#2f8fff', toMe ? 58 : 36, -6);
+    };
+    const bead = (x, y, r, a) => {   // a drop of water: refracts darker at the bottom, a bright highlight on top
+      const gr = g.createRadialGradient(x - r * .3, y - r * .35, r * .1, x, y, r); gr.addColorStop(0, `rgba(255,255,255,${.85 * a})`); gr.addColorStop(.35, `rgba(200,230,255,${.35 * a})`); gr.addColorStop(.8, `rgba(60,130,210,${.45 * a})`); gr.addColorStop(1, `rgba(20,70,150,${.6 * a})`);
+      g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r * .92, r, 0, 0, 6.283); g.fill();
+      g.fillStyle = `rgba(255,255,255,${.9 * a})`; g.beginPath(); g.ellipse(x - r * .32, y - r * .38, r * .22, r * .14, -.5, 0, 6.283); g.fill();
+    };
+    const frame = (now) => {
+      const t = now - T0, dt = Math.min(.05, (now - last) / 1000); last = now; if (t > DUR) { cv.remove(); return; }
+      g.clearRect(0, 0, W, H);
+      const A = t > DUR - 700 ? (DUR - t) / 700 : 1;
+      if (!popped) {
+        // flight then a swell: the balloon grows and wobbles like jelly, a sheen sliding over it
+        let x, y, r, sx = 1, sy = 1;
+        if (t < FLY) { const k = t / FLY, e = 1 - Math.pow(1 - k, 2); x = fromX + (cx - fromX) * e; y = fromY + (cy - fromY) * e - Math.sin(k * Math.PI) * H * .2; r = R0 * (.8 + .4 * k); sx = 1 + .12 * Math.sin(t / 50); sy = 2 - sx; }
+        else { const k = (t - FLY) / SWELL; x = cx; y = cy; r = R0 + (R1 - R0) * (1 - Math.pow(1 - k, 3)); const wob = Math.sin(k * 28) * .09 * (1 - k * .3); sx = 1 + wob; sy = 1 - wob; if (k > .85) { sx += (k - .85) * 1.4; sy += (k - .85) * .8; } }
+        g.save(); g.translate(x, y); g.scale(sx, sy);
+        const bg = g.createRadialGradient(-r * .35, -r * .4, r * .1, 0, 0, r); bg.addColorStop(0, 'rgba(210,240,255,.95)'); bg.addColorStop(.45, 'rgba(58,168,255,.9)'); bg.addColorStop(1, 'rgba(18,80,170,.95)');
+        g.fillStyle = bg; g.beginPath(); g.ellipse(0, 0, r * .92, r, 0, 0, 6.283); g.fill();
+        g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-r * .38, -r * .45, r * .2, r * .32, .5, 0, 6.283); g.fill();
+        g.fillStyle = '#1d63c4'; g.beginPath(); g.moveTo(-r * .08, r * .98); g.lineTo(0, r * 1.12); g.lineTo(r * .08, r * .98); g.fill();   // the knot
+        g.restore();
+        if (t >= POP) burst();
+      } else {
+        const pt = t - POP;
+        // the wave: a sheet of water crashing down from the top with a foamy edge
+        if (toMe && pt < 1100) { const k = Math.min(1, pt / 520), edge = H * 1.15 * (1 - Math.pow(1 - k, 2)), fade = pt > 600 ? 1 - (pt - 600) / 500 : 1;
+          const wg = g.createLinearGradient(0, edge - H * .6, 0, edge); wg.addColorStop(0, `rgba(40,120,220,${.0 * fade})`); wg.addColorStop(.6, `rgba(70,160,240,${.35 * fade})`); wg.addColorStop(1, `rgba(150,215,255,${.55 * fade})`);
+          g.fillStyle = wg; g.beginPath(); g.moveTo(0, 0); g.lineTo(W, 0); for (let x = W; x >= 0; x -= 16) g.lineTo(x, edge + Math.sin(x * .04 + pt * .02) * 14); g.closePath(); g.fill();
+          g.fillStyle = `rgba(240,250,255,${.8 * fade})`; for (let x = 0; x <= W; x += 10) { const yy = edge + Math.sin(x * .04 + pt * .02) * 14; g.beginPath(); g.arc(x, yy, 4 + 3 * Math.sin(x * .3 + pt * .03), 0, 6.283); g.fill(); } }
+        // spray
+        for (const p2 of spray) { p2.t += dt * 1000; if (p2.t > p2.life) continue; p2.vy += 1500 * dt; p2.x += p2.vx * dt; p2.y += p2.vy * dt; bead(p2.x, p2.y, p2.r, 1 - p2.t / p2.life); }
+        // rubber shreds
+        for (const sh of shreds) { sh.vy += 1600 * dt; sh.x += sh.vx * dt; sh.y += sh.vy * dt; sh.rot += sh.vr * dt; g.save(); g.translate(sh.x, sh.y); g.rotate(sh.rot); g.globalAlpha = A; g.fillStyle = '#2a86e6'; g.beginPath(); g.moveTo(-sh.w / 2, 0); g.quadraticCurveTo(0, -sh.w * .4, sh.w / 2, 0); g.quadraticCurveTo(0, sh.w * .15, -sh.w / 2, 0); g.fill(); g.restore(); }
+        // beads on the glass, sliding with wet trails, and a ripple of light over them
+        for (const dr of drops) { if (pt < dr.delay) continue; dr.y += dr.v * dt; if (dr.v > 20) { dr.trail.push([dr.x, dr.y]); if (dr.trail.length > 40) dr.trail.shift(); }
+          if (dr.trail.length > 1) { g.strokeStyle = `rgba(170,215,255,${.25 * A})`; g.lineWidth = dr.r * .9; g.lineCap = 'round'; g.beginPath(); dr.trail.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke(); }
+          bead(dr.x, dr.y, dr.r * Math.min(1, (pt - dr.delay) / 120), A); }
+        if (toMe && pt < 2200) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .12 * A; g.strokeStyle = '#bfe6ff'; g.lineWidth = 2; for (let i = 0; i < 6; i++) { const yy = (pt * .15 + i * H / 6) % H; g.beginPath(); for (let x = 0; x <= W; x += 12) g.lineTo(x, yy + Math.sin(x * .03 + i + pt * .004) * 10); g.stroke(); } g.restore(); }
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    keepFor(DUR + 200);
+  } else if (kind === 'kiss') {   // a romantic moment: pink haze, glossy lips pucker and blow a kiss, prints stamped around, a big heart bursts into a shower of hearts
+    const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const T0 = performance.now(), DUR = 3400, cx = toMe ? W / 2 : tx, cy = toMe ? H * .42 : ty, S = toMe ? Math.min(W, H) * .5 : 120;
+    const bokeh = Array.from({ length: toMe ? 26 : 8 }, () => ({ x: toMe ? rnd(0, W) : cx + rnd(-120, 120), y: toMe ? rnd(0, H) : cy + rnd(-90, 90), r: rnd(8, 26) * (toMe ? 1 : .6), v: rnd(10, 30), ph: rnd(0, 6.28) }));
+    const prints = (toMe ? [[.24, .2, -18], [.78, .3, 14], [.22, .72, 10], [.74, .8, -12]] : [[0, 0, -10]]).map(([fx2, fy2, rot], i) => ({ x: toMe ? W * fx2 : cx + rnd(-30, 30), y: toMe ? H * fy2 : cy + rnd(-20, 20), rot: rot * Math.PI / 180, at: 900 + i * 220, s: toMe ? rnd(.32, .42) : .5 }));
+    const hearts = [];
+    let burst = false, last = T0;
+    const lipPath = (w, h, pucker) => {   // upper lip with its cupid's bow, lower lip fuller; pucker pulls the corners in
+      const k = 1 - pucker * .35, up = new Path2D(), lo = new Path2D();
+      up.moveTo(-w * k, 0); up.bezierCurveTo(-w * .7 * k, -h * .55, -w * .28, -h * .95, -w * .02, -h * .42); up.bezierCurveTo(0, -h * .38, 0, -h * .38, w * .02, -h * .42); up.bezierCurveTo(w * .28, -h * .95, w * .7 * k, -h * .55, w * k, 0); up.bezierCurveTo(w * .5 * k, -h * .12, -w * .5 * k, -h * .12, -w * k, 0);
+      lo.moveTo(-w * k, 0); lo.bezierCurveTo(-w * .5 * k, h * .12, w * .5 * k, h * .12, w * k, 0); lo.bezierCurveTo(w * .65 * k, h * 1.05, -w * .65 * k, h * 1.05, -w * k, 0);
+      return [up, lo];
+    };
+    const drawLips = (x, y, w, h, rot, pucker, a, gloss, lines) => {
+      g.save(); g.translate(x, y); g.rotate(rot); g.globalAlpha = a; const [up, lo] = lipPath(w, h, pucker);
+      const lg = g.createLinearGradient(0, -h, 0, h); lg.addColorStop(0, '#ff6a9a'); lg.addColorStop(.5, '#e8195c'); lg.addColorStop(1, '#a30d3f');
+      g.fillStyle = lg; g.fill(up); g.fill(lo);
+      if (lines) { g.strokeStyle = 'rgba(110,0,35,.35)'; g.lineWidth = Math.max(1, w * .012); for (let i = -6; i <= 6; i++) { const lx = i * w * .12; g.beginPath(); g.moveTo(lx, -h * .05); g.quadraticCurveTo(lx * 1.05, h * .4, lx * .9, h * .78); g.stroke(); g.beginPath(); g.moveTo(lx, -h * .06); g.quadraticCurveTo(lx * 1.05, -h * .32, lx * .92, -h * .55); g.stroke(); } }
+      g.strokeStyle = 'rgba(90,0,30,.5)'; g.lineWidth = Math.max(1.2, w * .02); g.beginPath(); g.moveTo(-w * (1 - pucker * .35), 0); g.bezierCurveTo(-w * .4, h * .1, w * .4, h * .1, w * (1 - pucker * .35), 0); g.stroke();
+      if (gloss) { g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-w * .1, h * .45, w * .3, h * .1, 0, 0, 6.283); g.fill(); g.beginPath(); g.ellipse(-w * .42, -h * .45, w * .12, h * .06, -.4, 0, 6.283); g.fill(); }
+      g.restore();
+    };
+    const heart = (x, y, r, rot, flip, col, a) => { g.save(); g.translate(x, y); g.rotate(rot); g.scale(Math.max(.1, Math.abs(flip)), 1); g.globalAlpha = a; g.fillStyle = col; g.beginPath(); g.moveTo(0, r * .35); g.bezierCurveTo(-r * 1.1, -r * .35, -r * .5, -r * 1.05, 0, -r * .45); g.bezierCurveTo(r * .5, -r * 1.05, r * 1.1, -r * .35, 0, r * .35); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(-r * .35, -r * .5, r * .16, r * .1, -.6, 0, 6.283); g.fill(); g.restore(); };
+    SND.play('whoosh'); later(420, () => SND.play('chime'));
+    pop(toMe ? W / 2 : cx, toMe ? H * .12 : cy - 90, 'MWAH!', '#ff3d7f', toMe ? 58 : 36, -6, 520);
+    const frame = (now) => {
+      const t = now - T0, dt = Math.min(.05, (now - last) / 1000); last = now; if (t > DUR) { cv.remove(); return; }
+      g.clearRect(0, 0, W, H);
+      const A = Math.min(1, t / 300) * (t > DUR - 700 ? (DUR - t) / 700 : 1);
+      if (toMe) { const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .2, W / 2, H / 2, Math.max(W, H) * .75); vg.addColorStop(0, 'rgba(255,120,170,0)'); vg.addColorStop(1, `rgba(255,70,140,${.38 * A})`); g.fillStyle = vg; g.fillRect(0, 0, W, H); }
+      g.save(); g.globalCompositeOperation = 'lighter'; for (const b of bokeh) { const y = b.y - (t / 1000) * b.v, a2 = (.18 + .1 * Math.sin(t / 400 + b.ph)) * A; heart(b.x, y, b.r, 0, 1, `rgba(255,140,190,${a2})`, 1); } g.restore();
+      // the giant lips: rise in, pucker twice, blow the kiss (lean forward, then fade)
+      if (t < 1500) { const k = Math.min(1, t / 350), pk = t < 350 ? 0 : t < 1100 ? .5 + .5 * Math.sin((t - 350) / 750 * Math.PI * 3) : 1, lean = t > 1100 ? (t - 1100) / 400 : 0, s2 = S * (.6 + .4 * (1 - Math.pow(1 - k, 3))) * (1 + lean * .5);
+        drawLips(cx, cy, s2 * .5, s2 * .32, 0, pk, A * (1 - lean), true, false);
+        if (t > 1050 && t < 1400) { const kk = (t - 1050) / 350; g.strokeStyle = `rgba(255,190,215,${.8 * (1 - kk)})`; g.lineWidth = 4; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(cx, cy, s2 * (.4 + kk * .8 + i * .12), 0, 6.283); g.stroke(); } } }
+      // lipstick prints stamped one after another, with real lip lines
+      for (const pr of prints) { if (t < pr.at) continue; const k = Math.min(1, (t - pr.at) / 160), sq = k < 1 ? 1.6 - .6 * k : 1; if (k >= 1 && !pr.done) { pr.done = true; SND.play('pop'); for (let i = 0; i < 5; i++) hearts.push({ x: pr.x, y: pr.y, vx: rnd(-120, 120), vy: rnd(-260, -120), r: rnd(6, 11), rot: rnd(-.5, .5), flip: rnd(0, 6), vf: rnd(6, 10), col: pick(['#ff4d8d', '#ff8fb8', '#ffc2d4']), life: 1400, t: 0 }); }
+        drawLips(pr.x, pr.y, S * pr.s * sq, S * pr.s * .62 * sq, pr.rot, 0, A * .92 * Math.min(1, k * 2), false, true); }
+      // the big heart: pulses, then bursts into a shower
+      const ht = t - 1500;
+      if (ht > 0 && !burst) { const k = Math.min(1, ht / 500), r = S * .42 * (k < 1 ? .3 + .7 * Math.sin(k * Math.PI / 2) : 1) * (1 + .08 * Math.sin(ht / 70)); heart(cx, cy + r * .2, r, 0, 1, '#ff2a6d', A); if (ht > 650) { burst = true; SND.play('chime'); SND.play('pop'); for (let i = 0; i < (toMe ? 70 : 24); i++) { const a2 = rnd(0, 6.283), v = rnd(200, 700) * (toMe ? 1 : .6); hearts.push({ x: cx, y: cy, vx: Math.cos(a2) * v, vy: Math.sin(a2) * v - 200, r: rnd(7, 18) * (toMe ? 1 : .7), rot: rnd(-.6, .6), flip: rnd(0, 6), vf: rnd(5, 11), col: pick(['#ff2a6d', '#ff4d8d', '#ff8fb8', '#ffc2d4', '#ffffff']), life: rnd(1300, 2000), t: 0 }); } } }
+      for (const h of hearts) { h.t += dt * 1000; if (h.t > h.life) continue; h.vx *= Math.pow(.3, dt); h.vy = h.vy * Math.pow(.3, dt) + 260 * dt; h.x += h.vx * dt + Math.sin(h.t / 200) * .6; h.y += h.vy * dt; h.flip += h.vf * dt; heart(h.x, h.y, h.r, h.rot, Math.cos(h.flip), h.col, A * Math.min(1, 1.6 - h.t / h.life)); }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    keepFor(DUR + 200);
   } else if (kind === 'ghost') {   // the lights dip, a ghost drifts in on a wobbling path and lunges: BOO!
     const dim = node('inset:0;left:0;top:0;width:100%;height:100%;background:rgba(10,14,40,.55);opacity:0', 'giftbit'); anim(dim, [{ opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .6 }, { opacity: 0 }], { duration: 3200, fill: 'forwards' });
     SND.play('whoosh');
