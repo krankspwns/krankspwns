@@ -2432,7 +2432,7 @@ function giftBanner(g) {
   setTimeout(() => { ban.classList.add('out'); setTimeout(() => { ban.remove(); if (!lane.children.length) lane.remove(); }, 450); }, 3600);
 }
 // throws that arrive together play one after another instead of piling up on top of each other
-const GIFT_MS = { tomato: 2900, pie: 2900, snowball: 3900, rose: 4400, popper: 3300, rocket: 3600, bomb: 5200, fireworks: 5200, balloon: 3300, kiss: 3200, ghost: 3600, zap: 3200, disco: 4600, cash: 4200 };
+const GIFT_MS = { tomato: 2900, pie: 2900, snowball: 3900, rose: 4400, popper: 3300, rocket: 3600, bomb: 5200, fireworks: 5200, balloon: 3300, kiss: 3200, ghost: 3600, zap: 3200, disco: 4600, cash: 4300 };
 let giftQ = [], giftRun = false;
 function queueGift(g) {
   if (giftQ.length >= 4) giftQ.shift();   // a flood: the oldest waiting effect is skipped
@@ -2857,21 +2857,63 @@ function playGift(g) {
       for (let i = 0; i < 4; i++) { const sg = node(`width:34px;height:34px;opacity:0`, 'giftbit', `<svg viewBox="0 0 48 48" width="100%" height="100%">${GIFT_SVG.ghost}</svg>`); const x = rnd(W * .1, W * .9); anim(sg, [{ transform: `translate(${x}px,${H}px)`, opacity: .7 }, { transform: `translate(${x + rnd(-40, 40)}px,${H * rnd(.1, .4)}px) rotate(${rnd(-20, 20)}deg)`, opacity: 0 }], { duration: rnd(1600, 2200), delay: i * 120, easing: 'ease-out', fill: 'forwards' }); }
     });
     keepFor(3600);
-  } else if (kind === 'zap') {   // a storm cloud gathers overhead and a bolt of lightning strikes
-    const cw = toMe ? Math.min(W * 0.8, 340) : 150, cx = toMe ? W / 2 : tx, cy = toMe ? H * 0.12 : Math.max(60, ty - 140);
-    const cl = node(`left:${cx - cw / 2}px;top:${cy - cw * 0.3}px;width:${cw}px;height:${cw * 0.6}px;opacity:0;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))`, 'giftbit', '<svg viewBox="0 0 100 60" width="100%" height="100%"><defs><radialGradient id="zcg" cx=".45" cy=".35" r=".8"><stop offset="0" stop-color="#9aa3c2"/><stop offset="1" stop-color="#3b4260"/></radialGradient></defs><path d="M18 52c-9 0-15-6-15-13 0-7 6-12.5 13-12.5 1.6-9 9-15.5 18-15.5 6.4 0 12 3.4 15.2 8.4 2.4-1.6 5.4-2.6 8.6-2.6 8.6 0 15.6 6.8 15.8 15.2 6 .6 10.6 5.6 10.6 11.4 0 6.4-5.2 11.6-11.6 11.6z" fill="url(#zcg)"/></svg>');
-    anim(cl, [{ transform: 'translateY(-30px) scale(.8)', opacity: 0 }, { transform: 'none', opacity: 1, offset: .2 }, { transform: 'none', opacity: 1, offset: .8 }, { transform: 'translateY(-20px)', opacity: 0 }], { duration: 2800, fill: 'forwards' });
-    SND.play('thunder');
-    const strike = (x, y, d) => later(d, () => {
-      const e = atkEngine(); e.cv.style.zIndex = '261';
-      e.bolt(cx + rnd(-cw * .2, cw * .2), cy + cw * 0.2, x, y, { w: toMe ? 9 : 6, ms: 380, branches: 4, col: [255, 236, 150] });
-      e.burst(x, y, 30, { spd: [120, 420], life: [300, 700], s: [2, 5], col: [255, 245, 200], col1: [255, 170, 40], g: 200 }); e.ring(x, y, toMe ? 180 : 100, [255, 236, 150], 420, 6);
-      SND.play('impact'); flash('#fff8d0', toMe ? 0.55 : 0.3, 200); shake(toMe ? 300 : 200);
-      setTimeout(() => e.stop(), 1400);
-    });
-    strike(tx, ty, 650); if (toMe) { strike(W * 0.25, H * 0.6, 1000); strike(W * 0.75, H * 0.45, 1250); }
-    pop(toMe ? W / 2 : tx, toMe ? H * 0.3 : ty - 70, 'ZAP!', '#ffcf20', toMe ? 60 : 40, -8, 700);
-    keepFor(3200);
+  } else if (kind === 'zap') {   // a storm: the sky darkens, rain sweeps in, clouds roll and flicker, then a huge bolt cracks down
+    const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const T0 = performance.now(), DUR = 3200, hitAt = 1250, hx = tx, hy = toMe ? H * 0.64 : ty;   // aimed at you it splits the whole screen
+    const drops = Array.from({ length: 160 }, () => ({ x: rnd(-W * 0.3, W * 1.1), y: rnd(-H, H), v: rnd(900, 1500), l: rnd(14, 30) }));
+    const base = H * (toMe ? 0.2 : 0.14), clouds = Array.from({ length: 34 }, (_, i) => { const x = (i / 33) * (W + 120) - 60; return { side: x < W / 2 ? -1 : 1, x, y: base - rnd(10, 70) - (i % 3) * 18, r: rnd(46, 92), ph: rnd(0, 6.28) }; }).sort((p, q) => p.y - q.y);   // one continuous bank of storm cloud across the top
+    let flx = W / 2;
+    const jag = (x0, y0, x1, y1, disp, depth) => { let pts = [[x0, y0], [x1, y1]]; for (let k = 0; k < depth; k++) { const n = []; for (let i = 0; i < pts.length - 1; i++) { const [ax, ay] = pts[i], [bx, by] = pts[i + 1], mx = (ax + bx) / 2, my = (ay + by) / 2, dx = by - ay, dy = ax - bx, l = Math.hypot(dx, dy) || 1, o = rnd(-disp, disp); n.push(pts[i], [mx + dx / l * o, my + dy / l * o]); } n.push(pts[pts.length - 1]); pts = n; disp *= 0.55; } return pts; };
+    let bolt = null, branches = [], arcs = [], flick = 0, lastFl = 0;
+    const strikeNow = () => {
+      bolt = jag(hx + rnd(-60, 60), base - 20, hx, hy, Math.max(60, (hy - base)) * 0.22, 7); flx = hx; flick = 1;
+      branches = []; for (let i = 0; i < 9; i++) { const q = bolt[Math.floor(rnd(4, bolt.length - 14))], a2 = Math.PI / 2 + rnd(-1.2, 1.2); branches.push(jag(q[0], q[1], q[0] + Math.cos(a2) * rnd(60, 200), q[1] + Math.sin(a2) * rnd(40, 160), 26, 5)); }
+      SND.play('thunder'); SND.play('impact'); SND.play('boom'); shake(toMe ? 520 : 300);
+      if (toMe) { const a2 = document.getElementById('app'); if (a2) { a2.animate([{ filter: 'invert(1) hue-rotate(180deg)' }, { filter: 'none', offset: .3 }, { filter: 'invert(1) hue-rotate(180deg)', offset: .5 }, { filter: 'none' }], { duration: 260 }); } }
+      for (let i = 0; i < 40; i++) part(hx, hy, { ang: rnd(0, 6.28), spd: rnd(200, 700), g: 900, life: rnd(400, 900), size: rnd(2, 5), color: pick(['#fff6b0', '#ffffff', '#9fd6ff']), end: 0.2, glow: true });
+      ring(hx, hy, '#fff6b0', toMe ? 260 : 130, 520, 6); ring(hx, hy, '#9fd6ff', toMe ? 180 : 90, 420, 4, 80);
+      for (let i = 0; i < 10; i++) part(hx + rnd(-20, 20), hy, { ang: -Math.PI / 2 + rnd(-.6, .6), spd: rnd(40, 120), g: -60, life: rnd(1200, 2000), size: rnd(14, 26), color: 'rgba(70,70,85,.45)', end: 2.2 });
+      pop(toMe ? W / 2 : hx, toMe ? H * 0.3 : hy - 80, 'ZAP!', '#ffe14d', toMe ? 72 : 44, -8);
+    };
+    later(hitAt, strikeNow); later(hitAt + 260, () => { bolt = jag(hx + rnd(-50, 50), base - 20, hx, hy, Math.max(60, (hy - base)) * 0.2, 7); flick = 1; SND.play('crackle'); });   // it re-strikes once
+    const edgeArc = () => { const side = Math.floor(rnd(0, 4)), L = rnd(80, 200), p0 = side < 2 ? [rnd(0, W - L), side ? H - 4 : 4] : [side === 2 ? 4 : W - 4, rnd(0, H - L)], p1 = side < 2 ? [p0[0] + L, p0[1]] : [p0[0], p0[1] + L]; arcs.push({ pts: jag(p0[0], p0[1], p1[0], p1[1], 16, 5), life: 160 }); };
+    SND.play('whoosh');
+    const frame = (now) => {
+      const t = now - T0; if (t > DUR) { cv.remove(); return; }
+      g.clearRect(0, 0, W, H);
+      const inA = Math.min(1, t / 500), outA = t > DUR - 600 ? (DUR - t) / 600 : 1, A = inA * outA;
+      // the dark sky
+      g.fillStyle = `rgba(8,12,28,${0.62 * A})`; g.fillRect(0, 0, W, H);
+      // lightning lighting up the clouds from inside, more often as the strike nears
+      if (t < hitAt + 400 && now - lastFl > (t < hitAt ? 520 - t * 0.3 : 120) && Math.random() < 0.6) { flick = 1; lastFl = now; flx = rnd(W * 0.1, W * 0.9); }
+      flick *= 0.86;
+      // clouds rolling in from both sides
+      const k0 = Math.min(1, t / 900), ease0 = 1 - Math.pow(1 - k0, 3);
+      g.fillStyle = `rgba(22,26,40,${0.95 * A})`; g.fillRect(0, 0, W, Math.max(0, base - 60) * ease0);   // the solid sky above the cloud bank
+      for (const c of clouds) { const x = c.side < 0 ? -c.r * 2 + (c.x + c.r * 2) * ease0 : W + c.r * 2 - (W + c.r * 2 - c.x) * ease0, y = c.y + Math.sin(t / 900 + c.ph) * 4;
+        const lit = flick * Math.max(0, 1 - Math.abs(x - flx) / (W * 0.45));   // lit from inside, near where the lightning is
+        const cg = g.createRadialGradient(x, y + c.r * 0.35, c.r * 0.1, x, y, c.r);
+        cg.addColorStop(0, `rgba(${70 + 170 * lit},${76 + 170 * lit},${98 + 157 * lit},${0.98 * A})`); cg.addColorStop(0.55, `rgba(${44 + 60 * lit},${48 + 60 * lit},${66 + 70 * lit},${0.97 * A})`); cg.addColorStop(1, 'rgba(26,30,44,0)');
+        g.fillStyle = cg; g.beginPath(); g.arc(x, y, c.r, 0, 6.283); g.fill();
+        g.strokeStyle = `rgba(150,165,200,${0.18 * A})`; g.lineWidth = 2; g.beginPath(); g.arc(x, y, c.r * 0.82, 0.3, 2.84); g.stroke(); }   // soft light catching each billow's underside
+      if (flick > 0.05) { g.save(); g.globalCompositeOperation = 'lighter'; const fg2 = g.createRadialGradient(flx, base - 30, 0, flx, base - 30, W * 0.35); fg2.addColorStop(0, `rgba(170,200,255,${0.45 * flick * A})`); fg2.addColorStop(1, 'rgba(170,200,255,0)'); g.fillStyle = fg2; g.fillRect(0, 0, W, base + 80); g.restore(); }
+      // rain sweeping in at an angle
+      g.strokeStyle = `rgba(170,200,255,${0.45 * A})`; g.lineWidth = 1.3; g.beginPath();
+      for (const r of drops) { const y = ((r.y + (t / 1000) * r.v) % (H + 60)) - 30, x = r.x + (y + 30) * 0.25; g.moveTo(x, y); g.lineTo(x + r.l * 0.25, y + r.l); } g.stroke();
+      // the bolt, with a bloom; it fades out over half a second
+      if (bolt && t >= hitAt) { const k = Math.max(0, 1 - Math.pow((t - hitAt) / 1000, 2)) * (0.75 + 0.25 * Math.random()), line = (pts, w, a, col) => { g.strokeStyle = col.replace('A', a * k); g.lineWidth = w; g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke(); };
+        g.save(); g.globalCompositeOperation = 'lighter'; line(bolt, 48, 0.12, 'rgba(140,190,255,A)'); line(bolt, 22, 0.32, 'rgba(170,210,255,A)'); line(bolt, 10, 0.7, 'rgba(215,235,255,A)'); line(bolt, 4.5, 1, 'rgba(255,255,255,A)'); for (const br of branches) { line(br, 10, 0.25, 'rgba(170,215,255,A)'); line(br, 2.4, 0.95, 'rgba(255,255,255,A)'); }
+        const ig = g.createRadialGradient(hx, hy, 0, hx, hy, toMe ? 160 : 90); ig.addColorStop(0, `rgba(255,250,220,${0.9 * k})`); ig.addColorStop(1, 'rgba(160,210,255,0)'); g.fillStyle = ig; g.beginPath(); g.arc(hx, hy, toMe ? 160 : 90, 0, 6.283); g.fill();   // the glow where it strikes
+        const fl = Math.max(0, 1 - (t - hitAt) / 220); if (fl > 0) { g.fillStyle = `rgba(235,245,255,${fl * (toMe ? 0.8 : 0.45)})`; g.fillRect(0, 0, W, H); }
+        g.restore(); }
+      // electricity crawling along the screen edges after the hit
+      if (toMe && t > hitAt && t < DUR - 500 && Math.random() < 0.35) edgeArc();
+      g.save(); g.globalCompositeOperation = 'lighter'; for (let i = arcs.length - 1; i >= 0; i--) { const a2 = arcs[i]; a2.life -= 16; if (a2.life <= 0) { arcs.splice(i, 1); continue; } g.strokeStyle = `rgba(160,215,255,${a2.life / 160})`; g.lineWidth = 2.4; g.beginPath(); a2.pts.forEach((q, j) => (j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke(); } g.restore();
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    keepFor(DUR + 200);
   } else if (kind === 'disco') {   // a disco ball drops in, the room lights up with sweeping coloured beams
     const bs = toMe ? 120 : 80, bx = toMe ? W / 2 : tx, by = toMe ? H * 0.22 : Math.max(70, ty - 110);
     const str = node(`left:${bx - 1}px;top:0;width:2px;height:${by - bs / 2}px;background:#9aa6c2;transform-origin:50% 0;opacity:0`, 'giftbit');
@@ -2888,21 +2930,57 @@ function playGift(g) {
       pop(toMe ? W / 2 : tx, toMe ? H * 0.42 : ty + 10, 'DANCE!', '#ff5ad0', toMe ? 56 : 36, -6, 200);
     });
     keepFor(4600);
-  } else if (kind === 'cash') {   // make it rain: banknotes flutter down and gold coins bounce
-    SND.play('chime');
-    const n = toMe ? 44 : 18, x0 = toMe ? 0 : tx - 140, wd = toMe ? W : 280;
-    for (let i = 0; i < n; i++) {
-      const d = rnd(0, 1600), x = x0 + rnd(0, wd), nw = rnd(34, 54), coin = Math.random() < 0.3;
-      const html = coin ? '<svg viewBox="0 0 24 24" width="100%" height="100%"><defs><radialGradient id="cgc" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff3b0"/><stop offset=".55" stop-color="#ffcf40"/><stop offset="1" stop-color="#c58a10"/></radialGradient></defs><circle cx="12" cy="12" r="10" fill="url(#cgc)" stroke="#a86f00"/><text x="12" y="16.5" font-size="12" font-weight="900" text-anchor="middle" fill="#8a5a00" font-family="Inter,system-ui,sans-serif">$</text></svg>'
-        : '<svg viewBox="0 0 40 20" width="100%" height="100%"><rect x="1" y="1" width="38" height="18" rx="2" fill="#5fcf86" stroke="#1e7a40"/><rect x="4" y="4" width="32" height="12" rx="1" fill="none" stroke="#e8fff0" stroke-width=".8" opacity=".7"/><circle cx="20" cy="10" r="4.4" fill="#e8fff0" opacity=".85"/><text x="20" y="13.2" font-size="8" font-weight="900" text-anchor="middle" fill="#1e7a40" font-family="Inter,system-ui,sans-serif">$</text></svg>';
-      const b = node(`width:${coin ? 24 : nw}px;height:${coin ? 24 : nw / 2}px;opacity:0;filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))`, 'giftbit', html);
-      const yEnd = toMe ? H + 30 : ty + rnd(40, 120), fr = [];
-      for (let k = 0; k <= 10; k++) { const q = k / 10; fr.push({ transform: `translate(${x + Math.sin(q * 6 + i) * (coin ? 6 : 34)}px,${-40 + (yEnd + 40) * q}px) rotate(${coin ? q * 720 : Math.sin(q * 7 + i) * 50}deg) rotateX(${coin ? 0 : q * 540}deg)`, opacity: q > 0.85 && !toMe ? 1 - (q - 0.85) / 0.15 : 1 }); }
-      anim(b, fr, { duration: coin ? rnd(1000, 1400) : rnd(1700, 2500), delay: d, easing: 'linear', fill: 'forwards' });
-      if (coin && i % 3 === 0) later(d + 1000, () => SND.play('tick'));
-    }
-    pop(toMe ? W / 2 : tx, toMe ? H * 0.16 : ty - 90, '$$$', '#2e9e57', toMe ? 64 : 40, -6, 200);
-    keepFor(4200);
+  } else if (kind === 'cash') {   // jackpot: money guns fire banknotes from the bottom corners, coins rain and bounce, a giant gold coin spins
+    const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none`; fx.append(cv);
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const T0 = performance.now(), DUR = 4100, bills = [], coins = [], floor = H - 14, sc = toMe ? 1 : 0.75;
+    const gun = (side, n, d0) => { for (let i = 0; i < n; i++) later(d0 + i * 45, () => { const x0 = side < 0 ? -10 : W + 10, a = side < 0 ? rnd(-1.45, -0.75) : Math.PI - rnd(-1.45, -0.75), v = rnd(700, 1250) * (toMe ? 1 : 0.8), z = rnd(0.55, 1.35); bills.push({ x: x0, y: H * 0.92, vx: Math.cos(a) * v, vy: Math.sin(a) * v, rot: rnd(0, 6.28), vr: rnd(-6, 6), flip: rnd(0, 6.28), vf: rnd(5, 11), sway: rnd(0, 6.28), z, born: performance.now() }); if (i % 6 === 0) SND.play('whoosh'); }); };
+    if (toMe) { gun(-1, 26, 200); gun(1, 26, 380); gun(-1, 16, 1100); gun(1, 16, 1250); } else { const side = tx < W / 2 ? -1 : 1; gun(side, 22, 200); }
+    for (let i = 0; i < (toMe ? 34 : 14); i++) later(500 + rnd(0, 2000), () => coins.push({ x: toMe ? rnd(20, W - 20) : tx + rnd(-120, 120), y: -20, vy: rnd(100, 300), vx: rnd(-40, 40), spin: rnd(0, 6.28), vs: rnd(8, 16), r: rnd(9, 15) * (toMe ? 1 : 0.8), bounces: 0 }));
+    const drawBill = (b) => { const w = 64 * b.z * sc, h = 30 * b.z * sc, fl = Math.cos(b.flip); g.save(); g.translate(b.x, b.y); g.rotate(b.rot); g.scale(1, Math.max(0.06, Math.abs(fl))); g.globalAlpha = Math.min(1, 0.55 + b.z * 0.4);
+      const front = fl > 0, gr = g.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2); gr.addColorStop(0, front ? '#9be8b2' : '#6cc98a'); gr.addColorStop(0.5, front ? '#59c47d' : '#3ea765'); gr.addColorStop(1, front ? '#2f9a57' : '#2a8048');
+      g.fillStyle = gr; g.beginPath(); g.roundRect ? g.roundRect(-w / 2, -h / 2, w, h, 3) : g.rect(-w / 2, -h / 2, w, h); g.fill(); g.strokeStyle = 'rgba(20,90,45,.8)'; g.lineWidth = 1; g.stroke();
+      g.strokeStyle = 'rgba(230,255,240,.55)'; g.strokeRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6);
+      g.fillStyle = 'rgba(232,255,240,.9)'; g.beginPath(); g.ellipse(0, 0, h * 0.34, h * 0.34, 0, 0, 6.283); g.fill();
+      g.fillStyle = '#1e7a40'; g.font = `900 ${h * 0.5}px Inter, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('$', 0, h * 0.03);
+      g.fillStyle = `rgba(255,255,255,${0.35 * Math.pow(Math.abs(Math.sin(b.flip)), 6)})`; g.fillRect(-w / 2, -h / 2, w, h);   // a glint as it turns
+      g.restore(); };
+    const drawCoin = (c) => { const sx = Math.cos(c.spin); g.save(); g.translate(c.x, c.y); g.scale(Math.max(0.12, Math.abs(sx)), 1);
+      const cg = g.createRadialGradient(-c.r * 0.35, -c.r * 0.4, 1, 0, 0, c.r); cg.addColorStop(0, '#fff6c2'); cg.addColorStop(0.5, '#ffcf40'); cg.addColorStop(1, '#b67c06');
+      g.fillStyle = cg; g.beginPath(); g.arc(0, 0, c.r, 0, 6.283); g.fill(); g.strokeStyle = '#9a6400'; g.lineWidth = 1.2; g.stroke(); g.fillStyle = '#8a5a00'; g.font = `900 ${c.r * 1.1}px Inter, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('$', 0, 1); g.restore(); };
+    // the giant coin in the middle, spinning under JACKPOT!
+    const bx = toMe ? W / 2 : tx, by = toMe ? H * 0.42 : ty - 30, BR = toMe ? Math.min(W, H) * 0.17 : 46;
+    later(300, () => { SND.play('chime'); SND.play('balloons'); });
+    pop(bx, by - BR - (toMe ? 46 : 30), 'JACKPOT!', '#ffcf40', toMe ? 56 : 32, -4, 350);
+    let last = T0;
+    const frame = (now) => {
+      const t = now - T0, dt = Math.min(0.05, (now - last) / 1000); last = now; if (t > DUR) { cv.remove(); return; }
+      g.clearRect(0, 0, W, H);
+      const A = t > DUR - 600 ? (DUR - t) / 600 : 1; g.globalAlpha = A;
+      // a warm golden glow behind everything
+      const gl = g.createRadialGradient(bx, by, 0, bx, by, BR * 4); gl.addColorStop(0, `rgba(255,210,80,${0.32 * Math.min(1, t / 400)})`); gl.addColorStop(1, 'rgba(255,210,80,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H);
+      // the big coin: spins, with rays and a glint
+      if (t > 250) { const k = Math.min(1, (t - 250) / 350), s2 = (k < 1 ? 0.3 + 0.85 * Math.sin(k * Math.PI / 2) * 1.08 : 1) * BR, spin = (t - 250) / 260, sx = Math.cos(spin);
+        g.save(); g.translate(bx, by); g.rotate(t / 1800); g.globalAlpha = 0.28 * A; g.fillStyle = '#ffe28a'; for (let i = 0; i < 12; i++) { g.rotate(Math.PI / 6); g.beginPath(); g.moveTo(0, 0); g.lineTo(s2 * 2.6, -s2 * 0.22); g.lineTo(s2 * 2.6, s2 * 0.22); g.closePath(); g.fill(); } g.restore();
+        g.save(); g.translate(bx, by); g.scale(Math.max(0.08, Math.abs(sx)), 1);
+        g.fillStyle = '#9a6400'; g.beginPath(); g.arc(sx > 0 ? -3 : 3, 3, s2, 0, 6.283); g.fill();   // the rim's thickness
+        const cg = g.createRadialGradient(-s2 * 0.3, -s2 * 0.35, 2, 0, 0, s2); cg.addColorStop(0, '#fff8d0'); cg.addColorStop(0.45, '#ffd34d'); cg.addColorStop(1, '#c08508'); g.fillStyle = cg; g.beginPath(); g.arc(0, 0, s2, 0, 6.283); g.fill();
+        g.strokeStyle = 'rgba(150,95,0,.8)'; g.lineWidth = s2 * 0.07; g.beginPath(); g.arc(0, 0, s2 * 0.8, 0, 6.283); g.stroke();
+        g.fillStyle = '#8a5a00'; g.font = `900 ${s2 * 1.05}px Inter, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('$', 0, s2 * 0.05);
+        g.globalCompositeOperation = 'lighter'; const gx = ((t / 900) % 2) * s2 * 3 - s2 * 1.5, gg2 = g.createLinearGradient(gx - s2 * 0.4, 0, gx + s2 * 0.4, 0); gg2.addColorStop(0, 'rgba(255,255,255,0)'); gg2.addColorStop(0.5, 'rgba(255,255,255,.55)'); gg2.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gg2; g.beginPath(); g.arc(0, 0, s2, 0, 6.283); g.fill();
+        g.restore(); }
+      // banknotes: shot up, then air drag takes over and they flutter down flipping
+      for (const b of bills) { b.vx *= Math.pow(0.12, dt); b.vy = b.vy * Math.pow(0.15, dt) + 420 * dt; if (b.vy > 140 * b.z) b.vy = 140 * b.z; b.sway += dt * 3; b.x += (b.vx + Math.sin(b.sway) * 40 * b.z) * dt; b.y += b.vy * dt; b.rot += b.vr * dt * 0.3; b.flip += b.vf * dt; }
+      bills.sort((p, q) => p.z - q.z); for (const b of bills) if (b.y < H + 60) drawBill(b);
+      // coins: fall, bounce on the floor, settle
+      for (const c of coins) { c.vy += 1400 * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.spin += c.vs * dt; if (c.y > floor - c.r && c.vy > 0) { c.y = floor - c.r; if (c.bounces < 3) { c.vy *= -0.45; c.bounces++; if (c.bounces === 1 && Math.random() < 0.4) SND.play('tick'); } else { c.vy = 0; c.vs *= 0.9; } } drawCoin(c); }
+      // golden glitter
+      if (Math.random() < 0.6) part(rnd(0, W), rnd(0, H * 0.7), { ang: Math.PI / 2, spd: rnd(20, 60), g: 40, life: rnd(600, 1000), size: rnd(3, 6), color: pick(['#ffe28a', '#fff6c2', '#ffcf40']), end: 0.1, glow: true });
+      g.globalAlpha = 1;
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    keepFor(DUR + 200);
   } else if (kind === 'fireworks') {   // a volley of shells with different bursts
     const cols = [['#ff5a5a', '#ffd23f'], ['#4fc3ff', '#ffffff'], ['#b77bff', '#ff8fc0'], ['#7be08f', '#ffd23f'], ['#ffd23f', '#ff7a1f']];
     const shells = 6;
