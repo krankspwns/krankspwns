@@ -914,6 +914,26 @@ async function handle(action, b, query, ctx = {}) {
       break;
     }
 
+    case 'rename': {   // a player renames themselves; the host can rename anyone
+      const target = room.players.find((q) => q.id === String(b.target || pid));
+      need(target, 404, 'Player not found');
+      need(target.id === pid || room.hostId === pid, 403, 'Only the host can rename someone else');
+      const name = cleanName(b.name);
+      need(name, 400, 'Enter a name');
+      if (name === target.name) break;
+      need(!room.players.some((q) => q.id !== target.id && q.name.toLowerCase() === name.toLowerCase()), 409, 'Name already taken');
+      const was = target.name;
+      target.name = name;
+      // this round's results carry names for the replays and the commentary: keep them in step
+      for (const r of Object.values(room.results || {})) {
+        for (const e of r.entries || []) if (e.id === target.id) e.name = name;
+        if (r.hits && r.hitIds) r.hits = r.hitIds.map((id, i) => (id === target.id ? name : r.hits[i]));
+        if (r.misses && r.missIds) r.misses = r.missIds.map((id, i) => (id === target.id ? name : r.misses[i]));
+        if (r.streak && r.streak.name === was && r.losers && r.losers[0] === target.id) r.streak.name = name;
+      }
+      sysChat(room, { k: 'rename', fn: was, tn: name });
+      break;
+    }
     case 'release': {   // the host sets a player inactive: their seat, cards and points stay, and whoever joins next with that name takes it over
       need(room.hostId === pid, 403, 'Only the host can do that');
       const target = room.players.find((q) => q.id === String(b.target));

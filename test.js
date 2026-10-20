@@ -396,6 +396,18 @@ const post = (b) => call('POST', b, {});
     assert.equal(sw.wallet.pts, 25, 'the creator starts with 25 WP'); assert.equal(sj.wallet.pts, 25, 'so does everyone who joins');
     globalThis.__startWp = 0;
   }
+  { // ---- renaming: yourself any time, anyone if you are the host; names stay unique ----
+    const ra = (await post({ action: 'create', name: 'Ann' })).j, rb = (await post({ action: 'join', code: ra.code, name: 'Bea' })).j;
+    const nm = (v, id) => v.players.find((q) => q.id === id).name;
+    let v = (await post({ action: 'rename', code: ra.code, pid: rb.meId, name: '  Bee  ' })).j;
+    assert.equal(nm(v, rb.meId), 'Bee', 'a player renames themselves (trimmed)');
+    assert.equal((await post({ action: 'rename', code: ra.code, pid: rb.meId, target: ra.meId, name: 'Boss' })).s, 403, 'only the host renames others');
+    assert.equal((await post({ action: 'rename', code: ra.code, pid: ra.meId, target: rb.meId, name: 'ann' })).s, 409, 'names stay unique');
+    assert.equal((await post({ action: 'rename', code: ra.code, pid: ra.meId, name: '   ' })).s, 400, 'not empty');
+    v = (await post({ action: 'rename', code: ra.code, pid: ra.meId, target: rb.meId, name: 'Beatrice' })).j;
+    assert.equal(nm(v, rb.meId), 'Beatrice', 'the host renames someone');
+    assert.ok(v.chat.some((m) => m.k === 'rename' && m.fn === 'Bee' && m.tn === 'Beatrice'), 'the chat says so');
+  }
   { // ---- WP rewards scale with the number of players ----
     const { placeWpFor, predWpFor, tallyWins } = require('./api/game.js');
     assert.deepEqual([2, 3, 4, 6, 7, 9, 10, 12].map((n) => placeWpFor(n)), [[10, 5, 0], [10, 5, 0], [15, 10, 5], [15, 10, 5], [20, 15, 10], [20, 15, 10], [25, 20, 15], [25, 20, 15]]);
