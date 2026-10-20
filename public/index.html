@@ -694,7 +694,8 @@
   body.calm .giftfx { display: none; }
   .guide.still { animation: none; }   /* the pop-in plays once; later refreshes (every tap on a setting) must not replay it */
   :is(button:not([class]):not([role]), button.big:not(.ghost), .shoplink, .wf-shop, .avbadge) :is(.ic-c) { filter: grayscale(1) brightness(.22); }   /* on a solid gold button the colour icons turn dark */
-  .qrcopy .cpdisc { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); flex: none; } .qrcopy .ic-c { filter: none !important; }   /* the copy-link icon keeps its colours on a white disc */
+  .leavego { background: linear-gradient(180deg, #ff4a3d, #c8160c) !important; color: #fff !important; border: 1px solid rgba(255,150,140,.5) !important; box-shadow: 0 6px 16px rgba(200,22,12,.4) !important; text-shadow: 0 1px 1px rgba(0,0,0,.25); } .dangerbtn.leavego .ic-c { filter: none !important; }
+  .leavego .cpdisc, .qrcopy .cpdisc { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); flex: none; } .qrcopy .ic-c { filter: none !important; }   /* the copy-link icon keeps its colours on a white disc */
   .dangerbtn .ic-c { filter: grayscale(1) brightness(3) !important; } .ic-c { flex: none; }
   .gtitle b.colorful { background: none; width: 26px; height: 26px; }
   .guidebtn b.colorful { background: none; width: 26px; height: 26px; }
@@ -6877,7 +6878,7 @@ function confirmLeave() {
       el('p', { class: 'leavep' }, st && st.isHost && st.players.length > 1 ? t('leaveHostNote') : t('leaveNote')),
       el('div', { class: 'leaverow' },
         el('button', { type: 'button', class: 'ghost', onclick: close }, t('stay')),
-        el('button', { type: 'button', class: 'dangerbtn', onclick: () => { close(); leave(); } }, withIcon('logout', t('leaveYes'))))));
+        el('button', { type: 'button', class: 'dangerbtn leavego', onclick: () => { close(); leave(); } }, el('span', { class: 'iconlabel' }, el('span', { class: 'cpdisc' }, icon('logout', 16)), t('leaveYes'))))));
   document.body.append(ov);
 }
 
