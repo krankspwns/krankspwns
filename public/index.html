@@ -431,20 +431,28 @@
   .nextbar.on { background: linear-gradient(90deg, rgba(111,207,151,.16), rgba(111,207,151,.05)); border-color: rgba(111,207,151,.5); }
   .nb-l { display: grid; gap: 1px; min-width: 0; grid-column: 1; grid-row: 1; } .nb-l b { font-size: 16px; } .nb-l small { font-size: 12px; opacity: .75; } .nb-n { font-size: 12px !important; color: #8fe0ae; }
   .nb-avs { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 1; grid-row: 2; } .nb-av { line-height: 0; border-radius: 50%; opacity: .45; filter: grayscale(.6); transition: opacity .2s, filter .2s; } .nb-av.r { opacity: 1; filter: none; box-shadow: 0 0 0 2px #6fcf97; }
-  .nextbar > .nbbtn { grid-column: 2; grid-row: 1 / span 2; align-self: center; } .nbbtn { position: relative; overflow: hidden; flex: none; display: inline-flex; align-items: center; gap: 8px; min-width: 120px; justify-content: center; padding: 11px 18px 11px 12px !important; border-radius: 99px !important; font-weight: 800 !important; font-size: 15px !important; letter-spacing: .02em;
-    color: #2b1d05 !important; background: linear-gradient(180deg, #ffe9a8, #f2c14e 55%, #d99a1f) !important; border: 1px solid rgba(255,240,190,.9) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 18px rgba(242,193,78,.35) !important; animation: nbpulse 2.2s ease-in-out infinite; transition: transform .15s; }
-  .nbbtn:active { transform: scale(.96); }
-  .nbbtn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.65) 50%, transparent 65%); transform: translateX(-130%); animation: nbsheen 3.2s 1s ease-in-out infinite; pointer-events: none; }
-  .nbi { width: 26px; height: 26px; display: block; line-height: 0; flex: none; filter: drop-shadow(0 1px 1.5px rgba(80,45,0,.35)); }
-  .nbbtn.on { color: #fff !important; background: linear-gradient(180deg, #6fe0a0, #2fa866 60%, #208a50) !important; border-color: rgba(190,255,215,.8) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 6px 18px rgba(47,168,102,.35) !important; animation: nbpop .4s cubic-bezier(.2,1.6,.4,1); text-shadow: 0 1px 1px rgba(0,0,0,.2); }
-  .nbbtn.on::after { display: none; } .nbbtn.on .nbi { filter: drop-shadow(0 1px 2px rgba(0,60,30,.4)); }
-  @keyframes nbpulse { 0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 18px rgba(242,193,78,.3); } 50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(120,70,0,.25), 0 6px 26px rgba(242,193,78,.6), 0 0 0 4px rgba(242,193,78,.12); } }
+  .nextbar > .nbbtn { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+  /* a chunky key of mint glass: raised on a thick translucent edge; pressing it sinks it in, and it stays down while you are ready */
+  .nbbtn { --lift: 5px; position: relative; overflow: hidden; flex: none; display: inline-flex; align-items: center; gap: 8px; min-width: 120px; justify-content: center; padding: 11px 18px 11px 12px !important; border-radius: 99px !important; font-weight: 800 !important; font-size: 15px !important; letter-spacing: .02em;
+    color: #fff !important; text-shadow: 0 1px 2px rgba(0,50,30,.45); background: linear-gradient(180deg, rgba(150,255,210,.36), rgba(80,220,160,.12)) !important; -webkit-backdrop-filter: blur(10px) saturate(1.5); backdrop-filter: blur(10px) saturate(1.5); border: 1px solid rgba(190,255,225,.7) !important;
+    transform: translateY(calc(var(--lift) * -1)); box-shadow: inset 0 2px 0 rgba(255,255,255,.7), inset 0 -3px 8px rgba(120,255,200,.18), 0 var(--lift) 0 rgba(60,170,120,.6), 0 calc(var(--lift) + 7px) 20px rgba(0,0,0,.45) !important; transition: transform .12s, box-shadow .12s; }
+  .nbbtn:not(.on):active { transform: translateY(-1px); box-shadow: inset 0 2px 0 rgba(255,255,255,.6), 0 1px 0 rgba(60,170,120,.6), 0 4px 10px rgba(0,0,0,.4) !important; }
+  .nbbtn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.35) 50%, transparent 62%); transform: translateX(-130%); animation: nbsheen 3.6s 1s ease-in-out infinite; pointer-events: none; }   /* light glinting across the glass */
+  .nbi { width: 26px; height: 26px; display: block; line-height: 0; flex: none; filter: drop-shadow(0 1px 1.5px rgba(0,40,25,.4)); }
+  /* pressed in: level with the bar, the edge gone, lit from inside */
+  .nbbtn.on { transform: translateY(1px); background: linear-gradient(180deg, rgba(120,240,185,.55), rgba(60,200,140,.32)) !important; border-color: rgba(200,255,230,.9) !important;
+    box-shadow: inset 0 3px 8px rgba(0,60,35,.35), inset 0 -1px 0 rgba(255,255,255,.35), 0 0 0 0 rgba(60,170,120,.6), 0 2px 6px rgba(0,0,0,.3), 0 0 22px rgba(111,224,160,.4) !important; }
+  .nbbtn.on::after { display: none; }
+  .nbbtn.on.just { animation: nbpress .55s cubic-bezier(.3,1.6,.5,1) both; }
+  @keyframes nbpress {
+    0% { transform: translateY(-5px); box-shadow: inset 0 2px 0 rgba(255,255,255,.7), 0 5px 0 rgba(60,170,120,.6), 0 12px 20px rgba(0,0,0,.45), 0 0 0 0 rgba(111,224,160,.8); }
+    30% { transform: translateY(3px) scale(.97, .94); box-shadow: inset 0 4px 10px rgba(0,60,35,.45), 0 0 0 rgba(60,170,120,.6), 0 1px 4px rgba(0,0,0,.3), 0 0 0 6px rgba(111,224,160,.45); }
+    60% { transform: translateY(0) scale(1.02, 1.01); }
+    100% { transform: translateY(1px); box-shadow: inset 0 3px 8px rgba(0,60,35,.35), inset 0 -1px 0 rgba(255,255,255,.35), 0 0 0 16px rgba(111,224,160,0), 0 2px 6px rgba(0,0,0,.3), 0 0 22px rgba(111,224,160,.4); }
+  }
+  .nbbtn:not(.on).just { animation: nbup .45s cubic-bezier(.3,1.6,.5,1) both; }   /* un-ready: it pops back up */
+  @keyframes nbup { 0% { transform: translateY(1px); } 60% { transform: translateY(-7px); } 100% { transform: translateY(-5px); } }
   @keyframes nbsheen { 0% { transform: translateX(-130%); } 35%, 100% { transform: translateX(130%); } }
-  @keyframes nbpop { 0% { transform: scale(.9); } 100% { transform: none; } }
-  .nbbtn.just { animation: nbjump .5s cubic-bezier(.2,1.6,.4,1), nbwave .8s ease-out; }   /* a ring of light bursts out from the button (a shadow, so the sheen stays clipped inside) */
-  @keyframes nbwave { 0% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 0 rgba(111,224,160,.85); } 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 18px rgba(111,224,160,0); } }
-  @keyframes nbjump { 0% { transform: scale(.88); } 55% { transform: scale(1.07); } 100% { transform: none; } }
   .nb-av { position: relative; } .nb-av.just { animation: nbavpop .6s cubic-bezier(.2,1.7,.4,1); }
   .nb-av.just::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2.5px solid #6fcf97; animation: nbring .7s ease-out forwards; pointer-events: none; }
   .nb-spark { position: absolute; right: -5px; top: -6px; width: 12px; height: 12px; background: #eafff2; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 3px #6fcf97); animation: nbspark .8s ease-out forwards; pointer-events: none; }
@@ -4355,15 +4363,15 @@ const NB_SVG = {
 };
 function nbIcon(on) { const w = el('span', { class: 'nbi' }); w.innerHTML = uniqSvg(`<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">${NB_SVG[on ? 'tick' : 'cards']}</svg>`); return w; }
 // everyone taps Ready for another round; when the last one does, the next round is dealt (the host can still deal straight away from the top)
-let nbSeen = { round: -1, ids: new Set() };
+let nbSeen = { round: -1, ids: new Set() }, nbPressAt = 0;
 function nextRoundBar(active) {
   const me = active.find((p) => p.id === st.meId); if (!me) return '';
-  const n = active.filter((p) => p.nextReady).length, mine = me.nextReady, wasMine = nbSeen.round === st.round && nbSeen.ids.has(me.id);
+  const n = active.filter((p) => p.nextReady).length, mine = me.nextReady, pressAge = Date.now() - nbPressAt;   // the press keeps playing through the redraw the server's reply causes
   queueMicrotask(() => { nbSeen = { round: st.round, ids: new Set(active.filter((p) => p.nextReady).map((p) => p.id)) }; });   // remembered after drawing, so only new arrivals celebrate
   return el('div', { class: 'nextbar' + (mine ? ' on' : '') },
     el('div', { class: 'nb-l' }, el('b', {}, t('nextT')), el('small', {}, el('b', { class: 'nb-n' }, t('nextN', { n, of: active.length })), ' · ', t('nextHint'))),
     el('div', { class: 'nb-avs' }, ...active.map((p) => { const fresh = p.nextReady && nbSeen.round === st.round && !nbSeen.ids.has(p.id); return el('span', { class: 'nb-av' + (p.nextReady ? ' r' : '') + (fresh ? ' just' : ''), title: p.name }, avatarEl(p.avatar, 26, '', p.acc, p.bd), fresh ? el('i', { class: 'nb-spark' }) : ''); })),
-    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : '') + (mine && !wasMine && nbSeen.round === st.round ? ' just' : ''), 'aria-pressed': String(!!mine), onclick: () => { me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, nbIcon(mine), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
+    el('button', { type: 'button', class: 'nbbtn' + (mine ? ' on' : '') + (pressAge < 600 ? ' just' : ''), style: pressAge < 600 ? `animation-delay:-${pressAge}ms` : '', 'aria-pressed': String(!!mine), onclick: () => { nbPressAt = Date.now(); me.nextReady = !mine; SND.play(mine ? 'unready' : 'ready'); buzz(15); render(); act('nextReady', { ready: !mine }); } }, nbIcon(mine), el('span', {}, mine ? t('nextIn') : t('nextBtn'))));
 }
 let finalOpen = false;
 
