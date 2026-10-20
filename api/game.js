@@ -29,7 +29,9 @@ const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(proce
 const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
 const PRED_WP = 3, PRED_PENALTY = 1, PRED_MS = 15000;   // points for calling who loses a row, lost for a wrong call, and how long the guessing lasts
-const balanceOf = (room, pid) => (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
+const START_WP = 25;   // every player starts with a little to spend in the shop
+const startWp = () => (globalThis.__startWp ?? START_WP);   // the tests of the shop start from zero
+const balanceOf = (room, pid) => startWp() + (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
 const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];

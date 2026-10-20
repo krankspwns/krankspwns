@@ -13,6 +13,7 @@ async function call(method, body, query) {
 }
 globalThis.__testToks = toks;
 globalThis.__predOff = true;
+globalThis.__startWp = 0;   // the shop tests count from zero; the real starting amount is tested on its own below
 const post = (b) => call('POST', b, {});
 (async () => {
   const c = (await post({ action: 'create', name: 'Host' })).j;
@@ -363,6 +364,12 @@ const post = (b) => call('POST', b, {});
   assert.equal((await call('GET', null, { code: pa.code, pid: pa.meId })).j.predWin, null, 'row 2 opens without a new window');
   assert.deepEqual(globalThis.__rooms.get(pa.code).results[0].picks, { [pa.meId]: pb.meId, [pb.meId]: pa.meId, [pc.meId]: pa.meId });
   globalThis.__predOff = true;
+  { // ---- every player starts with 25 WP ----
+    delete globalThis.__startWp;
+    const sw = (await post({ action: 'create', name: 'Starter' })).j, sj = (await post({ action: 'join', code: sw.code, name: 'Joiner' })).j;
+    assert.equal(sw.wallet.pts, 25, 'the creator starts with 25 WP'); assert.equal(sj.wallet.pts, 25, 'so does everyone who joins');
+    globalThis.__startWp = 0;
+  }
   // ---- security ----
   const sa = (await post({ action: 'create', name: 'SecA' })).j, sb = (await post({ action: 'join', code: sa.code, name: 'SecB' })).j;
   const rawCall = async (method, body, query, headers = {}) => { let out; const res = { setHeader() {}, status(x) { this.s = x; return this; }, json(j) { out = { s: this.s, j }; } }; await h({ method, body, query, headers }, res); return out; };
