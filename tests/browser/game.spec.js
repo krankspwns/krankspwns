@@ -61,6 +61,13 @@ test('two players complete a round using keyboard cards on desktop and mobile', 
     }
     await expect(page.locator('.hallwrap')).toBeVisible({ timeout: 45000 });
     await expect(guest.locator('.hallwrap')).toBeVisible({ timeout: 45000 });
+    for (const viewer of [page, guest]) {
+      await expect.poll(() => viewer.evaluate(() => {
+        const controls = document.querySelector('.final .nextbar').getBoundingClientRect();
+        const standings = document.querySelector('.final .hallwrap').getBoundingClientRect();
+        return controls.top >= 0 && standings.bottom <= innerHeight;
+      })).toBe(true);
+    }
     await page.reload();
     await expect(page.locator('.hallwrap')).toBeVisible();
     expect(errors).toEqual([]);

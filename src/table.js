@@ -269,6 +269,54 @@ function renderRejoin() {
     : el('div', { class: 'rj-dots' }, el('i'), el('i'), el('i'))));
   clearTimeout(rejoinT); if (!slow) rejoinT = setTimeout(() => { if (session && !st) render(); }, 7050 - (Date.now() - rejoinAt));
 }
+// Frame the next-round controls and standings once on arrival, wherever the viewer was.
+let hallFramedKey = '', hallFrameTimer = null, hallFrameAnimation = 0;
+function hallFrameTarget(first, hall, from = window.scrollY) {
+  const top = first.getBoundingClientRect().top + window.scrollY - 16;
+  const bottom = hall.getBoundingClientRect().bottom + window.scrollY + 16;
+  const height = window.innerHeight;
+  // Leave a view that already contains both sections alone. Otherwise center the
+  // pair when it fits; on short screens keep Another Round and the podium first.
+  if (top >= from && bottom <= from + height) return from;
+  const target = bottom - top <= height ? (top + bottom - height) / 2 : top;
+  return Math.max(0, Math.min(document.documentElement.scrollHeight - height, target));
+}
+function syncHallFraming() {
+  const hall = document.querySelector('.final .hallwrap');
+  if (!st || !hall) {
+    clearTimeout(hallFrameTimer); hallFrameTimer = null;
+    cancelAnimationFrame(hallFrameAnimation); hallFrameAnimation = 0;
+    hallFramedKey = ''; return;
+  }
+  const key = st.code + ':' + st.round;
+  if (hallFramedKey === key || hallFrameTimer !== null) return;
+  const begin = () => {
+    hallFrameTimer = null;
+    if (!st || st.code + ':' + st.round !== key || !document.querySelector('.final .hallwrap')) return;
+    if (document.querySelector('.atkfx, .resfx, .drinkfx, .nextfx, .winfx')) {
+      hallFrameTimer = setTimeout(begin, 100); return;
+    }
+    hallFramedKey = key;
+    const start = window.scrollY, started = performance.now();
+    const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1200;
+    const frame = (now) => {
+      const standings = document.querySelector('.final .hallwrap');
+      if (!st || st.code + ':' + st.round !== key || !standings) return;
+      const first = document.querySelector('.final .nextbar') || standings;
+      const progress = duration ? Math.min(1, (now - started) / duration) : 1;
+      const eased = progress * progress * (3 - 2 * progress);
+      // Resolve against the original position so repeated frames do not chase
+      // a moving "already visible" destination during the pan.
+      const target = hallFrameTarget(first, standings, start);
+      window.scrollTo({ top: start + (target - start) * eased, behavior: 'instant' });
+      if (progress < 1) hallFrameAnimation = requestAnimationFrame(frame);
+      else hallFrameAnimation = 0;
+    };
+    hallFrameAnimation = requestAnimationFrame(frame);
+  };
+  hallFrameTimer = setTimeout(begin, 600);   // allow the final panel's entrance to settle
+}
+
 function render() {
   const reveals = captureRevealAnimations(app);
   const focus = focusSnapshot(app);
@@ -293,8 +341,9 @@ function render() {
   if (stageScroll) {   // moving on to the next row: bring it into view, but never while the player is scrolling
     stageScroll = false;
     const e = document.querySelector('.stage, .final');
-    if (e && Date.now() - lastTouch > 2500) { const r = e.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.5) e.scrollIntoView({ block: 'start' }); }
+    if (e && !e.classList.contains('final') && Date.now() - lastTouch > 2500) { const r = e.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.5) e.scrollIntoView({ block: 'start' }); }
   }
+  syncHallFraming();
 }
 
 const activePlayers = () => st.players.filter((p) => !p.spectator);   // joined mid-round players only watch
