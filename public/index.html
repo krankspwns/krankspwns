@@ -2352,21 +2352,27 @@ const myGifts = () => (st && st.wallet && st.wallet.gifts) || {};
 const giftTotal = () => Object.values(myGifts()).reduce((a, n) => a + (n > 0 ? n : 0), 0);
 // opened a moment later: the tap that asked for it is still travelling up the page, and the outside-tap handler would close the tray again
 function openGiftTray(item) { setTimeout(() => { giftTrayOpen = true; giftPick = item || null; syncEmoteUi(); }, 30); }
+let giftTraySig = '';
 function syncGiftUi() {
   const show = !!(session && st) && giftTotal() > 0 && (st.players.length > 1 || (st.prices && st.prices.test));   // alone? only while the shop is in testing mode
   let fab = document.getElementById('giftFab');
   if (!show) { fab?.remove(); document.getElementById('giftTray')?.remove(); giftTrayOpen = false; giftPick = null; return; }
   if (!fab) { fab = el('button', { id: 'giftFab', type: 'button', class: 'emotefab giftfab', 'aria-label': t('giftTitle'), title: t('giftTitle'), onclick: (e) => { e.stopPropagation(); giftTrayOpen = !giftTrayOpen; giftPick = null; giftTarget = null; syncEmoteUi(); } }, colorIcon(GIFT_ICON, 30), el('i', { class: 'cbadge' })); document.body.append(fab); }
   fab.querySelector('.cbadge').textContent = String(giftTotal());
-  document.getElementById('giftTray')?.remove();
-  if (!giftTrayOpen) return;
+  const old = document.getElementById('giftTray');
+  if (!giftTrayOpen) { old?.remove(); giftTraySig = ''; return; }
+  // the tray is only touched when what it shows has changed, and then filled in place: it never slides in again while open
+  const sig = JSON.stringify([giftPick, giftTarget, myGifts(), st.players.map((p) => [p.id, p.name, p.avatar, p.acc, p.bd]), lang, st.prices && st.prices.uses]);
+  if (old && sig === giftTraySig) return;
+  giftTraySig = sig;
   const owned = GIFT_KEYS.filter((k) => (myGifts()[k] || 0) > 0);
   if (giftPick && !owned.includes(giftPick)) giftPick = null;
   const body = giftPick
     ? [el('h5', {}, el('button', { type: 'button', class: 'ghost', onclick: () => { giftPick = null; syncEmoteUi(); } }, '‹'),  giftEl(giftPick, 22), t('giftWho', { name: t('gift_' + giftPick) })),
        el('div', { class: 'giftwho' }, (st.players.length > 1 || (st.prices && st.prices.test)) ? el('button', { type: 'button', class: 'giftall', disabled: (myGifts()[giftPick] || 0) < st.prices.uses, onclick: () => sendGift(giftPick, 'all') }, el('span', { class: 'gall' }, icon('users', 20)), el('span', {}, el('b', {}, t('giftEveryone')), el('small', {}, (myGifts()[giftPick] || 0) < st.prices.uses ? t('giftEveryoneNeed', { n: st.prices.uses }) : t('giftEveryoneCost', { n: st.prices.uses })))) : '', ...st.players.filter((p) => p.id !== st.meId || (st.prices && st.prices.test)).map((p) => el('button', { type: 'button', onclick: () => sendGift(giftPick, p.id) }, avatarEl(p.avatar, 30, '', p.acc, p.bd), el('span', {}, p.name + (p.id === st.meId ? t('you') : '')))))]
     : [el('h5', {}, t('giftTitle') + (giftTarget ? ' → ' + ((st.players.find((q) => q.id === giftTarget) || {}).name || '') : '')), el('div', { class: 'giftgrid' }, ...owned.map((k) => el('button', { type: 'button', onclick: () => { if (giftTarget && st.players.some((q) => q.id === giftTarget)) sendGift(k, giftTarget); else { giftPick = k; syncEmoteUi(); } } }, giftEl(k, 36), el('small', {}, t('gift_' + k) + ' ×' + myGifts()[k]))))];
-  document.body.append(el('div', { id: 'giftTray', class: 'gifttray', role: 'menu', onclick: (e) => e.stopPropagation() }, ...body));
+  if (old) old.replaceChildren(...body);
+  else document.body.append(el('div', { id: 'giftTray', class: 'gifttray', role: 'menu', onclick: (e) => e.stopPropagation() }, ...body));
 }
 document.addEventListener('click', (e) => { if (giftTrayOpen && !(e.target.closest && e.target.closest('#giftTray, #giftFab'))) { giftTrayOpen = false; giftPick = null; giftTarget = null; syncEmoteUi(); } });
 function sendGift(item, target) {
