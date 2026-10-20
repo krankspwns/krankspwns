@@ -2,6 +2,12 @@
   "outputDirectory": "public",
   "headers": [
     {
+      "source": "/(avatars|audio)/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://realtime.ably.io https://*.ably.io https://*.ably-realtime.com; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'" },

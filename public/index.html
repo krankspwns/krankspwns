@@ -1736,16 +1736,30 @@ const uniqSvg = (h) => { const n = ++svgUid; const ids = [...h.matchAll(/\bid="(
 const avBg = (k) => (AVATARS[k] || AVATARS.cat)[0];
 // small per-animal nudge so every face sits in the middle of its circle: [scale, x, y]
 const AV_FIT = { fox: [0.93, 0, 1], lion: [0.92, 0, -2.4], monkey: [0.9, 0, 0.6], rabbit: [1, 0, 0] };
+// the legendary portraits are pictures: each is fetched once and kept in memory, so a redrawn avatar shows at once
+// instead of going back to the network (and sitting black) every time the screen is rebuilt
+const LEGEND_SRC = {}, legendLoading = new Set();
+function warmLegend(k) {   // the first time a portrait is needed: fetch it once, decode it, and point every copy on screen at the kept one
+  if (LEGEND_SRC[k] || legendLoading.has(k)) return;
+  legendLoading.add(k);
+  fetch('/avatars/' + k + '.webp').then((r) => (r.ok ? r.blob() : null)).then((b) => {
+    if (!b) return legendLoading.delete(k);
+    const url = URL.createObjectURL(b), im = new Image(); im.src = url;
+    (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => { LEGEND_SRC[k] = url; document.querySelectorAll(`.av.legend[data-k="${k}"] image`).forEach((n) => n.setAttribute('href', url)); });
+  }).catch(() => legendLoading.delete(k));
+}
 function avatarEl(key, size = 40, cls = '', acc = '', bd = '') {
-  const [bg, body] = AVATARS[key] || AVATARS.cat;
+  let [bg, body] = AVATARS[key] || AVATARS.cat;
+  if (LEGEND_KEYS.includes(key)) { if (LEGEND_SRC[key]) body = body.replace('/avatars/' + key + '.webp', LEGEND_SRC[key]); else warmLegend(key); }
   const w = el('span', { class: 'av avatar ' + cls + (BORDERS.includes(bd) ? ' bd bd-' + bd : '') + (LEGEND_KEYS.includes(key) ? ' legend' + (size >= 36 ? ' live' : '') : '') });
   if (BORDERS.includes(bd)) w.style.padding = Math.min(10, Math.max(1.5, size * 0.075)) + 'px';
   w.style.width = w.style.height = size + 'px';
   if (!/^url\(/.test(bg)) w.style.setProperty('--avbg', bg);   // the disc is also painted by CSS, so a browser that drops the SVG's own circle never shows a see-through face
+  if (LEGEND_SRC[key]) w.style.setProperty('--avbg', `${bg} url("${LEGEND_SRC[key]}") center / cover no-repeat`);   // the portrait itself sits behind too: a freshly built avatar is never black while the picture inside is drawn
   w.dataset.k = key; w.dataset.acc = acc || ''; w.dataset.bd = bd || '';   // what a long press needs to draw it large
   w.onclick = () => {};   // a real click target, so a touch lands on the animal rather than being pulled to the badge beside it
   w.style.setProperty('--d', (-Math.random() * 6).toFixed(2) + 's');   // every avatar breathes and blinks on its own rhythm
-  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${bg}"/><g class="avb">${AV_FIT[key] ? `<g transform="translate(${(24 - 24 * AV_FIT[key][0] + AV_FIT[key][1]).toFixed(2)} ${(24 - 24 * AV_FIT[key][0] + AV_FIT[key][2]).toFixed(2)}) scale(${AV_FIT[key][0]})">${body}</g>` : body}${ACC[acc] ? accFit(key, acc) : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
+  w.innerHTML = `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="${LEGEND_SRC[key] && !BORDERS.includes(bd) ? 'none' : bg}"/><g class="avb">${AV_FIT[key] ? `<g transform="translate(${(24 - 24 * AV_FIT[key][0] + AV_FIT[key][1]).toFixed(2)} ${(24 - 24 * AV_FIT[key][0] + AV_FIT[key][2]).toFixed(2)}) scale(${AV_FIT[key][0]})">${body}</g>` : body}${ACC[acc] ? accFit(key, acc) : ''}</g>${LEGEND_KEYS.includes(key) ? LEGEND_BADGE : PREMIUM_KEYS.includes(key) ? STAR_BADGE : ''}</svg>`;
   if (w.innerHTML.includes(" id=\"") || w.innerHTML.includes("id=\"")) w.innerHTML = uniqSvg(w.innerHTML);
   return w;
 }
