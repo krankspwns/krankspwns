@@ -92,14 +92,17 @@ function rtUrl(code) {
 const mem = (globalThis.__rooms = globalThis.__rooms || new Map());
 
 async function redis(cmd) {
-  const r = await fetch(REDIS_URL, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
-    body: JSON.stringify(cmd),
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error);
-  return j.result;
+  try {
+    const response = await fetch(REDIS_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+      body: JSON.stringify(cmd),
+      signal: AbortSignal.timeout(3000),
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) throw new Error('Redis unavailable');
+    return data.result;
+  } catch { throw new HttpError(503, 'Connection interrupted. Please retry.'); }
 }
 
 // Many phones poll the same room: share one Redis read between polls that land on the same server within a moment.
@@ -127,6 +130,8 @@ local cur = redis.call('GET', KEYS[1])
 if cur then
   local o = cjson.decode(cur)
   if tonumber(o.version) ~= tonumber(ARGV[2]) then return 0 end
+elseif tonumber(ARGV[2]) ~= 0 then
+  return 0
 end
 redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[3])
 return 1`;
@@ -134,10 +139,16 @@ return 1`;
 async function saveRoom(room) {
   const expected = room.version || 0;
   room.version = expected + 1;
-  roomCache.delete(room.code);
-  if (!REDIS_URL) { mem.set(room.code, room); return background(rtPublish(room)); }
+  if (!REDIS_URL) {
+    const current = mem.get(room.code);
+    if ((current ? current.version : 0) !== expected) throw new Conflict();
+    mem.set(room.code, JSON.parse(JSON.stringify(room)));
+    roomCache.delete(room.code);
+    return background(rtPublish(room));
+  }
   const ok = await redis(['EVAL', CAS_LUA, '1', `room:${room.code}`, JSON.stringify(room), String(expected), String(TTL_SECONDS)]);
   if (ok !== 1) throw new Conflict();
+  roomCache.delete(room.code);
   await background(rtPublish(room));
 }
 
@@ -186,6 +197,30 @@ function tokenOk(p, tok) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 function issueToken(p) { const tok = newToken(); p.tkh = hashToken(tok); return tok; }
+// The recovery secret rotates with the seat token; only its owner sees it.
+function recoveryCode(room, p) {
+  return crypto.createHmac('sha256', p.tkh).update('recover:' + room.code + ':' + p.id).digest('base64url').slice(0, 24);
+}
+function recoveredToken(room, p, code, requestId) {
+  return crypto.createHmac('sha256', String(code).trim()).update('seat:' + room.code + ':' + p.id + ':' + requestId).digest('base64url');
+}
+function recoveryOk(room, p, code) {
+  const a = Buffer.from(hashToken(recoveryCode(room, p)));
+  const b = Buffer.from(hashToken(String(code || '').trim()));
+  return crypto.timingSafeEqual(a, b);
+}
+const REQUEST_TTL_MS = 120000;
+function requestFingerprint(action, b) {
+  const { requestId, cn, tok, ...data } = b;
+  return hashToken(JSON.stringify([action, data]));
+}
+function rememberRequest(room, pid, b, action) {
+  if (!b.requestId) return;
+  room.requests = room.requests || {};
+  const recent = (room.requests[pid] || []).filter((r) => Date.now() - r.at < REQUEST_TTL_MS);
+  recent.push({ id: b.requestId, fp: requestFingerprint(action, b), at: Date.now() });
+  room.requests[pid] = recent.slice(-128);
+}
 
 // ---- abuse limits: best effort per address, so one machine cannot hammer the game or burn the database quota ----
 const rlMem = (globalThis.__rl = globalThis.__rl || new Map());
@@ -580,6 +615,7 @@ function view(room, pid, seen, cn) {
     predN: activeOf(room).filter((p) => [0, 1, 2, 3].every((r) => room.preds && room.preds[r] && p.id in room.preds[r])).length,   // players who have decided every row
     predWp: predWpFor(activeOf(room).length),
     predPen: PRED_PENALTY,
+    recoveryCode: recoveryCode(room, me),
     meId: me.id,
     isHost: room.hostId === me.id,
     hand: me.hand,
@@ -654,14 +690,20 @@ async function handle(action, b, query, ctx = {}) {
   if (action === 'join') {
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
-    // same name as someone who has gone quiet = that player coming back (lost phone data, new browser): hand their seat back
+    // A matching name identifies a seat, but its private recovery code proves ownership.
     const same = room.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
     if (same) {
-      // a seat the host has set inactive can be taken straight away; otherwise only one that has been silent for a good while
-      // (the owner would still hold the old token otherwise)
-      if (!same.released) { const ts = (await readPresence(code))[same.id]; need(!ts || Date.now() - ts > 120000, 409, 'Name already taken'); }
+      const receipt = same.recoveryReceipt;
+      const replayTok = b.requestId && b.recoveryCode ? recoveredToken(room, same, b.recoveryCode, b.requestId) : null;
+      // Recover the response to a committed recovery without rotating the token twice.
+      if (receipt && receipt.id === b.requestId && Date.now() - receipt.at < REQUEST_TTL_MS && tokenOk(same, replayTok)) {
+        return { ...(await viewFor(room, same.id)), tok: replayTok };
+      }
+      need(recoveryOk(room, same, b.recoveryCode), 409, 'Recovery code required for this name');
       delete same.released;
-      const tok = issueToken(same);   // the old token stops working
+      const tok = replayTok || issueToken(same);
+      same.tkh = hashToken(tok);   // the old token stops working
+      same.recoveryReceipt = b.requestId ? { id: b.requestId, at: Date.now() } : null;
       await saveRoom(room);
       seenThrottle.delete(code + ':' + same.id);
       await touchPresence(code, same.id);
@@ -691,8 +733,23 @@ async function handle(action, b, query, ctx = {}) {
   const pid = String(b.pid || query.pid || '');
   const cnRaw = query.cn !== undefined ? query.cn : b.cn;
   const cnOf = cnRaw === undefined || cnRaw === '' ? undefined : Number(cnRaw);
-  const me = room.players.find((p) => p.id === pid);
+  let me = room.players.find((p) => p.id === pid);
+  // Another server may still cache the token from before a seat recovery.
+  // Verify against Redis before rejecting a newly rotated token.
+  if (action === 'state' && (!me || !tokenOk(me, ctx.tok))) {
+    roomCache.delete(code);
+    room = await loadRoom(code);
+    need(room, 404, 'Room not found');
+    me = room.players.find((p) => p.id === pid);
+  }
   need(me && tokenOk(me, ctx.tok), 404, 'You are not in this room');
+  if (b.requestId) {
+    const prior = (room.requests && room.requests[pid] || []).find((r) => r.id === b.requestId);
+    if (prior) {
+      need(prior.fp === requestFingerprint(action, b), 409, 'Request ID already used');
+      return viewFor(room, pid, cnOf);
+    }
+  }
   await touchPresence(code, pid);
   const PLAYER_ACTIONS = ['predict', 'place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
   need(!(me.spectator && PLAYER_ACTIONS.includes(action)), 409, 'Wait for the next round');
@@ -989,7 +1046,7 @@ async function handle(action, b, query, ctx = {}) {
       if (row === 'late' && !room.drunkLateAt && !lateDrinkPending(room)) room.drunkLateAt = Date.now();   // the guessing opens a beat after the last of them
       break;
     }
-    case 'release': {   // the host sets a player inactive: their seat, cards and points stay, and whoever joins next with that name takes it over
+    case 'release': {   // inactive players keep their seat, cards and points; recovery still requires their private code
       need(room.hostId === pid, 403, 'Only the host can do that');
       const target = room.players.find((q) => q.id === String(b.target));
       need(target, 404, 'Player not found');
@@ -1004,6 +1061,7 @@ async function handle(action, b, query, ctx = {}) {
       need(target, 404, 'Player not found');
       need(target.id !== pid, 400, 'You can’t remove yourself');
       room.players = room.players.filter((q) => q.id !== target.id);
+      if (room.requests) delete room.requests[target.id];
       sysChat(room, { k: 'leave', fn: target.name });
       room.allReady = null;
       seenMem.get(code) && delete seenMem.get(code)[target.id];
@@ -1013,6 +1071,7 @@ async function handle(action, b, query, ctx = {}) {
     case 'leave': {
       const leaver = room.players.find((p) => p.id === pid);
       room.players = room.players.filter((p) => p.id !== pid);
+      if (room.requests) delete room.requests[pid];
       if (leaver && room.players.length) sysChat(room, { k: 'leave', fn: leaver.name });
       if (!room.players.length) {
         if (!REDIS_URL) mem.delete(code);
@@ -1030,6 +1089,7 @@ async function handle(action, b, query, ctx = {}) {
       throw new HttpError(400, 'Unknown action');
   }
   storeResults(room);
+  rememberRequest(room, pid, b, action);
   await saveRoom(room);
   return viewFor(room, pid, cnOf);
 }
@@ -1047,6 +1107,7 @@ module.exports = async (req, res) => {
     body = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
     need(JSON.stringify(body).length <= 8000, 413, 'Too much data');
     const action = req.method === 'GET' ? 'state' : typeof body.action === 'string' ? body.action : '';
+    if (body.requestId !== undefined) need(typeof body.requestId === 'string' && /^[a-zA-Z0-9_-]{16,80}$/.test(body.requestId), 400, 'Bad request ID');
     const h = req.headers || {};
     const tok = String(h['x-tok'] || body.tok || '').slice(0, 100);
     let result;

@@ -379,18 +379,19 @@ const post = (b) => call('POST', b, {});
     assert.deepEqual(lw.winners, [la.meId], 'all rows tied, so the late point decides the round');
     assert.equal(lw.players.find((p) => p.id === lb.meId).sess.pen, 1);
   }
-  { // ---- the host sets a player inactive, and someone joining with that name takes over the seat at once ----
+  { // ---- inactive seats still require the owner's private recovery code ----
     const ra = (await post({ action: 'create', name: 'Host' })).j, rb = (await post({ action: 'join', code: ra.code, name: 'Lost' })).j;
     assert.equal((await post({ action: 'join', code: ra.code, name: 'lost' })).s, 409, 'an active player keeps their name');
     assert.equal((await post({ action: 'release', code: ra.code, pid: rb.meId, tok: rb.tok, target: rb.meId })).s, 403, 'only the host can do it');
     assert.equal((await post({ action: 'release', code: ra.code, pid: ra.meId, target: rb.meId })).s, 200);
     assert.equal((await call('GET', null, { code: ra.code, pid: ra.meId })).j.players.find((q) => q.id === rb.meId).released, true, 'shown as inactive');
-    const back = (await post({ action: 'join', code: ra.code, name: 'LOST' })).j;
+    const back = (await post({ action: 'join', code: ra.code, name: 'LOST', recoveryCode: rb.recoveryCode })).j;
     assert.equal(back.meId, rb.meId, 'the same seat comes back'); assert.ok(back.tok && back.tok !== rb.tok, 'with a new token');
     assert.equal(back.players.length, 2, 'no new seat'); assert.equal(back.players.find((q) => q.id === rb.meId).released, false, 'and it is active again');
     const rr = globalThis.__rooms.get(ra.code); for (let i = 0; i < 10; i++) rr.players.push({ id: 'f' + i, name: 'F' + i, avatar: 'cat', hand: [], board: Array(7).fill(null), ready: false });
     assert.equal((await post({ action: 'release', code: ra.code, pid: ra.meId, target: rb.meId })).s, 200);
-    assert.equal((await post({ action: 'join', code: ra.code, name: 'Lost' })).s, 200, 'a full room still lets an inactive player back in');
+    const nextCode = (await call('GET', null, { code: ra.code, pid: rb.meId })).j.recoveryCode;
+    assert.equal((await post({ action: 'join', code: ra.code, name: 'Lost', recoveryCode: nextCode })).s, 200, 'a full room still lets an inactive player back in');
   }
   { // ---- every player starts with 25 WP ----
     delete globalThis.__startWp;
