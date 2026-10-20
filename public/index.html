@@ -2413,9 +2413,12 @@ function queueGift(g) {
 function runGiftQ() {
   if (giftRun || !giftQ.length) return;
   const g = giftQ.shift(); giftRun = true;
-  const mini = giftIsMini(g);
-  giftBanner(g); if (mini) playGiftMini(g); else playGift(g);
-  setTimeout(() => { giftRun = false; runGiftQ(); }, (mini ? 1900 : GIFT_MS[g.item] || 3000) + (giftQ.length ? 250 : 0));
+  const mini = giftIsMini(g), atMe = !!st && g.to === st.meId && g.from !== st.meId, lead = atMe ? 600 : 0;
+  giftBanner(g);
+  if (mini) playGiftMini(g);
+  else if (atMe) { playGiftMini(g); setTimeout(() => playGift(g), lead); }   // aimed at me: I see it fly from the thrower's avatar onto mine, then the full show
+  else playGift(g);
+  setTimeout(() => { giftRun = false; runGiftQ(); }, (mini ? 1900 : lead + (GIFT_MS[g.item] || 3000)) + (giftQ.length ? 250 : 0));
 }
 
 // a throw at somebody else: a small projectile flies from the thrower to that player and lands with a tiny version of the effect (the target itself gets the full show)
