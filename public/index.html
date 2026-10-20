@@ -4918,16 +4918,52 @@ function paintBlackHole(g, x, y, R, rot, a) {
   g.restore();
 }
 function paintUfo(g, x, y, s, rot, t, ch = 0) {
+  // a sleek saucer: brushed-metal lens hull with panel seams, a darker underside with a glowing core,
+  // chasing rim lights and a smoked-glass dome with a faint pilot inside
   g.save(); g.translate(x, y); g.rotate(rot * 0.0174533); g.scale(s, s);
-  const glow = g.createRadialGradient(0, 22, 4, 0, 22, 90); glow.addColorStop(0, 'rgba(120,255,200,.55)'); glow.addColorStop(1, 'rgba(120,255,200,0)'); g.fillStyle = glow; g.beginPath(); g.ellipse(0, 24, 92, 40, 0, 0, 6.283); g.fill();
-  if (ch > 0.02) { g.save(); g.globalCompositeOperation = 'lighter'; const R = 14 + ch * 46, og = g.createRadialGradient(0, 38, 0, 0, 38, R * 1.8); og.addColorStop(0, 'rgba(255,255,255,1)'); og.addColorStop(0.3, 'rgba(160,255,210,.95)'); og.addColorStop(1, 'rgba(40,220,150,0)'); g.fillStyle = og; g.beginPath(); g.arc(0, 38, R * 1.8, 0, 6.283); g.fill(); g.strokeStyle = 'rgba(200,255,230,.8)'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { const a = t / 90 + i * 2.1; g.beginPath(); g.arc(0, 38, R * (1 + 0.25 * i), a, a + 1.7); g.stroke(); } g.restore(); }
-  const dome = g.createRadialGradient(-10, -34, 4, 0, -22, 46); dome.addColorStop(0, 'rgba(235,255,255,.95)'); dome.addColorStop(0.5, 'rgba(120,220,235,.7)'); dome.addColorStop(1, 'rgba(40,120,160,.55)');
-  g.fillStyle = dome; g.strokeStyle = 'rgba(210,250,255,.9)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, -10, 36, 36, 0, Math.PI, 6.283); g.closePath(); g.fill(); g.stroke();
-  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-14, -28, 9, 5, -0.6, 0, 6.283); g.fill();
-  const hull = g.createLinearGradient(0, -14, 0, 28); hull.addColorStop(0, '#f1f5fb'); hull.addColorStop(0.35, '#a9b6c8'); hull.addColorStop(0.7, '#5b6678'); hull.addColorStop(1, '#2a3140');
-  g.fillStyle = hull; g.beginPath(); g.ellipse(0, 8, 88, 24, 0, 0, 6.283); g.fill(); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, 6, 86, 20, 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke();
-  g.fillStyle = '#394255'; g.beginPath(); g.ellipse(0, 24, 40, 9, 0, 0, 6.283); g.fill();
-  for (let i = 0; i < 9; i++) { const a = Math.PI * (0.08 + i * 0.105), px = Math.cos(a) * 70, py = 10 + Math.sin(a) * 14, on = (Math.floor(t / (110 - ch * 70)) + i) % 3 === 0; const lg = g.createRadialGradient(px, py, 0, px, py, 9); lg.addColorStop(0, on ? 'rgba(255,255,200,1)' : 'rgba(120,255,200,.8)'); lg.addColorStop(1, 'rgba(120,255,200,0)'); g.fillStyle = lg; g.beginPath(); g.arc(px, py, 9, 0, 6.283); g.fill(); }
+  const pulse = 0.5 + 0.5 * Math.sin(t / 160);
+  // soft light it throws downward
+  const glow = g.createRadialGradient(0, 30, 6, 0, 30, 110); glow.addColorStop(0, `rgba(110,255,210,${0.32 + 0.15 * ch})`); glow.addColorStop(1, 'rgba(110,255,210,0)'); g.fillStyle = glow; g.beginPath(); g.ellipse(0, 30, 112, 46, 0, 0, 6.283); g.fill();
+  // underside
+  const ug = g.createLinearGradient(0, 6, 0, 34); ug.addColorStop(0, '#3d4658'); ug.addColorStop(1, '#141a26'); g.fillStyle = ug; g.beginPath(); g.ellipse(0, 12, 84, 21, 0, 0, Math.PI); g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(150,170,200,.25)'; g.lineWidth = 1.2; for (const rr of [62, 44]) { g.beginPath(); g.ellipse(0, 14, rr, rr * 0.24, 0, 0.1, Math.PI - 0.1); g.stroke(); }
+  // the engine core, brighter while it charges
+  const cr = 15 + 3 * pulse + 10 * ch, cg = g.createRadialGradient(0, 26, 0, 0, 26, cr * 1.9); cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(0.3, `rgba(150,255,220,${0.85 + 0.15 * ch})`); cg.addColorStop(1, 'rgba(60,220,170,0)');
+  g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = cg; g.beginPath(); g.ellipse(0, 26, cr * 1.9, cr * 0.75, 0, 0, 6.283); g.fill(); g.restore();
+  g.fillStyle = '#0d121c'; g.beginPath(); g.ellipse(0, 24, 22, 6, 0, 0, 6.283); g.fill(); g.fillStyle = `rgba(190,255,235,${0.75 + 0.25 * pulse})`; g.beginPath(); g.ellipse(0, 25, 16, 3.6, 0, 0, 6.283); g.fill();
+  // the top hull: a lens of brushed metal
+  const hull = () => { g.beginPath(); g.moveTo(-92, 10); g.bezierCurveTo(-70, -6, -36, -18, 0, -19); g.bezierCurveTo(36, -18, 70, -6, 92, 10); g.bezierCurveTo(60, 17, -60, 17, -92, 10); g.closePath(); };
+  const hg = g.createLinearGradient(0, -20, 0, 16); hg.addColorStop(0, '#f4f7fc'); hg.addColorStop(0.45, '#b9c4d4'); hg.addColorStop(0.8, '#7a879b'); hg.addColorStop(1, '#4a5466'); g.fillStyle = hg; hull(); g.fill();
+  g.save(); hull(); g.clip();
+  const sp = g.createLinearGradient(-92, 0, 92, 0); sp.addColorStop(0, 'rgba(255,255,255,0)'); sp.addColorStop(0.3, 'rgba(255,255,255,.55)'); sp.addColorStop(0.38, 'rgba(255,255,255,0)'); sp.addColorStop(0.7, 'rgba(255,255,255,.18)'); sp.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = sp; g.fillRect(-95, -22, 190, 40);   // a specular band
+  g.strokeStyle = 'rgba(40,52,70,.35)'; g.lineWidth = 1; for (let i = -5; i <= 5; i++) { if (!i) continue; const bx = i * 16; g.beginPath(); g.moveTo(bx * 0.35, -17); g.quadraticCurveTo(bx * 0.8, -6, bx * 1.12, 14); g.stroke(); }   // panel seams fanning out
+  g.strokeStyle = 'rgba(40,52,70,.3)'; g.beginPath(); g.ellipse(0, 2, 70, 9, 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke();
+  g.restore();
+  // a bright machined rim
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(-90, 10); g.bezierCurveTo(-60, 16.5, 60, 16.5, 90, 10); g.stroke();
+  g.strokeStyle = 'rgba(20,28,40,.6)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-90, 11.6); g.bezierCurveTo(-60, 18.2, 60, 18.2, 90, 11.6); g.stroke();
+  // chasing rim lights
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 11; i++) {
+    const u = -0.86 + i * 0.172, lx = u * 88, ly = 10 + 5.5 * (1 - u * u), head = ((t / (95 - 50 * ch)) % 11 + 11) % 11, d = Math.min(Math.abs(i - head), 11 - Math.abs(i - head)), on = Math.max(0, 1 - d / 2.2);
+    const lr = 3.2 + 4 * on, lg = g.createRadialGradient(lx, ly, 0, lx, ly, lr * 2); lg.addColorStop(0, `rgba(255,255,255,${0.55 + 0.45 * on})`); lg.addColorStop(0.35, `rgba(120,255,215,${0.45 + 0.5 * on})`); lg.addColorStop(1, 'rgba(120,255,215,0)'); g.fillStyle = lg; g.beginPath(); g.arc(lx, ly, lr * 2, 0, 6.283); g.fill();
+  }
+  g.restore();
+  // dome collar
+  const cl = g.createLinearGradient(0, -24, 0, -14); cl.addColorStop(0, '#dfe6f0'); cl.addColorStop(1, '#5c677a'); g.fillStyle = cl; g.beginPath(); g.ellipse(0, -18, 38, 7, 0, 0, 6.283); g.fill();
+  // the dome: smoked glass, a faint pilot, reflections
+  const dome = () => { g.beginPath(); g.moveTo(-33, -19); g.bezierCurveTo(-33, -46, -18, -58, 0, -58); g.bezierCurveTo(18, -58, 33, -46, 33, -19); g.closePath(); };
+  const dg = g.createLinearGradient(0, -58, 0, -18); dg.addColorStop(0, 'rgba(40,110,140,.92)'); dg.addColorStop(1, 'rgba(12,36,58,.95)'); g.fillStyle = dg; dome(); g.fill();
+  g.save(); dome(); g.clip();
+  g.fillStyle = 'rgba(80,200,170,.35)'; g.beginPath(); g.ellipse(0, -30, 9, 10.5, 0, 0, 6.283); g.fill(); g.beginPath(); g.ellipse(0, -16, 15, 9, 0, Math.PI, 6.283); g.fill();   // the pilot's silhouette
+  g.fillStyle = `rgba(170,255,225,${0.7 + 0.3 * pulse})`; for (const ex of [-3.6, 3.6]) { g.beginPath(); g.ellipse(ex, -31, 2.6, 1.5, ex < 0 ? 0.5 : -0.5, 0, 6.283); g.fill(); }
+  const rf = g.createLinearGradient(-30, -56, 10, -24); rf.addColorStop(0, 'rgba(255,255,255,.75)'); rf.addColorStop(0.5, 'rgba(255,255,255,.08)'); rf.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rf; g.beginPath(); g.moveTo(-27, -24); g.bezierCurveTo(-28, -44, -16, -54, -2, -55); g.bezierCurveTo(-14, -50, -21, -40, -20, -24); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(14, -47, 3.4, 1.8, 0.7, 0, 6.283); g.fill();
+  g.restore();
+  g.strokeStyle = 'rgba(200,245,255,.7)'; g.lineWidth = 1.3; dome(); g.stroke();
+  // a little antenna with a blinking tip
+  g.strokeStyle = '#9aa6b8'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(0, -58); g.lineTo(0, -66); g.stroke();
+  const at = (Math.floor(t / 420) % 2) ? 1 : 0.25; g.save(); g.globalCompositeOperation = 'lighter'; const ag = g.createRadialGradient(0, -67, 0, 0, -67, 7); ag.addColorStop(0, `rgba(255,120,120,${at})`); ag.addColorStop(1, 'rgba(255,80,80,0)'); g.fillStyle = ag; g.beginPath(); g.arc(0, -67, 7, 0, 6.283); g.fill(); g.restore();
   g.restore();
 }
 function paintShark(g, x, y, s, rot, flip, open) {
@@ -5576,14 +5612,27 @@ async function runShowdown(res) {
           SND.play('whistle'); setDim(0.9);
           const r = tileRect(tTile), uy = Math.max(110, T.y - 200), U = { x: T.x + (T.x > W / 2 ? -1 : 1) * W * 0.65, y: -140, b: 0, f: 1, ang: 0, lock: 0, ch: 0, dx: 0, dy: -300, sc: 0.7, rot: 0 }, ut0 = performance.now();
           const dropUfo = E.layer((g) => paintUfo(g, U.dx, U.dy, U.sc * 1.2, U.rot, performance.now() - ut0, U.ch));
+          const cardBox = () => (tTile.querySelector('.tcards') || tTile).getBoundingClientRect();   // measured every frame: the page and the tile move during the attack
           const dropBm = E.layer((g) => {
-            if (U.b <= 0.01) return; const by2 = U.dy + 52 * U.sc * 1.2, ex = r.left + r.width / 2, ey = Math.min(H, r.bottom + 12);
-            let tx, hw, ty;
-            if (U.lock < 1) { const sw = Math.sin(U.ang) * W * 0.55; tx = T.x + sw * (1 - U.lock); ty = ey; hw = 70 + 30 * U.lock; } else { tx = ex; ty = ey; hw = r.width / 2; }
-            tx = tx * (1 - 0) ; const gr = g.createLinearGradient(0, by2, 0, ty); gr.addColorStop(0, `rgba(170,255,220,${0.75 * U.f * U.b})`); gr.addColorStop(1, `rgba(110,255,190,${0.25 * U.f * U.b})`);
-            g.fillStyle = gr; g.beginPath(); g.moveTo(U.dx - 32, by2); g.lineTo(U.dx + 32, by2); g.lineTo(tx + hw, ty); g.lineTo(tx - hw, ty); g.closePath(); g.fill();
-            g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(210,255,235,${0.5 * U.f * U.b})`; g.lineWidth = 2; g.beginPath(); g.moveTo(U.dx - 32, by2); g.lineTo(tx - hw, ty); g.moveTo(U.dx + 32, by2); g.lineTo(tx + hw, ty); g.stroke();
-            const gg = g.createRadialGradient(tx, ty, 0, tx, ty, hw * 1.2); gg.addColorStop(0, `rgba(200,255,230,${0.55 * U.f * U.b})`); gg.addColorStop(1, 'rgba(100,255,190,0)'); g.fillStyle = gg; g.beginPath(); g.ellipse(tx, ty, hw * 1.2, hw * 0.35, 0, 0, 6.283); g.fill(); g.restore();
+            if (U.b <= 0.01) return;
+            const rr = cardBox(), by2 = U.dy + 24 * U.sc * 1.2, ex = rr.left + rr.width / 2, ey = rr.bottom + 4, al = U.f * U.b, now = performance.now();
+            let tx = ex, hw = rr.width / 2 + 10;
+            if (U.lock < 1) { tx = ex + Math.sin(U.ang) * W * 0.5 * (1 - U.lock); hw = 60 + (hw - 60) * U.lock; }
+            const top = 20 * U.sc * 1.2, ty = ey;
+            g.save(); g.globalCompositeOperation = 'lighter';
+            // three nested cones: wide and faint to narrow and bright, so the edges are soft
+            for (const [wk, a0] of [[1, 0.16], [0.72, 0.18], [0.42, 0.22]]) {
+              const lt = U.dx - top * wk, rt = U.dx + top * wk, lb = tx - hw * wk, rb = tx + hw * wk;
+              const gr = g.createLinearGradient(0, by2, 0, ty); gr.addColorStop(0, `rgba(190,255,230,${a0 * 1.6 * al})`); gr.addColorStop(0.7, `rgba(120,255,200,${a0 * al})`); gr.addColorStop(1, `rgba(120,255,200,${a0 * 0.5 * al})`);
+              g.fillStyle = gr; g.beginPath(); g.moveTo(lt, by2); g.lineTo(rt, by2); g.lineTo(rb, ty); g.lineTo(lb, ty); g.closePath(); g.fill();
+            }
+            // rings of light rising up the beam
+            for (let i = 0; i < 5; i++) {
+              const ph = ((now / 900 + i / 5) % 1), y = ty - ph * (ty - by2), w2 = hw + (top - hw) * ph, x2 = tx + (U.dx - tx) * ph;
+              g.strokeStyle = `rgba(210,255,240,${0.4 * (1 - ph) * al})`; g.lineWidth = 2; g.beginPath(); g.ellipse(x2, y, w2, Math.max(2, w2 * 0.16), 0, 0, 6.283); g.stroke();
+            }
+            const pool = g.createRadialGradient(tx, ty, 0, tx, ty, hw * 1.3); pool.addColorStop(0, `rgba(210,255,235,${0.45 * al})`); pool.addColorStop(1, 'rgba(110,255,200,0)'); g.fillStyle = pool; g.beginPath(); g.ellipse(tx, ty, hw * 1.3, hw * 0.3, 0, 0, 6.283); g.fill();
+            g.restore();
           });
           // 1) it arrives, the whole screen rumbling
           await tween(760, (k) => { const e = ease(k); U.x = U.x + (T.x - U.x) * 0.15; U.y = -140 + (uy + 140) * e; U.dx = U.x; U.dy = U.y + Math.sin(k * 14) * 6; U.sc = 0.6 + 0.45 * e; U.rot = Math.sin(k * 10) * 7; jitter(3 * k); });
@@ -5591,20 +5640,19 @@ async function runShowdown(res) {
           // 2) the searchlight sweeps across the area, then locks onto the loser
           SND.play('beep'); U.b = 0.01;
           await tween(1000, (k) => { U.b = Math.min(1, k * 6); U.ang = k * 9; U.lock = k > 0.72 ? Math.min(1, (k - 0.72) / 0.28) : 0; U.dx = U.x + Math.sin(k * 16) * 7; U.dy = uy + Math.sin(k * 11) * 5; });
-          U.lock = 1; SND.play('chime'); E.ring(T.x, r.bottom, 150, [160, 255, 215], 520, 4);
+          U.lock = 1; SND.play('chime'); { const cb = cardBox(); E.ring(cb.left + cb.width / 2, cb.bottom, 150, [160, 255, 215], 520, 4); }
           // 3) the tile is lifted and spun in the beam, wind spiralling up around it
           try { tTile.animate([{ transform: 'none', filter: 'none' }, { transform: 'translateY(-30px) rotate(-4deg)', filter: 'brightness(1.3) drop-shadow(0 0 16px #7dffc8)', offset: .2 }, { transform: 'translateY(-52px) rotate(6deg)', filter: 'brightness(1.5) drop-shadow(0 0 26px #7dffc8)', offset: .6 }, { transform: 'translateY(-46px) rotate(-5deg)', filter: 'brightness(1.6) drop-shadow(0 0 30px #7dffc8)' }], { duration: 1100, easing: 'ease-in-out' }); } catch {}
           await tween(1100, (k) => {
             U.dx = U.x + Math.sin(k * 20) * 6; U.dy = uy + Math.sin(k * 13) * 5; U.ch = Math.max(0, (k - 0.35) / 0.65);
-            for (let i = 0; i < 3; i++) { const a = rnd(0, 6.283), rr = r.width * rnd(0.35, 0.6), cx2 = r.left + r.width / 2, cy2 = r.bottom - 10; E.emit({ x: cx2 + Math.cos(a) * rr, y: cy2 + rnd(-6, 6), vx: -Math.sin(a) * 160, vy: -rnd(160, 340), g: 0, life: rnd(500, 900), s: rnd(3, 7), s1: 1, col: [210, 255, 235], col1: [60, 230, 160], drag: 0.99 }); }
-            if (k > 0.6 && Math.random() < 0.5) E.bolt(U.dx + rnd(-30, 30), U.dy + 50, r.left + rnd(0, r.width), r.top + rnd(0, r.height), { w: 3, ms: 140, branches: 1, col: [150, 255, 210] });
+            for (let i = 0; i < 3; i++) { const cb = cardBox(), a = rnd(0, 6.283), rr = cb.width * rnd(0.35, 0.6), cx2 = cb.left + cb.width / 2, cy2 = cb.bottom - 6; E.emit({ x: cx2 + Math.cos(a) * rr, y: cy2 + rnd(-6, 6), vx: -Math.sin(a) * 160, vy: -rnd(160, 340), g: 0, life: rnd(500, 900), s: rnd(3, 7), s1: 1, col: [210, 255, 235], col1: [60, 230, 160], drag: 0.99 }); }
+            if (k > 0.6 && Math.random() < 0.5) { const cb = cardBox(); E.bolt(U.dx + rnd(-30, 30), U.dy + 30, cb.left + rnd(0, cb.width), cb.top + rnd(0, cb.height), { w: 3, ms: 140, branches: 1, col: [150, 255, 210] }); }
             jitter(2 * k);
           });
           jitter(0);
           // 4) fire: a thick plasma beam, then the tile is vaporised
-          E.freeze(110); SND.play('thunder'); SND.play('boom'); flash('#d4ffee', 0.65, 420); U.ch = 1;
-          for (let i = 0; i < 4; i++) E.beam(U.dx, U.dy + 60, T.x, T.y, { w: 70 - i * 10, col: i % 2 ? [255, 255, 255] : [110, 255, 190], ms: 260 });
-          E.bolt(U.dx, U.dy + 60, T.x, T.y, { w: 14, ms: 520, branches: 8, col: [130, 255, 200] });
+          E.freeze(110); SND.play('thunder'); SND.play('boom'); flash('#d4ffee', 0.22, 260); U.ch = 1;
+          { const cb = cardBox(), cx = cb.left + cb.width / 2, cy = cb.top + cb.height / 2; for (let i = 0; i < 3; i++) E.beam(U.dx, U.dy + 30, cx, cy, { w: 46 - i * 14, col: i % 2 ? [255, 255, 255] : [110, 255, 190], ms: 260 }); E.bolt(U.dx, U.dy + 30, cx, cy, { w: 8, ms: 420, branches: 4, col: [130, 255, 200] }); }
           E.explosion(T.x, T.y, 1.5); E.burst(T.x, T.y, 60, { spd: [160, 700], life: [600, 1300], s: [4, 10], col: [235, 255, 245], col1: [30, 200, 130], g: 160 });
           for (const [rr, c, w, ms] of [[340, [150, 255, 210], 9, 600], [220, [255, 255, 255], 6, 460], [120, [100, 255, 190], 4, 340]]) E.ring(T.x, T.y, rr, c, ms, w);
           shake(26, 700); punch(T.x, T.y, 1.1, 440); popT(T.x, T.y, pen, '#9dffd0', 220); hurt(tTile); scorch(tTile, 'rgba(0,40,20,.55)'); release(tgt.id);
