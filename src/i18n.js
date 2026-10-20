@@ -39,7 +39,7 @@ const I18N = {
     observing: 'Observing', watching: 'Watching', obsTitle: 'You’re watching this round',
     obsText: 'You joined while a game was in progress. You can follow along below — the host will deal you in when the next round starts.',
     obsWait: 'Waiting for the next round…', e_spec: 'Wait for the next round',
-    stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `Open Row ${v.n} For Everyone`, stageWaitHost: 'Open your own cards, or wait for the host to open them all',
+    stageRowOf: (v) => `Row ${v.n} of 4`, stageHost: (v) => `OPEN ROW ${v.n} FOR EVERYONE`, stageWaitHost: 'Open your own cards, or wait for the host to open them all',
     openedN: (v) => `${v.n}/${v.total} Opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
     youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
     finalTitle: 'Final Board', hallTitle: 'Hall of Fame', hallSub: (v) => `Round ${v.n} · lowest penalty wins`, hallPts: (v) => `${v.n} Pts`, hallLast: (v) => `+${v.n} this round`, hallLost: (v) => `${v.n} Row${v.n === 1 ? '' : 's'} Lost`, hallRounds: (v) => `${v.n} rd`, showBoard: 'Show Final Board', hideBoard: 'Hide Final Board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} Of 4 Rows`,
