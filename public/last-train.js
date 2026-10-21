@@ -7,7 +7,9 @@
   const invitation = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
   let seat = read('lt-seat'), state = null, busy = false, error = '', connected = true, timer, polling;
   let name = read('lt-name') || '', code = invitation, recovery = '', showCard = false, sceneKey = '', enteredKey = '';
-  let speechDraft = '', whisperDraft = '', draftStep = '', lastCardOpen = false;
+  let speechDraft = '', whisperDraft = '', draftStep = '';
+  let dockNode = null, dockStamp = '', drawerGesture = null, suppressDrawerClick = false;
+  const compactScene = matchMedia('(max-width: 680px)');
   const motionOK = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!seat?.tok || (invitation && invitation !== seat.code)) { seat = null; save('lt-seat', null); }
   if (seat) lastGame();
@@ -102,7 +104,7 @@
   function dialog(title, ...children) {
     const opener = document.activeElement?.dataset.focus;
     const d = el('dialog', { class: 'lt-dialog' }, el('h2', { tabIndex: -1 }, title), ...children);
-    d.addEventListener('close', () => { d.remove(); [...root.querySelectorAll('[data-focus]')].find(n => n.dataset.focus === opener)?.focus({ preventScroll: true }); });
+    d.addEventListener('close', () => { d.remove(); [...document.querySelectorAll('[data-focus]')].find(n => n.dataset.focus === opener)?.focus({ preventScroll: true }); });
     document.body.append(d); d.showModal(); d.querySelector('h2').focus({ preventScroll: true }); d.scrollTop = 0; return d;
   }
   const roleName = key => key === 'saboteur' ? 'Saboteurs' : role(key).name;
@@ -139,8 +141,12 @@
   function roomBar() {
     return el('div', { class: 'room-bar' }, el('div', {}, txt('small', 'eyebrow', 'PRIVATE ROOM'), txt('b', 'room-code', state.code)), el('div', { class: 'room-buttons' }, el('button', { type: 'button', 'data-invite': '', onclick: invite }, 'Copy link'), btn('Rejoin code', recoveryDialog, 'text-button'), !['lobby', 'finished'].includes(state.phase) && state.hostId === state.meId ? btn(state.paused ? 'Resume' : 'Pause', () => send(state.paused ? 'resume' : 'pause'), 'text-button') : null, btn('Leave', () => { if (confirm('Leave the train? Save your rejoin code if you want to come back.')) send('leave'); }, 'text-button')));
   }
-  function traveller(p, cls = '', secretRole = null) {
-    return el('div', { class: 'traveller ' + cls, 'aria-hidden': 'true' }, secretRole ? rolePortrait(secretRole) : avatar(p));
+  function traveller(p, cls = '') {
+    return el('div', { class: 'traveller ' + cls, 'aria-hidden': 'true' }, avatar(p));
+  }
+  function seatedTraveller(p) {
+    const index = p.avatarIndex ?? Math.max(0, (p.seat || 1) - 1);
+    return el('div', { class: 'seated-traveller', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + ((index % 4) * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%' });
   }
   function roster() {
     return el('section', { class: 'panel roster-panel' }, el('div', { class: 'panel-heading' }, el('h3', {}, 'Your fellow travellers'), txt('small', 'muted', state.players.filter(p => !p.departed).length + '/12 IN ROOM')), el('div', { class: 'roster' }, ...state.players.map(p => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (!p.alive ? ' out' : '') }, avatar(p, 'avatar'), el('div', { class: 'seat-label' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.role ? role(p.role).name + ' · ' + (p.alive ? groupName(p.group) : 'OUT') : p.departed ? 'AWAY' : p.id === state.hostId ? 'HOST' : 'READY TO BOARD'))))));
@@ -190,7 +196,7 @@
     const me = state.me;
     return el('section', { class: 'action-console bad-console', 'aria-label': 'Saboteur team choices' }, txt('span', 'eyebrow', 'YOUR PRIVATE TEAM CABIN'), el('h2', {}, 'Agree on one target.'),
       txt('p', 'console-hint', 'You can change your vote until time ends. A tied choice is random; Skip can win too.'),
-      el('div', { class: 'team-proposals' }, ...me.teamChoices.map(p => el('div', {}, rolePortrait(me.allies.find(a => a.id === p.id)?.role || 'saboteur'), el('b', {}, who(p.id) + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.attackId ? '→ ' + who(p.attackId) : p.selected ? '→ Skip' : 'Choosing… · defaults to Skip')))),
+      el('div', { class: 'team-proposals' }, ...me.teamChoices.map(p => el('div', {}, avatar(p.id), el('b', {}, who(p.id) + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.attackId ? '→ ' + who(p.attackId) : p.selected ? '→ Skip' : 'Choosing… · defaults to Skip')))),
       btn(me.nightChoice ? 'Change attack: ' + (me.nightChoice.attackId ? who(me.nightChoice.attackId) : 'Skip') : 'Choose attack or Skip', () => chooseTarget('Who will your team attack?', 'Anyone is allowed, including yourself and teammates.', 'night', {}, { self: true, skip: true }), 'danger'),
       me.role === 'blocker' ? me.used.block ? txt('p', 'console-hint', '🚫 Block used' + (me.nightChoice?.targetId ? ': ' + who(me.nightChoice.targetId) : '')) : btn('Use Blocker power', blockTarget, 'text-button') : null,
       el('details', { class: 'team-chat', 'data-details': 'team-chat', open: me.whispers.length > 0 }, el('summary', {}, 'Whisper to your team' + (me.whispers.length ? ' (' + me.whispers.length + ')' : '')), el('div', { class: 'whispers', role: 'log', 'aria-label': 'Private Saboteur chat' }, ...me.whispers.map(m => el('p', {}, el('b', {}, who(m.id) + ': '), m.text))), el('form', { class: 'whisper-form', onsubmit: async e => { e.preventDefault(); const text = whisperDraft; if (!text.trim()) return; whisperDraft = ''; await send('whisper', { text }); } }, el('input', { id: 'lt-whisper', maxLength: 160, value: whisperDraft, placeholder: 'Only your bad team can read this', 'aria-label': 'Whisper to your team', disabled: busy, oninput: e => whisperDraft = e.target.value }), el('button', { type: 'submit', disabled: busy, 'data-focus': 'send-whisper' }, 'Send'))));
@@ -218,17 +224,20 @@
   function cabinScene() {
     const me = state.me, settling = state.phase === 'settling';
     const badTogether = !settling && state.nightRole === 'saboteur' && me.alive && me.group === 'saboteur';
-    const roommates = badTogether ? me.allies.filter(p => p.alive && p.id !== state.meId).map(p => ({ ...player(p.id), knownRole: p.role })) : [];
-    return el('section', { class: 'world cabin-scene' + (badTogether ? ' conspiracy' : '') + (settling ? ' eyes-closing' : ''), 'aria-label': badTogether ? 'Your Saboteur team shares a private cabin' : 'Your private train cabin' }, art('cabin'),
+    const roommates = badTogether ? me.allies.filter(p => p.alive && p.id !== state.meId).map(p => player(p.id)) : [];
+    return el('section', { class: 'world cabin-scene' + (badTogether ? ' conspiracy' : '') + (settling ? ' eyes-closing' : ''), 'aria-label': badTogether ? 'Your Saboteur team shares a private cabin' : 'Your private train cabin' }, el('div', { class: 'cabin-view' }, art('cabin'),
       hud('NIGHT ' + state.round + ' · ' + (badTogether ? 'PRIVATE TEAM CABIN' : 'CABIN ' + String(player(state.meId).seat).padStart(2,'0')), settling ? 'Close your eyes.' : roleName(state.nightRole) + ', wake up.', settling ? 'The carriage lights dim. Your secret role is on the ticket below.' : badTogether ? 'Only your bad team can see this cabin and its plan.' : 'Only the active role acts. Everyone else rests.'),
-      el('div', { class: 'cabin-travellers count-' + roommates.length }, ...roommates.map(p => el('div', { class: 'cabin-person' }, traveller(p, '', p.knownRole), txt('span', '', p.name)))),
+      el('div', { class: 'cabin-travellers count-' + roommates.length }, ...roommates.map(p => el('div', { class: 'cabin-person', 'data-player': p.id }, seatedTraveller(p), txt('span', '', p.name))))),
       settling ? el('div', { class: 'curtain-message' }, txt('span','','☾'), txt('p','','Settle into your cabin…')) : actionConsole());
   }
   function loungeSeats() {
-    return el('div', { class: 'lounge-seats', 'aria-label': 'Speaking order, left to right' }, ...state.players.map(p => {
+    const seats = state.players.map(p => {
       const statement = state.settings.discussion === 'chat' && state.speakerId === p.id ? state.speeches.find(m => m.round === state.round && m.id === p.id) : null;
-      return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty' : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id }, txt('span', 'seat-number', String(p.seat).padStart(2,'0')), p.alive ? traveller(p) : txt('span','empty-seat','—'), txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', 'seat-status', !p.alive ? 'OUT · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), statement ? txt('p','speech-bubble',statement.text) : null);
-    }));
+      return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty' : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id }, txt('span', 'seat-number', String(p.seat).padStart(2,'0')), p.alive ? seatedTraveller(p) : txt('span','empty-seat','—'), txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', 'seat-status', !p.alive ? 'OUT · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), statement ? txt('p','speech-bubble',statement.text) : null);
+    });
+    const perRow = compactScene.matches ? 4 : 6, rows = [];
+    for (let i = 0; i < seats.length; i += perRow) rows.push(el('div', { class: 'sofa-row', style: '--seats:' + perRow }, ...seats.slice(i, i + perRow)));
+    return el('div', { class: 'lounge-seats', 'aria-label': 'Speaking order, left to right, then the next sofa' }, ...rows);
   }
   function outs(entry) {
     if (!entry || !entry.outs.length) return txt('p', 'nobody-out', '✦ Nobody is out.');
@@ -258,13 +267,73 @@
     return 'You are now ' + role(r.role).name + '. Your new power starts next night.';
   }
   function reportsDialog() { const d = dialog('Your private reports', ...[...state.me.reports].reverse().map(r => el('div', { class: 'report' }, txt('small','','ROUND ' + r.round), txt('p','',reportMessage(r))))); d.append(btn('Close', () => d.close(), 'gold')); }
-  function roleDock() {
-    const me = state.me, sealed = !me.role, limited = { careful:'lock', brave:'cover', witness:'watch', speaker:'double', blocker:'block' }[me.role];
-    return el('aside', { class: 'role-dock' + (showCard && !sealed ? ' revealed' : ''), 'aria-label': 'Your private role card' },
-      el('div', { class: 'ticket-notch' }), btn('', () => { showCard = !showCard; render(); }, 'ticket-toggle', sealed, 'toggle-card'),
-      el('div', { class: 'ticket-face' }, sealed || !showCard ? txt('span','ticket-icon ticket-sealed','LT') : rolePortrait(me.role,'ticket-icon ticket-role-portrait'), el('div', { class:'ticket-copy' }, txt('small','',sealed ? 'YOUR SEALED ROLE TICKET' : !me.alive ? 'YOUR ROLE · YOU ARE OUT' : 'YOUR PRIVATE ROLE TICKET'), el('b',{},sealed ? 'Your role awaits in your cabin.' : showCard ? role(me.role).name : 'Tap your ticket to reveal your role'), txt('span','ticket-subtitle',sealed ? 'Board the train first.' : showCard ? groupName(me.group) + (limited ? ' · ' + (me.used[limited] ? 'POWER USED' : 'POWER AVAILABLE') : me.medicine ? ' · Heal ' + me.medicine.heal + ' / Poison ' + me.medicine.poison : '') : 'Keep your screen private.'))),
-      !sealed ? el('div', {class:'ticket-tools'}, btn(showCard ? 'Hide role' : 'Show role', () => { showCard = !showCard; render(); }, 'text-button',false,'show-role'), state.me.reports.length ? btn('Reports (' + state.me.reports.length + ')', reportsDialog, 'report-button') : null) : null,
-      showCard && !sealed ? txt('p','ticket-rule',role(me.role).description) : null);
+  function setRoleCard(open) {
+    showCard = !!open;
+    if (!dockNode) return;
+    dockNode.classList.toggle('revealed', showCard);
+    const handle = dockNode.querySelector('.drawer-handle'), content = dockNode.querySelector('.drawer-content');
+    handle.textContent = showCard ? '⌄  Hide role' : '⌃  Show role' + (state.me.reports.length ? ' · Reports (' + state.me.reports.length + ')' : '');
+    handle.setAttribute('aria-label', showCard ? 'Hide role' : 'Show role');
+    handle.setAttribute('aria-expanded', String(showCard));
+    content.inert = !showCard;
+    content.setAttribute('aria-hidden', String(!showCard));
+    if (!showCard && content.contains(document.activeElement)) handle.focus({ preventScroll: true });
+  }
+  function syncRoleDock(visible) {
+    if (!visible) { dockNode?.remove(); dockNode = null; dockStamp = ''; drawerGesture = null; return; }
+    if (!dockNode) {
+      const handle = el('button', { type: 'button', class: 'drawer-handle', 'aria-controls': 'lt-role-content', 'data-focus': 'show-role', onclick: e => {
+        if (suppressDrawerClick && e.detail !== 0) { suppressDrawerClick = false; return; }
+        suppressDrawerClick = false;
+        setRoleCard(!showCard);
+      }});
+      dockNode = el('aside', { class: 'role-dock', 'aria-label': 'Your private role card' }, handle, el('div', { id: 'lt-role-content', class: 'drawer-content' }));
+      document.body.append(dockNode);
+      handle.addEventListener('pointerdown', e => {
+        if (!e.isPrimary || e.button !== 0) return;
+        suppressDrawerClick = false;
+        drawerGesture = { id: e.pointerId, y: e.clientY, dy: 0 };
+        handle.setPointerCapture(e.pointerId);
+      });
+      handle.addEventListener('pointermove', e => {
+        if (drawerGesture?.id !== e.pointerId) return;
+        drawerGesture.dy = e.clientY - drawerGesture.y;
+        const travel = dockNode.offsetHeight - handle.offsetHeight;
+        const dy = Math.max(showCard ? 0 : -travel, Math.min(showCard ? travel : 0, drawerGesture.dy));
+        dockNode.classList.add('dragging');
+        dockNode.style.setProperty('--drawer-drag', dy + 'px');
+      });
+      const end = e => {
+        if (drawerGesture?.id !== e.pointerId) return;
+        const dy = drawerGesture.dy;
+        drawerGesture = null;
+        dockNode.classList.remove('dragging');
+        dockNode.style.removeProperty('--drawer-drag');
+        if (Math.abs(dy) > 24) {
+          suppressDrawerClick = true;
+          if (e.type !== 'pointercancel') setRoleCard(dy < 0);
+        }
+      };
+      handle.addEventListener('pointerup', end);
+      handle.addEventListener('pointercancel', end);
+      handle.addEventListener('lostpointercapture', end);
+      handle.addEventListener('keydown', e => {
+        if (['ArrowUp','ArrowDown','Escape'].includes(e.key)) { e.preventDefault(); setRoleCard(e.key === 'ArrowUp'); }
+      });
+    }
+    const me = state.me, limited = { careful:'lock', brave:'cover', witness:'watch', speaker:'double', blocker:'block' }[me.role];
+    const stamp = JSON.stringify([me.role, me.alive, me.used, me.medicine, me.reports, busy]);
+    if (stamp !== dockStamp) {
+      const focusedReports = document.activeElement?.dataset.focus === 'role-reports';
+      dockNode.querySelector('.drawer-content').replaceChildren(...[
+        el('div', { class: 'ticket-face' }, rolePortrait(me.role, 'ticket-icon ticket-role-portrait'), el('div', { class:'ticket-copy' }, txt('small','', !me.alive ? 'YOUR ROLE · YOU ARE OUT' : 'YOUR PRIVATE ROLE'), el('b',{},role(me.role).name), txt('span','ticket-subtitle',groupName(me.group) + (limited ? ' · ' + (me.used[limited] ? 'POWER USED' : 'POWER AVAILABLE') : me.medicine ? ' · Heal ' + me.medicine.heal + ' / Poison ' + me.medicine.poison : '')))),
+        txt('p','ticket-rule',role(me.role).description),
+        me.reports.length ? btn('Reports (' + me.reports.length + ')', reportsDialog, 'report-button', false, 'role-reports') : null
+      ].filter(Boolean));
+      dockStamp = stamp;
+      if (focusedReports && showCard) dockNode.querySelector('.report-button')?.focus({ preventScroll: true });
+    }
+    setRoleCard(showCard);
   }
   function chatLog() {
     if (state.settings.discussion !== 'chat' || !['gathering','morning','discussion','voting','voteResult','finished'].includes(state.phase)) return null;
@@ -295,10 +364,10 @@
     const key = [state?.code,state?.match,state?.phase,state?.nightRole,state?.phase === 'discussion' ? state.speakerId : ''].join(':');
     root.replaceChildren(...[header(), error ? el('div',{class:'error',role:'alert'},error,btn('Close',()=>{error='';render();},'text-button')) : null, seat && !connected ? txt('p','connection','Reconnecting. Your ticket is saved.') : null, state && seat ? roomBar() : null, state?.notice ? txt('p','waiting',state.notice) : null,
       state?.paused ? el('div',{class:'pause-banner',role:'status'},txt('b','','Ⅱ Journey paused'),txt('span','','Timers and choices are on hold.'),state.hostId === state.meId ? btn('RESUME JOURNEY',()=>send('resume'),'host') : null) : null,
-      content,playing && !['briefing','boarding'].includes(state.phase) ? roleDock() : null,txt('footer','','Last Train · Every cabin hides a secret.')].filter(Boolean));
+      content,txt('footer','','Last Train · Every cabin hides a secret.')].filter(Boolean));
     for (const n of root.querySelectorAll('details[data-details]')) if (openDetails.includes(n.dataset.details)) n.open = true;
     root.querySelectorAll('.action-console').forEach(panel => panel.prepend(txt('span','countdown action-seconds','')));
-    root.querySelector('.ticket-toggle')?.setAttribute('aria-label',showCard ? 'Hide my role card' : 'Show my role card');
+    syncRoleDock(playing && !['briefing','boarding'].includes(state.phase));
     const restored = focusId ? document.getElementById(focusId) : [...root.querySelectorAll('[data-focus]')].find(n => n.dataset.focus === focusKey);
     if (restored) { restored.focus({preventScroll:true}); if(typeof cursor === 'number' && restored.setSelectionRange) try{restored.setSelectionRange(cursor,cursor);}catch{} }
     root.dataset.paused = String(!!state?.paused); root.dataset.phase = state?.phase || 'home'; root.dataset.nightRole = state?.nightRole || '';
@@ -306,18 +375,17 @@
     if (sceneChanged) {
       root.querySelector('.world,.scene-panel,.lobby-grid,.landing')?.classList.add(motionOK ? 'scene-enter' : 'scene-static'); enteredKey = key;
     }
-    if (sceneChanged || showCard && !lastCardOpen) {
+    if (sceneChanged) {
       const ownTurn = state?.phase === 'discussion' && state.speakerId === state.meId;
       const ownNight = state?.phase === 'night' && (state.nightRole === state.me.role || state.nightRole === 'saboteur' && state.me.group === 'saboteur');
       if (ownTurn || ownNight) requestAnimationFrame(() => {
-        const panel = root.querySelector(ownTurn ? '.speech-console' : '.action-console'), ticket = root.querySelector('.role-dock');
+        const panel = root.querySelector(ownTurn ? '.speech-console' : '.action-console'), ticket = dockNode;
         if (!panel || !ticket) return;
         const gap = panel.getBoundingClientRect().bottom - ticket.getBoundingClientRect().top + 18;
         // Only reveal controls when the pinned ticket would cover them. Keep visible scenes still.
         if (gap > 0) window.scrollBy({ top: gap, behavior: motionOK ? 'smooth' : 'instant' });
       });
     }
-    lastCardOpen = showCard;
     tick();
   }
   function tick() {
@@ -326,6 +394,7 @@
     document.querySelectorAll('#lt-app .countdown,.lt-dialog .countdown').forEach(n => {n.textContent=state.paused?'Ⅱ':String(seconds).padStart(2,'0');n.classList.toggle('urgent',seconds<=5);n.setAttribute('aria-label',state.paused?'Paused':seconds+' seconds remaining');});
     root.querySelectorAll('.journey-clock').forEach(n=>n.style.setProperty('--remaining',state.paused?1:Math.min(1,seconds/(state.duration||20))));
   }
+  compactScene.addEventListener('change', () => { if (state) render(); });
   document.addEventListener('visibilitychange',()=>{if(!document.hidden && seat){clearTimeout(timer);poll();}});
   setInterval(tick,500);render();if(seat)poll();
 })();

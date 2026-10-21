@@ -79,3 +79,47 @@ test('private recovery rotates the old phone and saved games stay independent',a
     await p.goto('/');await expect(p).toHaveURL(/last-train\.html/);await expect(p.locator('.room-code')).toHaveText(initial.code);await p.getByRole('link',{name:'← All games'}).click();await p.getByRole('link',{name:/The Grand Con/}).click();await expect(p.locator('.room-code')).toBeVisible();await p.goto('/');await expect(p).toHaveURL(/grand-con\.html/);await p.getByRole('link',{name:'← All games'}).click();await p.getByRole('link',{name:/Last Train/}).click();await expect(p.locator('.room-code')).toHaveText(initial.code);
   }finally{await c.close();}
 });
+
+test('seated public identities stay private and the role drawer supports drag, keyboard and live updates',async({browser},info)=>{
+  const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
+  const make=(action,data)=>call(handler,{action,requestId:crypto.randomUUID(),...data});
+  const host=(await make('create',{name:'Sofa host'})).j,seats=[host];
+  for(let i=1;i<12;i++)seats.push((await make('join',{code:host.code,name:'Traveller '+i})).j);
+  let room=await store.load(host.code);rules.start(room);rules.board(room);rules.beginNight(room);rules.advance(room);await store.save(room);
+  const bad=room.players.filter(p=>rules.group(p)==='saboteur'),owner=seats.find(s=>s.meId===bad[0].id);
+  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
+  try{
+    await context.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:owner.code,pid:owner.meId,tok:owner.tok});
+    await context.route('**/api/last-train**',async route=>{const q=new URL(route.request().url()),req=route.request();const r=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});
+    const p=await context.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('/last-train.html');
+    await expect(p.locator('.cabin-person')).toHaveCount(2);
+    const expected=bad.filter(a=>a.id!==owner.meId).map(a=>({id:a.id,avatar:a.avatarIndex}));
+    expect(await p.locator('.cabin-person').evaluateAll(nodes=>nodes.map(n=>({id:n.dataset.player,avatar:Number(n.querySelector('[data-avatar-index]').dataset.avatarIndex)})))).toEqual(expected);
+    expect(new Set(expected.map(p=>p.avatar)).size).toBe(2);
+    await expect(p.locator('.cabin-person [data-role-art]')).toHaveCount(0);
+    const handle=p.locator('.drawer-handle'),content=p.locator('.drawer-content');
+    const opened=()=>expect.poll(()=>p.locator('.role-dock').evaluate(n=>Math.abs(n.getBoundingClientRect().bottom-innerHeight))).toBeLessThan(2);
+    const closed=()=>expect.poll(()=>handle.evaluate(n=>innerHeight-n.getBoundingClientRect().top)).toBeLessThan(51);
+    await expect(handle).toHaveAttribute('aria-expanded','false');await expect(content).toHaveAttribute('aria-hidden','true');
+    expect(await handle.evaluate(n=>innerHeight-n.getBoundingClientRect().top)).toBeLessThan(51);
+    await handle.click();await expect(handle).toHaveAttribute('aria-expanded','true');await expect(content).toBeVisible();
+    await handle.focus();await p.keyboard.press('ArrowDown');await expect(handle).toHaveAttribute('aria-expanded','false');await p.keyboard.press('ArrowUp');await expect(handle).toHaveAttribute('aria-expanded','true');await opened();
+    // A real pointer drag survives the host's room update while held.
+    let box=await handle.boundingBox();await p.mouse.move(box.x+box.width/2,box.y+20);await p.mouse.down();await p.mouse.move(box.x+box.width/2,box.y+95,{steps:8});
+    await p.evaluate(()=>{window.savedRoleDrawer=document.querySelector('.role-dock');});
+    room=await store.load(host.code);room.notice='Still aboard.';await store.save(room);await expect(p.locator('.waiting')).toContainText('Still aboard.');
+    expect(await p.evaluate(()=>window.savedRoleDrawer===document.querySelector('.role-dock'))).toBe(true);
+    await p.mouse.up();await expect(handle).toHaveAttribute('aria-expanded','false');await closed();
+    // Real touch input pulls the collapsed handle up.
+    box=await handle.boundingBox();const cdp=await context.newCDPSession(p),x=box.x+box.width/2,y=box.y+22;
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-100}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await expect(handle).toHaveAttribute('aria-expanded','true');await opened();await handle.focus();await p.keyboard.press('Escape');await expect(handle).toBeFocused();await expect(handle).toHaveAttribute('aria-expanded','false');await p.keyboard.press('Enter');await expect(handle).toHaveAttribute('aria-expanded','true');await p.keyboard.press('Enter');await expect(handle).toHaveAttribute('aria-expanded','false');
+    room=await store.load(host.code);while(room.phase!=='discussion')rules.advance(room);await store.save(room);await expect(p.locator('.lounge-seat')).toHaveCount(12);
+    expect(await p.locator('.lounge-seat').evaluateAll(nodes=>nodes.map(n=>({id:n.dataset.player,avatar:Number(n.querySelector('[data-avatar-index]').dataset.avatarIndex)})))).toEqual(room.seatOrder.map(id=>({id,avatar:room.players.find(p=>p.id===id).avatarIndex})));
+    await expect(p.locator('.sofa-row')).toHaveCount(3);await expect(p.locator('.lounge-seat [data-role-art]')).toHaveCount(0);
+    await p.screenshot({path:info.outputPath('seated-lounge-mobile.png'),fullPage:true});
+    await p.setViewportSize({width:1240,height:960});await expect(p.locator('.sofa-row')).toHaveCount(2);
+    await p.setViewportSize({width:320,height:720});await expect(p.locator('.sofa-row')).toHaveCount(3);
+    expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
+  }finally{await context.close();}
+});
