@@ -189,3 +189,65 @@ test('private notebook preserves text and handwriting through polling, reload an
     expect(JSON.stringify(payloads)).not.toContain('PRIVATE:');expect(JSON.stringify((await call(handler,null,{code:host.code,pid:host.meId},{'x-tok':host.tok})).j)).not.toContain('PRIVATE:');expect(errors).toEqual([]);
   }finally{await context.close();}
 });
+
+test('host test mode adds five independent players, readies them and plays through night, discussion and voting',async({browser},info)=>{
+  test.setTimeout(90000);
+  const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
+  const host=(await call(handler,{action:'create',name:'Human host',requestId:crypto.randomUUID()})).j;
+  const context=await browser.newContext({viewport:{width:390,height:844}}),errors=[];
+  try{
+    await context.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:host.meId,tok:host.tok});
+    await context.route('**/api/last-train**',async route=>{const req=route.request(),q=new URL(req.url());const r=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});
+    const p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto('/last-train.html?room='+host.code+'&test=1');
+    const controls=p.getByRole('region',{name:'Test players'});await controls.getByRole('button',{name:'Add 5 test players'}).click();await expect(p.locator('.seat')).toHaveCount(6);await expect(controls.getByRole('status')).toContainText('5 test players');
+    const pool=await p.evaluate(()=>JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>k.startsWith('lt-test-players:')))));expect(pool).toHaveLength(5);expect(new Set(pool.map(b=>b.pid)).size).toBe(5);expect(pool.every(b=>b.pid!==host.meId&&b.tok)).toBe(true);
+    await p.reload();await expect(p.locator('.seat')).toHaveCount(6);await expect(controls.getByRole('status')).toContainText('Playing automatically');
+    await p.screenshot({path:info.outputPath('test-players-lobby-mobile.png'),fullPage:true});
+    await controls.getByRole('button',{name:'Stop autoplay'}).click();await expect(controls.getByRole('status')).toContainText('Stopped');await controls.getByRole('button',{name:'Resume autoplay'}).click();
+    await p.getByRole('button',{name:'START JOURNEY'}).click();await expect.poll(async()=>Object.keys((await store.load(host.code)).ready||{}).length).toBe(5);
+    await p.getByRole('button',{name:'I’m ready · board the train'}).click();await expect(p.locator('#lt-app')).toHaveAttribute('data-phase','boarding');
+    let room=await store.load(host.code);rules.beginNight(room);rules.advance(room);await store.save(room);
+    const botIds=new Set(pool.map(b=>b.pid));
+    while(room.phase==='night'){
+      const active=rules.nightRole(room);
+      const acting=room.players.filter(a=>a.alive&&botIds.has(a.id)&&(active==='saboteur'?rules.group(a)==='saboteur':a.role===active));
+      await expect.poll(async()=>{const r=await store.load(host.code);return acting.every(a=>active==='medic'?!!r.night.medicine:!!r.night.choices[a.id]);}).toBe(true);
+      room=await store.load(host.code);rules.advance(room);await store.save(room);
+    }
+    while(room.phase!=='discussion'){rules.advance(room);}await store.save(room);
+    let checkedSpeech=false;
+    while(room.phase==='discussion'){
+      const speaker=rules.speakerId(room);
+      if(botIds.has(speaker)){
+        checkedSpeech=true;const previousStep=room.step;
+        await expect.poll(async()=>(await store.load(host.code)).step,{timeout:12000}).not.toBe(previousStep);
+        room=await store.load(host.code);
+      }else{rules.nextSpeaker(room);await store.save(room);}
+    }
+    expect(checkedSpeech).toBe(true);expect(room.phase).toBe('voting');await expect.poll(async()=>{const r=await store.load(host.code);return r.players.filter(a=>a.alive&&botIds.has(a.id)).every(a=>!!r.votes[a.id]);}).toBe(true);
+    await p.goto('/last-train.html');await expect(p.getByRole('region',{name:'Test players'})).toHaveCount(0);
+    // A guest never receives test controls even if they copy the test-mode URL.
+    await p.evaluate(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:pool[0].pid,tok:pool[0].tok});await context.clearCookies();
+    const guest=await browser.newContext({viewport:{width:320,height:720}});await guest.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:pool[0].pid,tok:pool[0].tok});await guest.route('**/api/last-train**',async route=>{const req=route.request(),q=new URL(req.url());const r=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});const gp=await guest.newPage();await gp.goto('/last-train.html?test=1');await expect(gp.locator('.room-code')).toHaveText(host.code);await expect(gp.getByRole('region',{name:'Test players'})).toHaveCount(0);await guest.close();
+    expect(errors).toEqual([]);
+  }finally{await context.close();}
+});
+
+test('test mode chats once per turn and removes only its five seats from the lobby',async({browser})=>{
+  const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
+  const host=(await call(handler,{action:'create',name:'Chat host',requestId:crypto.randomUUID()})).j;
+  const context=await browser.newContext({viewport:{width:320,height:720}});
+  try{
+    await context.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:host.meId,tok:host.tok});
+    await context.route('**/api/last-train**',async route=>{const req=route.request(),q=new URL(req.url());const r=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});
+    const p=await context.newPage();await p.goto('/last-train.html?test=1');const controls=p.getByRole('region',{name:'Test players'});await controls.getByRole('button',{name:'Add 5 test players'}).click();await expect(p.locator('.seat')).toHaveCount(6);
+    expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await controls.getByRole('button',{name:'Remove test players'}).click();await expect(p.locator('.seat')).toHaveCount(1);expect((await store.load(host.code)).players.map(p=>p.id)).toEqual([host.meId]);
+    await controls.getByRole('button',{name:'Add 5 test players'}).click();await expect(p.locator('.seat')).toHaveCount(6);
+    let room=await store.load(host.code);room.settings.discussion='chat';rules.start(room);rules.beginDiscussion(room);if(rules.speakerId(room)===host.meId)rules.nextSpeaker(room);await store.save(room);
+    await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(1);room=await store.load(host.code);const first=room.speeches[0];expect(first.text).toContain('test player');expect(first.id).not.toBe(host.meId);
+    // A new speaker gets a distinct single statement; the first is never duplicated.
+    rules.nextSpeaker(room);if(rules.speakerId(room)===host.meId)rules.nextSpeaker(room);await store.save(room);await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(2);room=await store.load(host.code);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(2);
+    await expect(controls.getByRole('button',{name:'Remove test players'})).toBeDisabled();
+  }finally{await context.close();}
+});

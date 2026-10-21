@@ -12,6 +12,7 @@
   let cinemaNode = null, cinemaKey = '', cinemaEnd = null;
   const overlayRoot = document.getElementById('lt-overlays');
   const notebook = window.createTrainNotebook(overlayRoot);
+  const testPlayers = new URLSearchParams(location.search).get('test') === '1' ? window.createTrainTestPlayers(root) : null;
   const compactScene = matchMedia('(max-width: 680px)');
   const motionOK = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!seat?.tok || (invitation && invitation !== seat.code)) { seat = null; save('lt-seat', null); }
@@ -462,6 +463,7 @@
       state?.paused ? el('div',{class:'pause-banner',role:'status'},txt('b','','Ⅱ Journey paused'),txt('span','','Timers and choices are on hold.'),state.hostId === state.meId ? btn('RESUME JOURNEY',()=>send('resume'),'host') : null) : null,
       content,txt('footer','','Last Train · Every cabin hides a secret.')].filter(Boolean));
     for (const n of root.querySelectorAll('details[data-details]')) if (openDetails.includes(n.dataset.details)) n.open = true;
+    testPlayers?.sync(state, seat);
     syncRoleDock(playing && !['briefing','boarding'].includes(state.phase));
     updateOverlayViewport();
     syncElimination();

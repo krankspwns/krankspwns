@@ -93,6 +93,12 @@ Notes belong to the current room, player and game. Lobby notes carry into the fi
 
 Cabin, lounge and platform use local compressed WebP artwork with a violet, midnight-blue and champagne-gold palette. The cabin has a seated first-person viewpoint with a wide composition that keeps the sofa visible on phones. Human portraits replace emoji characters; role portraits match each profession, while 12 unique neutral civilian portraits identify players publicly without revealing teams. See `last-train-art.md` for atlas mapping. The first-person cabin never shows an external avatar of the owner. Saboteur cabins show the other known teammates across from the viewer; the owner is represented by the private bottom role card. The shared lounge retains every numbered seat, with paired seats, a spotlight on the current speaker and faded figures for removed players. A role ticket stays pinned to the bottom. Action target manifests open as keyboard-accessible dialogs and close when the turn changes, preventing a stale choice from carrying into another turn. Reduced-motion mode keeps all scenes readable without boarding/transition animation.
 
+## Optional test players
+
+The host can open `/last-train.html?room=ROOM&test=1` on the browser where their host seat is saved, then press **Add 5 test players** in the lobby. The five clearly named Bot seats use their own ordinary API credentials and private views. They ready up, make simple legal night choices, post a labelled test statement in chat (or finish their in-person speaking turn after four seconds), and vote automatically. They prefer other bot seats as targets so the human can keep testing. They never start or advance a host-controlled phase or modify room settings.
+
+Keep the test-mode page open while playing. Stop/Resume autoplay is available during the game; Remove test players is available only in the lobby. Bot seats are saved locally for reload recovery. No bots join until the host presses Add; guests and ordinary game URLs have no test controls. These are flow-testing clients, not strategic opponents.
+
 ## Verification
 
 - `npm test`: existing game/recovery suites and Last Train rules/API tests.

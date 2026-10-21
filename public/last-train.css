@@ -410,3 +410,12 @@ textarea.notebook-paper { resize: none; padding: 21px 18px 18px 44px; font: 15px
   .departure-copy { padding-left: 12px; }
 }
 @media(prefers-reduced-motion:reduce) { .departure-button::after, .departure-arrow { transition: none; } }
+
+/* Optional host controls, enabled only by the explicit test-mode link. */
+.test-players { margin: 0 0 20px; padding: 18px 20px; border-color: #9eabd959; background: linear-gradient(120deg, #2b2b45, #1c1728); }
+.test-players h3 { font-size: 17px; color: #e9d5b1; }
+.test-players .small { margin-top: 6px; font-size: 11px; }
+.test-player-status { font-size: 11px; color: #d4c197; margin: 10px 0; }
+.test-player-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.test-player-actions button { font-size: 11px; }
+.test-players [hidden] { display: none; }
