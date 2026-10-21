@@ -3,7 +3,7 @@ for (const style of ['ice', 'blackhole']) {
   test(`${style} stays attached to vertically stacked targets during scrolling`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.setViewportSize({ width: 390, height: 600 });
-    await page.goto('/');
+    await page.goto('/reckoning.html');
     await page.evaluate(style => {
       clearTimeout(timer); rtClose(); session = null; render = () => {};
       ui.calm = false; SND.setMode(0); document.body.classList.remove('calm', 'autocalm');

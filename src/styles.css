@@ -1187,3 +1187,5 @@
 .recovery-fields { display: grid; gap: 8px; min-width: 0; padding-top: 10px; }
 .joincard .recovery-fields label { margin: 0; line-height: 1.5; }
 .recovery-fields input { min-width: 0; min-height: 44px; }
+
+.games-back { display:inline-block; margin:0 0 12px; color:var(--gold-hi); font-size:13px; text-decoration:none; }

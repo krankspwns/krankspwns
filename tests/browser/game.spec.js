@@ -6,7 +6,7 @@ async function setup(page) {
     localStorage.setItem('sct-lang', 'en');
   });
   await page.route('https://fonts.googleapis.com/**', (route) => route.abort());
-  await page.goto('/');
+  await page.goto('/reckoning.html');
 }
 async function create(page, name = 'Host') {
   await setup(page);

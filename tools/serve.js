@@ -3,16 +3,17 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const handler = require('../api/game');
+const grandCon = require('../api/grand-con');
 const root = path.resolve(__dirname, '../public');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (url.pathname === '/api/game') {
+  if (['/api/game','/api/grand-con'].includes(url.pathname)) {
     let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 8000) { res.writeHead(413); res.end(); return; } }
     req.body = body; req.query = Object.fromEntries(url.searchParams);
     res.status = (code) => { res.statusCode = code; return res; };
     res.json = (data) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); };
-    return handler(req, res);
+    return (url.pathname === '/api/grand-con' ? grandCon : handler)(req, res);
   }
   if (url.pathname === '/_vercel/insights/script.js') { res.writeHead(204); res.end(); return; }
   const file = path.resolve(root, '.' + decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname));

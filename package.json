@@ -8,9 +8,9 @@
   },
   "scripts": {
     "dev": "npm run build && vercel dev",
-    "test": "npm run build && node test.js && node test_rules.js && node tests/reliability.js",
+    "test": "npm run build && node test.js && node test_rules.js && node tests/reliability.js && node tests/grand-con.js",
     "build": "node tools/build.js",
-    "test:redis": "node tests/redis.js",
+    "test:redis": "node tests/redis.js && node tests/grand-con.js --redis",
     "test:browser": "npm run build && playwright test",
     "watch": "node tools/build.js --watch"
   },

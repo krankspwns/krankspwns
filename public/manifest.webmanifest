@@ -1,14 +1,27 @@
 {
-  "name": "Row of Reckoning",
-  "short_name": "ROR",
-  "description": "A multiplayer card game: arrange seven cards, win the rows, call who loses.",
+  "name": "The Game Room",
+  "short_name": "Game Room",
+  "description": "Competitive games for your table: Row of Reckoning and The Grand Con.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1b1148",
   "theme_color": "#18213b",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

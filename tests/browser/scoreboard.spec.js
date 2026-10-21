@@ -3,7 +3,7 @@ for (const width of [320,390,430,1280]) {
   test(`scoreboard keeps Calls and WP separate at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height:900 });
     await page.route('https://fonts.googleapis.com/**', route=>route.abort());
-    await page.goto('/');
+    await page.goto('/reckoning.html');
     await page.evaluate(() => {
       clearTimeout(timer); rtClose(); session=null;
       const values = [['Benny',34,53,57,115,512],['zzz',5,124,5,20,124],['Noob',3,116,6,17,182],['Pig',2,128,4,16,120],['Mel',2,163,2,8,105]];
