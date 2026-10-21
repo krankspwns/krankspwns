@@ -27,15 +27,9 @@ body{background:radial-gradient(ellipse at 8% 0,#3e286660,transparent 55%),radia
 @media(max-width:680px){.on-journey{padding-bottom:230px!important}.brand-icon{width:34px;height:34px;font-size:14px}.lt-header{gap:9px}.wordmark b{letter-spacing:1.3px}.wordmark small{font-size:6px}.intro>.train-art{margin:20px auto;max-width:none}.intro>.train-art img{height:200px;border-radius:17px}.entrance{border-radius:19px}.world,.scene-panel{border-radius:19px}.scene-hud{padding:20px 18px;min-height:120px}.scene-hud .eyebrow{font-size:7px;letter-spacing:1.4px}.scene-hud h1{font-size:25px!important;font-weight:650;letter-spacing:-.8px}.scene-hud p{font-size:10px;color:#dfd0e2;line-height:1.55}.journey-clock{width:53px;height:53px}.journey-clock .countdown{font-size:23px}.on-journey .room-bar{background:#19152b9e;border-radius:12px}.team-intros{grid-template-columns:1fr;gap:15px;padding:0 15px}.team-intro{padding:19px}.team-intro h2{font-size:24px}.team-intro-goal{font-size:12px}.introduced-roles{grid-template-columns:1fr 1fr;gap:13px}.introduced-role{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding-top:12px}.introduced-role>.intro-portrait{width:65px;height:65px;border-radius:12px}.introduced-role b{font-size:12px}.introduced-role p{font-size:10px;line-height:1.55}.introduced-role b small{font-size:9px}.intro-kind{font-size:7px;margin-top:7px}.bad .introduced-roles{grid-template-columns:1fr 1fr}.intro-footer{padding:20px 19px 0}.intro-footer .muted{font-size:11px}.role-intro .scene-hud{min-height:150px}.cabin-scene{min-height:720px}.cabin-scene .world-art{object-position:center center}.cabin-scene::after{background:linear-gradient(#0a0b20a6,transparent 32%,transparent 65%,#100d2444)}.cabin-scene .scene-hud{min-height:120px}.cabin-travellers,.cabin-travellers.count-1,.cabin-travellers.count-2{left:7%;top:143px;bottom:auto;width:86%;height:auto;gap:19px}.cabin-person .traveller{width:102px;height:102px;transform:none;margin:0 0 7px}.cabin-person>.portrait,.cabin-person .portrait{border-radius:15px}.cabin-person>span{font-size:11px;max-width:115px;padding:4px 8px;background:#211731e6}.action-console{width:calc(100% - 30px);margin:210px 15px 26px;padding:20px;gap:12px;border-radius:17px;background:linear-gradient(145deg,#2c1e39f0,#14192ef0);backdrop-filter:blur(24px)}.conspiracy .action-console{margin-top:175px}.action-console h2{font-size:23px!important;line-height:1.22}.console-hint{font-size:11px!important;line-height:1.6}.action-console button{font-size:12px;min-height:44px}.action-console .eyebrow{font-size:7px}.team-proposals{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.team-proposals>div{display:flex;gap:5px;padding:9px 4px;border-radius:10px;background:#9773b612;border:1px solid #ab82c92e}.team-proposals .portrait{width:39px;height:39px;border-radius:9px}.team-proposals b{font-size:9px}.team-proposals small{font-size:9px;line-height:1.4}.bad-console .console-hint{font-size:10px!important}.bad-console h2{font-size:23px}.team-chat summary{font-size:10px}.whispers{max-height:90px}.whispers p{font-size:10px}.whisper-form input{font-size:10px!important}.whisper-form button{font-size:11px;min-height:40px;padding:7px 12px}.patient-heading .portrait{width:49px;height:49px}.patient-heading h2{font-size:22px!important}.medic-console{grid-template-columns:1fr 1fr;gap:12px}.medic-console>.heal,.medic-console>.danger{font-size:11px;min-height:46px;padding:10px 5px}.medic-console>.text-button{font-size:11px;min-height:36px}.medicine-counts{font-size:10px!important;letter-spacing:1.2px}.overdose-hint{font-size:10px;line-height:1.55}.console-role-icon.portrait{width:65px;height:65px}.rest-note{position:relative;margin:375px 18px 25px;width:calc(100% - 36px);padding:19px;border-radius:15px;background:#14182b9e}.rest-note h2{font-size:25px}.rest-note p{font-size:12px;line-height:1.6}.rest-note>span{font-size:24px}.curtain-message{margin:180px 20px 120px;padding:28px}.curtain-message p{font-size:13px}.role-dock{width:calc(100% - 22px);bottom:max(10px,env(safe-area-inset-bottom));padding:14px;border-radius:16px;gap:0 8px}.ticket-face{gap:12px}.ticket-icon{width:65px;height:65px;border-radius:11px}.ticket-copy{min-width:0}.ticket-copy small{font-size:6px;letter-spacing:1px;line-height:1.5}.ticket-copy b{font-size:18px;letter-spacing:-.3px;line-height:1.2}.ticket-subtitle{font-size:8px;line-height:1.5;margin-top:4px}.ticket-tools{max-width:70px;gap:4px}.ticket-tools .text-button{font-size:10px;min-height:29px;padding:4px}.report-button{font-size:9px;min-height:32px;padding:6px}.ticket-rule{font-size:10px;line-height:1.55;padding-top:9px;margin-top:11px}.ticket-sealed{font-size:23px}.ticket-toggle{border-radius:15px}.lounge-scene{min-height:720px}.lounge-scene .scene-hud{min-height:126px}.lounge-seats{grid-template-columns:repeat(4,minmax(0,1fr));width:94%;gap:12px 5px;margin:8px auto 23px}.lounge-seat{padding:8px 2px 7px;border-radius:12px;background:#1f16394a}.lounge-seat .traveller{width:56px;height:56px;margin:6px 0 4px}.lounge-seat .portrait{border-radius:11px}.lounge-name{font-size:10px;line-height:1.4}.seat-status{font-size:5px;letter-spacing:.5px;margin-top:3px}.lounge-seat .seat-number{font-size:7px;top:-5px;padding:1px 5px}.empty-seat{width:56px;height:56px;margin:6px 0 4px;border-radius:11px}.lounge-console,.speech-console{width:calc(100% - 28px);padding:19px 18px;border-radius:17px}.speaking-person{gap:11px}.speaking-person>.portrait{width:44px;height:44px;border-radius:10px}.speaking-person h2{font-size:22px}.speaking-person small{font-size:8px;letter-spacing:1px}.speech-console>.console-hint{font-size:11px!important}.speaking-person>.speaker-seconds{font-size:21px;min-width:36px;width:36px;height:36px}.speech-form textarea{font-size:13px;padding:11px;min-height:78px}.speech-form button,.speech-console>button{font-size:12px;min-height:44px}.speech-console:has(.speech-form){padding:18px}.speech-form{margin-top:12px;gap:10px}.speech-bubble{width:190px;font-size:11px;line-height:1.6}.revealed-out{padding:15px;gap:13px}.revealed-out>.portrait{width:62px;height:62px;border-radius:12px}.revealed-out b{font-size:17px}.alignment-stamp{font-size:8px;letter-spacing:1px}.revealed-out small{font-size:11px}.inline-votes .vote-row{font-size:11px;padding:8px 0}.train-chat{padding:22px 18px}.train-chat h2{font-size:19px}.public-message>.message-avatar{width:37px;height:37px;border-radius:10px}.public-message p{font-size:13px}.message-byline b{font-size:12px}.message-byline small{font-size:7px}.lt-dialog:has(.manifest-targets){padding:21px}.manifest-targets{gap:8px}.manifest-target{min-height:102px;padding:10px 5px;gap:6px;border-radius:11px}.manifest-target .portrait{width:42px;height:42px;border-radius:9px}.manifest-target>b{font-size:11px;line-height:1.4}.manifest-target>small{font-size:7px}.manifest-target.skip{font-size:12px}.lt-dialog:has(.manifest-targets) h2{font-size:25px}.lt-dialog:has(.manifest-targets) p{font-size:12px}.lt-dialog>[data-focus=confirm-target]{min-height:45px;font-size:13px}.finale-scene .final-role{padding:13px 10px;gap:9px}.finale-scene .final-role>.portrait{width:48px;height:48px;border-radius:10px}.finale-scene .final-role b{font-size:11px}.finale-scene .final-role small{font-size:8px}.finale-scene .final-roles{grid-template-columns:1fr 1fr}.boarding-person .traveller{width:35px;height:35px;transform:none}.boarding-person .portrait{border-radius:8px}.boarding-person>span{font-size:6px;max-width:52px;padding:2px 4px}.boarding-queue{gap:13px 2px}.boarding-manifest span{font-size:7px}.action-console>.action-seconds.urgent,.speaking-person>.speaker-seconds.urgent{color:#ffada8;border-color:#e6968c}}
 @media(max-width:360px){.ticket-face{gap:8px}.ticket-icon{width:51px;height:51px}.ticket-copy b{font-size:16px}.ticket-copy small{font-size:5px}.ticket-subtitle{font-size:7px}.ticket-rule{font-size:9px}.ticket-tools{max-width:61px}.ticket-tools .text-button{font-size:9px}.report-button{font-size:8px}.role-dock{padding:13px}.cabin-person .traveller{width:88px;height:88px}.cabin-travellers{gap:16px!important}.cabin-person>span{font-size:10px}.action-console{padding:18px}.action-console h2{font-size:21px!important}.patient-heading .portrait{width:43px;height:43px}.team-proposals .portrait{width:33px;height:33px}.team-proposals b{font-size:8px}.team-proposals small{font-size:8px}.lounge-seat .traveller,.empty-seat{width:46px;height:46px}.lounge-name{font-size:9px}.lounge-seat .seat-number{font-size:6px}.lounge-seats{gap:11px 4px}.scene-hud h1{font-size:23px!important}.scene-hud .eyebrow{font-size:6px}.scene-hud p{font-size:10px}.introduced-roles{grid-template-columns:1fr 1fr}.introduced-role>.intro-portrait{width:60px;height:60px}.introduced-role b{font-size:11px}.introduced-role p{font-size:10px}.manifest-target .portrait{width:39px;height:39px}.manifest-target{min-height:96px}.finale-scene .final-roles{grid-template-columns:1fr}.finale-scene .final-role>.portrait{width:54px;height:54px}.finale-scene .final-role b{font-size:13px}}
 
-/* Cabin HUD, public seated characters and a persistent sliding private card. */
-@font-face {
-  font-family: Inter;
-  src: url('/fonts/inter-variable.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-}
-:root { --lt-gold: #c9a96a; --lt-gold-hi: #e8d3a2; }
+/* Luxury journey scenes and a viewport-anchored private drawer. */
+@font-face { font-family: Inter; src: url('/fonts/inter-variable.woff2') format('woff2'); font-style: normal; font-weight: 100 900; font-display: swap; }
+:root { --lt-gold: #c9a96a; --lt-gold-hi: #e8d3a2; --lt-good: #8de6ad; --lt-bad: #ff8293; }
 body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; color: #f4ead2; background: radial-gradient(ellipse at 50% -10%, #c9a96a20, transparent 55%), radial-gradient(ellipse at 100% 105%, #4664c829, transparent 55%), radial-gradient(circle at 50% 40%, #18213b, #0e1426 60%, #080c18); background-attachment: fixed; }
 button, input, select, textarea { font-family: inherit; }
 button { font-size: 13px; font-weight: 600; letter-spacing: .4px; border-radius: 10px; }
@@ -49,58 +43,107 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .danger { background: linear-gradient(180deg, #db6f7f, #b54659); border-color: #fba3af80; color: #fff8f4; }
 .danger:hover:not(:disabled) { background: #da7282; }
 .secondary { background: #ffffff0f; border-color: #ffffff26; color: #e9ecf5; }
-.on-journey { padding-bottom: 245px !important; }
-.world.cabin-scene { background: transparent; border: 0; box-shadow: none; min-height: 0; overflow: visible; }
-.cabin-scene::after { display: none; }
-.cabin-view { position: relative; isolation: isolate; height: 530px; overflow: hidden; border-radius: 20px; }
-.cabin-view .world-picture { z-index: -2; }
-.cabin-view::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(#080c1866, transparent 25%, transparent 82%, #0e1426); }
-.cabin-view .world-art { filter: none; object-position: center; }
-.cabin-view .scene-hud { background: linear-gradient(#080c18c9, transparent); }
+.on-journey { padding-bottom: 90px !important; }
 .scene-hud h1 { color: #fff1cf; }
 .scene-hud p { color: #f1e8d6; }
-.cabin-view .scene-hud p { max-width: 440px; }
-.seated-traveller { display: block; position: relative; flex: none; width: 210px; height: 210px; background: url('/last-train/seated.webp') var(--px) var(--py) / 400% 300% no-repeat; filter: drop-shadow(0 9px 9px #0007); }
-.cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { width: 52%; left: 50%; top: 165px; transform: translateX(-50%); gap: 0; align-items: flex-start; }
-.cabin-travellers.count-0 { display: none; }
-.cabin-person { width: 50%; }
-.cabin-person .seated-traveller { width: 290px; height: 290px; }
-.cabin-person > span { margin-top: -5px; font-size: 12px; border: 0; border-radius: 5px; background: #080c18b3; }
-.action-console, .bad-console, .rest-note, .curtain-message { position: relative; width: min(100% - 40px, 700px); margin: -18px auto 28px; padding: 24px 0 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; text-align: left; }
-.action-console::before { content: ''; position: absolute; top: 0; left: 0; width: 50px; height: 10px; border-top: 2px solid #e8d3a2; border-left: 2px solid #e8d3a2; pointer-events: none; }
-.action-console h2 { font-size: 28px; }
-.action-console .console-hint, .rest-note p { color: #c7cedd; font-size: 13px !important; }
-.action-console .eyebrow { display: none; }
-.action-console > .action-seconds { top: 18px; right: 0; background: #ffffff08; border-color: #e8d3a266; }
-.team-proposals { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
-.team-proposals > div { display: flex; align-items: center; flex-direction: column; text-align: center; border: 0; border-bottom: 1px solid #e8d3a230; border-radius: 0; background: transparent; padding: 6px 0 10px; gap: 5px; }
-.team-proposals b { font-size: 12px; }
-.team-proposals small { color: #d0b9c6; font-size: 11px; }
-.overdose-hint { color: #e4b8aa; font-size: 12px; }
-.action-console .medicine-counts { color: #8fe0ae !important; font-size: 12px !important; }
-.rest-note h2 { font-size: 28px; }
-.rest-note > span { display: none; }
-.curtain-message { padding: 25px 0; text-align: center; }
-.curtain-message span { font-size: 36px; }
-.cabin-scene.eyes-closing .cabin-view { animation: cabin-settle 4s ease-in-out; }
-@keyframes cabin-settle { 0%, 25% { filter: brightness(.06); } 100% { filter: brightness(1); } }
-.lounge-seats { display: flex; flex-direction: column; width: 96%; max-width: 1120px; gap: 0; margin: 0 auto 25px; }
-.sofa-row { display: grid; grid-template-columns: repeat(var(--seats), minmax(0,1fr)); position: relative; isolation: isolate; padding: 0 16px; min-height: 260px; }
-.sofa-row::before { content: ''; position: absolute; z-index: -1; left: 0; right: 0; top: 15px; height: 200px; background: url('/last-train/banquette.webp') center / 100% 100% no-repeat; filter: drop-shadow(0 12px 10px #0008); }
-.lounge-seat, .lounge-seat.speaking { border: 0; border-radius: 0; background: transparent; backdrop-filter: none; padding: 0 0 14px; box-shadow: none; }
-.lounge-seat .seated-traveller { width: 210px; height: 210px; margin-top: 0; }
+
+/* The person and their sofa cushion share one image coordinate system. */
+.seated-traveller { display: block; position: relative; flex: none; width: 100%; aspect-ratio: 1; height: auto; background: url('/last-train/seated.webp?v=5') var(--px) var(--py) / 400% var(--sprite-y-size, 300%) no-repeat; filter: drop-shadow(0 9px 9px #0007); }
+.lounge-scene { background: linear-gradient(#21171e, #0e1426); min-height: 0; }
+.lounge-scene > .world-picture { bottom: auto; height: 680px; mask-image: linear-gradient(#000 75%, transparent); }
+.lounge-scene > .world-picture .world-art { object-fit: fill; }
+.lounge-seats { display: flex; flex-direction: column; width: 96%; max-width: 1120px; gap: 18px; margin: 8px auto 30px; }
+.sofa-row { display: grid; grid-template-columns: repeat(var(--seats), minmax(0,1fr)); position: relative; isolation: isolate; padding: 0; min-height: 0; }
+.sofa-row::before, .lounge-seat::before { display: none; }
+.lounge-seat, .lounge-seat.speaking { position: relative; border: 0; border-radius: 0; background: transparent; backdrop-filter: none; padding: 0 0 8px; box-shadow: none; }
+.lounge-seat .seated-traveller { width: 100%; height: auto; margin: 0; }
 .lounge-seat.speaking .seated-traveller { filter: drop-shadow(0 0 12px #ffdda969) drop-shadow(0 6px 8px #0009); }
-.lounge-seat .seat-number { top: 1px; left: 8px; background: #0e1426b3; border-color: #e8d3a24d; font-size: 9px; }
-.lounge-name { font-size: 12px; padding: 1px 6px; background: #080c18b3; border-radius: 4px; }
-.seat-status { font-size: 7px; color: #ddd0be; text-shadow: 0 1px 4px #000; }
+.lounge-seat .seat-number { top: 1px; left: 7px; background: #0e1426cc; border-color: #e8d3a24d; font-size: 9px; min-width: 27px; }
+.lounge-name { font-size: 12px; padding: 2px 6px; margin-top: 2px; background: #080c18c9; border-radius: 4px; }
+.seat-status { font-size: 8px; color: #ddd0be; text-shadow: 0 1px 4px #000; }
 .speaking .seat-status { color: #ffe0a1; }
 .speaking .lounge-name { outline: 1px solid #e8d3a280; }
-.lounge-seat .empty-seat { width: 100%; height: 210px; border: 0; background: transparent; margin: 0; }
-.lounge-seat.empty { opacity: .6; }
-.lounge-console, .speech-console { background: #0e1426bf; border: 0; border-top: 1px solid #e8d3a266; border-radius: 0; box-shadow: none; backdrop-filter: blur(6px); }
-.lounge-seat .speech-bubble { bottom: calc(100% - 25px); }
-.role-dock { --drawer-handle: calc(48px + env(safe-area-inset-bottom)); --drawer-drag: 0px; position: fixed; left: 50%; bottom: 0; z-index: 25; width: min(680px, calc(100% - 24px)); max-width: none; padding: 0; display: block; border-radius: 18px 18px 0 0; border: 1px solid #c9a96a80; border-bottom: 0; background: linear-gradient(145deg, #22283df5, #101629fa); backdrop-filter: blur(20px); box-shadow: 0 -5px 40px #0005; transform: translate(-50%, calc(100% - var(--drawer-handle) + var(--drawer-drag))); transition: transform .36s cubic-bezier(.22,.8,.28,1); }
-.role-dock.revealed { transform: translate(-50%, var(--drawer-drag)); border-color: #e8d3a2a6; }
+.lounge-seat.empty { opacity: 1; }
+.lounge-seat.empty .seated-traveller { opacity: .3; filter: grayscale(.85); }
+.lounge-seat.empty .lounge-name { color: #cabec4; }
+.out-cross { position: absolute; inset: -7px; display: grid; place-items: center; color: #ff5577; font-size: 33px; font-weight: 600; text-shadow: 0 1px 5px #070a19; }
+.alignment-bad .seat-status, .bad .alignment-stamp { color: var(--lt-bad); }
+.alignment-good .seat-status, .good .alignment-stamp { color: var(--lt-good); }
+.lounge-console, .speech-console { background: #0e1426c9; border: 1px solid #c9a96a35; border-radius: 15px; box-shadow: 0 10px 35px #0003; backdrop-filter: blur(6px); }
+.lounge-seat .speech-bubble { bottom: calc(100% - 15px); }
+
+/* Choices float over the room, within reach of the seated first-person view. */
+.world.cabin-scene { background: #10101c; border: 1px solid #c9a96a33; min-height: 0; overflow: hidden; }
+.cabin-scene::after { display: none; }
+.cabin-scene .cabin-view { position: relative; isolation: isolate; height: min(780px, calc(100svh - 145px)); min-height: 650px; overflow: hidden; }
+.cabin-view .world-picture { z-index: -2; }
+.cabin-view .world-art { filter: none; object-position: center; }
+.cabin-view::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(#080c18ad, transparent 23%, #080c181a 70%, #080c1880); }
+.cabin-view .scene-hud { background: linear-gradient(#080c1870, transparent); }
+.cabin-view .scene-hud p { max-width: 440px; }
+.cabin-scene .action-console, .cabin-scene .rest-note, .cabin-scene .curtain-message { position: absolute; z-index: 3; top: 30%; left: 50%; right: auto; bottom: auto; transform: translateX(-50%); width: min(590px, calc(100% - 48px)); margin: 0; padding: 22px; border: 0; border-radius: 24px; background: radial-gradient(ellipse at center, #07111fe6 25%, #07111f99 65%, #07111f00 100%); box-shadow: none; backdrop-filter: none; text-align: center; display: grid; gap: 13px; }
+.cabin-scene .action-console::before { display: none; }
+.cabin-scene .action-console h2 { font-size: 29px; padding: 0 25px; color: #fff4db; text-shadow: 0 2px 14px #000; }
+.action-console .console-hint, .rest-note p { color: #dedde5; font-size: 13px !important; text-shadow: 0 1px 5px #000; }
+.action-console > .action-seconds { top: 8px; right: 12px; background: #080c1899; border-color: #e8d3a266; }
+.action-console .eyebrow, .rest-note > span { display: none; }
+.action-console .gold, .action-console .heal, .action-console .danger { min-height: 54px; border-radius: 16px; box-shadow: 0 5px 25px #0005, inset 0 1px #fff3; font-size: 14px; }
+.action-console > .text-button { width: fit-content; margin: auto; color: #e7e2eb; min-height: 36px; }
+.action-console .medicine-counts { justify-content: center; color: #8fe0ae !important; font-size: 12px !important; letter-spacing: 1.4px; }
+.console-role-icon.portrait { width: 58px; height: 58px; margin: auto; }
+.patient-heading { justify-content: center; gap: 10px; }
+.patient-heading .portrait { width: 42px; height: 42px; }
+.patient-heading h2 { padding: 0 !important; }
+.cabin-scene .medic-console { top: 22%; display: grid; grid-template-columns: 1fr 1fr; }
+.medic-console > * { grid-column: 1 / -1; }
+.medic-console > .heal, .medic-console > .danger { grid-column: auto; width: 100%; min-height: 76px; font-size: 15px; }
+.medic-console > .heal::before { content: '+'; display: block; font-size: 25px; line-height: 1; margin-bottom: 5px; font-weight: 500; }
+.medic-console > .danger::before { content: '◇'; display: block; font-size: 25px; line-height: 1; margin-bottom: 5px; }
+.overdose-hint { border: 0; padding: 0; color: #efbead; font-size: 12px; text-shadow: 0 1px 6px #000; }
+.cabin-scene.conspiracy .action-console { top: 24%; left: auto; right: 4%; transform: none; width: 46%; margin: 0; }
+.cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { position: absolute; left: 4%; top: auto; bottom: 12%; width: 46%; height: auto; transform: none; display: flex; gap: 0; justify-content: center; align-items: flex-end; }
+.cabin-travellers.count-0 { display: none; }
+.cabin-person { display: flex; flex-direction: column; width: 50%; max-width: 300px; align-items: center; }
+.cabin-person .seated-traveller { width: 100%; height: auto; margin: 0; }
+.cabin-person > span { margin: 0; border: 0; background: #080c18c9; color: #fff0cf; padding: 3px 9px; font-size: 12px; }
+.team-proposals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.team-proposals > .team-proposal { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; gap: 6px; min-width: 0; border: 0; padding: 8px 0; background: transparent; }
+.proposal-target { position: relative; width: 65px; height: 65px; }
+.team-proposals .chosen-avatar, .choice-symbol { width: 65px; height: 65px; border-radius: 16px; border: 1px solid #edb1ab8c; box-shadow: 0 0 0 4px #ffadbd0d; }
+.choice-symbol { display: grid; place-items: center; font-size: 30px; background: #11152699; color: #cdb6c0; }
+.team-proposals .chooser-avatar { position: absolute; width: 25px; height: 25px; border-radius: 50%; bottom: -4px; right: -5px; border: 2px solid #e8d3a2; }
+.team-proposals .proposal-name { font-size: 12px; color: #fff0df; overflow-wrap: anywhere; }
+.team-proposals .proposal-by { font-size: 10px; color: #c7bdce; line-height: 1.35; overflow-wrap: anywhere; }
+.team-chat summary { color: #e6d3df; min-height: 35px; padding: 6px 0; }
+.team-chat .whispers { background: #080c18b3; max-height: 64px; }
+.team-chat .whisper-form input { background: #101526c9; font-size: 12px !important; }
+.patient-scene { position: absolute; inset: auto 0 0; height: 52%; z-index: 1; pointer-events: none; }
+.patient-body { width: min(90%, 520px); height: auto; aspect-ratio: 362 / 160; position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); background: url('/last-train/patients.webp') var(--px) var(--py) / 400% 678.75% no-repeat; filter: drop-shadow(0 10px 8px #0008); }
+.patient-floor-label { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12%; white-space: nowrap; font-size: 11px; letter-spacing: 1px; padding: 5px 11px; color: #ffd3c5; background: #080c18b3; border-radius: 6px; }
+.treated .patient-body { filter: drop-shadow(0 0 16px #88ffae33) drop-shadow(0 10px 8px #0008); }
+.treated .patient-floor-label { color: var(--lt-good); }
+.cabin-scene.eyes-closing .cabin-view { animation: cabin-settle 4s ease-in-out; }
+@keyframes cabin-settle { 0%, 25% { filter: brightness(.06); } 100% { filter: brightness(1); } }
+
+/* Champagne, walnut and oxblood echo the train's lamps and upholstery. */
+.role-intro { position: relative; isolation: isolate; background: #17121b; border-color: #c9a96a55; }
+.role-intro > .world-picture { opacity: .3; }
+.role-intro::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(120deg, #160d15d9, #14121c9e 60%, #2c1419d9); }
+.role-intro .scene-hud { background: transparent; }
+.team-intro, .team-intro.bad { background: linear-gradient(135deg, #35212bbf, #170f19cc); border: 1px solid #c9a96a66; box-shadow: inset 0 1px #f8e3b414, 0 15px 35px #0003; }
+.team-intro h2 { color: #f1d6a1; font-weight: 750; }
+.team-label { color: #b9dec5; letter-spacing: 2.4px; }
+.bad .team-label { color: #efa9af; }
+.introduced-role { border-color: #c9a96a2e; }
+.introduced-role b { color: #f7e6ca; }
+.introduced-role p, .team-intro-goal { color: #d0c2c5; }
+.intro-kind { color: #d4b587; }
+.intro-kind.crew { color: #afcfbb; }
+
+/* The role drawer is anchored to a dedicated visual-viewport layer. */
+.role-overlay { position: fixed; top: 0; left: 0; right: 0; height: 100dvh; z-index: 40; pointer-events: none; }
+.role-dock { --drawer-handle: calc(48px + env(safe-area-inset-bottom)); --drawer-drag: 0px; position: absolute; left: 12px; right: 12px; bottom: 0; width: min(680px, calc(100% - 24px)); max-width: none; margin: 0 auto; padding: 0; display: block; pointer-events: auto; border-radius: 18px 18px 0 0; border: 1px solid #c9a96a80; border-bottom: 0; background: linear-gradient(145deg, #22283df5, #101629fa); backdrop-filter: blur(20px); box-shadow: 0 -5px 40px #0005; transform: translateY(calc(100% - var(--drawer-handle) + var(--drawer-drag))); transition: transform .36s cubic-bezier(.22,.8,.28,1); }
+.role-dock.revealed { transform: translateY(var(--drawer-drag)); border-color: #e8d3a2a6; }
 .role-dock.dragging { transition: none; user-select: none; }
 .drawer-handle { position: relative; width: 100%; height: var(--drawer-handle); min-height: var(--drawer-handle); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 12px calc(4px + env(safe-area-inset-bottom)); touch-action: none; background: transparent; border: 0; color: #e8d3a2; border-radius: 17px 17px 0 0; font-size: 11px; font-weight: 600; }
 .drawer-handle::before { content: ''; display: block; width: 38px; height: 3px; flex: none; border-radius: 3px; background: #e8d3a280; }
@@ -114,40 +157,99 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .ticket-subtitle { font-size: 11px; color: #e8d3a2; }
 .ticket-rule { font-size: 12px; color: #c8ccda; pointer-events: auto; }
 .drawer-content .report-button { margin-top: 12px; }
-@media (max-width: 1000px) and (min-width: 681px) {
-  .lounge-seat .seated-traveller { width: 170px; height: 170px; }
-  .sofa-row { min-height: 225px; }
-  .sofa-row::before { height: 170px; }
-  .lounge-seat .empty-seat { height: 170px; }
+
+/* A compact illustrated vote record, including double votes and Skip. */
+.vote-ledger, .inline-votes .vote-ledger { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 0; margin-top: 16px; border: 0; background: transparent; }
+.vote-row, .inline-votes .vote-row { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 12px minmax(0,1fr); align-items: center; gap: 6px; padding: 10px 8px; border: 1px solid #c9a96a24; background: #0b10207a; border-radius: 9px; font-size: 11px; }
+.vote-person { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.vote-person .portrait, .skip-avatar { width: 25px; height: 25px; flex: none; border-radius: 7px; }
+.skip-avatar { display: grid; place-items: center; background: #ffffff0a; color: #b5bccb; }
+.vote-row .vote-person b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: #eee4d3; font-weight: 550; }
+.vote-row .vote-arrow { color: #c9a96a; text-align: center; }
+.double-vote { position: absolute; right: 3px; top: 0; color: #ffe0a1; font-size: 8px; }
+
+/* A railway log, with round markers and expandable records. */
+.on-journey .journey-log { margin-top: 24px; padding: 25px; background: linear-gradient(135deg, #211b29cc, #111627e6) !important; border: 1px solid #c9a96a33; border-radius: 18px; box-shadow: none; }
+.log-heading h2 { font-size: 24px; margin: 5px 0 22px; color: #f2ddbc; }
+.log-heading .eyebrow { font-size: 8px; }
+.log-events { position: relative; display: grid; gap: 9px; }
+.journey-log .log-event { margin: 0; padding: 0; border: 0; background: #ffffff03; border-radius: 11px; }
+.log-event > summary { display: flex; align-items: center; gap: 13px; padding: 14px; list-style: none; }
+.log-event > summary::-webkit-details-marker { display: none; }
+.log-round { display: grid; place-items: center; width: 39px; height: 45px; flex: none; border: 1px solid #c9a96a55; background: #c9a96a0c; color: #e8d3a2; font-size: 17px; font-variant-numeric: tabular-nums; border-radius: 8px; }
+.log-event-title { flex: 1; min-width: 0; }
+.log-event-title b { display: block; color: #f1e4d0; font-size: 13px; font-weight: 650; }
+.log-event-title small { display: block; color: #ac9fae; font-size: 10px; margin-top: 4px; }
+.log-faces { display: flex; align-items: center; padding-left: 8px; }
+.log-faces .portrait { width: 30px; height: 30px; border-radius: 50%; margin-left: -8px; border: 2px solid #171525; }
+.log-chevron { color: #bdac90; font-size: 17px; transition: transform .2s; }
+.log-event[open] .log-chevron { transform: rotate(180deg); }
+.log-event-body { padding: 0 14px 14px; }
+
+/* Original elimination: a punched, cancelled ticket at the next station. */
+.elimination-cinema { position: fixed; padding: 30px; width: min(540px, calc(100% - 28px)); max-height: calc(100dvh - 32px); overflow: hidden; isolation: isolate; text-align: center; background: #12111e; border: 1px solid #e8d3a280; box-shadow: 0 30px 120px #000c; }
+.elimination-cinema::backdrop { background: #050811d9; backdrop-filter: blur(12px); }
+.elimination-cinema h2 { font-size: 26px; margin-bottom: 22px; position: relative; z-index: 2; }
+.cinema-window { position: absolute; z-index: -1; inset: 0; background: linear-gradient(#07101db3, #11101bd9), url('/last-train/platform.webp') center / cover; }
+.station-streaks { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 100px, #e9b55722 105px 115px, transparent 125px 260px); animation: station-passes 2.4s linear infinite; }
+.cancelled-ticket { position: relative; max-width: 310px; margin: auto; border: 1px solid #c9a96a99; border-radius: 14px; padding: 21px 20px 24px; background: linear-gradient(130deg, #e8d3a212, #211b2ae6); box-shadow: 0 8px 40px #0008; animation: ticket-arrives .9s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--cinema-offset, 0s); }
+.cancelled-ticket::after { content: ''; position: absolute; right: 14px; top: 14px; width: 23px; height: 23px; border-radius: 50%; background: #0c1019; box-shadow: inset 0 2px 4px #0008, 0 0 0 1px #c9a96a66; animation: ticket-punch 3s both; animation-delay: var(--cinema-offset, 0s); }
+.cancelled-ticket .eyebrow { font-size: 8px; letter-spacing: 1.3px; padding-right: 15px; }
+.cinema-avatar.portrait { display: block; width: 125px; height: 125px; border-radius: 22px; margin: 20px auto 14px; border: 1px solid #e8d3a299; }
+.cancelled-ticket h3 { font-size: 26px; color: #f9e7c9; }
+.cinema-seat { display: block; color: #c6b59a; font-size: 10px; letter-spacing: 3px; margin-top: 7px; }
+.cancel-stamp { position: absolute; bottom: 90px; left: 5%; width: 90%; color: #ffd7b0; border: 3px double #d8aa79; border-radius: 5px; background: #2a1820f0; padding: 10px 3px; font-size: 17px; letter-spacing: 2px; font-weight: 800; transform: rotate(-10deg); animation: cancel-ticket 3.2s both; animation-delay: var(--cinema-offset, 0s); }
+.elimination-cinema .cinema-alignment { position: relative; font-size: 12px; font-weight: 750; letter-spacing: 2px; margin: 22px 0 8px; animation: reveal-alignment 3.4s both; animation-delay: var(--cinema-offset, 0s); }
+.cinema-alignment.bad { color: var(--lt-bad); }
+.cinema-alignment.good { color: var(--lt-good); }
+.elimination-cinema .cinema-caption { font-size: 12px; color: #c2b7c7; margin: 6px 0 15px; }
+.elimination-cinema > .gold { width: 100%; margin-top: 12px; }
+.elimination-cinema[data-paused=true] *, .elimination-cinema[data-paused=true] *::after { animation-play-state: paused !important; }
+@keyframes station-passes { to { transform: translateX(-260px); } }
+@keyframes ticket-arrives { from { opacity: 0; transform: translateY(60px) rotate(5deg) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes ticket-punch { 0%, 50% { opacity: 0; transform: scale(0); } 65% { opacity: 1; transform: scale(1.4); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes cancel-ticket { 0%, 55% { opacity: 0; transform: rotate(-10deg) scale(1.8); } 70% { opacity: 1; transform: rotate(-10deg) scale(.94); } 100% { opacity: 1; transform: rotate(-10deg) scale(1); } }
+@keyframes reveal-alignment { 0%, 65% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
+@media(max-width:1000px) and (min-width:681px) {
+  .cabin-scene.conspiracy .action-console { right: 2%; width: 50%; }
+  .cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { left: 2%; width: 44%; }
+  .vote-ledger, .inline-votes .vote-ledger { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
-@media (max-width: 680px) {
-  .on-journey { padding-bottom: 240px !important; }
-  .cabin-view { height: 440px; border-radius: 15px; }
-  .cabin-view .scene-hud { padding: 18px 15px; }
+@media(max-width:680px) {
+  .on-journey { padding-bottom: 85px !important; }
+  .cabin-scene .cabin-view { height: max(690px, calc(100svh - 125px)); min-height: 690px; }
+  .cabin-view .scene-hud { padding: 19px 15px; }
   .scene-hud h1 { font-size: 25px !important; font-weight: 800; letter-spacing: -.035em; }
   .scene-hud .eyebrow { font-size: 8px; letter-spacing: 1.1px; }
   .cabin-view .scene-hud p { display: none; }
-  .cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { top: 133px; left: 50%; width: 91%; gap: 0 !important; }
-  .cabin-person .seated-traveller { width: 235px; height: 235px; }
-  .cabin-person > span { font-size: 11px; }
-  .action-console, .bad-console, .rest-note, .curtain-message { margin: -2px auto 22px; padding: 22px 0 0; width: calc(100% - 30px); gap: 13px; }
-  .action-console h2 { font-size: 25px !important; }
+  .cabin-scene .action-console, .cabin-scene .rest-note, .cabin-scene .curtain-message { top: 29%; width: calc(100% - 24px); padding: 18px 12px; gap: 12px; }
+  .cabin-scene .action-console h2 { font-size: 24px !important; }
   .action-console .console-hint, .rest-note p { font-size: 12px !important; }
-  .action-console button { font-size: 13px; min-height: 46px; }
-  .medic-console > .heal, .medic-console > .danger { font-size: 12px; }
-  .team-proposals .portrait { width: 37px; height: 37px; }
-  .team-proposals b, .team-proposals small { font-size: 10px; }
-  .overdose-hint { font-size: 11px; }
-  .lounge-seats { width: 98%; gap: 4px; }
-  .sofa-row { padding: 0 5px; min-height: 166px; }
-  .sofa-row::before { top: 7px; height: 129px; }
-  .lounge-seat .seated-traveller { width: clamp(98px, 33vw, 155px); height: clamp(98px, 33vw, 155px); }
-  .lounge-seat .empty-seat { height: clamp(98px, 33vw, 155px); }
-  .lounge-seat .seat-number { font-size: 7px; left: 2px; top: 3px; }
+  .cabin-scene.conspiracy .action-console { top: 19%; right: auto; left: 50%; width: calc(100% - 22px); transform: translateX(-50%); }
+  .cabin-scene .medic-console { top: 18%; }
+  .medic-console > .heal, .medic-console > .danger { min-height: 80px; font-size: 13px; }
+  .cabin-scene .power-console { top: 28%; }
+  .overdose-hint { font-size: 11px; line-height: 1.5; }
+  .cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { left: 50%; width: 91%; top: auto; bottom: 7%; transform: translateX(-50%); gap: 0 !important; }
+  .cabin-person { max-width: 200px; }
+  .cabin-person > span { font-size: 11px; }
+  .team-proposals { gap: 9px; }
+  .proposal-target, .team-proposals .chosen-avatar, .choice-symbol { width: 56px; height: 56px; }
+  .team-proposals .chooser-avatar { width: 23px; height: 23px; }
+  .team-proposals .proposal-name { font-size: 11px; }
+  .team-proposals .proposal-by { font-size: 9px; }
+  .bad-console .console-hint { font-size: 11px !important; }
+  .team-chat .whispers { max-height: 46px; }
+  .team-chat .whisper-form { margin-top: 4px; }
+  .team-chat .whisper-form input { font-size: 11px !important; }
+  .patient-body { width: min(94%, 410px); height: auto; bottom: 12%; }
+  .patient-floor-label { bottom: 22%; font-size: 10px; }
+  .lounge-seats { width: 98%; gap: 17px; margin-top: 0; }
+  .lounge-scene > .world-picture { height: 500px; }
+  .lounge-seat .seat-number { font-size: 7px; left: 3px; min-width: 23px; }
+  .out-cross { font-size: 28px; }
   .lounge-name { font-size: 10px; padding: 0 3px; }
   .seat-status { font-size: 6px; letter-spacing: .5px; }
-  .lounge-seat { padding-bottom: 8px; }
-  .lounge-seat .speech-bubble { bottom: calc(100% - 10px); }
   .lounge-console, .speech-console { width: calc(100% - 28px); padding: 20px 16px; }
   .speech-console h2 { font-size: 23px; }
   .drawer-content { padding: 4px 16px calc(16px + env(safe-area-inset-bottom)); }
@@ -156,26 +258,39 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
   .ticket-copy small { font-size: 8px; }
   .ticket-subtitle { font-size: 10px; }
   .ticket-rule { font-size: 12px; }
+  .vote-ledger, .inline-votes .vote-ledger { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+  .vote-row, .inline-votes .vote-row { grid-template-columns: 12px minmax(0,1fr); gap: 4px; padding: 8px; min-height: 63px; }
+  .vote-row > .vote-person:first-child { grid-column: 1 / -1; }
+  .vote-row > .vote-person { grid-column: 2; }
+  .vote-row > .vote-arrow { grid-column: 1; }
+  .vote-person .portrait, .skip-avatar { width: 21px; height: 21px; border-radius: 6px; }
+  .vote-row .vote-person b { font-size: 10px; }
+  .on-journey .journey-log { padding: 20px 16px; }
+  .log-event > summary { gap: 10px; padding: 12px 10px; }
+  .log-event-body { padding: 0 10px 12px; }
+  .log-round { width: 34px; height: 40px; font-size: 15px; }
+  .log-event-title b { font-size: 12px; }
+  .log-event-title small { font-size: 9px; }
+  .elimination-cinema { padding: 23px 20px; }
+  .elimination-cinema h2 { font-size: 24px; }
 }
-@media (max-width: 360px) {
-  .cabin-view { height: 410px; }
-  .cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { top: 122px; }
-  .cabin-person .seated-traveller { width: 210px; height: 210px; }
-  .sofa-row { min-height: 148px; }
-  .sofa-row::before { height: 112px; }
+@media(max-width:360px) {
+  .cabin-scene .cabin-view { height: 710px; min-height: 710px; }
+  .cabin-scene.conspiracy .action-console { top: 17%; padding: 16px 10px; }
+  .cabin-scene .medic-console { top: 17%; }
+  .cabin-scene .action-console h2 { font-size: 22px !important; }
+  .team-proposals .proposal-name { font-size: 10px; }
+  .patient-body { width: min(94%, 360px); height: auto; bottom: 12%; }
   .ticket-face { gap: 10px; }
   .ticket-copy b { font-size: 19px; }
   .ticket-subtitle { font-size: 9px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .role-dock { transition: none; }
+@media(prefers-reduced-motion:reduce) {
+  .role-dock, .log-chevron { transition: none; }
   .cabin-scene.eyes-closing .cabin-view { animation: none; }
+  .cancel-stamp, .cancelled-ticket::after, .cinema-alignment { opacity: 1; }
 }
-.cabin-scene.conspiracy .action-console { margin-top: -18px; }
-@media(max-width:680px) { .cabin-scene.conspiracy .action-console { margin-top: -2px; } }
 
-/* Keep the room's floor behind the sofas as the control area grows. */
-.lounge-scene { background: linear-gradient(#171323, #101426); }
-.lounge-scene > .world-picture { bottom: auto; height: 650px; mask-image: linear-gradient(#000 85%, transparent); }
-.lounge-scene > .world-picture .world-art { object-fit: fill; }
-@media(max-width:680px) { .lounge-scene > .world-picture { height: 480px; } }
+.elimination-cinema h2:focus { outline: none; }
+
+.seated-traveller { clip-path: polygon(33% 0, 70% 0, 70% 7%, 100% 7%, 100% 100%, 0 100%, 0 7%, 33% 7%); }

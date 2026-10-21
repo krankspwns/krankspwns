@@ -25,7 +25,7 @@ test('twelve phones board, meet their cabins, take sequential night turns, speak
     await expect(host.locator('.platform-scene')).toBeVisible();await expect(host.locator('.boarding-person')).toHaveCount(12);await host.screenshot({path:info.outputPath('journey-boarding.png'),fullPage:true});
     await nightTurn(host,'saboteur');const states=await Promise.all(pages.map(read)),bad=states.map((s,i)=>({s,i})).filter(x=>x.s.me.group==='saboteur');
     const wi=states.findIndex(s=>s.me.role==='witness'),mi=states.findIndex(s=>s.me.role==='medic'),ii=states.findIndex(s=>s.me.role==='inspector'),bi=states.findIndex(s=>s.me.role==='brave'),ci=states.findIndex(s=>s.me.role==='careful');
-    for(const b of bad){await nightTurn(pages[b.i],'saboteur');await expect(pages[b.i].locator('.cabin-person')).toHaveCount(2);await choose(pages[b.i],'Choose attack or Skip','Player '+bad[0].i);}
+    for(const b of bad){await nightTurn(pages[b.i],'saboteur');await expect(pages[b.i].locator('.cabin-person')).toHaveCount(2);await choose(pages[b.i],'Choose Target','Player '+bad[0].i);}
     const team=pages[bad[0].i];if(!await team.locator('.team-chat').evaluate(n=>n.open))await team.locator('.team-chat summary').click();await team.getByLabel('Whisper to your team',{exact:true}).fill('Same target, team.');await team.getByRole('button',{name:'Send',exact:true}).click();await expect(pages[bad[1].i].getByRole('log',{name:'Private Saboteur chat'})).toContainText('Same target, team.');
     await team.screenshot({path:info.outputPath('journey-saboteur-cabin-mobile.png'),fullPage:true});
     const witness=pages[wi];await expect(witness.locator('.cabin-person')).toHaveCount(0);await expect(witness.getByLabel('Private Saboteur chat')).toHaveCount(0);await expect(witness.locator('.role-dock')).toBeVisible();expect(await witness.locator('[data-role-art]').evaluateAll(nodes=>nodes.every(n=>n.dataset.roleArt==='witness'))).toBe(true);await expect(witness.locator('.cabin-scene picture source')).toHaveAttribute('srcset','/last-train/cabin-mobile.webp');
@@ -36,7 +36,7 @@ test('twelve phones board, meet their cabins, take sequential night turns, speak
     await nightTurn(host,'inspector');await nightTurn(pages[ii],'inspector');await choose(pages[ii],'Choose someone to check','Player '+bad[2].i);
     await nightTurn(host,'witness');await nightTurn(witness,'witness');await witness.getByRole('button',{name:'Watch tonight',exact:true}).click();
     await expect(host.locator('.lounge-scene')).toBeVisible({timeout:27000});await expect(host.locator('#lt-app')).toHaveAttribute('data-phase','morning',{timeout:10000});await expect(host.locator('.morning-reveal .revealed-out')).toHaveCount(2);
-    await witness.getByRole('button',{name:'Reports (1)',exact:true}).click();await expect(witness.getByRole('dialog')).toContainText('The Saboteurs tried to attack Player '+bad[0].i);await witness.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();
+    if(await witness.getByRole('button',{name:'Show role',exact:true}).isVisible())await witness.getByRole('button',{name:'Show role',exact:true}).click();await witness.getByRole('button',{name:'Reports (1)',exact:true}).click();await expect(witness.getByRole('dialog')).toContainText('The Saboteurs tried to attack Player '+bad[0].i);await witness.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();
     await expect(host.locator('#lt-app')).toHaveAttribute('data-phase','discussion',{timeout:13000});
     const discussion=await read(host),order=discussion.speakingOrder;expect(order.length).toBe(10);expect(order).toEqual(discussion.players.filter(p=>p.alive).map(p=>p.id));
     await host.screenshot({path:info.outputPath('journey-lounge-desktop.png'),fullPage:true});
@@ -122,4 +122,37 @@ test('seated public identities stay private and the role drawer supports drag, k
     await p.setViewportSize({width:320,height:720});await expect(p.locator('.sofa-row')).toHaveCount(3);
     expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
   }finally{await context.close();}
+});
+
+test('cabin HUD keeps patient identity private and vote cinema pauses without replay or a drifting drawer',async({browser},info)=>{
+  const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
+  const make=(action,data)=>call(handler,{action,requestId:crypto.randomUUID(),...data});
+  const host=(await make('create',{name:'HUD host'})).j,seats=[host];for(let i=1;i<12;i++)seats.push((await make('join',{code:host.code,name:'Cabin '+i})).j);
+  let room=await store.load(host.code);rules.start(room);rules.board(room);rules.beginNight(room);rules.advance(room);await store.save(room);
+  const bad=room.players.filter(p=>rules.group(p)==='saboteur'),medic=room.players.find(p=>p.role==='medic'),patient=room.players.find(p=>rules.group(p)==='passenger');
+  const seat=p=>seats.find(s=>s.meId===p.id),contexts=[];
+  const open=async(s)=>{const c=await browser.newContext({viewport:{width:390,height:844}});contexts.push(c);await c.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:s.code,pid:s.meId,tok:s.tok});await c.route('**/api/last-train**',async route=>{const q=new URL(route.request().url()),req=route.request(),r=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});const p=await c.newPage();await p.goto('/last-train.html');return p;};
+  const post=async(action)=>{const r=await store.load(host.code);return call(handler,{action,code:host.code,pid:host.meId,tok:host.tok,match:r.match,round:r.round,step:r.step,requestId:crypto.randomUUID()});};
+  try{
+    const a=await open(seat(bad[0]));await expect(a.locator('.team-proposal')).toHaveCount(3);await expect(a.locator('.team-proposal[data-target=pending]')).toHaveCount(3);
+    await a.getByRole('button',{name:'Choose Target',exact:true}).click();await a.getByRole('dialog').getByRole('button',{name:'Skip · nobody',exact:true}).click();await a.getByRole('dialog').getByRole('button',{name:'Confirm: Skip',exact:true}).click();
+    await expect(a.locator('.team-proposal[data-voter="'+bad[0].id+'"]')).toHaveAttribute('data-target','skip');await expect(a.getByRole('button',{name:'Choose Target',exact:true})).toBeVisible();
+    room=await store.load(host.code);for(const b of bad)rules.nightChoice(room,room.players.find(p=>p.id===b.id),{attackId:patient.id});rules.advance(room);await store.save(room);
+    const m=await open(seat(medic));await expect(m.locator('.patient-scene')).toHaveAttribute('data-patient',patient.id);await expect(m.locator('.patient-body')).toHaveAttribute('data-avatar-index',String(patient.avatarIndex));await expect(a.locator('.patient-scene')).toHaveCount(0);
+    await expect(m.getByRole('button',{name:'Heal '+patient.name,exact:true})).toBeInViewport();await expect(m.locator('.cabin-view .medic-console')).toBeVisible();
+    await m.setViewportSize({width:320,height:720});await expect(m.getByRole('button',{name:'Heal '+patient.name,exact:true})).toBeInViewport();expect(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await m.setViewportSize({width:390,height:844});
+    room=await store.load(host.code);room.night.blockedId=medic.id;await store.save(room);await expect(m.locator('.patient-scene')).toHaveCount(0);expect((await read(m)).me.patientId).toBeNull();await expect(m.getByRole('heading',{name:'Your medicine is blocked.'})).toBeVisible();
+    room=await store.load(host.code);room.night.blockedId=null;while(room.phase!=='voting')rules.advance(room);for(const p of rules.alive(room))rules.vote(room,p,{targetId:bad[0].id});await store.save(room);
+    await expect(m.locator('.elimination-cinema')).toBeVisible();await expect(m.locator('.cinema-alignment')).toHaveText('BAD · SABOTEUR');
+    await expect(m.locator('.drawer-handle')).toHaveAttribute('aria-expanded','false');
+    await post('pause');await expect(m.locator('.elimination-cinema')).toHaveAttribute('data-paused','true');
+    // The pause lasts longer than the cinematic, so a wall-clock timeout would fail.
+    await m.waitForTimeout(5000);await expect(m.locator('.elimination-cinema')).toBeVisible();await post('resume');await expect(m.locator('.elimination-cinema')).toHaveCount(0,{timeout:7000});
+    const dead=m.locator('.lounge-seat[data-player="'+bad[0].id+'"]');await expect(dead).toHaveClass(/alignment-bad/);await expect(dead.locator('.out-cross')).toBeVisible();await expect(dead.locator('.seated-traveller')).toHaveCount(1);await expect(m.locator('.lounge-seat[data-player="'+patient.id+'"]')).toHaveClass(/alignment-good/);
+    await expect(m.locator('.inline-votes .vote-row')).toHaveCount(11);await expect(m.locator('.inline-votes .vote-person .portrait')).toHaveCount(22);expect(await m.locator('.inline-votes .vote-ledger').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length)).toBe(2);
+    room=await store.load(host.code);room.notice='Votes are available below.';await store.save(room);await expect(m.locator('.waiting')).toContainText('Votes are available');await expect(m.locator('.elimination-cinema')).toHaveCount(0);
+    await m.evaluate(()=>scrollTo(0,document.body.scrollHeight));expect(await m.locator('.drawer-handle').evaluate(n=>Math.abs(innerHeight-n.getBoundingClientRect().bottom))).toBeLessThan(2);
+    await m.getByRole('button',{name:'Show role',exact:true}).click();await expect.poll(()=>m.locator('.role-dock').evaluate(n=>Math.abs(innerHeight-n.getBoundingClientRect().bottom))).toBeLessThan(2);await m.getByRole('button',{name:'Hide role',exact:true}).click();
+    await m.screenshot({path:info.outputPath('vote-record-and-drawer-mobile.png')});
+  }finally{await Promise.all(contexts.map(c=>c.close()));}
 });
