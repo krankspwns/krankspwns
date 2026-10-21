@@ -13,13 +13,27 @@ function turn(room, role) { while (room.phase === 'night' && r.nightRole(room) !
 function morning(room) { while(room.phase === 'night')r.advance(room); assert.equal(room.phase,'gathering'); r.advance(room); assert.equal(room.phase,'morning'); }
 function attack(room, target) { for(const p of r.alive(room).filter(p=>r.group(p)==='saboteur'))r.nightChoice(room,p,{attackId:target}); }
 function engineTests() {
-  const counts = [[3,2,1],[3,2,2],[3,3,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
-  for(let n=6;n<=12;n++){
+  const counts = [[2,2,1],[2,2,2],[3,2,2],[3,3,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
+  for(let n=5;n<=12;n++){
     const roles=r.plan(n);assert.equal(roles.length,n);assert.ok(roles.includes('witness'));
-    assert.deepEqual(['passenger','crew','saboteur'].map(g=>roles.filter(role=>r.ROLES[role].group===g).length),counts[n-6]);
+    assert.deepEqual(['passenger','crew','saboteur'].map(g=>roles.filter(role=>r.ROLES[role].group===g).length),counts[n-5]);
     assert.equal(roles.includes('trainee'),n>=8);assert.equal(roles.includes('blocker'),n===12);
   }
-  assert.deepEqual(r.plan(5),[]);assert.deepEqual(r.plan(13),[]);assert.ok(r.plan(12,{extra:'speaker',blocker:false}).includes('speaker'));
+  assert.deepEqual(r.plan(4),[]);assert.deepEqual(r.plan(13),[]);assert.ok(r.plan(12,{extra:'speaker',blocker:false}).includes('speaker'));
+  // Starting thresholds and the real deal agree at every supported player count.
+  for(let n=5;n<=12;n++){
+    const room={players:Array.from({length:n},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat'}};
+    r.start(room);assert.equal(room.players.length,n);assert.ok(room.players.every(p=>p.role));
+    const view=r.view(room,room.players[0]);assert.deepEqual(['passenger','crew','saboteur'].map(g=>view.counts[g]),counts[n-5]);
+    assert.equal(view.mix.reduce((total,m)=>total+m.count,0),n);assert.equal(view.me.role,null);
+  }
+  for(const n of [4,13])rejected(()=>r.start({players:Array.from({length:n},(_,i)=>({id:'p'+i})),settings:{}}),409);
+  // An already-dealt six-player game retains its original mix until replay.
+  {
+    const room=fixture(['careful','witness','passenger','inspector','medic','saboteur']);
+    assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,1);
+    r.start(room);assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,2);
+  }
   // Opening sequence keeps identities sealed until the cabin. Seats are a separate fixed shuffle.
   {
     const room={players:Array.from({length:12},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat'}};

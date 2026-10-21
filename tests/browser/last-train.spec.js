@@ -251,3 +251,23 @@ test('test mode chats once per turn and removes only its five seats from the lob
     await expect(controls.getByRole('button',{name:'Remove test players'})).toBeDisabled();
   }finally{await context.close();}
 });
+
+for(const count of [5,6])test(count+' players can start and replay with the correct Saboteur count',async({browser})=>{
+  const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
+  const enter=(action,data)=>call(handler,{action,requestId:crypto.randomUUID(),...data});
+  const host=(await enter('create',{name:'Small host'})).j;
+  for(let i=1;i<4;i++)await enter('join',{code:host.code,name:'Guest '+i});
+  const context=await browser.newContext({viewport:{width:320,height:720}});
+  try{
+    await context.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:host.meId,tok:host.tok});
+    await context.route('**/api/last-train**',async route=>{const req=route.request(),q=new URL(req.url());const r=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});
+    const p=await context.newPage();await p.goto('/last-train.html');await expect(p.getByRole('button',{name:'START JOURNEY'})).toBeDisabled();await expect(p.getByText('1 more needed to start.',{exact:true})).toBeVisible();
+    const early=await enter('start',{code:host.code,pid:host.meId,tok:host.tok,match:0,round:0,step:0});expect(early.s).toBe(409);expect(early.j.error).toContain('5–12');
+    for(let i=4;i<count;i++)await enter('join',{code:host.code,name:'Guest '+i});await expect(p.locator('.seat')).toHaveCount(count);await expect(p.getByRole('button',{name:'START JOURNEY'})).toBeEnabled();
+    const badCount=count===5?1:2;await expect(p.locator('.role-mix > span').filter({hasText:'Saboteur'})).toContainText(badCount+'×');
+    await p.getByRole('button',{name:'START JOURNEY'}).click();await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();const view=await read(p);expect(view.counts.saboteur).toBe(badCount);expect(view.me.role).toBeNull();expect(view.players.every(a=>!a.role)).toBe(true);
+    // Replay at the new minimum uses the same rules as the initial deal.
+    const room=await store.load(host.code);room.phase='finished';room.winner='good';room.winReason='Test game finished.';room.deadline=null;await store.save(room);await expect(p.getByRole('button',{name:'PLAY AGAIN'})).toBeEnabled();await p.getByRole('button',{name:'PLAY AGAIN'}).click();await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();expect((await read(p)).counts.saboteur).toBe(badCount);expect((await read(p)).match).toBe(2);
+    expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  }finally{await context.close();}
+});

@@ -1,6 +1,6 @@
 # Last Train
 
-A separate 6–12-player secret-team game at `/last-train.html`. The existing Row of Reckoning and Grand Con (Review) remain separate. Its API is `/api/last-train`, Redis namespace `last-train:room:*`, and browser seat `lt-seat`.
+A separate 5–12-player secret-team game at `/last-train.html`. The existing Row of Reckoning and Grand Con (Review) remain separate. Its API is `/api/last-train`, Redis namespace `last-train:room:*`, and browser seat `lt-seat`.
 
 The journey now uses illustrated train scenes: team introductions → boarding on the platform → closing eyes and finding a private cabin → sequential night turns → gathering in the lounge → speaking in seat order → a sealed vote → a public removal and vote record → the next night or winner.
 
@@ -10,7 +10,8 @@ The journey now uses illustrated train scenes: team introductions → boarding o
 
 | Players | Passengers | Crew | Saboteurs |
 | --- | --- | --- | --- |
-| 6 | 3 | 2 | 1 |
+| 5 | 2 | 2 | 1 |
+| 6 | 2 | 2 | 2 |
 | 7 | 3 | 2 | 2 |
 | 8 | 3 | 3 | 2 |
 | 9 | 4 | 3 | 2 |
@@ -18,7 +19,9 @@ The journey now uses illustrated train scenes: team introductions → boarding o
 | 11 | 5 | 3 | 3 |
 | 12 | 6 | 3 | 3 |
 
-These are initial mixes for group playtesting, not a claim of verified competitive balance. The room includes Careful Passenger and Witness, plus ordinary Passengers. At 9–12, Brave Passenger is included, or the host may replace Brave with Speaker. Crew are Inspector and Medic, plus Trainee at 8–12. At 12, one of the three bad players defaults to Blocker; the host can disable that role.
+Saboteur counts are 1 at five players, 2 at six to nine, and 3 at ten to twelve. A running game keeps its dealt roles and original role summary; the new mix applies when the host starts another journey.
+
+These are initial mixes for group playtesting, not a claim of verified competitive balance. Every room includes Careful Passenger and Witness; ordinary Passengers fill any remaining Passenger seats. At 9–12, Brave Passenger is included, or the host may replace Brave with Speaker. Crew are Inspector and Medic, plus Trainee at 8–12. At 12, one of the three bad players defaults to Blocker; the host can disable that role.
 
 | Role | Group | Power |
 | --- | --- | --- |
@@ -37,7 +40,7 @@ Living identities stay private; roles and alignment are revealed when a player i
 
 ## Introduction, boarding and seats
 
-The initial 20-second introduction briefly lists the available good and bad roles and counts without assigning any identities publicly. Everyone can press Ready to board sooner. All 6–12 travellers then board a train on a 6-second platform scene. A 4-second closing-eyes transition takes each person to their cabin.
+The initial 20-second introduction briefly lists the available good and bad roles and counts without assigning any identities publicly. Everyone can press Ready to board sooner. All 5–12 travellers then board a train on a 6-second platform scene. A 4-second closing-eyes transition takes each person to their cabin.
 
 Seat order is shuffled independently from role assignment at the start of the match. It never sorts by team and stays fixed for the whole match. Boarding names, cabin numbers and lounge seats use that same order. In the lounge, seats run left to right, then the next row; numbered seats keep this clear on smaller phones. Removed seats remain visibly empty and do not get a speaking turn.
 
@@ -77,7 +80,7 @@ The 12-second result shows the removed person, **GOOD or BAD**, exact role, and 
 
 ## Rooms, privacy and timers
 
-Four-letter room codes, 6–12-player starts and private authenticated seats. New names join only before a match starts; existing players can rejoin with their same name and private rejoin code. Recovery preserves character/powers and rotates the token, signing out the old phone. Losing connection or leaving never kills a character. Host controls transfer to another remaining player, preferring a living player.
+Four-letter room codes, 5–12-player starts and private authenticated seats. New names join only before a match starts; existing players can rejoin with their same name and private rejoin code. Recovery preserves character/powers and rotates the token, signing out the old phone. Losing connection or leaving never kills a character. Host controls transfer to another remaining player, preferring a living player.
 
 Host pause freezes timers and rejects gameplay changes. Resume restores remaining time. Host cannot cut a night turn or the ordered speaking phase. Public morning/result scenes may be advanced by the host, while timers also advance them automatically. State polls settle expired steps. Choices use match/round/step fences and action receipts; retries cannot use another medicine, duplicate a statement or add another vote. Concurrent 12-player mutations use compare-and-swap storage and bounded retries.
 
