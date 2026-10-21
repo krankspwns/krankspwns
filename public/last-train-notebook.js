@@ -3,6 +3,8 @@
   'use strict';
   window.createTrainNotebook = host => {
     let key = '', data = { text: '', strokes: [] }, launcher, book, canvas, ctx, status, phaseLabel;
+    const inks = [['Midnight', '#293248'], ['Ruby', '#a22d46'], ['Emerald', '#22745b'], ['Blue', '#275fbc'], ['Violet', '#7747a8'], ['Amber', '#976313']];
+    let ink = inks[0][1];
     let current = null, activePointer = null, mode = 'type', tool = 'pen', dirty = false, saveTimer, observer, cleared = null;
     const node = (tag, cls, text) => {
       const n = document.createElement(tag); n.className = cls || ''; if (text) n.textContent = text; return n;
@@ -23,7 +25,7 @@
     function paint(stroke) {
       const { width, height } = canvas.getBoundingClientRect();
       ctx.save(); ctx.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
-      ctx.strokeStyle = '#293248'; ctx.fillStyle = '#293248'; ctx.lineCap = ctx.lineJoin = 'round'; ctx.lineWidth = (stroke.tool === 'eraser' ? 20 : 2.2) * width / 360;
+      ctx.strokeStyle = stroke.color || '#293248'; ctx.fillStyle = stroke.color || '#293248'; ctx.lineCap = ctx.lineJoin = 'round'; ctx.lineWidth = (stroke.tool === 'eraser' ? 20 : 2.2) * width / 360;
       ctx.beginPath();
       stroke.points.forEach((p, i) => { if (i) ctx.lineTo(p[0] * width, p[1] * height); else ctx.moveTo(p[0] * width, p[1] * height); });
       if (stroke.points.length === 1) { const p = stroke.points[0]; ctx.arc(p[0] * width, p[1] * height, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); }
@@ -67,21 +69,28 @@
       const typing = node('div', 'notebook-typing'), label = node('label', '', 'Your notes'); label.htmlFor = 'notebook-text';
       const input = node('textarea', 'notebook-paper'); input.id = 'notebook-text'; input.maxLength = 10000; input.value = data.text;
       input.placeholder = 'Who do you trust? What did you notice?'; input.addEventListener('input', () => { data.text = input.value; changed(); }); typing.append(label, input);
-      const drawing = node('div', 'notebook-drawing'), tools = node('div', 'notebook-tools'); tools.setAttribute('role', 'group'); tools.setAttribute('aria-label', 'Drawing tools');
+      const drawing = node('div', 'notebook-drawing'), toolbar = node('div', 'notebook-toolbar'), tools = node('div', 'notebook-tools'); tools.setAttribute('role', 'group'); tools.setAttribute('aria-label', 'Drawing tools');
       for (const [value, label] of [['pen', 'Pen'], ['eraser', 'Eraser']]) {
         const b = button(label, () => { tool = value; for (const n of tools.querySelectorAll('[data-note-tool]')) n.setAttribute('aria-pressed', String(n.dataset.noteTool === tool)); });
         b.dataset.noteTool = value; b.setAttribute('aria-pressed', String(tool === value)); tools.append(b);
       }
       const undo = button('Undo', () => { finish(); if (cleared) { data.strokes = cleared; cleared = null; } else data.strokes.pop(); changed(); persist(); redraw(); }); undo.dataset.noteUndo = ''; tools.append(undo);
       tools.append(button('Clear drawing', () => { finish(); if (!data.strokes.length) return; cleared = data.strokes; data.strokes = []; changed(); persist(); redraw(); }));
+      const palette = node('div', 'notebook-palette'); palette.setAttribute('role', 'group'); palette.setAttribute('aria-label', 'Ink colors');
+      for (const [name, color] of inks) {
+        const swatch = button('', () => { finish(); ink = color; tool = 'pen'; for (const n of palette.children) n.setAttribute('aria-pressed', String(n.dataset.color === ink)); for (const n of tools.querySelectorAll('[data-note-tool]')) n.setAttribute('aria-pressed', String(n.dataset.noteTool === tool)); }, 'ink-swatch');
+        swatch.dataset.color = color; swatch.style.setProperty('--ink', color); swatch.setAttribute('aria-label', name + ' ink'); swatch.setAttribute('aria-pressed', String(color === ink)); palette.append(swatch);
+      }
+      toolbar.append(tools, palette);
       const paper = node('div', 'notebook-paper drawing-paper'); canvas = node('canvas'); canvas.setAttribute('aria-label', 'Handwriting area. Draw with a finger, stylus or mouse.'); ctx = canvas.getContext('2d');
       const point = e => { const r = canvas.getBoundingClientRect(); return [Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))]; };
       canvas.addEventListener('pointerdown', e => {
         if (!e.isPrimary || e.button !== 0 || activePointer !== null) return;
-        e.preventDefault(); activePointer = e.pointerId; canvas.setPointerCapture(e.pointerId); current = { tool, points: [point(e)] }; redraw();
+        e.preventDefault(); window.getSelection()?.removeAllRanges(); activePointer = e.pointerId; canvas.setPointerCapture(e.pointerId); current = { tool, color: ink, points: [point(e)] }; redraw();
       });
       canvas.addEventListener('pointermove', e => {
         if (e.pointerId !== activePointer || !current) return;
+        e.preventDefault();
         const coalesced = e.getCoalescedEvents?.();
         const events = coalesced?.length ? coalesced : [e];
         for (const event of events) {
@@ -91,7 +100,10 @@
         redraw();
       });
       for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(event, e => { if (e.pointerId === activePointer) finish(); });
-      paper.append(canvas); drawing.append(tools, paper, node('p', 'notebook-tip', 'Use your finger, stylus or mouse. Undo also restores a cleared drawing.'));
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+      paper.addEventListener('selectstart', e => e.preventDefault());
+      paper.addEventListener('dragstart', e => e.preventDefault());
+      paper.append(canvas); drawing.append(toolbar, paper, node('p', 'notebook-tip', 'Draw with a finger, pen or mouse. Your notes stay private.'));
       status = node('span', 'notebook-save'); status.setAttribute('role', 'status'); status.textContent = dirty ? 'Saving…' : 'Saved on this device';
       const footer = node('footer', 'notebook-footer'); footer.append(status, node('span', '', 'Only you · This game · This device'));
       book.append(top, phaseLabel, tabs, typing, drawing, footer);

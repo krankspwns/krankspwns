@@ -5,7 +5,7 @@ const { call, startRedis } = require('./helpers');
 const uuid = () => crypto.randomUUID();
 const rejected = (fn, status) => assert.throws(fn, e => e.status === status);
 function fixture(roles = r.plan(12), discussion = 'in-person') {
-  const room = { code: 'TEST', rulesVersion: 2, version: 1, match: 1, round: 0, step: 0, settings: { extra: 'brave', blocker: true, discussion }, medicine: { heal: 1, poison: 1 }, history: [], speeches: [], players: roles.map((role,i) => ({ id: 'p'+i, name: role+i, role, originalRole: role, alive: true, used: {}, reports: [] })) };
+  const room = { code: 'TEST', rulesVersion: 2, version: 1, nightOrder: ['saboteur','medic','brave','careful','inspector','witness'], match: 1, round: 0, step: 0, settings: { extra: 'brave', blocker: true, discussion }, medicine: { heal: 1, poison: 1 }, history: [], speeches: [], players: roles.map((role,i) => ({ id: 'p'+i, name: role+i, role, originalRole: role, alive: true, used: {}, reports: [] })) };
   room.hostId = room.players[0].id; room.seatOrder = room.players.map(p => p.id).reverse(); r.beginNight(room); r.advance(room); return room;
 }
 const person = (room, role) => room.players.find(p => p.role === role && p.alive);
@@ -13,11 +13,11 @@ function turn(room, role) { while (room.phase === 'night' && r.nightRole(room) !
 function morning(room) { while(room.phase === 'night')r.advance(room); assert.equal(room.phase,'gathering'); r.advance(room); assert.equal(room.phase,'morning'); }
 function attack(room, target) { for(const p of r.alive(room).filter(p=>r.group(p)==='saboteur'))r.nightChoice(room,p,{attackId:target}); }
 function engineTests() {
-  const counts = [[2,2,1],[2,2,2],[3,2,2],[3,3,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
+  const counts = [[3,1,1],[3,1,2],[3,2,2],[4,2,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
   for(let n=5;n<=12;n++){
     const roles=r.plan(n);assert.equal(roles.length,n);assert.ok(roles.includes('witness'));
     assert.deepEqual(['passenger','crew','saboteur'].map(g=>roles.filter(role=>r.ROLES[role].group===g).length),counts[n-5]);
-    assert.equal(roles.includes('trainee'),n>=8);assert.equal(roles.includes('blocker'),n===12);
+    assert.equal(roles.includes('trainee'),n>=9);assert.equal(roles.includes('blocker'),n===12);
   }
   assert.deepEqual(r.plan(4),[]);assert.deepEqual(r.plan(13),[]);assert.ok(r.plan(12,{extra:'speaker',blocker:false}).includes('speaker'));
   // Starting thresholds and the real deal agree at every supported player count.
@@ -33,6 +33,28 @@ function engineTests() {
     const room=fixture(['careful','witness','passenger','inspector','medic','saboteur']);
     assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,1);
     r.start(room);assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,2);
+  }
+  // Custom mixes allow all normal Passengers, one special Saboteur at most, and strictly more Passengers than Crew.
+  for(let n=5;n<=12;n++){
+    const slots=r.teamSlots(n),roles={crew:['medic'],passengers:[],saboteur:n===5?'normal':'blocker'};
+    r.validateLoadout(n,roles);const mix=r.plan(n,{roles});assert.equal(mix.length,n);assert.equal(mix.filter(k=>k==='passenger').length,slots.good-1);
+    assert.equal(mix.filter(k=>k==='blocker').length,n===5?0:1);
+    for(let i=0;i<20;i++){const chosen=r.randomLoadout(n);r.validateLoadout(n,chosen);const mix=r.plan(n,{roles:chosen});assert.equal(mix.length,n);assert.ok(mix.filter(k=>r.ROLES[k].group==='passenger').length>chosen.crew.length);}
+  }
+  rejected(()=>r.validateLoadout(5,{crew:['inspector','medic'],passengers:[],saboteur:'normal'}),400);
+  rejected(()=>r.validateLoadout(7,{crew:['trainee'],passengers:[],saboteur:'normal'}),400);
+  rejected(()=>r.validateLoadout(7,{crew:['medic','medic'],passengers:[],saboteur:'normal'}),400);
+  rejected(()=>r.validateLoadout(5,{crew:['medic'],passengers:[],saboteur:'blocker'}),400);
+  // Closed roles remain private in every public path, including history and group counts.
+  {
+    const room=fixture(),before=r.view(room,room.players[0]).counts;
+    const outs=r.remove(room,[person(room,'medic').id,person(room,'witness').id,person(room,'saboteur').id]);room.history.push({round:1,type:'night',outs});
+    for(const p of room.players){const view=r.view(room,p);assert.ok(view.players.filter(q=>!q.alive).every(q=>!('role' in q)&&!('group' in q)&&['good','bad'].includes(q.alignment)));assert.ok(view.history[0].outs.every(q=>!('role' in q)&&!('group' in q)));assert.deepEqual(view.counts,before);}
+    room.phase='finished';assert.ok(r.view(room,room.players[0]).players.every(p=>p.role));assert.ok(r.view(room,room.players[0]).history[0].outs.every(p=>p.role));
+  }
+  // Careful locks first; the full night still resolves together, including a later Blocker.
+  for(const blocked of [false,true]){
+    const room=fixture();room.nightOrder=[...r.NIGHT];const c=person(room,'careful'),b=person(room,'blocker');assert.equal(r.nightRole(room),'careful');r.nightChoice(room,c,{power:'lock'});r.advance(room);assert.equal(r.nightRole(room),'saboteur');attack(room,c.id);if(blocked)r.nightChoice(room,b,{power:'block',targetId:c.id,attackId:c.id});morning(room);assert.equal(c.alive,!blocked);
   }
   // Opening sequence keeps identities sealed until the cabin. Seats are a separate fixed shuffle.
   {
@@ -144,11 +166,20 @@ function engineTests() {
     const raw=async()=>redis?JSON.parse(await redis.client.get('last-train:room:'+host.code)):structuredClone(globalThis.__lastTrainRooms.get(host.code));
     const save=async room=>redis?redis.client.set('last-train:room:'+host.code,JSON.stringify(room)):globalThis.__lastTrainRooms.set(host.code,structuredClone(room));
     const expire=async()=>{const room=await raw();room.deadline=Date.now()-1;await save(room);return (await get(host)).j;};
+    const custom={crew:['medic'],passengers:[],saboteur:'normal'};
+    assert.equal((await post(seats[1],'shuffleRoles')).s,403);
+    assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:{crew:['trainee'],passengers:[],saboteur:'normal'}})).s,400);
+    assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:custom})).s,200);
+    assert.equal((await get(host)).j.mix.find(m=>m.role==='passenger').count,8);
+    const shuffleView=(await get(host)).j,shuffleReq={action:'shuffleRoles',code:host.code,pid:host.meId,tok:host.tok,requestId:uuid(),match:shuffleView.match,round:shuffleView.round,step:shuffleView.step};
+    const shuffled=await call(handler,shuffleReq);assert.equal(shuffled.s,200);assert.deepEqual((await call(handler,shuffleReq)).j.settings.roles,shuffled.j.settings.roles);
+    assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:null})).s,200);
     assert.equal((await post(seats[1],'settings',{extra:'brave',blocker:true,discussion:'chat'})).s,403);
     assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat'})).s,200);assert.equal((await post(host,'start')).j.phase,'briefing');
     for(const s of seats){const v=(await get(s)).j;assert.equal(v.me.role,null);assert.ok(v.players.every(p=>!p.role));}
     assert.equal((await enter('join',{code:host.code,name:'Late'})).s,409);
     const ready=await Promise.all(seats.map(s=>post(s,'ready')));assert.ok(ready.every(v=>v.s===200));assert.equal((await get(host)).j.phase,'boarding');await expire();assert.equal((await get(host)).j.phase,'settling');await expire();
+    assert.equal((await get(host)).j.nightRole,'careful');await expire();
     const views=(await Promise.all(seats.map(get))).map(v=>v.j);assert.equal(new Set(views[0].players.map(p=>p.avatarIndex)).size,12,'neutral human portraits are unique and independent of roles');const bad=views.filter(v=>v.me.group==='saboteur'),w=views.find(v=>v.me.role==='witness'),m=views.find(v=>v.me.role==='medic'),ins=views.find(v=>v.me.role==='inspector');
     const seatFor=v=>seats.find(s=>s.meId===v.meId);
     for(const v of views){assert.ok(v.players.every(p=>!('role' in p)&&!('group' in p)&&!('tokenHash' in p)));assert.equal('allies' in v.me,v.me.group==='saboteur');assert.ok(!('night' in v)&&!('receipts' in v));}
@@ -160,7 +191,7 @@ function engineTests() {
     await expire();assert.equal((await get(host)).j.nightRole,'medic');assert.equal((await get(seatFor(m))).j.me.patientId,bad[0].meId);
     const medView=(await get(host)).j,medReq={action:'medicine',code:host.code,pid:m.meId,tok:seatFor(m).tok,requestId:uuid(),match:medView.match,round:medView.round,step:medView.step,power:'poison',targetId:bad[1].meId};
     assert.equal((await call(handler,medReq)).s,200);assert.equal((await call(handler,medReq)).s,200);assert.equal((await post(seatFor(m),'medicine',{power:'heal'})).s,409);
-    await expire();assert.equal((await get(host)).j.nightRole,'brave');await expire();assert.equal((await get(host)).j.nightRole,'careful');await expire();assert.equal((await get(host)).j.nightRole,'inspector');
+    await expire();assert.equal((await get(host)).j.nightRole,'brave');await expire();assert.equal((await get(host)).j.nightRole,'inspector');
     await post(seatFor(ins),'night',{power:'check',targetId:bad[2].meId});await expire();await post(seatFor(w),'night',{power:'watch'});await expire();await expire();
     const morningView=(await get(host)).j;assert.equal(morningView.phase,'morning');assert.equal(morningView.history[0].outs.length,2);assert.equal((await get(seatFor(w))).j.me.reports[0].targetId,bad[0].meId);
     assert.equal((await get(seatFor(ins))).j.me.reports[0].alignment,'bad');assert.equal((await call(handler,medReq)).s,200,'replay after a phase change remains idempotent');
@@ -172,7 +203,7 @@ function engineTests() {
     }
     const voting=(await get(host)).j;assert.equal(voting.phase,'voting');assert.equal(voting.speeches.length,10);
     const living=seats.filter(s=>order.includes(s.meId));const voted=await Promise.all(living.map(s=>post(s,'vote',{targetId:bad[2].meId})));assert.ok(voted.every(v=>v.s===200));
-    const result=(await get(host)).j;assert.equal(result.phase,'voteResult');assert.equal(result.history[1].outs[0].group,'saboteur');assert.equal(result.history[1].votes.length,10);assert.ok(result.players.filter(p=>p.alive).every(p=>!p.role));
+    const result=(await get(host)).j;assert.equal(result.phase,'voteResult');assert.equal(result.history[1].outs[0].alignment,'bad');assert.equal(result.history[1].votes.length,10);assert.ok(result.players.filter(p=>p.alive).every(p=>!p.role));
     const done=await expire();assert.equal(done.phase,'finished');assert.equal(done.winner,'good');assert.ok(done.players.every(p=>p.role));
     const recoverBody={action:'join',code:host.code,name:'Host',recoveryCode:done.me.recoveryCode,requestId:uuid()},back=await call(handler,recoverBody);
     assert.equal(back.s,200);assert.deepEqual(back.j.players.map(p=>p.avatarIndex),done.players.map(p=>p.avatarIndex));assert.equal((await get(host)).s,401);assert.equal((await call(handler,recoverBody)).j.tok,back.j.tok);

@@ -122,7 +122,7 @@
     const d = dialog('One train. Two secret teams.', txt('p', 'muted', '5–12 friends. Each person uses their own phone. Keep your role private.'),
       el('div', { class: 'rules-groups' }, el('div', {}, el('b', {}, 'GOOD · Passengers + Crew'), txt('p', '', 'Find every Saboteur. Keep at least one Passenger and one Crew member alive.')), el('div', {}, el('b', {}, 'BAD · Saboteurs'), txt('p', '', 'Get all Passengers OR all Crew out. Your teammates share a private cabin.'))),
       txt('p', 'muted small', '5 players: 1 Saboteur. 6–9 players: 2 Saboteurs. 10–12 players: 3 Saboteurs.'),
-      el('ol', {}, el('li', {}, el('b', {}, 'Meet the roles, then board. '), 'Seats are shuffled at the start. Your seat also sets your speaking order for the whole game.'), el('li', {}, el('b', {}, 'Close your eyes in your cabin. '), 'Each night turn lasts 20 seconds. Only the active role gets a choice; everyone else waits.'), el('li', {}, el('b', {}, 'Saboteurs → Medic → Brave → Careful → Inspector → Witness. '), 'Saboteurs can change their target votes before time ends. Most votes choose the shared target. A tie is random among the tied choices, including Skip. An unselected vote is Skip.'), el('li', {}, el('b', {}, 'Meet in the lounge. '), 'Each living player gets 20 seconds, from the first seat to the last. Chat rooms share one written statement per turn. In-person rooms speak aloud.'), el('li', {}, el('b', {}, 'Vote, or Skip. '), 'The unique player with most votes is out only if they beat Skip. Ties remove nobody. Everyone then sees who voted for whom, and whether the removed player was good or bad.')),
+      el('ol', {}, el('li', {}, el('b', {}, 'Meet the roles, then board. '), 'Seats are shuffled at the start. Your seat also sets your speaking order for the whole game.'), el('li', {}, el('b', {}, 'Close your eyes in your cabin. '), 'Each night turn lasts 20 seconds. Only the active role gets a choice; everyone else waits.'), el('li', {}, el('b', {}, 'Careful → Saboteurs → Medic → Brave → Inspector → Witness. '), 'Only roles included in your game take a turn. Saboteurs can change their target votes before time ends. Most votes choose the shared target. A tie is random among the tied choices, including Skip. An unselected vote is Skip.'), el('li', {}, el('b', {}, 'Meet in the lounge. '), 'Each living player gets 20 seconds, from the first seat to the last. Chat rooms share one written statement per turn. In-person rooms speak aloud.'), el('li', {}, el('b', {}, 'Vote, or Skip. '), 'The unique player with most votes is out only if they beat Skip. Ties remove nobody. Everyone then sees who voted for whom, and whether the removed player was good or bad.')),
       txt('p', 'rule-highlight', 'Too much help is deadly: if Brave protects someone and Medic heals them on the same night, that player dies from overdose.'),
       el('details', {}, el('summary', {}, 'Powers and extra rules'), ...(state ? Object.entries(state.catalog).map(([,r]) => txt('p', '', r.name + ' — ' + r.description)) : [txt('p', '', 'Crew include Inspector, Medic and Trainee. Passenger powers include a door lock, protection and witnessing an attack.')]),
         txt('p', '', 'Medic gets one heal and one poison for the whole game. Only one medicine per night. Healing responds to the original attack. Brave now stops an attack rather than taking the hit. Poison and overdose bypass protection and a locked door.'),
@@ -142,7 +142,12 @@
     try { await navigator.clipboard.writeText(url); announce('Link copied'); root.querySelector('[data-invite]').textContent = 'Copied!'; }
     catch { error = 'Copy this link: ' + url; render(); }
   }
-  function header() { return el('header', { class: 'lt-header' }, el('a', { href: '/?games=1', class: 'back' }, '← All games'), el('a', { href: '/last-train.html', class: 'wordmark' }, txt('span', 'brand-icon', 'LT'), el('span', {}, txt('small', '', 'THE GAME ROOM'), txt('b', '', 'LAST TRAIN'))), btn('How to play', rules, 'text-button')); }
+  function trainMark(cls = '') {
+    const n = el('span', { class: 'train-mark ' + cls, 'aria-hidden': 'true' });
+    n.innerHTML = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 35V19a15 15 0 0 1 30 0v16M14 35h20M17 39l-3 5M31 39l3 5"/><rect x="15" y="12" width="18" height="24" rx="6"/><path d="M16 23h16M24 13v10M20 8h8"/><circle cx="20" cy="29" r="1.5"/><circle cx="28" cy="29" r="1.5"/></svg>';
+    return n;
+  }
+  function header() { return el('header', { class: 'lt-header' }, el('a', { href: '/?games=1', class: 'back' }, '← All games'), el('a', { href: '/last-train.html', class: 'wordmark' }, trainMark('brand-icon'), el('span', {}, txt('small', '', 'THE GAME ROOM'), txt('b', '', 'LAST TRAIN'))), btn('How to play', rules, 'text-button')); }
   function landing() {
     return el('div', { class: 'landing' }, el('section', { class: 'intro' }, txt('span', 'eyebrow', 'EVERY CABIN HIDES A SECRET.'), train(), el('h1', {}, 'All aboard.', el('br'), el('em', {}, 'Trust no easy story.')), txt('p', 'muted', 'A secret role. A private cabin. A train full of suspects. Use your power at night, then meet to talk and vote.'), el('div', { class: 'chips' }, txt('span', '', '5–12 friends'), txt('span', '', 'Secret teams'), txt('span', '', 'Night powers'))),
       el('section', { class: 'panel entrance' }, txt('span', 'eyebrow', 'YOUR TICKET TO PLAY'), el('h2', {}, 'Catch the last train.'), el('label', { htmlFor: 'lt-name' }, 'Your name'), el('input', { id: 'lt-name', value: name, maxLength: 12, autocomplete: 'nickname', placeholder: 'Your name', oninput: e => name = e.target.value }), btn('Create a room', () => enter('create'), 'gold'), txt('div', 'or', 'or join your friends'), el('label', { htmlFor: 'lt-code' }, 'Room code'), el('input', { id: 'lt-code', class: 'code-input', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', oninput: e => code = e.target.value }), btn('Join room', () => enter('join'), 'secondary'), el('details', {}, el('summary', {}, 'Rejoin on another phone'), txt('p', 'muted small', 'Use the same name and your saved private code.'), el('label', { htmlFor: 'lt-recovery' }, 'Rejoin code'), el('input', { id: 'lt-recovery', value: recovery, oninput: e => recovery = e.target.value })), txt('p', 'muted small', 'Good players and bad players can both lie. Your private role tells you which side you are on.')));
@@ -165,12 +170,12 @@
     return el('section', { class: 'panel roster-panel' }, el('div', { class: 'panel-heading' }, el('h3', {}, 'Your fellow travellers'), txt('small', 'muted', state.players.filter(p => !p.departed).length + '/12 IN ROOM')), el('div', { class: 'roster' }, ...state.players.map(p => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (!p.alive ? ' out' : '') }, avatar(p, 'avatar'), el('div', { class: 'seat-label' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.role ? role(p.role).name + ' · ' + (p.alive ? groupName(p.group) : 'OUT') : p.departed ? 'AWAY' : p.id === state.hostId ? 'HOST' : 'READY TO BOARD'))))));
   }
   function setting(extra = {}) { return send('settings', { ...state.settings, ...extra }); }
-  function startJourneyButton(disabled) {
-    const n = btn('START JOURNEY', () => send('start'), 'host departure-button', disabled);
-    n.setAttribute('aria-label', 'START JOURNEY');
+  function startJourneyButton(disabled, replay = false) {
+    const n = btn(replay ? 'PLAY AGAIN' : 'START JOURNEY', () => send('start'), 'host departure-button', disabled);
+    n.setAttribute('aria-label', replay ? 'PLAY AGAIN' : 'START JOURNEY');
     const icon = el('span', { class: 'departure-icon', 'aria-hidden': 'true' });
     icon.innerHTML = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="4" width="18" height="22" rx="5"/><path d="M8 15h16M13 4v11M19 4v11M11 26l-3 4M21 26l3 4M12 8h8"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>';
-    n.replaceChildren(icon, el('span', { class: 'departure-copy' }, txt('small', '', 'ALL ABOARD'), txt('b', '', 'Start Journey')), txt('span', 'departure-arrow', '→'));
+    n.replaceChildren(icon, el('span', { class: 'departure-copy' }, txt('small', '', replay ? 'A NEW DEAL. A NEW SECRET.' : 'ALL ABOARD'), txt('b', '', replay ? 'Another Journey' : 'Start Journey')), txt('span', 'departure-arrow', '→'));
     return n;
   }
   function waitingRoom() {
@@ -178,9 +183,30 @@
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Gather at least 5 players. Each person needs their own phone.'), txt('div', 'large-code', state.code),
       el('div', { class: 'room-setting' }, txt('b', '', 'How will you share your findings?'), el('div', { class: 'mode-switch', role: 'group', 'aria-label': 'Speaking mode' }, ...[['in-person','In person'],['chat','Chat room']].map(([mode,label]) => btn(label, () => setting({ discussion: mode }), state.settings.discussion === mode ? 'selected' : '', !host, 'mode-' + mode))), txt('p', 'muted small', state.settings.discussion === 'chat' ? 'Each player gets 20 seconds to type one statement. Everyone can read the train chat.' : 'Sit together. Each player gets 20 seconds to speak aloud, in seat order.')),
       n >= 5 ? el('div', { class: 'role-mix' }, ...state.mix.map(m => el('span', {}, rolePortrait(m.role, 'mix-portrait'), txt('b', '', m.count + '×'), role(m.role).name))) : txt('p', 'muted', (5 - n) + ' more needed to start.'),
-      host && n >= 9 ? el('label', { class: 'setting-label', htmlFor: 'lt-extra' }, 'Extra Passenger power', el('select', { id: 'lt-extra', disabled: busy, onchange: e => setting({ extra: e.target.value }) }, el('option', { value: 'brave', selected: state.settings.extra === 'brave' }, 'Brave Passenger'), el('option', { value: 'speaker', selected: state.settings.extra === 'speaker' }, 'Speaker'))) : null,
-      host && n === 12 ? el('label', { class: 'check-setting' }, el('input', { type: 'checkbox', checked: state.settings.blocker, disabled: busy, onchange: e => setting({ blocker: e.target.checked }) }), 'Include Blocker on the bad team') : null,
+      host ? el('div', { class: 'role-settings-actions' }, btn('Choose roles', roleSettingsDialog, 'secondary', n < 5), btn('Shuffle roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', 'Roles are dealt to players at random.')) : null,
       host ? startJourneyButton(n < 5) : txt('p', 'waiting', 'The host will start your journey.'), btn('See the rules', rules, 'text-button')), roster());
+  }
+  function roleSettingsDialog() {
+    const slots = state.teamSlots; if (!slots || state.hostId !== state.meId) return;
+    const selectedMix = state.phase === 'finished' ? state.nextMix : state.mix;
+    let draft = { crew: selectedMix.filter(m => role(m.role).group === 'crew').map(m => m.role), passengers: selectedMix.filter(m => role(m.role).group === 'passenger' && m.role !== 'passenger').map(m => m.role), saboteur: selectedMix.some(m => m.role === 'blocker') ? 'blocker' : 'normal' };
+    const d = dialog('Choose tonight’s roles', txt('p', 'muted small', 'Choose the role mix. Players receive their roles at random. Passengers always outnumber Crew.'));
+    d.classList.add('role-picker'); d.dataset.turn = fence();
+    const content = el('div', { class: 'role-picker-content' });
+    const commit = btn('Use these roles', () => { d.close(); setting({ roles: draft }); }, 'gold');
+    const refresh = () => {
+      const passengerSeats = slots.good - draft.crew.length;
+      const valid = draft.crew.length >= 1 && draft.crew.length <= slots.maxCrew && draft.crew.some(k => k === 'inspector' || k === 'medic') && draft.passengers.length <= passengerSeats;
+      commit.disabled = !valid || busy;
+      const option = (key, list, disabled = false) => el('label', { class: 'role-option' + (draft[list].includes(key) ? ' selected' : '') },
+        el('input', { type: list === 'crew' && slots.maxCrew === 1 ? 'radio' : 'checkbox', name: list === 'crew' && slots.maxCrew === 1 ? 'crew-role' : 'role-' + key, checked: draft[list].includes(key), disabled, onchange: e => { draft[list] = list === 'crew' && slots.maxCrew === 1 ? [key] : e.target.checked ? [...draft[list], key] : draft[list].filter(k => k !== key); refresh(); } }), rolePortrait(key, 'picker-portrait'), el('div', {}, txt('b', '', role(key).name), txt('small', '', rolePreview[key])));
+      content.replaceChildren(
+        el('div', { class: 'role-budget' }, txt('b', '', passengerSeats + ' Passengers'), txt('span', '', draft.crew.length + ' Crew'), txt('span', '', slots.saboteur + (slots.saboteur === 1 ? ' Saboteur' : ' Saboteurs'))),
+        el('section', { class: 'picker-group' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Crew'), txt('small', '', slots.maxCrew === 1 ? 'CHOOSE 1' : 'CHOOSE 1–' + slots.maxCrew)), txt('p', 'muted small', 'Include Inspector or Medic. Trainee needs one of them to inherit a job.'), el('div', { class: 'picker-grid' }, ...['inspector', 'medic', 'trainee'].map(k => option(k, 'crew', slots.maxCrew === 1 ? k === 'trainee' : !draft.crew.includes(k) && (draft.crew.length >= slots.maxCrew || draft.passengers.length > passengerSeats - 1))))),
+        el('section', { class: 'picker-group' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Passengers'), btn('All normal', () => { draft.passengers = []; refresh(); }, 'text-button')), txt('p', 'muted small', (passengerSeats - draft.passengers.length) + ' normal Passengers. Add powers below, or leave every Passenger normal.'), el('div', { class: 'picker-grid' }, ...['careful', 'brave', 'witness', 'speaker'].map(k => option(k, 'passengers', !draft.passengers.includes(k) && draft.passengers.length >= passengerSeats)))),
+        el('section', { class: 'picker-group bad-picker' }, el('h3', {}, 'Bad team'), el('div', { class: 'picker-grid' }, ...['normal', ...(slots.saboteur > 1 ? ['blocker'] : [])].map(value => el('label', { class: 'role-option' + (draft.saboteur === value ? ' selected' : '') }, el('input', { type: 'radio', name: 'bad-role-mix', checked: draft.saboteur === value, onchange: () => { draft.saboteur = value; refresh(); } }), rolePortrait(value === 'normal' ? 'saboteur' : 'blocker', 'picker-portrait'), el('div', {}, txt('b', '', value === 'normal' ? slots.saboteur + ' × Saboteur' : '1 × Blocker'), txt('small', '', value === 'normal' ? 'Normal Saboteurs only.' : (slots.saboteur - 1) + ' normal Saboteur' + (slots.saboteur > 2 ? 's' : '') + ' + one Blocker.')))))));
+    };
+    d.append(content, commit, btn('Recommended roles', () => { d.close(); setting({ roles: null }); }, 'text-button'), btn('Cancel', () => d.close(), 'text-button')); refresh();
   }
   function clock() { return el('div', { class: 'journey-clock', role: 'timer', 'aria-live': 'off' }, txt('span', 'countdown', ''), txt('small', '', state.paused ? 'PAUSED' : 'SECONDS')); }
   function hud(kicker, title, subtitle) { return el('div', { class: 'scene-hud' }, el('div', {}, txt('span', 'eyebrow', kicker), el('h1', {}, title), subtitle ? txt('p', '', subtitle) : null), state.deadline || state.paused ? clock() : null); }
@@ -192,7 +218,10 @@
       el('div', { class: 'intro-footer' }, txt('p', 'muted small', 'Seats are shuffled separately from roles. Your seat number sets your speaking order.'), state.me.ready ? txt('p', 'choice-saved', '✓ Ready to board. Waiting for the others…') : btn('I’m ready · board the train', () => send('ready'), 'gold')));
   }
   function boardingScene() {
-    return el('section', { style: '--elapsed:' + Math.max(0,(state.duration || 6) - (state.remainingMs || 0)/1000) + 's', class: 'world platform-scene', 'aria-label': 'Everyone boards the train' }, art('platform'), hud('ALL ABOARD', 'The last train is leaving.', 'Your seat is set. Your secret is waiting.'), el('div', { class: 'boarding-queue' }, ...state.players.map((p,i) => el('div', { class: 'boarding-person', style: '--order:' + i + ';--total:' + state.players.length }, traveller(p), txt('span', '', p.name)))), el('div', { class: 'boarding-manifest' }, ...state.players.map(p => txt('span', '', String(p.seat).padStart(2,'0') + ' · ' + p.name))));
+    return el('section', { style: '--elapsed:' + Math.max(0,(state.duration || 6) - (state.remainingMs || 0)/1000) + 's', class: 'world platform-scene', 'aria-label': 'Everyone boards the train' },
+      el('div', { class: 'boarding-cinema', 'aria-hidden': 'true' }, art('platform'), el('div', { class: 'boarding-door-shade' }), el('div', { class: 'boarding-destination' }, trainMark(), txt('span', '', 'PLATFORM 07'), txt('b', '', 'Last call.'))),
+      hud('ALL ABOARD', 'Next stop: the unknown.', 'The carriage is ready. Find your cabin.'),
+      el('div', { class: 'boarding-queue', 'aria-label': 'Passenger boarding checks' }, ...state.players.map((p,i) => el('div', { class: 'boarding-person', style: '--order:' + i + ';--total:' + state.players.length }, avatar(p, 'boarding-avatar'), el('div', {}, txt('b', '', p.name), txt('small', '', 'CABIN ' + String(p.seat).padStart(2, '0'))), txt('span', 'boarding-check', '✓')))));
   }
   function chooseTarget(title, kind, action, extra = {}, { self = false, skip = false } = {}) {
     const bound = fence(); let selected = null, double = false;
@@ -215,7 +244,7 @@
   }
   function badConsole() {
     const me = state.me;
-    return el('section', { class: 'action-console bad-console', 'aria-label': 'Saboteur team choices' }, el('h2', {}, 'Agree on one target.'),
+    return el('section', { class: 'action-console bad-console', 'aria-label': 'Saboteur team choices' }, el('h2', {}, me.allies.filter(p => p.alive).length > 1 ? 'Agree on one target.' : 'Choose your target.'),
       txt('p', 'console-hint', 'Pick a player or Skip. You can choose again until time ends.'),
       el('div', { class: 'team-proposals', 'aria-label': 'Your team’s target choices' }, ...me.teamChoices.map(p => el('div', { class: 'team-proposal', 'data-voter': p.id, 'data-target': p.attackId || (p.selected ? 'skip' : 'pending') },
         el('div', { class: 'proposal-target' }, p.attackId ? avatar(p.attackId, 'chosen-avatar') : txt('span', 'choice-symbol', p.selected ? '—' : '?'), avatar(p.id, 'chooser-avatar')),
@@ -240,11 +269,11 @@
     if (active === 'medic') {
       const stock = txt('p', 'medicine-counts', 'HEAL ' + me.medicine.heal + '   /   POISON ' + me.medicine.poison);
       if (me.blocked) return el('section', { class: 'action-console' }, stock, el('h2', {}, 'Your medicine is blocked.'), txt('p', '', 'No patient is shown. No medicine is spent tonight.'));
-      if (me.medicineChoice) return el('section', { class: 'action-console' }, stock, txt('p', 'choice-saved', '✓ ' + ({ heal: 'Heal', poison: 'Poison', pass: 'Skip' }[me.medicineChoice.power]) + ' saved.'), txt('p', 'console-hint', 'Keep quiet until the next role wakes up.'));
+      if (me.medicineChoice) return el('section', { class: 'action-console' }, stock, txt('p', 'choice-saved', ({ heal: 'Medicine given.', poison: 'Poison delivered.', pass: 'You kept your medicine.' }[me.medicineChoice.power])), txt('p', 'console-hint', 'Keep quiet until the next role wakes up.'));
       return el('section', { class: 'action-console medic-console' }, stock, el('div', { class: 'patient-heading' }, me.patientId ? avatar(me.patientId) : null, el('h2', {}, me.patientId ? who(me.patientId) + ' was attacked.' : 'No one was attacked.')), txt('p', 'console-hint', 'Heal, poison, or Skip. Only one medicine tonight.'),
         medicineButton('heal', 'Heal ' + (me.patientId ? who(me.patientId) : 'someone'), () => send('medicine', { power: 'heal' }), !me.patientId || !me.medicine.heal), medicineButton('poison', 'Poison someone', () => chooseTarget('Who will you poison?', 'They will be out tonight, even if protected. You might choose a good player.', 'medicine', { power: 'poison' }), !me.medicine.poison), btn('Skip', () => send('medicine', { power: 'pass' }), 'secondary skip-power'), txt('p', 'overdose-hint', 'If Brave also protects your healed patient, that player dies from overdose.'));
     }
-    if (me.nightChoice) return el('section', { class: 'action-console' }, txt('p', 'choice-saved', '✓ Your choice is saved.'), txt('p', 'console-hint', 'Stay quiet. The next cabin wakes when the timer ends.'));
+    if (me.nightChoice) return el('section', { class: 'action-console' }, txt('p', 'choice-saved', 'Your turn is complete.'), txt('p', 'console-hint', 'Stay quiet. The next cabin wakes when the timer ends.'));
     const power = { brave: 'cover', careful: 'lock', inspector: 'check', witness: 'watch' }[active];
     if (me.used[power]) return el('section', { class: 'action-console' }, el('h2', {}, 'Your power is already used.'), txt('p', 'console-hint', 'Save your story for the lounge. Your turn will pass automatically.'));
     return el('section', { class: 'action-console power-console' }, rolePortrait(me.role, 'console-role-icon'), el('h2', {}, { brave: 'Who needs protection?', careful: 'Lock your door tonight?', inspector: 'Who will you check?', witness: 'Watch tonight’s attack?' }[active]),
@@ -285,17 +314,20 @@
       const x = positions[count][col];
       const y = rows === 1 ? 89 : compactScene.matches ? (rows === 2 ? [56,93][row] : [40,66,93][row]) : [58,94][row];
       const width = compactScene.matches ? 20 + depth * 3 : 13 + depth * 2.5;
-      return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.group === 'saboteur' ? 'bad' : 'good') : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', 'data-seat-pair': Math.floor(col / 2), style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) },
+      return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', 'data-seat-pair': Math.floor(col / 2), style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) },
         el('span', { class: 'seat-number', 'aria-label': 'Seat ' + p.seat + (!p.alive ? ' · Out' : '') }, String(p.seat).padStart(2,'0'), !p.alive ? txt('span','out-cross','×') : null), seatedTraveller(p),
-        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD')));
+        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD')));
     });
     const banks = [];
     for (let i = 0; i < seats.length; i += perRow) banks.push(el('div', { class: 'sofa-row' }, ...seats.slice(i, i + perRow)));
     return el('div', { class: 'lounge-seats', 'aria-label': 'Speaking order, left to right, then the next row' }, ...banks);
   }
   function outs(entry) {
-    if (!entry || !entry.outs.length) return txt('p', 'nobody-out', '✦ Nobody is out.');
-    return el('div', { class: 'revealed-outs' }, ...entry.outs.map(p => el('div', { class: 'revealed-out ' + (p.group === 'saboteur' ? 'bad' : 'good') }, avatar(p.id, 'reveal-avatar'), el('div', {}, el('b', {}, who(p.id) + ' is out'), txt('span', 'alignment-stamp', p.group === 'saboteur' ? 'BAD · SABOTEUR' : 'GOOD · ' + (p.group === 'crew' ? 'CREW' : 'PASSENGER')), txt('small', '', role(p.role).name)))));
+    if (!entry || !entry.outs.length) return txt('p', 'nobody-out', 'Everyone is still aboard.');
+    return el('div', { class: 'revealed-outs' }, ...entry.outs.map(p => {
+      const alignment = p.alignment || (p.group === 'saboteur' ? 'bad' : 'good');
+      return el('div', { class: 'revealed-out ' + alignment }, avatar(p.id, 'reveal-avatar'), el('div', {}, el('b', {}, who(p.id) + ' is out'), txt('span', 'alignment-stamp', alignment.toUpperCase()), state.phase === 'finished' && p.role ? txt('small', '', role(p.role).name) : txt('small', '', 'Their role stays secret until the journey ends.')));
+    }));
   }
   function votePerson(id) {
     return el('span', { class: 'vote-person' }, id ? avatar(id) : txt('span', 'skip-avatar', '—'), txt('b', '', id ? who(id) : 'Skip'));
@@ -308,13 +340,13 @@
     const me = state.me, own = state.speakerId === state.meId, mode = state.settings.discussion;
     const said = state.speeches.find(m => m.round === state.round && m.id === state.meId);
     return el('section', { class: 'speech-console' }, el('div', { class: 'speaking-person' }, avatar(state.speakerId), el('div', {}, txt('small', '', 'SEAT ' + player(state.speakerId).seat + ' · ' + (state.speakerIndex + 1) + '/' + state.speakingOrder.length), el('h2', {}, own ? 'It’s your turn.' : who(state.speakerId) + ' has the floor.')), txt('span','countdown speaker-seconds','')),
-      txt('p', 'console-hint', own ? mode === 'chat' ? 'Share your findings in one short message before your 20 seconds end.' : 'Tell the group what you know. You have up to 20 seconds.' : mode === 'chat' ? 'Listen by reading. Your turn follows the seat numbers.' : 'Listen to their story. Your turn follows the seat numbers.'),
-      own && me.alive ? mode === 'chat' ? said ? txt('p','choice-saved','✓ Findings shared. Everyone can read them below.') : el('form', { class: 'speech-form', onsubmit: async e => { e.preventDefault(); if (!speechDraft.trim()) return; const text = speechDraft; await send('speak', { text }); } }, el('textarea', { id: 'lt-speech', rows: 3, maxLength: 280, value: speechDraft, placeholder: 'What did you find? Who do you trust?', 'aria-label': 'Your findings', disabled: busy || state.paused, oninput: e => speechDraft = e.target.value }), el('button', { type: 'submit', class: 'gold', disabled: busy || state.paused, 'data-focus': 'share-findings' }, 'Share findings')) : btn('I’m done speaking', () => send('finishSpeech'), 'gold', state.paused) : null);
+      txt('p', 'console-hint', own ? mode === 'chat' ? 'What happened last night? Tell the group in one short message.' : 'Tell the group what you know. You have up to 20 seconds.' : mode === 'chat' ? 'Read their message. Your turn follows the seat numbers.' : 'Listen to their story. Your turn follows the seat numbers.'),
+      own && me.alive ? mode === 'chat' ? said ? txt('p','choice-saved','You’ve had your say. Let’s hear the next traveller.') : el('form', { class: 'speech-form', onsubmit: async e => { e.preventDefault(); if (!speechDraft.trim()) return; const text = speechDraft; await send('speak', { text }); } }, el('textarea', { id: 'lt-speech', rows: 3, maxLength: 280, value: speechDraft, placeholder: 'What did you find? Who do you trust?', 'aria-label': 'Your findings', disabled: busy || state.paused, oninput: e => speechDraft = e.target.value }), el('button', { type: 'submit', class: 'gold', disabled: busy || state.paused, 'data-focus': 'share-findings' }, 'Share findings')) : btn('I’m done speaking', () => send('finishSpeech'), 'gold', state.paused) : null);
   }
   function loungeScene() {
     const phase = state.phase, latest = state.history.at(-1), gathering = phase === 'gathering';
     const titles = { gathering: 'Everyone to the lounge.', morning: 'A new morning. A few secrets.', discussion: 'One seat. One story.', voting: 'Who leaves the train?', voteResult: latest?.outs.length ? 'One player leaves the train.' : 'No one leaves this time.' };
-    const subtitles = { gathering: 'Cabin doors open. Meet your fellow travellers.', morning: 'See who is out. Check your ticket for any new private report.', discussion: 'Speaking order runs left to right, by seat number. Each person gets 20 seconds.', voting: 'Vote for someone or Skip. Choices stay hidden until everyone has voted.', voteResult: 'The full vote record is below. Good or bad, their secret is now out.' };
+    const subtitles = { gathering: 'Cabin doors open. Meet your fellow travellers.', morning: 'See who is out. Check your ticket for any new private report.', discussion: 'Speaking order runs left to right, by seat number. Each person gets 20 seconds.', voting: 'Vote for someone or Skip. Choices stay hidden until everyone has voted.', voteResult: 'Their team is revealed. Their role stays secret until the end.' };
     return el('section', { class: 'world lounge-scene phase-' + phase, 'aria-label': 'The train gathering lounge' }, hud('ROUND ' + state.round + ' · THE GATHERING LOUNGE', titles[phase], subtitles[phase]), el('div', { class: 'lounge-room', 'aria-label': 'Everyone seated together in the observation lounge' }, art('lounge-room'), loungeSeats()),
       gathering ? txt('p', 'gathering-caption', 'Take your seat…') : phase === 'morning' ? el('section', { class: 'lounge-console morning-reveal' }, outs(latest), txt('p', 'console-hint', 'The next part begins when the timer ends.')) : phase === 'discussion' ? speechConsole() : phase === 'voting' ? el('section', { class: 'lounge-console voting-console' }, el('h2', {}, state.me.vote ? 'Your vote is sealed.' : state.me.alive ? 'Your vote. Your decision.' : 'Watch the vote quietly.'), state.me.vote ? txt('p', 'choice-saved', '✓ ' + (state.me.vote.targetId ? who(state.me.vote.targetId) : 'Skip') + (state.me.vote.weight === 2 ? ' · counts twice' : '')) : state.me.alive && !state.paused ? btn('Choose a player or Skip', () => chooseTarget('Who should leave the train?', 'Your vote is final after confirmation. Ties remove nobody.', 'vote', {}, { self: true, skip: true }), 'gold') : null, txt('p', 'console-hint', state.players.filter(p => p.voteLocked).length + ' / ' + state.players.filter(p => p.alive).length + ' votes sealed')) : el('section', { class: 'lounge-console ejection-reveal' }, outs(latest), latest?.reason === 'tie' ? txt('p', 'console-hint', 'A tie. Nobody is voted out.') : latest?.reason === 'skip' ? txt('p', 'console-hint', 'The group chose Skip.') : null, latest?.votes ? el('div', { class: 'inline-votes' }, ledger(latest)) : null, txt('p', 'console-hint', 'The next part begins when the timer ends.')));
   }
@@ -331,7 +363,9 @@
     if (!dockNode) return;
     dockNode.classList.toggle('revealed', showCard);
     const handle = dockNode.querySelector('.drawer-handle'), content = dockNode.querySelector('.drawer-content');
-    handle.textContent = showCard ? '⌄  Hide role' : '⌃  Show role' + (state.me.reports.length ? ' · Reports (' + state.me.reports.length + ')' : '');
+    const arrow = el('span', { class: 'drawer-arrow', 'aria-hidden': 'true' });
+    arrow.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10l4-4 4 4"/></svg>';
+    handle.replaceChildren(arrow, txt('span', '', showCard ? 'Hide role' : 'Show role'), !showCard && state.me.reports.length ? txt('small', 'drawer-report-count', String(state.me.reports.length)) : null);
     handle.setAttribute('aria-label', showCard ? 'Hide role' : 'Show role');
     handle.setAttribute('aria-expanded', String(showCard));
     content.inert = !showCard;
@@ -408,11 +442,11 @@
     cinemaKey = key;
     if (read('lt-ejection-seen') === key || elapsed >= 4.8) return;
     save('lt-ejection-seen', key);
-    const out = entry.outs[0], bad = out.group === 'saboteur';
+    const out = entry.outs[0], bad = out.alignment === 'bad' || out.group === 'saboteur';
     const d = dialog('The journey ends here.',
       el('div', { class: 'cinema-window', 'aria-hidden': 'true' }, el('div', { class: 'station-streaks' })),
       el('div', { class: 'cancelled-ticket' }, txt('span','eyebrow','LAST TRAIN · PASSENGER TICKET'), avatar(out.id, 'cinema-avatar'), el('h3',{},who(out.id)), txt('small','cinema-seat','SEAT ' + String(player(out.id).seat).padStart(2,'0')), txt('span','cancel-stamp','TICKET CANCELLED')),
-      txt('p','cinema-alignment ' + (bad ? 'bad' : 'good'),bad ? 'BAD · SABOTEUR' : 'GOOD · ' + (out.group === 'crew' ? 'CREW' : 'PASSENGER')),
+      txt('p','cinema-alignment ' + (bad ? 'bad' : 'good'),bad ? 'BAD' : 'GOOD'),
       txt('p','cinema-caption',who(out.id) + ' leaves at the next station.'));
     d.classList.add('elimination-cinema');
     d.style.setProperty('--cinema-offset', '-' + Math.max(0, elapsed) + 's');
@@ -429,19 +463,33 @@
   }
   function chatLog() {
     if (state.settings.discussion !== 'chat' || !['gathering','morning','discussion','voting','voteResult','finished'].includes(state.phase)) return null;
-    return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'The train chat'), txt('small','muted','ONE VOICE AT A TIME')), state.speeches.length ? el('div', {class:'public-messages',role:'log','aria-label':'Shared findings'}, ...state.speeches.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{},who(m.id)), txt('small','','ROUND ' + m.round + ' · SEAT ' + player(m.id).seat)), txt('p','',m.text))))) : txt('p','muted small','Findings appear here during each player’s speaking turn.'));
+    const rounds = [...new Set(state.speeches.map(m => m.round))];
+    return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'Conversations aboard'), txt('small','muted','ONE VOICE AT A TIME')),
+      rounds.length ? el('div', { class: 'night-accordions' }, ...rounds.map(round => {
+        const messages = state.speeches.filter(m => m.round === round);
+        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === state.round }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'The morning conversation'), txt('small', '', messages.length + ' voices'), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{},who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), txt('p','',m.text))))));
+      })) : txt('p','muted small','Messages will appear here when the conversation begins.'));
   }
   function history() {
-    return state.history.length ? el('section', { class: 'history journey-log' }, el('div', { class: 'log-heading' }, txt('span','eyebrow','THE JOURNEY LOG'), el('h2', {}, 'Journey so far')),
-      el('div', { class: 'log-events' }, ...state.history.map((entry,i) => el('details', { class: 'log-event', 'data-details':'event-' + i },
-        el('summary', {}, txt('span', 'log-round', String(entry.round).padStart(2,'0')), el('span', { class: 'log-event-title' }, txt('b','',entry.type === 'night' ? 'Nightfall' : 'The vote'), txt('small','',entry.outs.length ? entry.outs.length + (entry.outs.length === 1 ? ' traveller out' : ' travellers out') : entry.type === 'vote' ? 'Nobody voted out' : 'Everyone survived')),
-          el('span', { class: 'log-faces', 'aria-hidden':'true' }, ...entry.outs.map(p => avatar(p.id))), txt('span','log-chevron','⌄')),
-        el('div', { class: 'log-event-body' }, outs(entry), entry.type === 'vote' ? ledger(entry) : null))))) : null;
+    const rounds = [...new Set(state.history.map(e => e.round))];
+    return rounds.length ? el('section', { class: 'history journey-log' }, el('div', { class: 'log-heading' }, txt('span','eyebrow','THE JOURNEY LOG'), el('h2', {}, 'Along the way')),
+      el('div', { class: 'night-accordions' }, ...rounds.map(round => {
+        const entries = state.history.filter(e => e.round === round), outsCount = entries.reduce((n, e) => n + e.outs.length, 0);
+        return el('details', { class: 'night-accordion', 'data-details': 'log-night-' + round, open: round === state.round }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'From nightfall to the vote'), txt('small', '', outsCount ? outsCount + ' out' : 'All aboard'), txt('span', 'accordion-chevron', '⌄')), el('div', { class: 'night-log-body' }, ...entries.map(entry => el('section', { class: 'night-log-event' }, el('h3', {}, entry.type === 'night' ? 'At daybreak' : 'The group’s vote'), outs(entry), entry.votes ? ledger(entry) : null))));
+      }))) : null;
+  }
+  function standingTraveller(p) {
+    const index = p.avatarIndex ?? Math.max(0, p.seat - 1);
+    return el('div', { class: 'standing-traveller', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + (index % 4 * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%' });
   }
   function finale() {
-    const latest = state.history.at(-1);
-    return el('div', { class:'finale' }, el('section', {class:'world finale-scene'}, art('lounge'), hud('THE JOURNEY IS OVER', state.winner === 'good' ? 'The good team wins!' : 'The Saboteurs win!', state.winReason), txt('div','victory-icon',state.winner === 'good' ? '🏆' : '🗡️'), el('div', {class:'final-roles'}, ...state.players.map(p => el('div',{class:'final-role ' + p.group},rolePortrait(p.role, 'role-icon'),el('div',{},txt('b','',p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name + ' · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD')))))),
-      latest?.votes ? btn('See the final vote', () => ledgerDialog(latest), 'secondary') : null, state.hostId === state.meId ? btn('PLAY AGAIN', () => send('start'),'host',state.players.filter(p => !p.departed).length < 5) : txt('p','waiting','The host can start another journey.')), chatLog(), history());
+    const latest = state.history.at(-1), bad = state.winner === 'bad';
+    const winners = state.players.filter(p => (p.group === 'saboteur') === bad);
+    return el('div', {class:'finale'}, el('section', {class:'world finale-scene ' + (bad ? 'bad-victory' : 'good-victory')},
+      el('div', {class:'winner-stage'}, art('lounge-room'), el('div', {class:'winner-heading'}, txt('span','eyebrow','THE LAST WORD'), trainMark('victory-mark'), el('h1',{},bad ? 'The Saboteurs win!' : 'The good team wins!'), txt('p','',bad ? 'They played their part. They kept their secrets.' : 'The truth made it through the night.'), txt('small','winner-reason',state.winReason)),
+        txt('div','winner-team-label','THE WINNING TEAM'), el('div', {class:'winner-cast',style:'--winners:'+winners.length+';--winner-columns:'+Math.min(3,winners.length)}, ...winners.map(p => el('article',{class:'winner-person'},standingTraveller(p),el('div',{class:'winner-nameplate'},el('b',{},p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name))))),
+        el('div',{class:'victory-actions'},state.hostId === state.meId ? startJourneyButton(state.players.filter(p => !p.departed).length < 5, true) : txt('p','waiting','The host can start another journey.'), state.hostId === state.meId ? el('div', { class: 'victory-role-actions' }, btn('Choose roles', roleSettingsDialog, 'text-button', state.players.filter(p => !p.departed).length < 5), btn('Shuffle roles', () => send('shuffleRoles'), 'text-button', state.players.filter(p => !p.departed).length < 5)) : null, latest?.votes ? btn('See the final vote',()=>ledgerDialog(latest),'text-button',false,'final-vote') : null)),
+      el('section',{class:'panel final-manifest'},txt('span','eyebrow','BEHIND EVERY FACE'),el('h2',{},'The full cast'),el('div',{class:'final-roles'},...state.players.map(p=>el('div',{class:'final-role '+p.group},avatar(p,'role-icon'),el('div',{},txt('b','',p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name + ' · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD')))))))),chatLog(),history());
   }
   function match() {
     const scene = state.phase === 'briefing' ? introScene() : state.phase === 'boarding' ? boardingScene() : ['settling','night'].includes(state.phase) ? cabinScene() : loungeScene();
@@ -449,7 +497,7 @@
   }
   function render() {
     const active = document.activeElement, focusId = active?.id, focusKey = active?.dataset.focus, cursor = active?.selectionStart;
-    const openDetails = [...root.querySelectorAll('details[open][data-details]')].map(n => n.dataset.details);
+    const detailStates = new Map([...root.querySelectorAll('details[data-details]')].map(n => [n.dataset.details, n.open]));
     if (state) {
       const next = state.code + ':' + state.match;
       if (next !== sceneKey) { sceneKey = next; showCard = false; }
@@ -463,14 +511,14 @@
     root.replaceChildren(...[header(), error ? el('div',{class:'error',role:'alert'},error,btn('Close',()=>{error='';render();},'text-button')) : null, seat && !connected ? txt('p','connection','Reconnecting. Your ticket is saved.') : null, state && seat ? roomBar() : null, state?.notice ? txt('p','waiting',state.notice) : null,
       state?.paused ? el('div',{class:'pause-banner',role:'status'},txt('b','','Ⅱ Journey paused'),txt('span','','Timers and choices are on hold.'),state.hostId === state.meId ? btn('RESUME JOURNEY',()=>send('resume'),'host') : null) : null,
       content,txt('footer','','Last Train · Every cabin hides a secret.')].filter(Boolean));
-    for (const n of root.querySelectorAll('details[data-details]')) if (openDetails.includes(n.dataset.details)) n.open = true;
+    for (const n of root.querySelectorAll('details[data-details]')) if (String(state?.round || 0) === root.dataset.round && detailStates.has(n.dataset.details)) n.open = detailStates.get(n.dataset.details);
     testPlayers?.sync(state, seat);
-    syncRoleDock(playing && !['briefing','boarding'].includes(state.phase));
+    syncRoleDock(playing && !['briefing','boarding','finished'].includes(state.phase));
     updateOverlayViewport();
     syncElimination();
     const restored = focusId ? document.getElementById(focusId) : [...root.querySelectorAll('[data-focus]')].find(n => n.dataset.focus === focusKey);
     if (restored) { restored.focus({preventScroll:true}); if(typeof cursor === 'number' && restored.setSelectionRange) try{restored.setSelectionRange(cursor,cursor);}catch{} }
-    root.dataset.paused = String(!!state?.paused); root.dataset.phase = state?.phase || 'home'; root.dataset.nightRole = state?.nightRole || '';
+    root.dataset.round = String(state?.round || 0); root.dataset.paused = String(!!state?.paused); root.dataset.phase = state?.phase || 'home'; root.dataset.nightRole = state?.nightRole || '';
     const sceneChanged = key !== enteredKey;
     if (sceneChanged) {
       root.querySelector('.world,.scene-panel,.lobby-grid,.landing')?.classList.add(motionOK ? 'scene-enter' : 'scene-static'); enteredKey = key;

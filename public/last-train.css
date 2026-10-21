@@ -419,3 +419,220 @@ textarea.notebook-paper { resize: none; padding: 21px 18px 18px 44px; font: 15px
 .test-player-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .test-player-actions button { font-size: 11px; }
 .test-players [hidden] { display: none; }
+
+/* Last Train: restrained brass, velvet and paper, with one visual language. */
+.train-mark { display: inline-grid; place-items: center; flex: none; color: #e5c58c; }
+.train-mark svg { display: block; width: 100%; height: 100%; }
+.wordmark .brand-icon { width: 44px; height: 48px; padding: 4px; border: 1px solid #cda96b55; border-radius: 14px 14px 8px 8px; background: linear-gradient(145deg, #4f354145, #171322); }
+.wordmark b { font-size: 13px; letter-spacing: 2.1px; }
+.drawer-handle { flex-direction: row; gap: 8px; }
+.drawer-handle::before { display: none; }
+.drawer-arrow { display: grid; place-items: center; width: 16px; height: 16px; transition: transform .25s; }
+.drawer-arrow svg { display: block; width: 16px; height: 16px; }
+.revealed .drawer-arrow { transform: rotate(180deg); }
+.drawer-report-count { min-width: 20px; border-radius: 5px; background: #d5b67b1c; padding: 1px 5px; font-size: 9px; }
+
+/* The host chooses roles, never the player who receives them. */
+.role-settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 19px; }
+.role-settings-actions > p { flex-basis: 100%; font-size: 10px; }
+.role-picker { max-width: 820px; }
+.role-budget { display: flex; flex-wrap: wrap; gap: 8px; padding: 13px 0; margin-bottom: 8px; }
+.role-budget > * { font-size: 11px; border: 1px solid #d0b77a44; background: #d0b77a0b; padding: 5px 10px; border-radius: 6px; color: #e6d1a6; }
+.picker-group { border-top: 1px solid #d1b27c30; padding-top: 17px; margin-top: 17px; }
+.picker-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.picker-heading > small { font-size: 9px; color: #c3ac83; letter-spacing: 1px; }
+.picker-group h3 { font-size: 17px; }
+.picker-group > p { font-size: 11px; margin: 7px 0 12px; }
+.picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
+.role-option { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 11px; border: 1px solid #c9a96a26; background: #100d174d; cursor: pointer; min-height: 90px; }
+.role-option.selected { border-color: #d7b67d88; background: #bd966c12; }
+.role-option:has(input:disabled) { opacity: .4; cursor: default; }
+.role-option input { width: 18px; height: 18px; min-height: 18px; min-width: 18px; margin: 0; padding: 0; display: block; accent-color: #d8bd83; }
+.role-option .picker-portrait { width: 43px; height: 43px; border-radius: 9px; }
+.role-option > div { min-width: 0; }
+.role-option b { display: block; font-size: 12px; color: #f0dfbf; line-height: 1.4; }
+.role-option small { display: block; font-size: 10px; color: #b7abbc; line-height: 1.5; margin-top: 4px; }
+.bad-picker .selected { border-color: #cd8a9a80; background: #a2496812; }
+.role-picker > .gold { width: 100%; margin-top: 24px !important; }
+
+/* Conversations and events share a compact night-indexed archive. */
+.night-accordions { display: grid; gap: 11px; }
+.night-accordion { margin: 0 !important; padding: 0 !important; border: 1px solid #c9a96a28 !important; background: #100d1b40; border-radius: 11px; overflow: hidden; }
+.night-accordion > summary { display: grid; grid-template-columns: 76px minmax(0,1fr) auto 18px; align-items: center; gap: 12px; padding: 16px; list-style: none; min-height: 62px; }
+.night-accordion > summary::-webkit-details-marker { display: none; }
+.night-accordion > summary > b { color: #ead9bc; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.night-accordion > summary > small { font-size: 9px; color: #a89cac; white-space: nowrap; }
+.night-tag { color: #d7b77f; font-size: 9px; letter-spacing: 1.6px; }
+.accordion-chevron { display: grid; place-items: center; width: 18px; height: 18px; color: #c9ab76; transition: transform .2s; }
+.night-accordion[open] > summary { border-bottom: 1px solid #c9a96a20; background: #c9a96a06; }
+.night-accordion[open] > summary .accordion-chevron { transform: rotate(180deg); }
+.night-accordion > .public-messages { padding: 18px; }
+.night-log-body { padding: 18px; display: grid; gap: 22px; }
+.night-log-event > h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.7px; color: #b9a58b; margin-bottom: 12px; }
+.night-log-event .revealed-outs { margin: 0; }
+.night-log-event .revealed-out { padding: 11px; }
+.night-log-event .revealed-out > .portrait { width: 42px; height: 42px; }
+.night-log-event .revealed-out b { font-size: 13px; }
+.night-log-event .revealed-out small { font-size: 10px; }
+
+/* A private, full-height writing desk. Only the paper accepts drawing gestures. */
+.notebook { width: min(940px, calc(100% - 28px)); height: min(920px, calc(100dvh - 28px)); max-height: calc(100dvh - 28px); padding: 0; overflow: hidden; border-radius: 19px; background: linear-gradient(130deg, #35242d, #1b1522 65%); border-color: #c4a37480; }
+.notebook[open] { display: flex; flex-direction: column; }
+.notebook-header { padding: 22px 25px 12px; }
+.notebook-header h2 { font-size: 29px; letter-spacing: -.9px; }
+.notebook-header .eyebrow { color: #b89b73; letter-spacing: 2.6px; }
+.notebook-phase { padding: 0 25px; margin: 0 0 14px; font-size: 11px; color: #ab9aaa; }
+.notebook-close { border: 0; background: #ffffff05; font-weight: 300; }
+.notebook-modes { margin: 0 25px 14px; padding: 3px; border-radius: 8px; background: #130e1b; }
+.notebook-modes > button { min-height: 39px; border-radius: 6px; min-width: 86px; }
+.notebook-typing, .notebook-drawing { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 0 25px; }
+.notebook-typing > label { font-size: 10px; color: #baaaae; margin-bottom: 9px; }
+.notebook-paper { flex: 1; min-height: 80px; height: auto; border: 1px solid #bca67b; border-left: 5px solid #c1ac85; border-radius: 3px 7px 7px 3px; box-shadow: inset 5px 0 15px #70552812, 0 4px 12px #0002; background: repeating-linear-gradient(transparent 0 29px, #b4a18a2b 29px 30px), #f4ecd9; }
+textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px; }
+.notebook-toolbar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px 12px; align-items: center; margin-bottom: 11px; }
+.notebook-tools { margin: 0; gap: 5px; }
+.notebook-tools button { min-height: 40px; padding: 8px 12px; font-size: 11px; border-radius: 7px; }
+.notebook-tools button:last-child { margin-left: 0; }
+.notebook-palette { display: flex; align-items: center; gap: 3px; }
+.notebook .ink-swatch { display: grid; place-items: center; width: 34px; min-height: 38px; padding: 0; border-radius: 7px; border: 1px solid transparent; background: transparent; }
+.notebook .ink-swatch::before { content: ''; width: 18px; height: 18px; background: var(--ink); border: 1px solid #fff4; border-radius: 50%; box-shadow: 0 1px 3px #0003; }
+.notebook .ink-swatch[aria-pressed=true] { border-color: #ead29a88; background: #fff1; }
+.notebook .ink-swatch[aria-pressed=true]::before { outline: 1px solid #f0ddaf99; outline-offset: 3px; }
+.notebook-tip { margin-top: 8px; font-size: 10px; }
+.notebook-footer { padding: 14px 25px 17px; margin-top: 5px; text-align: left; }
+.notebook-open, .notebook-open *:not(textarea):not(input), .drawing-paper, .drawing-paper canvas { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.notebook textarea, .notebook input { user-select: text; -webkit-user-select: text; }
+.drawing-paper { touch-action: none; }
+.drawing-paper canvas { touch-action: none; }
+
+/* A real camera move into the carriage, with passenger boarding checks below. */
+.world.platform-scene { padding: 0 0 22px; min-height: 0; background: #17121c; overflow: hidden; }
+.platform-scene::after { display: none; }
+.boarding-cinema { position: relative; isolation: isolate; height: 430px; overflow: hidden; }
+.boarding-cinema .world-art { object-position: 26% 60%; animation: enter-carriage 6s cubic-bezier(.3,.1,.7,1) both; animation-delay: calc(-1 * var(--elapsed, 0s)); transform-origin: 25% 68%; }
+.boarding-door-shade { position: absolute; inset: 0; background: #060912; opacity: 0; animation: carriage-darken 6s both; animation-delay: calc(-1 * var(--elapsed, 0s)); }
+.boarding-destination { position: absolute; right: 30px; top: 30px; display: grid; justify-items: center; gap: 8px; padding: 16px 22px; color: #e8d3aa; border: 1px solid #d6b88166; background: #1a1521b3; border-radius: 14px; backdrop-filter: blur(12px); }
+.boarding-destination .train-mark { width: 42px; height: 42px; }
+.boarding-destination > span { font-size: 8px; letter-spacing: 2px; }
+.boarding-destination b { font-size: 18px; }
+.platform-scene .scene-hud { text-align: center; display: block; background: transparent; padding: 22px; }
+.platform-scene .scene-hud .journey-clock { display: none; }
+.platform-scene .boarding-queue { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; padding: 0 24px; margin: 0; width: 100%; max-width: none; position: relative; top: auto; bottom: auto; left: auto; right: auto; }
+.platform-scene .boarding-person { display: flex; gap: 9px; justify-content: flex-start; align-items: center; border: 1px solid #c7ac7c2e; border-radius: 9px; background: #d0b18206; padding: 9px; margin: 0; width: auto; position: relative; inset: auto; opacity: 1; transform: none; animation: boarding-checked .5s both; animation-delay: calc(var(--order) / var(--total) * 3.5s - var(--elapsed, 0s)); }
+.boarding-person .boarding-avatar { width: 35px; height: 35px; border-radius: 7px; }
+.boarding-person > div { min-width: 0; }
+.boarding-person b { display: block; font-size: 11px; font-weight: 600; overflow-wrap: anywhere; }
+.boarding-person small { display: block; color: #a99caa; font-size: 8px; letter-spacing: 1px; margin-top: 2px; }
+.platform-scene .boarding-person > .boarding-check { width: auto; max-width: none; margin-left: auto; background: transparent; padding: 0; color: #bbd4bc; font-size: 15px; }
+@keyframes enter-carriage { 0% { transform: scale(1); } 85%, 100% { transform: scale(1.46); } }
+@keyframes carriage-darken { 0%, 78% { opacity: 0; } 100% { opacity: .9; } }
+@keyframes boarding-checked { from { opacity: .35; border-color: #c7ac7c20; } to { opacity: 1; border-color: #d7bc7d66; } }
+#lt-app[data-paused=true] .boarding-cinema *, #lt-app[data-paused=true] .boarding-person { animation-play-state: paused !important; }
+
+/* One light temperature and a contact shadow tie the seats to the carpet. */
+.lounge-room { box-shadow: inset 0 0 70px #120b1940, 0 18px 45px #0004; }
+.lounge-room > .world-picture .world-art { filter: saturate(.78) brightness(.83); }
+.lounge-room::after { z-index: 10; background: radial-gradient(ellipse at 50% 10%, #f5c77612, transparent 55%), linear-gradient(90deg, #070b1326, transparent 20%, transparent 80%, #070b1326); mix-blend-mode: soft-light; pointer-events: none; }
+.lounge-seat .seated-traveller { filter: saturate(.78) sepia(.08) brightness(.85) drop-shadow(0 8px 5px #10081688); }
+.lounge-seat.speaking .seated-traveller { filter: saturate(.86) sepia(.06) brightness(.94) drop-shadow(0 0 8px #d6b57c25) drop-shadow(0 8px 5px #10081688); }
+.lounge-seat::after { content: ''; position: absolute; z-index: -1; left: 5%; width: 90%; height: 8%; bottom: 32px; background: #08061299; border-radius: 50%; filter: blur(6px); transform: scaleX(1.13); pointer-events: none; }
+.lounge-seat.empty .seated-traveller { filter: saturate(.15) brightness(.65); }
+
+/* The winning cast gets the room, the light and the full-body spotlight. */
+.world.finale-scene { padding: 0; min-height: 0; background: transparent; border: 0; box-shadow: none; overflow: visible; }
+.finale-scene::after { display: none; }
+.winner-stage { position: relative; isolation: isolate; overflow: hidden; border: 1px solid #c5a16888; border-radius: 22px; padding: 34px 28px 28px; background: #1b1320; }
+.winner-stage > .world-picture { opacity: .32; }
+.winner-stage::before { content: ''; position: absolute; z-index: -1; inset: 0; background: radial-gradient(ellipse at 50% 45%, #956c372b, transparent 55%), linear-gradient(#110c1999, #110c1933 55%, #0d0c17e6); }
+.winner-heading { text-align: center; }
+.winner-heading .eyebrow { font-size: 8px; letter-spacing: 4px; }
+.victory-mark { width: 46px; height: 48px; margin: 9px auto 12px; }
+.winner-heading h1 { font-size: clamp(30px,4vw,52px); color: #f4dcaa; font-weight: 850; letter-spacing: -1.5px; }
+.bad-victory .winner-heading h1 { color: #f4c1c4; }
+.winner-heading > p { margin: 9px 0; color: #cdbfae; font-size: 13px; }
+.winner-reason { font-size: 10px; color: #9d90a2; }
+.winner-team-label { width: fit-content; margin: 26px auto 3px; padding: 6px 18px; font-size: 8px; letter-spacing: 3px; color: #d6b780; border-top: 1px solid #c7a86c33; border-bottom: 1px solid #c7a86c33; }
+.winner-cast { display: grid; grid-template-columns: repeat(var(--winner-columns,3), minmax(0,1fr)); gap: 22px 8px; width: min(780px,100%); margin: 0 auto; justify-content: center; }
+.winner-person { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0 3px 12px; min-width: 0; }
+.winner-person::before { content: ''; position: absolute; z-index: -1; inset: 12% -20% 12%; background: radial-gradient(ellipse at 50% 0%, #e9cb8929, transparent 65%); }
+.standing-traveller { width: 100%; max-width: 235px; aspect-ratio: 3/4; background: url('/last-train/standing.webp') var(--px) var(--py) / 400% 300% no-repeat; filter: saturate(.85) drop-shadow(0 13px 7px #0007); }
+.winner-nameplate { width: 100%; text-align: center; border-top: 1px solid #e0c48670; padding: 11px 4px 0; background: radial-gradient(ellipse at 50% 0, #edc2770d, transparent 70%); }
+.winner-nameplate b { display: block; color: #f1dfba; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.winner-nameplate small { display: block; color: #b9a88e; font-size: 10px; margin-top: 3px; }
+.victory-actions { margin: 22px auto 0; max-width: 420px; text-align: center; }
+.victory-actions > .departure-button { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 83px; padding: 14px 19px; text-align: left; background: linear-gradient(115deg, #f7e5b9, #d5ad6b); border: 1px solid #ffe8b6; border-radius: 12px; color: #35212c; box-shadow: 0 5px 0 #7d5a37, 0 12px 30px #0004; position: relative; overflow: hidden; }
+.victory-actions .departure-copy small { font-size: 7px; letter-spacing: 1.6px; }
+.victory-actions > .text-button { margin-top: 12px; color: #b6a89e; font-size: 11px; }
+.final-manifest { margin-top: 22px; }
+.final-manifest > h2 { font-size: 25px; margin-top: 6px; }
+.finale-scene .final-roles { position: static; margin: 20px 0 0; padding: 0; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+.finale-scene .final-role { padding: 12px; background: #100d1b40; border-color: #c9a96a26; backdrop-filter: none; }
+.finale-scene .final-role > .portrait { width: 40px; height: 40px; border-radius: 8px; }
+@media(max-width:680px) {
+  .wordmark .brand-icon { width: 37px; height: 42px; }
+  .wordmark b { font-size: 11px; letter-spacing: 1.6px; }
+  .role-picker { padding: 20px 15px; }
+  .picker-grid { grid-template-columns: 1fr; gap: 7px; }
+  .role-option { min-height: 74px; padding: 10px; }
+  .role-option .picker-portrait { width: 39px; height: 39px; }
+  .role-option small { font-size: 10px; }
+  .night-accordion > summary { grid-template-columns: 65px minmax(0,1fr) auto 14px; gap: 8px; padding: 13px 11px; }
+  .night-accordion > summary > b { font-size: 10px; }
+  .night-tag { font-size: 8px; letter-spacing: 1.1px; }
+  .night-accordion > summary > small { font-size: 8px; }
+  .night-accordion > .public-messages, .night-log-body { padding: 13px 10px; }
+  .notebook { width: calc(100% - 16px); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); border-radius: 14px; }
+  .notebook-header { padding: 16px 16px 9px; }
+  .notebook-header h2 { font-size: 26px; }
+  .notebook-phase { padding-inline: 16px; margin-bottom: 10px; }
+  .notebook-modes { margin-inline: 16px; margin-bottom: 12px; }
+  .notebook-typing, .notebook-drawing { padding-inline: 12px; }
+  .notebook-tools { flex: 1; justify-content: space-between; }
+  .notebook-tools button { min-height: 38px; padding: 7px 11px; font-size: 10px; }
+  .notebook-toolbar { gap: 3px; margin-bottom: 7px; }
+  .notebook-palette { width: 100%; justify-content: space-between; }
+  .notebook .ink-swatch { width: 40px; min-height: 35px; }
+  .notebook-tip { margin-top: 6px; font-size: 9px; }
+  .notebook-footer { padding: 12px 16px; font-size: 8px; }
+  .boarding-cinema { height: 310px; }
+  .boarding-destination { right: 16px; top: 16px; padding: 12px 15px; }
+  .boarding-destination .train-mark { width: 33px; height: 35px; }
+  .platform-scene .scene-hud { padding: 19px 15px; }
+  .platform-scene .boarding-queue { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; padding-inline: 14px; }
+  .platform-scene .boarding-person { padding: 8px; gap: 7px; }
+  .boarding-person .boarding-avatar { width: 29px; height: 29px; }
+  .boarding-person b { font-size: 10px; }
+  .boarding-person small { font-size: 7px; }
+  .lounge-seat::after { bottom: 28px; filter: blur(3px); }
+  .winner-stage { padding: 24px 12px 22px; border-radius: 17px; }
+  .winner-heading h1 { font-size: 32px; letter-spacing: -1px; }
+  .winner-heading > p { font-size: 11px; padding-inline: 8px; }
+  .winner-team-label { margin-top: 22px; font-size: 7px; }
+  .winner-cast { gap: 15px 0; }
+  .winner-person { padding-inline: 0; }
+  .winner-nameplate b { font-size: 11px; }
+  .winner-nameplate small { font-size: 8px; }
+  .victory-actions { margin: 17px 8px 0; max-width: none; }
+  .victory-actions > .departure-button { gap: 12px; padding: 13px; }
+  .victory-actions .departure-copy b { font-size: 18px; }
+  .finale-scene .final-roles { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .finale-scene .final-role { padding: 9px; gap: 7px; }
+  .finale-scene .final-role > .portrait { width: 31px; height: 31px; }
+  .finale-scene .final-role b { font-size: 10px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .boarding-cinema .world-art, .boarding-door-shade, .platform-scene .boarding-person { animation: none; }
+  .boarding-door-shade { opacity: 0; }
+  .drawer-arrow, .accordion-chevron { transition: none; }
+}
+/* Keep the notebook within reach without covering anyone in the carriage. */
+.notebook-launcher { top: 20px; right: max(16px, env(safe-area-inset-right)); border-radius: 11px; }
+body:has(.notebook-launcher) .lt-header { padding-right: 63px; }
+.victory-role-actions { display: flex; justify-content: center; gap: 5px; margin-top: 12px; }
+.victory-role-actions button { font-size: 10px; }
+@media(max-width:680px) { .notebook-launcher { top: 16px; right: max(6px, env(safe-area-inset-right)); } body:has(.notebook-launcher) .lt-header { padding-right: 45px; } .lt-header > .text-button { white-space: normal; } }
+.lounge-seat .seated-traveller { background-image: url('/last-train/seated-warm.webp'); filter: saturate(.86) brightness(.9) drop-shadow(0 7px 5px #10081666); }
+.lounge-seat[data-facing=away] .seated-traveller { background-image: url('/last-train/seated-back-warm.webp'); }
+.lounge-seat.speaking .seated-traveller { filter: saturate(.92) brightness(1) drop-shadow(0 0 7px #d6b57c22) drop-shadow(0 7px 5px #10081666); }
+.lounge-seat.empty .seated-traveller { filter: saturate(.15) brightness(.65); }
+.notebook textarea, .notebook input { -webkit-touch-callout: default; touch-action: auto; }

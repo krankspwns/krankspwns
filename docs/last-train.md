@@ -10,10 +10,10 @@ The journey now uses illustrated train scenes: team introductions → boarding o
 
 | Players | Passengers | Crew | Saboteurs |
 | --- | --- | --- | --- |
-| 5 | 2 | 2 | 1 |
-| 6 | 2 | 2 | 2 |
+| 5 | 3 | 1 | 1 |
+| 6 | 3 | 1 | 2 |
 | 7 | 3 | 2 | 2 |
-| 8 | 3 | 3 | 2 |
+| 8 | 4 | 2 | 2 |
 | 9 | 4 | 3 | 2 |
 | 10 | 4 | 3 | 3 |
 | 11 | 5 | 3 | 3 |
@@ -21,7 +21,9 @@ The journey now uses illustrated train scenes: team introductions → boarding o
 
 Saboteur counts are 1 at five players, 2 at six to nine, and 3 at ten to twelve. A running game keeps its dealt roles and original role summary; the new mix applies when the host starts another journey.
 
-These are initial mixes for group playtesting, not a claim of verified competitive balance. Every room includes Careful Passenger and Witness; ordinary Passengers fill any remaining Passenger seats. At 9–12, Brave Passenger is included, or the host may replace Brave with Speaker. Crew are Inspector and Medic, plus Trainee at 8–12. At 12, one of the three bad players defaults to Blocker; the host can disable that role.
+These are initial mixes for group playtesting, not a claim of verified competitive balance. These are recommended mixes. Passengers strictly outnumber Crew. Five/six-player rooms have one Crew slot (Inspector by default); seven/eight have two (Inspector and Medic); nine to twelve have three (including Trainee). Recommended Passenger powers include Careful and Witness, plus Brave at nine or more. At twelve, one bad player defaults to Blocker.
+
+The host can choose roles before the first journey and before replay: one to three distinct Crew within the size limit, at least Inspector or Medic; any subset of the four special Passenger roles, including none; normal Passengers fill every remaining Passenger seat. One Saboteur is always normal. With two or three Saboteurs, the host can use all normal Saboteurs or replace one with Blocker. Roles are always dealt to people at random. Shuffle roles creates a valid random mix and Recommended roles restores the preset. Choices adapt if the room grows or shrinks. An already-dealt match keeps its original roles and night order.
 
 | Role | Group | Power |
 | --- | --- | --- |
@@ -36,11 +38,11 @@ These are initial mixes for group playtesting, not a claim of verified competiti
 | Saboteur | Bad · Saboteur | Know the bad team. Agree on one shared attack, or Skip, within 20 seconds. Anyone still alive is allowed, including themselves and teammates. |
 | Blocker | Bad · Saboteur | Also proposes the shared attack. Once per game, block one other living player's night power during the Saboteur turn. Does not stop the team's base attack. |
 
-Living identities stay private; roles and alignment are revealed when a player is out, and all roles are shown at the end. A bottom-of-screen role ticket can be shown or hidden. It shows the role, good/bad group, remaining medicine or one-use power status, and access to private reports. It first appears in the cabin, where it reveals the role to the owner.
+Living identities stay private. Eliminations reveal only GOOD or BAD; exact roles and Crew/Passenger membership remain hidden until the end. Public history is sanitized as well as the player list. Group counts stay at the starting totals during play so count changes cannot reveal a removed player’s good subgroup; finished games expose actual remaining counts and every role. A bottom-of-screen role ticket can be shown or hidden. It shows the role, good/bad group, remaining medicine or one-use power status, and access to private reports. It first appears in the cabin, where it reveals the role to the owner.
 
 ## Introduction, boarding and seats
 
-The initial 20-second introduction briefly lists the available good and bad roles and counts without assigning any identities publicly. Everyone can press Ready to board sooner. All 5–12 travellers then board a train on a 6-second platform scene. A 4-second closing-eyes transition takes each person to their cabin.
+The initial 20-second introduction briefly lists the available good and bad roles and counts without assigning any identities publicly. Everyone can press Ready to board sooner. All 5–12 travellers then board a train on a 6-second platform scene. Boarding uses a slow camera approach to the carriage and sequential passenger boarding checks rather than moving portrait cutouts. A 4-second closing-eyes transition takes each person to their cabin.
 
 Seat order is shuffled independently from role assignment at the start of the match. It never sorts by team and stays fixed for the whole match. Boarding names, cabin numbers and lounge seats use that same order. In the lounge, seats run left to right, then the next row; numbered seats keep this clear on smaller phones. Removed seats remain visibly empty and do not get a speaking turn.
 
@@ -48,12 +50,12 @@ Seat order is shuffled independently from role assignment at the start of the ma
 
 Each role window lasts the full **20 seconds**, whether its owner has confirmed, skipped, used their power, is blocked, or was removed. Only roles included in the original mix get a window; a role's window remains after its owner is out. Trainee can fill the Inspector or Medic window next night. Other players wait in their own cabin and do not need to submit dummy Ready actions.
 
-1. **Saboteurs.** Living bad players see themselves and their living teammates sharing the same illustrated cabin. They privately see each other's target proposals and have a private team chat. Proposals may change until the deadline. The shared target is the most-voted choice; a tie is drawn randomly among tied choices. **Skip participates in the tally and random draw. An unselected proposal counts as Skip.** If Skip wins, nobody is attacked. A confirmed Blocker power is fixed and spent even if that player's attack proposal changes.
-2. **Medic.** See the selected original attack target. Choose one available medicine or Skip. This happens before Brave and door-lock choices. A blocked Medic sees no patient and spends nothing. Only the owner receives the patient and medicine state.
-3. **Brave Passenger**, if in the original mix. Choose one person to protect, or save the once-per-game power. A shield alone stops the attack. Shield plus healing on the same player causes a deadly overdose.
-4. **Careful Passenger.** Lock their door, or save the once-per-game power.
-5. **Inspector.** Check one other living player, or Skip. The result is delivered after the night only if the Inspector survives.
-6. **Witness.** Watch tonight, or save the once-per-game power. The report names the original attack target, never attackers or a poison target. An explicit no-attack report is given if Skip won. A blocked Watch/Check produces a failure report, never invented information.
+1. **Careful Passenger**, if included. Choose whether to lock their own door before the Saboteur turn. The lock is resolved with all other effects at night end; Blocker can still disable it later that night.
+2. **Saboteurs.** Living bad players see known teammates in a shared cabin, propose an attack or Skip, and chat privately. Proposals remain editable for 20 seconds. Most votes choose the target; ties draw randomly among top choices, including Skip. Missing proposals count as Skip. A confirmed Blocker power is fixed and spent.
+3. **Medic**, if included. See the original attack target, then heal, poison another person or Skip. A blocked Medic sees no patient and spends nothing.
+4. **Brave Passenger**, if included. Protect one person once per game. Protection plus healing on the same player causes overdose.
+5. **Inspector**, if included. Check one other player for GOOD or BAD; receive the report in the morning if alive.
+6. **Witness**, if included. Learn the original attack target in the morning if alive. Blocked powers produce a failure report, never invented information.
 
 All choices except Saboteur proposals lock on confirmation. A confirmed limited power is spent even if blocked or unnecessary. Missing choices skip without spending a limited power. Dead characters cannot act or receive future Saboteur chat, proposals, patient information or medicine stock.
 
@@ -67,7 +69,7 @@ Resolve all victims together, then promote a surviving Trainee, check the winner
 
 ## Gathering, speaking and voting
 
-At night end a 4-second gathering transition brings everyone to the train lounge. An 8-second morning reveal shows who is out, their role and whether they were good or bad. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
+At night end a 4-second gathering transition brings everyone to the train lounge. An 8-second morning reveal shows who is out and whether they were GOOD or BAD, without the exact role. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
 
 The host chooses **In person** or **Chat room** before starting:
 
@@ -76,7 +78,7 @@ The host chooses **In person** or **Chat room** before starting:
 
 After every living player has had a turn, a 45-second sealed vote begins automatically. Everyone may vote for any living player, including themselves, or Skip. A confirmed vote cannot be changed. Missing votes count as Skip. The unique person with the most votes is removed only if they beat Skip; a tie removes nobody.
 
-The 12-second result shows the removed person, **GOOD or BAD**, exact role, and the full voter → target record, including Skip and Speaker's double vote. The same record remains in Journey so far. Even a winning removal gets this reveal before the final screen. If all three groups still have someone alive, everyone returns to their own cabin for the next night. Otherwise the game shows the winner and every role. Replay deals new roles and seats and resets supplies.
+The 12-second result shows the removed person, **GOOD or BAD**, and the full voter → target record, including Skip and Speaker's double vote. The same record remains in the journey log. Chat and the log group entries into Night 1, Night 2, and so on, each in its own accordion; the current night opens by default and manual open/closed choices survive polling until the next night. Even a winning removal gets this reveal before the final screen. If all three groups still have someone alive, everyone returns to their own cabin for the next night. Otherwise the game shows the winner and every role. Replay deals new roles and seats and resets supplies.
 
 ## Rooms, privacy and timers
 
@@ -88,13 +90,13 @@ Only explicit public fields and the authenticated owner's private data are retur
 
 ## Private notebook
 
-A floating Notes button on the right opens a private notebook in the lobby or during any game phase, including after elimination. Players can type notes or draw with a finger, stylus or mouse. Drawing tools include Pen, Eraser, Undo and Clear drawing; Undo can restore a cleared drawing. Text and drawings autosave on the current device and survive reloads, phase changes and pause/resume. The game continues while the notebook is open.
+A floating Notes button on the right opens a private notebook in the lobby or during any game phase, including after elimination. Players can type notes or draw with a finger, stylus or mouse. The larger paper area has six ink colors (Midnight, Ruby, Emerald, Blue, Violet, Amber), and each stroke retains its chosen color. Drawing suppresses page/text selection and native touch callouts, while typing remains selectable. Drawing tools include Pen, Eraser, Undo and Clear drawing; Undo can restore a cleared drawing. Text and drawings autosave on the current device and survive reloads, phase changes and pause/resume. The game continues while the notebook is open.
 
 Notes belong to the current room, player and game. Lobby notes carry into the first game; another game starts a fresh notebook. Notes never enter game requests, room state or shared chat. They do not transfer to another device through a rejoin code.
 
 ## Visual and interaction checks
 
-Cabin, lounge and platform use local compressed WebP artwork with a violet, midnight-blue and champagne-gold palette. The cabin has a seated first-person viewpoint with a wide composition that keeps the sofa visible on phones. Human portraits replace emoji characters; role portraits match each profession, while 12 unique neutral civilian portraits identify players publicly without revealing teams. See `last-train-art.md` for atlas mapping. The first-person cabin never shows an external avatar of the owner. Saboteur cabins show the other known teammates across from the viewer; the owner is represented by the private bottom role card. The shared lounge retains every numbered seat, with paired seats, a spotlight on the current speaker and faded figures for removed players. A role ticket stays pinned to the bottom. Action target manifests open as keyboard-accessible dialogs and close when the turn changes, preventing a stale choice from carrying into another turn. Reduced-motion mode keeps all scenes readable without boarding/transition animation.
+Cabin, lounge and platform use local compressed WebP artwork with a violet, midnight-blue and champagne-gold palette. The cabin has a seated first-person viewpoint with a wide composition that keeps the sofa visible on phones. Human portraits replace emoji characters; role portraits match each profession, while 12 unique neutral civilian portraits identify players publicly without revealing teams. See `last-train-art.md` for atlas mapping. The first-person cabin never shows an external avatar of the owner. Saboteur cabins show the other known teammates across from the viewer; the owner is represented by the private bottom role card. The shared lounge retains every numbered seat, with paired seats, a spotlight on the current speaker and faded figures for removed players. A role ticket stays pinned to the bottom during play, with a centered SVG chevron and no decorative drag line. The finished screen instead shows a full-body winning-team lineup and a public cast list, with a departure-ticket style Another Journey action. The header uses a train crest instead of the LT monogram. Action target manifests open as keyboard-accessible dialogs and close when the turn changes, preventing a stale choice from carrying into another turn. Reduced-motion mode keeps all scenes readable without boarding/transition animation.
 
 ## Optional test players
 

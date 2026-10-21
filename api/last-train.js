@@ -11,7 +11,7 @@ function player(name) { const tok = secret(); return { p: { id: crypto.randomUUI
 function view(room, me) { const result = rules.view(room, me); result.me.recoveryCode = recovery(room, me); return result; }
 async function execute(req, body) {
   const action = req.method === 'GET' ? 'state' : body.action;
-  need(['state', 'create', 'join', 'settings', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'vote', 'pause', 'resume', 'leave'].includes(action), 400, 'Unknown choice. Please reload.');
+  need(['state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'vote', 'pause', 'resume', 'leave'].includes(action), 400, 'Unknown choice. Please reload.');
   if (action === 'create') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     let code;
@@ -54,7 +54,7 @@ async function execute(req, body) {
   }
   const me = room.players.find(p => p.id === body.pid);
   need(me && body.tok && equal(me.tokenHash, hash(body.tok)), 401, 'Use your private rejoin code to return to the game.');
-  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text]));
+  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles]));
   const receipt = (room.receipts || []).find(r => r.pid === me.id && r.id === body.requestId);
   if (action !== 'state' && receipt) { need(receipt.fingerprint === fingerprint, 409, 'That request was already used. Reload the game.'); return view(room, me); }
   need(!me.departed || action === 'state', 403, 'Use your rejoin code to come back.');
@@ -65,10 +65,12 @@ async function execute(req, body) {
   const host = () => need(room.hostId === me.id, 403, 'Only the host can do that.');
   need(!room.paused || ['resume', 'leave'].includes(action), 409, 'The game is paused.');
   if (action === 'settings') {
-    host(); need(room.phase === 'lobby', 409, 'Change roles before the game starts.');
+    host(); need(['lobby','finished'].includes(room.phase), 409, 'Change roles before the game starts.');
     need(['brave', 'speaker'].includes(body.extra) && typeof body.blocker === 'boolean' && ['in-person', 'chat'].includes(body.discussion), 400, 'Choose the role mix on screen.');
-    room.settings = { extra: body.extra, blocker: body.blocker, discussion: body.discussion };
+    const roles = body.roles === undefined ? room.settings.roles || null : body.roles === null ? null : rules.validateLoadout(present(room).length, body.roles);
+    room.settings = { extra: body.extra, blocker: body.blocker, discussion: body.discussion, roles };
   }
+  if (action === 'shuffleRoles') { host(); need(['lobby','finished'].includes(room.phase), 409, 'Shuffle roles before the journey starts.'); room.settings.roles = rules.randomLoadout(present(room).length); }
   if (action === 'start') { host(); need(['lobby', 'finished'].includes(room.phase), 409, 'A game is already running.'); rules.start(room); }
   if (action === 'ready') {
     need(room.phase === 'briefing' && me.alive, 409, 'You cannot use Ready now.');
