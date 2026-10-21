@@ -11,6 +11,7 @@
   let dockNode = null, dockStamp = '', drawerGesture = null, suppressDrawerClick = false;
   let cinemaNode = null, cinemaKey = '', cinemaEnd = null;
   const overlayRoot = document.getElementById('lt-overlays');
+  const notebook = window.createTrainNotebook(overlayRoot);
   const compactScene = matchMedia('(max-width: 680px)');
   const motionOK = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!seat?.tok || (invitation && invitation !== seat.code)) { seat = null; save('lt-seat', null); }
@@ -162,6 +163,14 @@
     return el('section', { class: 'panel roster-panel' }, el('div', { class: 'panel-heading' }, el('h3', {}, 'Your fellow travellers'), txt('small', 'muted', state.players.filter(p => !p.departed).length + '/12 IN ROOM')), el('div', { class: 'roster' }, ...state.players.map(p => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (!p.alive ? ' out' : '') }, avatar(p, 'avatar'), el('div', { class: 'seat-label' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.role ? role(p.role).name + ' · ' + (p.alive ? groupName(p.group) : 'OUT') : p.departed ? 'AWAY' : p.id === state.hostId ? 'HOST' : 'READY TO BOARD'))))));
   }
   function setting(extra = {}) { return send('settings', { ...state.settings, ...extra }); }
+  function startJourneyButton(disabled) {
+    const n = btn('START JOURNEY', () => send('start'), 'host departure-button', disabled);
+    n.setAttribute('aria-label', 'START JOURNEY');
+    const icon = el('span', { class: 'departure-icon', 'aria-hidden': 'true' });
+    icon.innerHTML = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="4" width="18" height="22" rx="5"/><path d="M8 15h16M13 4v11M19 4v11M11 26l-3 4M21 26l3 4M12 8h8"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>';
+    n.replaceChildren(icon, el('span', { class: 'departure-copy' }, txt('small', '', 'ALL ABOARD'), txt('b', '', 'Start Journey')), txt('span', 'departure-arrow', '→'));
+    return n;
+  }
   function waitingRoom() {
     const n = state.players.filter(p => !p.departed).length, host = state.hostId === state.meId;
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Bring at least 6 friends. Each person needs their own phone.'), txt('div', 'large-code', state.code),
@@ -169,7 +178,7 @@
       n >= 6 ? el('div', { class: 'role-mix' }, ...state.mix.map(m => el('span', {}, rolePortrait(m.role, 'mix-portrait'), txt('b', '', m.count + '×'), role(m.role).name))) : txt('p', 'muted', (6 - n) + ' more needed to start.'),
       host && n >= 9 ? el('label', { class: 'setting-label', htmlFor: 'lt-extra' }, 'Extra Passenger power', el('select', { id: 'lt-extra', disabled: busy, onchange: e => setting({ extra: e.target.value }) }, el('option', { value: 'brave', selected: state.settings.extra === 'brave' }, 'Brave Passenger'), el('option', { value: 'speaker', selected: state.settings.extra === 'speaker' }, 'Speaker'))) : null,
       host && n === 12 ? el('label', { class: 'check-setting' }, el('input', { type: 'checkbox', checked: state.settings.blocker, disabled: busy, onchange: e => setting({ blocker: e.target.checked }) }), 'Include Blocker on the bad team') : null,
-      host ? btn('START JOURNEY', () => send('start'), 'host', n < 6) : txt('p', 'waiting', 'The host will start your journey.'), btn('See the rules', rules, 'text-button')), roster());
+      host ? startJourneyButton(n < 6) : txt('p', 'waiting', 'The host will start your journey.'), btn('See the rules', rules, 'text-button')), roster());
   }
   function clock() { return el('div', { class: 'journey-clock', role: 'timer', 'aria-live': 'off' }, txt('span', 'countdown', ''), txt('small', '', state.paused ? 'PAUSED' : 'SECONDS')); }
   function hud(kicker, title, subtitle) { return el('div', { class: 'scene-hud' }, el('div', {}, txt('span', 'eyebrow', kicker), el('h1', {}, title), subtitle ? txt('p', '', subtitle) : null), state.deadline || state.paused ? clock() : null); }
@@ -269,11 +278,12 @@
     const seats = state.players.map((p, i) => {
       const row = Math.floor(i / perRow), col = i % perRow, count = Math.min(perRow, state.players.length - row * perRow);
       const near = rows > 1 && row === rows - 1;
-      const depth = rows === 1 ? 1 : row / (rows - 1), edge = compactScene.matches ? 14 : 12;
-      const x = count === 1 ? 50 : compactScene.matches && rows === 3 && row === 1 && count === 4 ? [12,31,69,88][col] : edge + col * (100 - edge * 2) / (count - 1);
+      const depth = rows === 1 ? 1 : row / (rows - 1);
+      const positions = compactScene.matches ? { 4: [14,33,67,86], 3: [20,40,80], 2: [40,60], 1: [50] } : { 6: [9,23,43,57,77,91], 5: [11,25,50,75,89], 4: [18,32,68,82], 3: [23,37,77], 2: [43,57], 1: [50] };
+      const x = positions[count][col];
       const y = rows === 1 ? 89 : compactScene.matches ? (rows === 2 ? [56,93][row] : [40,66,93][row]) : [58,94][row];
       const width = compactScene.matches ? 20 + depth * 3 : 13 + depth * 2.5;
-      return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.group === 'saboteur' ? 'bad' : 'good') : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) },
+      return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.group === 'saboteur' ? 'bad' : 'good') : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', 'data-seat-pair': Math.floor(col / 2), style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) },
         el('span', { class: 'seat-number', 'aria-label': 'Seat ' + p.seat + (!p.alive ? ' · Out' : '') }, String(p.seat).padStart(2,'0'), !p.alive ? txt('span','out-cross','×') : null), seatedTraveller(p),
         el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD')));
     });
@@ -303,7 +313,7 @@
     const phase = state.phase, latest = state.history.at(-1), gathering = phase === 'gathering';
     const titles = { gathering: 'Everyone to the lounge.', morning: 'A new morning. A few secrets.', discussion: 'One seat. One story.', voting: 'Who leaves the train?', voteResult: latest?.outs.length ? 'One player leaves the train.' : 'No one leaves this time.' };
     const subtitles = { gathering: 'Cabin doors open. Meet your fellow travellers.', morning: 'See who is out. Check your ticket for any new private report.', discussion: 'Speaking order runs left to right, by seat number. Each person gets 20 seconds.', voting: 'Vote for someone or Skip. Choices stay hidden until everyone has voted.', voteResult: 'The full vote record is below. Good or bad, their secret is now out.' };
-    return el('section', { class: 'world lounge-scene phase-' + phase, 'aria-label': 'The train gathering lounge' }, hud('ROUND ' + state.round + ' · THE GATHERING LOUNGE', titles[phase], subtitles[phase]), el('div', { class: 'lounge-room', 'aria-label': 'Everyone seated together in the observation lounge' }, art('lounge-room'), el('div', { class: 'lounge-table', 'aria-hidden': 'true' }), loungeSeats()),
+    return el('section', { class: 'world lounge-scene phase-' + phase, 'aria-label': 'The train gathering lounge' }, hud('ROUND ' + state.round + ' · THE GATHERING LOUNGE', titles[phase], subtitles[phase]), el('div', { class: 'lounge-room', 'aria-label': 'Everyone seated together in the observation lounge' }, art('lounge-room'), loungeSeats()),
       gathering ? txt('p', 'gathering-caption', 'Take your seat…') : phase === 'morning' ? el('section', { class: 'lounge-console morning-reveal' }, outs(latest), txt('p', 'console-hint', 'The next part begins when the timer ends.')) : phase === 'discussion' ? speechConsole() : phase === 'voting' ? el('section', { class: 'lounge-console voting-console' }, el('h2', {}, state.me.vote ? 'Your vote is sealed.' : state.me.alive ? 'Your vote. Your decision.' : 'Watch the vote quietly.'), state.me.vote ? txt('p', 'choice-saved', '✓ ' + (state.me.vote.targetId ? who(state.me.vote.targetId) : 'Skip') + (state.me.vote.weight === 2 ? ' · counts twice' : '')) : state.me.alive && !state.paused ? btn('Choose a player or Skip', () => chooseTarget('Who should leave the train?', 'Your vote is final after confirmation. Ties remove nobody.', 'vote', {}, { self: true, skip: true }), 'gold') : null, txt('p', 'console-hint', state.players.filter(p => p.voteLocked).length + ' / ' + state.players.filter(p => p.alive).length + ' votes sealed')) : el('section', { class: 'lounge-console ejection-reveal' }, outs(latest), latest?.reason === 'tie' ? txt('p', 'console-hint', 'A tie. Nobody is voted out.') : latest?.reason === 'skip' ? txt('p', 'console-hint', 'The group chose Skip.') : null, latest?.votes ? el('div', { class: 'inline-votes' }, ledger(latest)) : null, txt('p', 'console-hint', 'The next part begins when the timer ends.')));
   }
   function reportMessage(r) {
@@ -475,6 +485,7 @@
     tick();
   }
   function tick() {
+    notebook.sync(state && seat ? { ...seat, match: state.match || 1 } : null, state ? (state.phase === 'lobby' ? 'Waiting to board' : 'Round ' + state.round + ' · ' + (state.paused ? 'Paused' : state.phase === 'night' ? roleName(state.nightRole) + ' turn' : ({ briefing:'Meet the teams', boarding:'All aboard', settling:'Nightfall', gathering:'Gathering', morning:'Morning', discussion:'Discussion', voting:'Voting', voteResult:'Vote results', finished:'Journey ended' }[state.phase] || ''))) : '');
     if (!state) return;
     if (cinemaNode && !state.paused) {
       const elapsed = (state.duration || 12) - (state.remainingMs || 0) / 1000 + (Date.now() - state.receivedAt) / 1000;

@@ -157,3 +157,35 @@ test('cabin controls keep patient identity private and vote cinema pauses withou
     await m.screenshot({path:info.outputPath('vote-record-and-drawer-mobile.png')});
   }finally{await Promise.all(contexts.map(c=>c.close()));}
 });
+
+test('private notebook preserves text and handwriting through polling, reload and turns without sharing notes',async({browser},info)=>{
+  const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
+  const make=(action,data)=>call(handler,{action,requestId:crypto.randomUUID(),...data});
+  const host=(await make('create',{name:'Note host'})).j,seats=[host];for(let i=1;i<6;i++)seats.push((await make('join',{code:host.code,name:'Note '+i})).j);
+  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true}),payloads=[],errors=[];
+  const connect=async(owner)=>{
+    await context.addInitScript(s=>{if(!sessionStorage.getItem('notebook-seeded')){localStorage.setItem('lt-seat',JSON.stringify(s));sessionStorage.setItem('notebook-seeded','1');}},{code:owner.code,pid:owner.meId,tok:owner.tok});
+    await context.route('**/api/last-train**',async route=>{const q=new URL(route.request().url()),req=route.request(),body=req.method()==='POST'?JSON.parse(req.postData()):null;if(body)payloads.push(body);const r=await call(handler,body,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});
+  };
+  try{
+    await connect(host);const p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto('/last-train.html');await p.getByRole('button',{name:'Open private notebook'}).click();
+    const book=p.getByRole('dialog',{name:'My notebook'}),text=p.getByLabel('Your notes',{exact:true});await text.fill('PRIVATE: cabin 4 changed their story.');await expect(book.getByRole('status')).toHaveText('Saved on this device');
+    // A lobby note follows the player into their first journey without being reset.
+    let room=await store.load(host.code);rules.start(room);await store.save(room);await expect(p.locator('#lt-app')).toHaveAttribute('data-phase','briefing');await expect(text).toHaveValue('PRIVATE: cabin 4 changed their story.');await expect(book).toBeVisible();
+    await book.getByRole('button',{name:'Draw',exact:true}).click();const canvas=book.locator('canvas'),box=await canvas.boundingBox();
+    // Real touch events exercise pointer capture and touch-action, including a second finger.
+    const cdp=await context.newCDPSession(p);const touch=async(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([x,y,id])=>({x,y,id,radiusX:3,radiusY:3,force:1}))});
+    await touch('touchStart',[[box.x+30,box.y+50,1]]);await touch('touchMove',[[box.x+70,box.y+85,1]]);await touch('touchMove',[[box.x+110,box.y+45,1]]);await touch('touchStart',[[box.x+110,box.y+45,1],[box.x+160,box.y+100,2]]);await touch('touchEnd',[[box.x+110,box.y+45,1]]);await touch('touchEnd',[]);
+    const notebookData=()=>p.evaluate(()=>JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>k.startsWith('lt-notebook:')))));
+    expect((await notebookData()).strokes).toHaveLength(1);expect((await notebookData()).strokes[0].points.length).toBeGreaterThan(2);
+    const ink=()=>canvas.evaluate(c=>{const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return pixels.some((n,i)=>i%4===3&&n>0);});expect(await ink()).toBe(true);
+    await book.getByRole('button',{name:'Clear drawing',exact:true}).click();expect(await ink()).toBe(false);await book.getByRole('button',{name:'Undo',exact:true}).click();expect(await ink()).toBe(true);
+    // Erasing is an undoable stroke, rather than deleting the whole notebook.
+    await book.getByRole('button',{name:'Eraser',exact:true}).click();await p.mouse.move(box.x+70,box.y+85);await p.mouse.down();await p.mouse.move(box.x+100,box.y+75,{steps:4});await p.mouse.up();expect((await notebookData()).strokes.at(-1).tool).toBe('eraser');await book.getByRole('button',{name:'Undo',exact:true}).click();expect((await notebookData()).strokes).toHaveLength(1);
+    await p.screenshot({path:info.outputPath('notebook-draw-mobile.png')});await p.reload();await p.getByRole('button',{name:'Open private notebook'}).click();await expect(p.getByLabel('Your notes',{exact:true})).toHaveValue('PRIVATE: cabin 4 changed their story.');await p.getByRole('dialog',{name:'My notebook'}).getByRole('button',{name:'Draw',exact:true}).click();expect(await ink()).toBe(true);
+    await p.setViewportSize({width:320,height:720});expect(await ink()).toBe(true);expect(await p.getByRole('dialog',{name:'My notebook'}).evaluate(n=>n.scrollWidth<=n.clientWidth+1)).toBe(true);
+    await p.keyboard.press('Escape');await expect(p.getByRole('button',{name:'Open private notebook'})).toBeFocused();
+    await p.evaluate(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:seats[1].meId,tok:seats[1].tok});await p.goto('/last-train.html');await expect.poll(async()=>p.locator('#lt-app').getAttribute('data-phase')).toBe('briefing');await p.getByRole('button',{name:'Open private notebook'}).click();await expect(p.getByLabel('Your notes',{exact:true})).toHaveValue('');
+    expect(JSON.stringify(payloads)).not.toContain('PRIVATE:');expect(JSON.stringify((await call(handler,null,{code:host.code,pid:host.meId},{'x-tok':host.tok})).j)).not.toContain('PRIVATE:');expect(errors).toEqual([]);
+  }finally{await context.close();}
+});

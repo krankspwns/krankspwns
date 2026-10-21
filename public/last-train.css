@@ -344,9 +344,69 @@ body { background: radial-gradient(ellipse at 0 0, #5a334330, transparent 55%), 
 }
 .elimination-cinema h2:focus { outline: none; }
 
-/* Guests on the near side face the group across the shared table. */
+/* Paired train seats face fellow travellers across the aisle. */
 .lounge-seat[data-facing=away] .seated-traveller { background-image: url('/last-train/seated-back.webp'); background-size: 400% 300%; background-position: var(--px) var(--back-y, var(--py)); }
-.lounge-table { position: absolute; z-index: 1; left: 50%; top: 56%; width: 65%; height: 22%; transform: translateX(-50%); background: url('/last-train/lounge-table.webp') center / contain no-repeat; filter: drop-shadow(0 8px 5px #170a1280); pointer-events: none; }
 .seat-name-row { display: flex; justify-content: center; align-items: center; max-width: 100%; gap: 4px; }
 .seat-caption .seat-identity { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #d7b57b88; }
-@media(max-width:680px) { .lounge-table { top: 50%; width: 68%; height: 21%; } .seat-name-row { gap: 2px; } .seat-caption .seat-identity { width: 14px; height: 14px; } }
+@media(max-width:680px) { .seat-name-row { gap: 2px; } .seat-caption .seat-identity { width: 14px; height: 14px; } }
+
+/* A departure ticket makes the host's main action feel like an invitation. */
+.waiting-panel > .departure-button {
+  display: flex; align-items: center; gap: 17px; width: 100%; min-height: 86px; padding: 14px 20px;
+  position: relative; overflow: hidden; text-align: left; border-radius: 13px;
+  background: linear-gradient(115deg, #f8e6b7, #ddbc7d 70%, #cfa76a); color: #38242d;
+  border: 1px solid #ffedc5; box-shadow: 0 5px 0 #8c6740, 0 12px 30px #0005, inset 0 1px #fff9;
+}
+.departure-button::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(110deg, transparent 35%, #fff5 50%, transparent 65%); transform: translateX(-110%); transition: transform .6s ease; }
+.departure-button:hover:not(:disabled) { background: linear-gradient(115deg, #fff0ce, #edcd8f); border-color: #fff3d7; transform: translateY(-2px); }
+.departure-button:hover:not(:disabled)::after { transform: translateX(110%); }
+.departure-button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #8c6740, 0 7px 18px #0004; }
+.departure-icon { display: grid; place-items: center; width: 47px; height: 47px; flex: none; color: #ffe8b0; background: linear-gradient(145deg, #593344, #2d2132); border: 1px solid #42283d; border-radius: 10px; box-shadow: inset 0 1px #fff2; }
+.departure-icon svg { width: 32px; height: 32px; }
+.departure-copy { display: grid; gap: 1px; padding-left: 17px; border-left: 1px dashed #68432470; }
+.departure-copy small { font-size: 8px; letter-spacing: 2.5px; color: #705037; }
+.departure-copy b { font-size: 20px; font-weight: 800; letter-spacing: -.5px; }
+.departure-arrow { margin-left: auto; font-size: 28px; transition: transform .2s; }
+.departure-button:hover:not(:disabled) .departure-arrow { transform: translateX(3px); }
+
+/* The notebook stays independent of polling and the private role drawer. */
+.notebook-launcher { position: absolute; pointer-events: auto; right: max(14px, env(safe-area-inset-right)); top: 48%; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 57px; padding: 10px 6px 7px; border: 1px solid #e6c58b99; border-radius: 13px 4px 4px 13px; background: linear-gradient(135deg, #614348f2, #292032f5); color: #f3dca8; box-shadow: 0 4px 18px #0006, inset 0 1px #fff1; font-size: 9px; }
+.notebook-launcher svg { width: 25px; height: 25px; }
+.notebook-launcher:hover:not(:disabled) { background: #694957; border-color: #f5dca5; }
+.notebook-open { overflow: hidden; }
+.notebook { width: min(680px, calc(100% - 28px)); max-width: none; max-height: calc(100dvh - 28px); margin: auto; padding: 24px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #d8b77b99; border-radius: 19px; background: radial-gradient(ellipse at 0 0, #603d4933, transparent 65%), #211925; color: #f4e3c5; box-shadow: 0 25px 100px #000b; }
+.notebook::backdrop { background: #090b16c9; backdrop-filter: blur(6px); }
+.notebook-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notebook-header .eyebrow { font-size: 8px; }
+.notebook-header h2 { margin-top: 3px; font-size: 29px; }
+.notebook-close { width: 44px; height: 44px; flex: none; padding: 0; font-size: 27px; color: #d4c1c9; }
+.notebook-phase { font-size: 11px; color: #bfaebd; margin: 9px 0 18px; }
+.notebook-modes { display: flex; gap: 5px; width: fit-content; padding: 4px; border: 1px solid #c9a96a33; border-radius: 11px; margin-bottom: 15px; background: #120e1c; }
+.notebook-modes button { min-width: 92px; padding: 8px 20px; border: 0; font-size: 12px; }
+.notebook button[aria-pressed=true] { color: #2d2030; background: linear-gradient(#f0d9a4, #d4b176); }
+.notebook-typing label { margin-bottom: 7px; color: #cfbbc8; font-size: 11px; }
+.notebook-paper { display: block; width: 100%; height: clamp(240px, 43dvh, 430px); border: 1px solid #cfbb95; border-radius: 5px 10px 10px 5px; color: #293248; background: repeating-linear-gradient(transparent 0 29px, #a6907d30 29px 30px), linear-gradient(90deg, #d49d8355 0 1px, transparent 1px) 33px 0 / calc(100% - 33px) 100% no-repeat, #f4ead3; box-shadow: inset 5px 0 9px #765f351c; }
+textarea.notebook-paper { resize: none; padding: 21px 18px 18px 44px; font: 15px/30px Inter, system-ui, sans-serif; letter-spacing: 0; }
+.notebook-paper::placeholder { color: #8a7d72; }
+.drawing-paper { position: relative; overflow: hidden; }
+.drawing-paper canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.notebook-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.notebook-tools button { min-height: 40px; padding: 7px 13px; font-size: 11px; }
+.notebook-tools button:last-child { margin-left: auto; color: #d9b6b6; }
+.notebook-tip { font-size: 10px; color: #b8a7b8; line-height: 1.5; margin-top: 9px; }
+.notebook-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 12px; padding: 16px 0 0; color: #ab9daf; font-size: 9px; letter-spacing: .2px; }
+.notebook-save { color: #cdb783; }
+.notebook [hidden] { display: none; }
+@media(max-width:680px) {
+  .notebook-launcher { width: 46px; right: max(6px, env(safe-area-inset-right)); padding: 9px 4px 6px; top: 47%; font-size: 8px; }
+  .notebook-launcher svg { width: 23px; height: 23px; }
+  .notebook { padding: 19px 15px; width: calc(100% - 20px); max-height: calc(100dvh - 20px); border-radius: 15px; }
+  .notebook-header h2 { font-size: 25px; }
+  .notebook-phase { margin-bottom: 12px; }
+  .notebook-tools { gap: 4px; }
+  .notebook-tools button { padding-inline: 9px; font-size: 10px; }
+  .departure-copy b { font-size: 18px; }
+  .waiting-panel > .departure-button { gap: 12px; padding-inline: 14px; }
+  .departure-copy { padding-left: 12px; }
+}
+@media(prefers-reduced-motion:reduce) { .departure-button::after, .departure-arrow { transition: none; } }
