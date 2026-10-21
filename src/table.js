@@ -269,6 +269,39 @@ function renderRejoin() {
     : el('div', { class: 'rj-dots' }, el('i'), el('i'), el('i'))));
   clearTimeout(rejoinT); if (!slow) rejoinT = setTimeout(() => { if (session && !st) render(); }, 7050 - (Date.now() - rejoinAt));
 }
+// Return from the attack camera only after the whole row presentation is clear.
+let ownCardReturnTimer = null, ownCardReturnAnimation = 0;
+function queueOwnCardReturn() {
+  clearTimeout(ownCardReturnTimer); cancelAnimationFrame(ownCardReturnAnimation);
+  if (!st) return;
+  const key = st.code + ':' + st.round;
+  const current = () => st && st.code + ':' + st.round === key && !document.querySelector('.final');
+  const blocked = () => document.querySelector('.atkfx, .resfx, .drinkfx, .nextfx, .winfx');
+  const attempt = () => {
+    ownCardReturnTimer = null;
+    if (!current()) return;
+    if (blocked() || drinkPendingRow() >= 0 || lateDrinkPending() || stageRow < (st.currentRow ?? 0)) {
+      ownCardReturnTimer = setTimeout(attempt, 100); return;
+    }
+    const cards = document.querySelector('.stage .tile.me .tcards');
+    if (!cards) return;
+    const rect = cards.getBoundingClientRect();
+    const tween = (duration, paint) => new Promise((resolve) => {
+      const started = performance.now(), reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const frame = (now) => {
+        if (!current() || blocked()) { resolve(); return; }
+        const progress = reduced ? 1 : Math.min(1, (now - started) / Math.max(900, duration));
+        paint(progress);
+        if (progress < 1) ownCardReturnAnimation = requestAnimationFrame(frame);
+        else { ownCardReturnAnimation = 0; resolve(); }
+      };
+      ownCardReturnAnimation = requestAnimationFrame(frame);
+    });
+    panAttackCamera(rect.top + window.scrollY + rect.height / 2, innerHeight, tween);
+  };
+  ownCardReturnTimer = setTimeout(attempt, 100);
+}
+
 // Frame the next-round controls and standings once on arrival, wherever the viewer was.
 let hallFramedKey = '', hallFrameTimer = null, hallFrameAnimation = 0;
 function hallFrameTarget(first, hall, from = window.scrollY) {
@@ -341,7 +374,7 @@ function render() {
   if (stageScroll) {   // moving on to the next row: bring it into view, but never while the player is scrolling
     stageScroll = false;
     const e = document.querySelector('.stage, .final');
-    if (e && !e.classList.contains('final') && Date.now() - lastTouch > 2500) { const r = e.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.5) e.scrollIntoView({ block: 'start' }); }
+    if (e && !e.classList.contains('final')) queueOwnCardReturn();
   }
   syncHallFraming();
 }

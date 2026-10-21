@@ -419,7 +419,7 @@ async function runShowdown(res) {
     const jitter = (amp) => { if (app) app.style.transform = amp ? `translate(${rnd(-amp, amp).toFixed(1)}px,${rnd(-amp, amp).toFixed(1)}px)` : ''; };
     const pop = (x, y, text, col = '#ff5a5a', delay = 0) => { y = Math.max(y, 250); x = Math.min(W - 130, Math.max(60, x)); const p = mk(`font:900 80px system-ui;color:${col};-webkit-text-stroke:4px #fff;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.45), 0 0 28px ${col}, 0 0 4px #000;white-space:nowrap;z-index:95;opacity:0`, text); anim(p, [{ transform: `translate(${x - 40}px,${y - 30}px) scale(.2) rotate(-10deg)`, opacity: 0 }, { transform: `translate(${x - 40}px,${y - 60}px) scale(1.5) rotate(-6deg)`, opacity: 1, offset: .1 }, { transform: `translate(${x - 40}px,${y - 70}px) scale(1.1) rotate(-4deg)`, opacity: 1, offset: .7 }, { transform: `translate(${x - 40}px,${y - 130}px) scale(1)`, opacity: 0 }], { duration: 1900, delay, fill: 'forwards' }); };
     const hurt = (tile) => { try { tile.animate([{ transform: 'none', filter: 'brightness(1)' }, { transform: 'translate(-12px,4px) rotate(-2.5deg)', filter: 'brightness(2.2)', offset: .12 }, { transform: 'translate(10px,-4px) rotate(2deg)', filter: 'brightness(1.4)', offset: .3 }, { transform: 'translate(-7px,2px)', offset: .5 }, { transform: 'translate(4px)', offset: .7 }, { transform: 'none', filter: 'brightness(1)' }], { duration: 640 }); tile.animate([{ boxShadow: '0 0 0 0 rgba(255,80,80,0)' }, { boxShadow: '0 0 0 6px rgba(255,90,90,.95), 0 0 60px rgba(255,80,80,.9)', offset: .2 }, { boxShadow: '0 0 0 0 rgba(255,80,80,0)' }], { duration: 1100 }); } catch {} };
-    const scorch = (tile, col) => { const r = tile.getBoundingClientRect(); const s = mk(`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:14px;background:radial-gradient(circle at 50% 55%, ${col}, transparent 70%);mix-blend-mode:multiply;opacity:0`); s.style.position = 'fixed'; anim(s, [{ opacity: 0 }, { opacity: .85, offset: .25 }, { opacity: .55 }], { duration: 1400, fill: 'forwards' }); };
+    const scorch = (tile, col) => { const s = mk(`position:absolute;inset:0;width:100%;height:100%;border-radius:14px;background:radial-gradient(circle at 50% 55%, ${col}, transparent 70%);mix-blend-mode:multiply;opacity:0`); tile.append(s); anim(s, [{ opacity: 0 }, { opacity: .85, offset: .25 }, { opacity: .55 }], { duration: 1400, fill: 'forwards' }); setTimeout(() => s.remove(), 1450); };
     const creature = (emoji, size) => { const c = mk(`font-size:${size}px;line-height:1;width:${size}px;height:${size}px;filter:drop-shadow(0 10px 14px rgba(0,0,0,.55));will-change:transform;z-index:85`); c.innerHTML = `<span class="atkflap">${emoji}</span>`; c.size = size; return c; };
     const place = (c, x, y, s = 1, rot = 0, flip = 1) => { c.style.transform = `translate(${x - c.size / 2}px,${y - c.size / 2}px) scale(${(s * flip).toFixed(3)},${s.toFixed(3)}) rotate(${rot.toFixed(1)}deg)`; };
     const tileRect = (n) => n.getBoundingClientRect();
@@ -452,6 +452,13 @@ async function runShowdown(res) {
     };
     await charge();
     const shown = pairs.map((p) => p.tgt), seen = new Set(), followBase = follow, jitterBase = jitter, flashBase = flash;
+    const anchoredStrikes = style === 'ice' || style === 'blackhole';
+    // These effects cover a tile. Keep their drawing in document coordinates
+    // while the camera travels to the next target.
+    const tileLayer = (draw) => {
+      const scrollAtStart = window.scrollY;
+      return E.layer((g) => { g.save(); g.translate(0, scrollAtStart - window.scrollY); try { draw(g); } finally { g.restore(); } });
+    };
     // every strike is its own little show and they all run at the same time, a beat apart; only the first one steers the camera
     const strike = async (ti) => {
       const follow = ti === 0 ? followBase : () => {}, jitter = ti === 0 ? jitterBase : () => {};
@@ -654,7 +661,7 @@ async function runShowdown(res) {
         await wait(ti < shown.length - 1 ? 520 : 760);
       } else {
         // from the sky: the screen goes to the loser first
-        await panAttackCamera(tdoc().y, H, tween); scrollNow = window.scrollY;
+        if (ti === 0 || anchoredStrikes) { await panAttackCamera(tdoc().y, H, tween); scrollNow = window.scrollY; }
         const T = vp(tdoc());
         if (style === 'thunder') {
           // a real storm cloud: dark puffs painted on the canvas, rolling in from the side, rain falling, lit from inside by every strike
@@ -850,7 +857,7 @@ async function runShowdown(res) {
           // a vortex opens over the loser and pulls its cards in
           SND.play('roar'); setDim(0.92);
           const BH = { r: 0, rot: 0, a: 1 };
-          const dropBH = E.layer((g) => { if (BH.r < 2) return; paintBlackHole(g, T.x, T.y, BH.r, BH.rot, BH.a); });
+          const dropBH = tileLayer((g) => { if (BH.r < 2) return; paintBlackHole(g, T.x, T.y, BH.r, BH.rot, BH.a); });
           await tween(650, (k) => { BH.r = 62 * ease(k); BH.rot += 0.05; });
           try { tTile.animate([{ transform: 'none' }, { transform: 'scale(.94) rotate(-3deg)', offset: .25 }, { transform: 'scale(.82) rotate(4deg)', offset: .6 }, { transform: 'scale(.62) rotate(-8deg)', opacity: .55 }], { duration: 950, easing: 'ease-in' }); } catch {}
           await tween(950, (k) => {
@@ -925,7 +932,7 @@ async function runShowdown(res) {
           const crystals = Array.from({ length: 12 }, (_, i) => { const bottom = i < 7, bx = bottom ? r.left + (i + 0.5) / 7 * r.width + rnd(-8, 8) : (i % 2 ? r.right : r.left), by = bottom ? r.bottom + 4 : r.top + rnd(0.3, 0.9) * r.height; return { x: bx, y: by, an: bottom ? -Math.PI / 2 + rnd(-0.45, 0.45) : (i % 2 ? -0.4 : -Math.PI + 0.4) + rnd(-0.3, 0.3), len: bottom ? rnd(48, 96) : rnd(30, 60), w: rnd(15, 26), d: rnd(0, 0.35) }; });
           const rrPath = (g, pad = 0) => { g.beginPath(); g.roundRect ? g.roundRect(r.left - pad, r.top - pad, r.width + pad * 2, r.height + pad * 2, 14 + pad) : g.rect(r.left - pad, r.top - pad, r.width + pad * 2, r.height + pad * 2); };
           let lastT = performance.now();
-          const dropIce = E.layer((g) => {
+          const dropIce = tileLayer((g) => {
             const now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
             if (shards.length) { for (const sh of shards) { sh.life -= dt; if (sh.life <= 0) continue; sh.vy += 900 * dt; sh.x += sh.vx * dt; sh.y += sh.vy * dt; sh.rot += sh.vr * dt; g.save(); g.globalAlpha = Math.min(1, sh.life * 1.4); g.translate(sh.x, sh.y); g.rotate(sh.rot); const gr = g.createLinearGradient(-sh.sz, -sh.sz, sh.sz, sh.sz); gr.addColorStop(0, 'rgba(250,255,255,.95)'); gr.addColorStop(0.5, 'rgba(150,210,255,.8)'); gr.addColorStop(1, 'rgba(70,140,230,.75)'); g.fillStyle = gr; g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(sh.sz, 0); g.lineTo(-sh.sz * 0.5, sh.sz * 0.8); g.lineTo(-sh.sz * 0.7, -sh.sz * 0.6); g.closePath(); g.fill(); g.stroke(); g.restore(); } return; }
             if (IC.k <= 0) return; const k = IC.k;
@@ -1060,7 +1067,9 @@ async function runShowdown(res) {
         }
       }
     };
-    await Promise.all(shown.map(async (_, ti) => { await wait(ti * 450); await strike(ti); }));
+    if (anchoredStrikes) {
+      for (let ti = 0; ti < shown.length; ti++) await strike(ti);
+    } else await Promise.all(shown.map(async (_, ti) => { await wait(ti * 450); await strike(ti); }));
     targets.slice(3).forEach((e) => release(e.id));
     dimEl.style.transition = 'opacity 1.1s cubic-bezier(.4,0,.2,1)'; setDim(0); cap.classList.remove('on');
     await wait(1150);
@@ -1211,7 +1220,7 @@ function buildResult(r, view, late = 0) {
     else { setTimeout(() => SND.play('names'), 250); setTimeout(() => SND.play('safe'), 700); }
   }
   if (iLose) buzz([220, 90, 220, 90, 360]);
-  setTimeout(() => o.remove(), Math.max(900, 3700 - late));
+  setTimeout(() => { o.remove(); queueOwnCardReturn(); }, Math.max(900, 3700 - late));
    // the host's phone says when the next row's guessing may begin
 }
 
