@@ -4,4 +4,4 @@
 
 .game-card{display:flex;flex-direction:column}.game-art{flex:none}.game-card-body{display:flex;flex-direction:column;flex:1}.game-cta{margin-top:auto}
 
-.train-hub-art img{width:100%;height:100%;max-width:none;object-fit:cover;object-position:45% 50%;filter:none}
+.train-hub-art img{width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 50%;filter:none}

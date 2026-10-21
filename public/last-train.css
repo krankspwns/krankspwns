@@ -47,20 +47,25 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .scene-hud h1 { color: #fff1cf; }
 .scene-hud p { color: #f1e8d6; }
 
-/* The person and their sofa cushion share one image coordinate system. */
-.seated-traveller { display: block; position: relative; flex: none; width: 100%; aspect-ratio: 1; height: auto; background: url('/last-train/seated.webp?v=5') var(--px) var(--py) / 400% var(--sprite-y-size, 300%) no-repeat; filter: drop-shadow(0 9px 9px #0007); }
-.lounge-scene { background: linear-gradient(#21171e, #0e1426); min-height: 0; }
-.lounge-scene > .world-picture { bottom: auto; height: 680px; mask-image: linear-gradient(#000 75%, transparent); }
-.lounge-scene > .world-picture .world-art { object-fit: fill; }
-.lounge-seats { display: flex; flex-direction: column; width: 96%; max-width: 1120px; gap: 18px; margin: 8px auto 30px; }
-.sofa-row { display: grid; grid-template-columns: repeat(var(--seats), minmax(0,1fr)); position: relative; isolation: isolate; padding: 0; min-height: 0; }
+/* A single camera and ground plane contain every seat and its caption. */
+.seated-traveller { display: block; position: relative; flex: none; width: 100%; aspect-ratio: 1; height: auto; background: url('/last-train/seated.webp?v=5') var(--px) var(--py) / 400% var(--sprite-y-size, 300%) no-repeat; filter: drop-shadow(0 9px 9px #0007); clip-path: polygon(33% 0, 70% 0, 70% 7%, 100% 7%, 100% 100%, 0 100%, 0 7%, 33% 7%); }
+.world.lounge-scene { background: transparent; min-height: 0; border: 0; box-shadow: none; overflow: visible; }
+.lounge-scene::after { display: none; }
+.lounge-scene > .scene-hud { padding: 22px 12px; background: transparent; }
+.lounge-room { position: relative; isolation: isolate; width: 100%; aspect-ratio: 8 / 5; overflow: hidden; border: 1px solid #c9a96a66; border-radius: 20px; background: #231720; box-shadow: 0 18px 45px #0004; }
+.lounge-room > .world-picture { inset: 0; height: 100%; mask-image: none; }
+.lounge-room > .world-picture .world-art { object-fit: fill; filter: none; }
+.lounge-room::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(transparent 75%, #0b0e1833); pointer-events: none; }
+.lounge-room .lounge-seats { position: absolute; inset: 0; width: 100%; max-width: none; margin: 0; padding: 0; display: block; }
+.lounge-room .sofa-row { display: contents; }
 .sofa-row::before, .lounge-seat::before { display: none; }
-.lounge-seat, .lounge-seat.speaking { position: relative; border: 0; border-radius: 0; background: transparent; backdrop-filter: none; padding: 0 0 8px; box-shadow: none; }
-.lounge-seat .seated-traveller { width: 100%; height: auto; margin: 0; }
-.lounge-seat.speaking .seated-traveller { filter: drop-shadow(0 0 12px #ffdda969) drop-shadow(0 6px 8px #0009); }
-.lounge-seat .seat-number { top: 1px; left: 7px; background: #0e1426cc; border-color: #e8d3a24d; font-size: 9px; min-width: 27px; }
-.lounge-name { font-size: 12px; padding: 2px 6px; margin-top: 2px; background: #080c18c9; border-radius: 4px; }
-.seat-status { font-size: 8px; color: #ddd0be; text-shadow: 0 1px 4px #000; }
+.lounge-seat, .lounge-seat.speaking { position: absolute; z-index: var(--seat-layer); left: var(--seat-x); top: var(--seat-y); width: var(--seat-width); transform: translate(-50%, -100%); border: 0; border-radius: 0; background: transparent; backdrop-filter: none; padding: 0; margin: 0; box-shadow: none; }
+.lounge-seat .seated-traveller { width: 100%; height: auto; margin: 0; filter: drop-shadow(0 5px 4px #12071499); }
+.lounge-seat.speaking .seated-traveller { filter: drop-shadow(0 0 9px #ffdda95c) drop-shadow(0 6px 8px #0009); }
+.lounge-seat .seat-number { top: 1px; left: 2px; background: #140f1acc; border-color: #d2b37488; font-size: 9px; min-width: 27px; }
+.seat-caption { width: 100%; min-height: 35px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 3px; }
+.lounge-name { font-size: 12px; line-height: 1.25; padding: 2px 5px; margin: 0; max-width: 100%; overflow-wrap: anywhere; background: #160f19b3; color: #f4e1bf; border-radius: 5px; }
+.seat-status { font-size: 8px; line-height: 1.3; letter-spacing: .7px; color: #dbcdbf; text-shadow: 0 1px 4px #000; margin: 0; }
 .speaking .seat-status { color: #ffe0a1; }
 .speaking .lounge-name { outline: 1px solid #e8d3a280; }
 .lounge-seat.empty { opacity: 1; }
@@ -69,58 +74,65 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .out-cross { position: absolute; inset: -7px; display: grid; place-items: center; color: #ff5577; font-size: 33px; font-weight: 600; text-shadow: 0 1px 5px #070a19; }
 .alignment-bad .seat-status, .bad .alignment-stamp { color: var(--lt-bad); }
 .alignment-good .seat-status, .good .alignment-stamp { color: var(--lt-good); }
-.lounge-console, .speech-console { background: #0e1426c9; border: 1px solid #c9a96a35; border-radius: 15px; box-shadow: 0 10px 35px #0003; backdrop-filter: blur(6px); }
-.lounge-seat .speech-bubble { bottom: calc(100% - 15px); }
 
-/* Choices float over the room, within reach of the seated first-person view. */
-.world.cabin-scene { background: #10101c; border: 1px solid #c9a96a33; min-height: 0; overflow: hidden; }
+/* Artwork stays clear. The choices form a separate console beneath it. */
+.world.cabin-scene { background: transparent; border: 0; min-height: 0; overflow: visible; box-shadow: none; }
 .cabin-scene::after { display: none; }
-.cabin-scene .cabin-view { position: relative; isolation: isolate; height: min(780px, calc(100svh - 145px)); min-height: 650px; overflow: hidden; }
+.cabin-scene .cabin-view { position: relative; isolation: isolate; height: 430px; min-height: 0; overflow: hidden; border: 1px solid #c9a96a55; border-radius: 20px; background: #19111c; }
 .cabin-view .world-picture { z-index: -2; }
-.cabin-view .world-art { filter: none; object-position: center; }
-.cabin-view::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(#080c18ad, transparent 23%, #080c181a 70%, #080c1880); }
+.cabin-view .world-art { filter: none; object-position: center bottom; }
+.cabin-view::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(#080c1880, transparent 33%, transparent 82%, #120d1a40); }
+.infirmary .cabin-view .world-art { transform: scale(1.9); transform-origin: center bottom; }
 .cabin-view .scene-hud { background: linear-gradient(#080c1870, transparent); }
 .cabin-view .scene-hud p { max-width: 440px; }
-.cabin-scene .action-console, .cabin-scene .rest-note, .cabin-scene .curtain-message { position: absolute; z-index: 3; top: 30%; left: 50%; right: auto; bottom: auto; transform: translateX(-50%); width: min(590px, calc(100% - 48px)); margin: 0; padding: 22px; border: 0; border-radius: 24px; background: radial-gradient(ellipse at center, #07111fe6 25%, #07111f99 65%, #07111f00 100%); box-shadow: none; backdrop-filter: none; text-align: center; display: grid; gap: 13px; }
+.cabin-scene .action-console, .cabin-scene.conspiracy .action-console, .cabin-scene .rest-note, .cabin-scene .curtain-message { position: relative; z-index: auto; top: auto; left: auto; right: auto; bottom: auto; transform: none; width: min(720px, calc(100% - 32px)); margin: 18px auto 0; padding: 22px 24px; border: 1px solid #c9a96a3d; border-radius: 17px; background: linear-gradient(140deg, #32212ccf, #161525eb); box-shadow: inset 0 1px #f4dba50a, 0 10px 30px #0002; backdrop-filter: none; text-align: center; display: grid; gap: 12px; }
 .cabin-scene .action-console::before { display: none; }
-.cabin-scene .action-console h2 { font-size: 29px; padding: 0 25px; color: #fff4db; text-shadow: 0 2px 14px #000; }
-.action-console .console-hint, .rest-note p { color: #dedde5; font-size: 13px !important; text-shadow: 0 1px 5px #000; }
-.action-console > .action-seconds { top: 8px; right: 12px; background: #080c1899; border-color: #e8d3a266; }
+.cabin-scene .action-console h2 { font-size: 26px; padding: 0; color: #f6e4c6; text-shadow: none; }
+.action-console .console-hint, .rest-note p { color: #c9bdc9; font-size: 13px !important; line-height: 1.55; text-shadow: none; }
 .action-console .eyebrow, .rest-note > span { display: none; }
-.action-console .gold, .action-console .heal, .action-console .danger { min-height: 54px; border-radius: 16px; box-shadow: 0 5px 25px #0005, inset 0 1px #fff3; font-size: 14px; }
-.action-console > .text-button { width: fit-content; margin: auto; color: #e7e2eb; min-height: 36px; }
-.action-console .medicine-counts { justify-content: center; color: #8fe0ae !important; font-size: 12px !important; letter-spacing: 1.4px; }
-.console-role-icon.portrait { width: 58px; height: 58px; margin: auto; }
+.action-console .gold, .action-console .heal, .action-console .danger { min-height: 46px; border-radius: 11px; box-shadow: 0 4px 18px #0003, inset 0 1px #fff2; font-size: 14px; }
+.power-buttons { display: flex; justify-content: center; gap: 12px; margin-top: 3px; }
+.power-buttons > button { width: auto; min-width: 94px; padding-inline: 22px; }
+.power-buttons > .skip-power { min-width: 80px; }
+.power-description { display: grid; gap: 5px; }
+.power-description .power-limit { display: block; font-size: 11px; font-weight: 650; color: #d8bd83; line-height: 1.5; }
+.power-description .console-hint { display: block; }
+.action-console .medicine-counts { justify-content: center; color: #b9dfc2 !important; font-size: 11px !important; letter-spacing: 1.4px; }
+.console-role-icon.portrait { width: 40px; height: 40px; margin: auto; }
 .patient-heading { justify-content: center; gap: 10px; }
-.patient-heading .portrait { width: 42px; height: 42px; }
+.patient-heading .portrait { width: 38px; height: 38px; }
 .patient-heading h2 { padding: 0 !important; }
-.cabin-scene .medic-console { top: 22%; display: grid; grid-template-columns: 1fr 1fr; }
+.cabin-scene .medic-console { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .medic-console > * { grid-column: 1 / -1; }
-.medic-console > .heal, .medic-console > .danger { grid-column: auto; width: 100%; min-height: 76px; font-size: 15px; }
-.medic-console > .heal::before { content: '+'; display: block; font-size: 25px; line-height: 1; margin-bottom: 5px; font-weight: 500; }
-.medic-console > .danger::before { content: '◇'; display: block; font-size: 25px; line-height: 1; margin-bottom: 5px; }
-.overdose-hint { border: 0; padding: 0; color: #efbead; font-size: 12px; text-shadow: 0 1px 6px #000; }
-.cabin-scene.conspiracy .action-console { top: 24%; left: auto; right: 4%; transform: none; width: 46%; margin: 0; }
-.cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { position: absolute; left: 4%; top: auto; bottom: 12%; width: 46%; height: auto; transform: none; display: flex; gap: 0; justify-content: center; align-items: flex-end; }
+.medic-console > .heal, .medic-console > .danger { grid-column: auto; display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; min-height: 78px; padding: 9px 14px; font-size: 15px; border-radius: 13px; }
+.medic-console > .heal { background: linear-gradient(145deg, #285b48, #15382f); color: #e7ffed; border-color: #9bd2a778; }
+.medic-console > .heal:hover:not(:disabled) { background: #2c614d; }
+.medic-console > .danger { background: linear-gradient(145deg, #543044, #2d1e35); color: #ffe8f2; border-color: #d69ab578; }
+.medic-console > .danger:hover:not(:disabled) { background: #614052; }
+.medic-console > .heal::before, .medic-console > .danger::before { display: none; }
+.medicine-icon { display: block; width: 54px; height: 54px; flex: none; filter: drop-shadow(0 3px 6px #0005); }
+.medic-console > .skip-power { justify-self: center; width: auto; min-width: 84px; min-height: 40px; padding: 8px 20px; }
+.overdose-hint { border: 0; padding: 0; color: #d8b4a4; font-size: 11px; line-height: 1.5; text-shadow: none; }
+.cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { position: absolute; left: 50%; top: auto; bottom: 7%; width: min(620px, 68%); height: auto; transform: translateX(-50%); display: flex; gap: 0; justify-content: center; align-items: flex-end; }
 .cabin-travellers.count-0 { display: none; }
-.cabin-person { display: flex; flex-direction: column; width: 50%; max-width: 300px; align-items: center; }
+.cabin-person { display: flex; flex-direction: column; width: 50%; max-width: 285px; align-items: center; }
 .cabin-person .seated-traveller { width: 100%; height: auto; margin: 0; }
-.cabin-person > span { margin: 0; border: 0; background: #080c18c9; color: #fff0cf; padding: 3px 9px; font-size: 12px; }
+.cabin-person > span { margin: 0; border: 0; background: #140d19c9; color: #f4e2bd; padding: 3px 9px; font-size: 12px; }
 .team-proposals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
 .team-proposals > .team-proposal { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; gap: 6px; min-width: 0; border: 0; padding: 8px 0; background: transparent; }
 .proposal-target { position: relative; width: 65px; height: 65px; }
-.team-proposals .chosen-avatar, .choice-symbol { width: 65px; height: 65px; border-radius: 16px; border: 1px solid #edb1ab8c; box-shadow: 0 0 0 4px #ffadbd0d; }
-.choice-symbol { display: grid; place-items: center; font-size: 30px; background: #11152699; color: #cdb6c0; }
+.team-proposals .chosen-avatar, .choice-symbol { width: 65px; height: 65px; border-radius: 16px; border: 1px solid #d6b3b17a; box-shadow: 0 0 0 4px #ffadbd0d; }
+.choice-symbol { display: grid; place-items: center; font-size: 30px; background: #16111f99; color: #cdb6c0; }
 .team-proposals .chooser-avatar { position: absolute; width: 25px; height: 25px; border-radius: 50%; bottom: -4px; right: -5px; border: 2px solid #e8d3a2; }
-.team-proposals .proposal-name { font-size: 12px; color: #fff0df; overflow-wrap: anywhere; }
-.team-proposals .proposal-by { font-size: 10px; color: #c7bdce; line-height: 1.35; overflow-wrap: anywhere; }
-.team-chat summary { color: #e6d3df; min-height: 35px; padding: 6px 0; }
-.team-chat .whispers { background: #080c18b3; max-height: 64px; }
-.team-chat .whisper-form input { background: #101526c9; font-size: 12px !important; }
-.patient-scene { position: absolute; inset: auto 0 0; height: 52%; z-index: 1; pointer-events: none; }
-.patient-body { width: min(90%, 520px); height: auto; aspect-ratio: 362 / 160; position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); background: url('/last-train/patients.webp') var(--px) var(--py) / 400% 678.75% no-repeat; filter: drop-shadow(0 10px 8px #0008); }
-.patient-floor-label { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12%; white-space: nowrap; font-size: 11px; letter-spacing: 1px; padding: 5px 11px; color: #ffd3c5; background: #080c18b3; border-radius: 6px; }
-.treated .patient-body { filter: drop-shadow(0 0 16px #88ffae33) drop-shadow(0 10px 8px #0008); }
+.team-proposals .proposal-name { font-size: 12px; color: #f3e1cb; overflow-wrap: anywhere; }
+.team-proposals .proposal-by { font-size: 10px; color: #bbadbe; line-height: 1.35; overflow-wrap: anywhere; }
+.team-chat summary { color: #d9c3d0; min-height: 35px; padding: 6px 0; }
+.team-chat .whispers { background: #100d19a6; max-height: 78px; }
+.team-chat .whisper-form input { background: #16121f; font-size: 12px !important; }
+.patient-scene { position: absolute; inset: auto 0 0; height: 65%; z-index: 1; pointer-events: none; }
+.patient-body { width: min(66%, 360px); height: auto; aspect-ratio: 362 / 280; position: absolute; bottom: 17%; left: 50%; transform: translateX(-50%); background: url('/last-train/patients.webp?v=6') var(--px) var(--py) / 400% var(--patient-y-size, 678.75%) no-repeat; filter: drop-shadow(0 6px 5px #0008); }
+.patient-floor-label { position: absolute; left: 50%; transform: translateX(-50%); bottom: 6%; white-space: nowrap; font-size: 10px; letter-spacing: 1px; padding: 4px 10px; color: #f1cbbd; background: #140d1ab3; border-radius: 6px; }
+.treated .patient-body { filter: drop-shadow(0 0 14px #88ffae33) drop-shadow(0 6px 5px #0008); }
 .treated .patient-floor-label { color: var(--lt-good); }
 .cabin-scene.eyes-closing .cabin-view { animation: cabin-settle 4s ease-in-out; }
 @keyframes cabin-settle { 0%, 25% { filter: brightness(.06); } 100% { filter: brightness(1); } }
@@ -139,6 +151,46 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .introduced-role p, .team-intro-goal { color: #d0c2c5; }
 .intro-kind { color: #d4b587; }
 .intro-kind.crew { color: #afcfbb; }
+
+/* The same walnut, velvet and champagne surfaces from platform to discussion. */
+body { background: radial-gradient(ellipse at 0 0, #5a334330, transparent 55%), radial-gradient(ellipse at 100% 90%, #24345235, transparent 60%), linear-gradient(145deg, #17121e, #0c101b 65%, #090c15); background-attachment: fixed; }
+.panel, .entrance, .waiting-panel, .roster-panel { background: linear-gradient(140deg, #34232fdb, #191523ed); border-color: #c9a96a3d; box-shadow: inset 0 1px #f5ddb20a, 0 14px 40px #0003; }
+.lt-header .wordmark b, .waiting-panel h1, .intro h1 { color: #f2dfbd; }
+.brand-icon { background: linear-gradient(145deg, #422b36, #1c192a); border-color: #c9a96a66; }
+.room-bar, .on-journey .room-bar { background: #211927b3; border-color: #c9a96a26; }
+.text-button, .back { color: #c0b2c2; }
+.muted { color: #bfb1c2; }
+.intro > .train-art img { object-position: center center; border-color: #c9a96a66; }
+.waiting-panel { position: relative; isolation: isolate; overflow: hidden; }
+.waiting-panel > .world-picture { opacity: .2; }
+.waiting-panel::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(#24182680, #191321d9); }
+.cabin-view .scene-hud h1 { text-wrap: balance; }
+.large-code { color: #f0d39d; border-color: #d7b66f66; background: #c9a96a06; }
+.room-setting { background: #140e1b4d; border-color: #c9a96a33; }
+.mode-switch button { background: #17121e; border-color: #c9a96a33; }
+.mode-switch .selected { color: #f3d8aa; background: #c9a96a14; border-color: #d8b5798c; }
+.roster-panel .panel-heading h3 { color: #f0dcb9; }
+.roster .seat { background: #1a13204d; border-color: #c9a96a26; border-radius: 12px; }
+.roster .seat.mine { background: #c9a96a0d; border-color: #d5b77d77; }
+.seat-label small { color: #c0aebd; }
+.role-mix > span { background: #21162470; border-color: #c9a96a35; color: #d6c2cf; }
+.waiting { background: #c9a96a08; border-color: #c9a96a45; color: #d3bd98; }
+.lounge-console, .speech-console { max-width: 760px; margin: 20px auto 0; background: linear-gradient(145deg, #33222edb, #171422ed); border: 1px solid #c9a96a40; border-radius: 17px; box-shadow: inset 0 1px #f8dfb20a, 0 12px 30px #0002; backdrop-filter: none; }
+.speech-console h2, .lounge-console h2 { color: #f1dfbf; }
+.speaking-person > .portrait { border: 1px solid #d4b57988; }
+.speaking-person small { color: #d2b583; }
+.speaking-person > .speaker-seconds { color: #e6c88e; background: #c9a96a0c; border-color: #c9a96a55; }
+.speech-form textarea, .whisper-form input { background: #160f1e; border-color: #c9a96a4d; color: #eee0d6; }
+.speech-form textarea::placeholder { color: #998798; }
+.train-chat, .on-journey .history { background: linear-gradient(145deg, #2b1d2bd9, #141421e6) !important; border-color: #c9a96a3d; }
+.public-message > div { background: #c9a96a07; border-color: #c9a96a29; }
+.message-byline b { color: #e4c58f; }
+.message-byline small { color: #a995ac; }
+.public-message p { color: #d8c9d5; }
+.lt-dialog { background: radial-gradient(ellipse at 0 0, #61404b36, transparent 70%), #1c1423; border-color: #d5b57a73; color: #eadfd5; }
+.lt-dialog h2 { color: #f3dfbd; }
+.manifest-target { background: #201626; border-color: #c9a96a38; }
+.manifest-target.selected { background: #c9a96a1a; border-color: #f0d39d; }
 
 /* The role drawer is anchored to a dedicated visual-viewport layer. */
 .role-overlay { position: fixed; top: 0; left: 0; right: 0; height: 100dvh; z-index: 40; pointer-events: none; }
@@ -193,7 +245,6 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .cinema-window { position: absolute; z-index: -1; inset: 0; background: linear-gradient(#07101db3, #11101bd9), url('/last-train/platform.webp') center / cover; }
 .station-streaks { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 100px, #e9b55722 105px 115px, transparent 125px 260px); animation: station-passes 2.4s linear infinite; }
 .cancelled-ticket { position: relative; max-width: 310px; margin: auto; border: 1px solid #c9a96a99; border-radius: 14px; padding: 21px 20px 24px; background: linear-gradient(130deg, #e8d3a212, #211b2ae6); box-shadow: 0 8px 40px #0008; animation: ticket-arrives .9s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--cinema-offset, 0s); }
-.cancelled-ticket::after { content: ''; position: absolute; right: 14px; top: 14px; width: 23px; height: 23px; border-radius: 50%; background: #0c1019; box-shadow: inset 0 2px 4px #0008, 0 0 0 1px #c9a96a66; animation: ticket-punch 3s both; animation-delay: var(--cinema-offset, 0s); }
 .cancelled-ticket .eyebrow { font-size: 8px; letter-spacing: 1.3px; padding-right: 15px; }
 .cinema-avatar.portrait { display: block; width: 125px; height: 125px; border-radius: 22px; margin: 20px auto 14px; border: 1px solid #e8d3a299; }
 .cancelled-ticket h3 { font-size: 26px; color: #f9e7c9; }
@@ -207,50 +258,52 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .elimination-cinema[data-paused=true] *, .elimination-cinema[data-paused=true] *::after { animation-play-state: paused !important; }
 @keyframes station-passes { to { transform: translateX(-260px); } }
 @keyframes ticket-arrives { from { opacity: 0; transform: translateY(60px) rotate(5deg) scale(.9); } to { opacity: 1; transform: none; } }
-@keyframes ticket-punch { 0%, 50% { opacity: 0; transform: scale(0); } 65% { opacity: 1; transform: scale(1.4); } 100% { opacity: 1; transform: scale(1); } }
 @keyframes cancel-ticket { 0%, 55% { opacity: 0; transform: rotate(-10deg) scale(1.8); } 70% { opacity: 1; transform: rotate(-10deg) scale(.94); } 100% { opacity: 1; transform: rotate(-10deg) scale(1); } }
 @keyframes reveal-alignment { 0%, 65% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
 @media(max-width:1000px) and (min-width:681px) {
-  .cabin-scene.conspiracy .action-console { right: 2%; width: 50%; }
-  .cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { left: 2%; width: 44%; }
   .vote-ledger, .inline-votes .vote-ledger { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .lounge-name { font-size: 10px; }
+  .seat-status { font-size: 7px; }
 }
 @media(max-width:680px) {
   .on-journey { padding-bottom: 85px !important; }
-  .cabin-scene .cabin-view { height: max(690px, calc(100svh - 125px)); min-height: 690px; }
-  .cabin-view .scene-hud { padding: 19px 15px; }
   .scene-hud h1 { font-size: 25px !important; font-weight: 800; letter-spacing: -.035em; }
   .scene-hud .eyebrow { font-size: 8px; letter-spacing: 1.1px; }
+  .cabin-scene .cabin-view { height: 310px; min-height: 0; border-radius: 16px; }
+  .cabin-view .scene-hud { padding: 17px 15px; }
   .cabin-view .scene-hud p { display: none; }
-  .cabin-scene .action-console, .cabin-scene .rest-note, .cabin-scene .curtain-message { top: 29%; width: calc(100% - 24px); padding: 18px 12px; gap: 12px; }
-  .cabin-scene .action-console h2 { font-size: 24px !important; }
+  .cabin-view .journey-clock { width: 48px; height: 48px; }
+  .cabin-view .journey-clock .countdown { font-size: 21px; }
+  .cabin-scene .action-console, .cabin-scene.conspiracy .action-console, .cabin-scene .rest-note, .cabin-scene .curtain-message { top: auto; left: auto; right: auto; transform: none; width: calc(100% - 12px); margin: 14px auto 0; padding: 17px 15px; gap: 10px; }
+  .cabin-scene .action-console h2 { font-size: 23px !important; }
   .action-console .console-hint, .rest-note p { font-size: 12px !important; }
-  .cabin-scene.conspiracy .action-console { top: 19%; right: auto; left: 50%; width: calc(100% - 22px); transform: translateX(-50%); }
-  .cabin-scene .medic-console { top: 18%; }
-  .medic-console > .heal, .medic-console > .danger { min-height: 80px; font-size: 13px; }
-  .cabin-scene .power-console { top: 28%; }
-  .overdose-hint { font-size: 11px; line-height: 1.5; }
-  .cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { left: 50%; width: 91%; top: auto; bottom: 7%; transform: translateX(-50%); gap: 0 !important; }
-  .cabin-person { max-width: 200px; }
-  .cabin-person > span { font-size: 11px; }
+  .power-buttons > button { font-size: 13px; min-height: 44px; }
+  .power-description .power-limit { font-size: 11px; }
+  .console-role-icon.portrait { width: 34px; height: 34px; }
+  .medic-console > .heal, .medic-console > .danger { min-height: 72px; gap: 7px; padding: 7px; font-size: 14px; }
+  .medicine-icon { width: 49px; height: 49px; }
+  .patient-heading .portrait { width: 34px; height: 34px; }
+  .patient-heading h2 { font-size: 21px !important; }
+  .overdose-hint { font-size: 10px; }
+  .cabin-travellers, .cabin-travellers.count-1, .cabin-travellers.count-2 { left: 50%; width: 86%; top: auto; bottom: 5%; transform: translateX(-50%); gap: 0 !important; }
+  .cabin-person { max-width: 185px; }
+  .cabin-person > span { font-size: 10px; padding: 2px 7px; }
   .team-proposals { gap: 9px; }
-  .proposal-target, .team-proposals .chosen-avatar, .choice-symbol { width: 56px; height: 56px; }
-  .team-proposals .chooser-avatar { width: 23px; height: 23px; }
+  .proposal-target, .team-proposals .chosen-avatar, .choice-symbol { width: 50px; height: 50px; }
+  .team-proposals .chooser-avatar { width: 22px; height: 22px; }
   .team-proposals .proposal-name { font-size: 11px; }
   .team-proposals .proposal-by { font-size: 9px; }
   .bad-console .console-hint { font-size: 11px !important; }
-  .team-chat .whispers { max-height: 46px; }
-  .team-chat .whisper-form { margin-top: 4px; }
-  .team-chat .whisper-form input { font-size: 11px !important; }
-  .patient-body { width: min(94%, 410px); height: auto; bottom: 12%; }
-  .patient-floor-label { bottom: 22%; font-size: 10px; }
-  .lounge-seats { width: 98%; gap: 17px; margin-top: 0; }
-  .lounge-scene > .world-picture { height: 500px; }
-  .lounge-seat .seat-number { font-size: 7px; left: 3px; min-width: 23px; }
+  .patient-body { width: min(68%, 280px); height: auto; bottom: 8%; }
+  .patient-floor-label { bottom: 5%; font-size: 9px; }
+  .lounge-scene > .scene-hud { padding: 19px 8px; }
+  .lounge-room { aspect-ratio: 18 / 25; border-radius: 16px; }
+  .lounge-seat .seat-number { font-size: 7px; left: 0; min-width: 22px; padding: 1px 4px; }
   .out-cross { font-size: 28px; }
-  .lounge-name { font-size: 10px; padding: 0 3px; }
-  .seat-status { font-size: 6px; letter-spacing: .5px; }
-  .lounge-console, .speech-console { width: calc(100% - 28px); padding: 20px 16px; }
+  .seat-caption { min-height: 29px; padding-top: 2px; gap: 1px; }
+  .lounge-name { font-size: 9px; padding: 1px 3px; }
+  .seat-status { font-size: 6px; letter-spacing: .2px; }
+  .lounge-console, .speech-console { width: calc(100% - 12px); margin: 16px auto 0; padding: 19px 16px; }
   .speech-console h2 { font-size: 23px; }
   .drawer-content { padding: 4px 16px calc(16px + env(safe-area-inset-bottom)); }
   .ticket-icon { width: 60px; height: 60px; }
@@ -275,22 +328,25 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
   .elimination-cinema h2 { font-size: 24px; }
 }
 @media(max-width:360px) {
-  .cabin-scene .cabin-view { height: 710px; min-height: 710px; }
-  .cabin-scene.conspiracy .action-console { top: 17%; padding: 16px 10px; }
-  .cabin-scene .medic-console { top: 17%; }
-  .cabin-scene .action-console h2 { font-size: 22px !important; }
+  .cabin-scene .cabin-view { height: 265px; }
+  .cabin-scene .action-console h2 { font-size: 21px !important; }
   .team-proposals .proposal-name { font-size: 10px; }
-  .patient-body { width: min(94%, 360px); height: auto; bottom: 12%; }
+  .patient-body { width: 68%; height: auto; bottom: 8%; }
   .ticket-face { gap: 10px; }
   .ticket-copy b { font-size: 19px; }
   .ticket-subtitle { font-size: 9px; }
+  .lounge-name { font-size: 8px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .role-dock, .log-chevron { transition: none; }
   .cabin-scene.eyes-closing .cabin-view { animation: none; }
-  .cancel-stamp, .cancelled-ticket::after, .cinema-alignment { opacity: 1; }
+  .cancel-stamp, .cinema-alignment { opacity: 1; }
 }
-
 .elimination-cinema h2:focus { outline: none; }
 
-.seated-traveller { clip-path: polygon(33% 0, 70% 0, 70% 7%, 100% 7%, 100% 100%, 0 100%, 0 7%, 33% 7%); }
+/* Guests on the near side face the group across the shared table. */
+.lounge-seat[data-facing=away] .seated-traveller { background-image: url('/last-train/seated-back.webp'); background-size: 400% 300%; background-position: var(--px) var(--back-y, var(--py)); }
+.lounge-table { position: absolute; z-index: 1; left: 50%; top: 56%; width: 65%; height: 22%; transform: translateX(-50%); background: url('/last-train/lounge-table.webp') center / contain no-repeat; filter: drop-shadow(0 8px 5px #170a1280); pointer-events: none; }
+.seat-name-row { display: flex; justify-content: center; align-items: center; max-width: 100%; gap: 4px; }
+.seat-caption .seat-identity { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #d7b57b88; }
+@media(max-width:680px) { .lounge-table { top: 50%; width: 68%; height: 21%; } .seat-name-row { gap: 2px; } .seat-caption .seat-identity { width: 14px; height: 14px; } }

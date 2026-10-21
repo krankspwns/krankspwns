@@ -26,15 +26,15 @@ test('twelve phones board, meet their cabins, take sequential night turns, speak
     await nightTurn(host,'saboteur');const states=await Promise.all(pages.map(read)),bad=states.map((s,i)=>({s,i})).filter(x=>x.s.me.group==='saboteur');
     const wi=states.findIndex(s=>s.me.role==='witness'),mi=states.findIndex(s=>s.me.role==='medic'),ii=states.findIndex(s=>s.me.role==='inspector'),bi=states.findIndex(s=>s.me.role==='brave'),ci=states.findIndex(s=>s.me.role==='careful');
     for(const b of bad){await nightTurn(pages[b.i],'saboteur');await expect(pages[b.i].locator('.cabin-person')).toHaveCount(2);await choose(pages[b.i],'Choose Target','Player '+bad[0].i);}
-    const team=pages[bad[0].i];if(!await team.locator('.team-chat').evaluate(n=>n.open))await team.locator('.team-chat summary').click();await team.getByLabel('Whisper to your team',{exact:true}).fill('Same target, team.');await team.getByRole('button',{name:'Send',exact:true}).click();await expect(pages[bad[1].i].getByRole('log',{name:'Private Saboteur chat'})).toContainText('Same target, team.');
+    const team=pages[bad[0].i];if(!await team.locator('.team-chat').evaluate(n=>n.open))await team.locator('.team-chat summary').click();await team.getByLabel('Whisper to your team',{exact:true}).fill('Same target, team.');await team.getByRole('button',{name:'Send',exact:true}).click();const peer=pages[bad[1].i];if(!await peer.locator('.team-chat').evaluate(n=>n.open))await peer.locator('.team-chat summary').click();await expect(peer.getByRole('log',{name:'Private Saboteur chat'})).toContainText('Same target, team.');
     await team.screenshot({path:info.outputPath('journey-saboteur-cabin-mobile.png'),fullPage:true});
-    const witness=pages[wi];await expect(witness.locator('.cabin-person')).toHaveCount(0);await expect(witness.getByLabel('Private Saboteur chat')).toHaveCount(0);await expect(witness.locator('.role-dock')).toBeVisible();expect(await witness.locator('[data-role-art]').evaluateAll(nodes=>nodes.every(n=>n.dataset.roleArt==='witness'))).toBe(true);await expect(witness.locator('.cabin-scene picture source')).toHaveAttribute('srcset','/last-train/cabin-mobile.webp');
+    const witness=pages[wi];await expect(witness.locator('.cabin-person')).toHaveCount(0);await expect(witness.getByLabel('Private Saboteur chat')).toHaveCount(0);await expect(witness.locator('.role-dock')).toBeVisible();expect(await witness.locator('[data-role-art]').evaluateAll(nodes=>nodes.every(n=>n.dataset.roleArt==='witness'))).toBe(true);await expect(witness.locator('.cabin-scene picture source')).toHaveAttribute('srcset','/last-train/cabin.webp');
     await nightTurn(host,'medic');const medic=pages[mi];await nightTurn(medic,'medic');await expect(medic.getByRole('button',{name:'Heal Player '+bad[0].i,exact:true})).toBeVisible();
     await expect(medic.locator('.patient-heading [data-portrait-set=passengers]')).toHaveCount(1);expect(await medic.locator('[data-role-art]').evaluateAll(nodes=>nodes.every(n=>n.dataset.roleArt==='medic'))).toBe(true);await medic.screenshot({path:info.outputPath('journey-medic-cabin-mobile.png'),fullPage:true});await choose(medic,'Poison someone','Player '+bad[1].i);await expect(medic.locator('.choice-saved')).toContainText('Poison saved');
-    await nightTurn(host,'brave');await nightTurn(pages[bi],'brave');await pages[bi].getByRole('button',{name:'Skip · save my power',exact:true}).click();
-    await nightTurn(host,'careful');await nightTurn(pages[ci],'careful');await pages[ci].getByRole('button',{name:'Skip · save my power',exact:true}).click();
-    await nightTurn(host,'inspector');await nightTurn(pages[ii],'inspector');await choose(pages[ii],'Choose someone to check','Player '+bad[2].i);
-    await nightTurn(host,'witness');await nightTurn(witness,'witness');await witness.getByRole('button',{name:'Watch tonight',exact:true}).click();
+    await nightTurn(host,'brave');await nightTurn(pages[bi],'brave');await pages[bi].getByRole('button',{name:'Skip',exact:true}).click();
+    await nightTurn(host,'careful');await nightTurn(pages[ci],'careful');await pages[ci].getByRole('button',{name:'Skip',exact:true}).click();
+    await nightTurn(host,'inspector');await nightTurn(pages[ii],'inspector');await choose(pages[ii],'Choose','Player '+bad[2].i);
+    await nightTurn(host,'witness');await nightTurn(witness,'witness');await witness.getByRole('button',{name:'Watch',exact:true}).click();
     await expect(host.locator('.lounge-scene')).toBeVisible({timeout:27000});await expect(host.locator('#lt-app')).toHaveAttribute('data-phase','morning',{timeout:10000});await expect(host.locator('.morning-reveal .revealed-out')).toHaveCount(2);
     if(await witness.getByRole('button',{name:'Show role',exact:true}).isVisible())await witness.getByRole('button',{name:'Show role',exact:true}).click();await witness.getByRole('button',{name:'Reports (1)',exact:true}).click();await expect(witness.getByRole('dialog')).toContainText('The Saboteurs tried to attack Player '+bad[0].i);await witness.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();
     await expect(host.locator('#lt-app')).toHaveAttribute('data-phase','discussion',{timeout:13000});
@@ -116,15 +116,16 @@ test('seated public identities stay private and the role drawer supports drag, k
     await expect(handle).toHaveAttribute('aria-expanded','true');await opened();await handle.focus();await p.keyboard.press('Escape');await expect(handle).toBeFocused();await expect(handle).toHaveAttribute('aria-expanded','false');await p.keyboard.press('Enter');await expect(handle).toHaveAttribute('aria-expanded','true');await p.keyboard.press('Enter');await expect(handle).toHaveAttribute('aria-expanded','false');
     room=await store.load(host.code);while(room.phase!=='discussion')rules.advance(room);await store.save(room);await expect(p.locator('.lounge-seat')).toHaveCount(12);
     expect(await p.locator('.lounge-seat').evaluateAll(nodes=>nodes.map(n=>({id:n.dataset.player,avatar:Number(n.querySelector('[data-avatar-index]').dataset.avatarIndex)})))).toEqual(room.seatOrder.map(id=>({id,avatar:room.players.find(p=>p.id===id).avatarIndex})));
-    await expect(p.locator('.sofa-row')).toHaveCount(3);await expect(p.locator('.lounge-seat [data-role-art]')).toHaveCount(0);
+    const captionsContained=async()=>expect(await p.locator('.lounge-room').evaluate(room=>{const b=room.getBoundingClientRect();return [...room.querySelectorAll('.seat-caption')].filter(n=>{const r=n.getBoundingClientRect();return r.top<b.top-1||r.bottom>b.bottom+1||r.left<b.left-1||r.right>b.right+1;}).map(n=>n.textContent);})).toEqual([]);
+    await expect(p.locator('.sofa-row')).toHaveCount(3);await expect(p.locator('.lounge-seat [data-role-art]')).toHaveCount(0);await captionsContained();
     await p.screenshot({path:info.outputPath('seated-lounge-mobile.png'),fullPage:true});
-    await p.setViewportSize({width:1240,height:960});await expect(p.locator('.sofa-row')).toHaveCount(2);
-    await p.setViewportSize({width:320,height:720});await expect(p.locator('.sofa-row')).toHaveCount(3);
+    await p.setViewportSize({width:1240,height:960});await expect(p.locator('.sofa-row')).toHaveCount(2);await captionsContained();
+    await p.setViewportSize({width:320,height:720});await expect(p.locator('.sofa-row')).toHaveCount(3);await captionsContained();
     expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
   }finally{await context.close();}
 });
 
-test('cabin HUD keeps patient identity private and vote cinema pauses without replay or a drifting drawer',async({browser},info)=>{
+test('cabin controls keep patient identity private and vote cinema pauses without replay or a drifting drawer',async({browser},info)=>{
   const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
   const make=(action,data)=>call(handler,{action,requestId:crypto.randomUUID(),...data});
   const host=(await make('create',{name:'HUD host'})).j,seats=[host];for(let i=1;i<12;i++)seats.push((await make('join',{code:host.code,name:'Cabin '+i})).j);
@@ -139,7 +140,7 @@ test('cabin HUD keeps patient identity private and vote cinema pauses without re
     await expect(a.locator('.team-proposal[data-voter="'+bad[0].id+'"]')).toHaveAttribute('data-target','skip');await expect(a.getByRole('button',{name:'Choose Target',exact:true})).toBeVisible();
     room=await store.load(host.code);for(const b of bad)rules.nightChoice(room,room.players.find(p=>p.id===b.id),{attackId:patient.id});rules.advance(room);await store.save(room);
     const m=await open(seat(medic));await expect(m.locator('.patient-scene')).toHaveAttribute('data-patient',patient.id);await expect(m.locator('.patient-body')).toHaveAttribute('data-avatar-index',String(patient.avatarIndex));await expect(a.locator('.patient-scene')).toHaveCount(0);
-    await expect(m.getByRole('button',{name:'Heal '+patient.name,exact:true})).toBeInViewport();await expect(m.locator('.cabin-view .medic-console')).toBeVisible();
+    await expect(m.getByRole('button',{name:'Heal '+patient.name,exact:true})).toBeInViewport();await expect(m.locator('.cabin-scene > .medic-console')).toBeVisible();expect(await m.locator('.medic-console').evaluate(n=>n.getBoundingClientRect().top>=document.querySelector('.cabin-view').getBoundingClientRect().bottom)).toBe(true);
     await m.setViewportSize({width:320,height:720});await expect(m.getByRole('button',{name:'Heal '+patient.name,exact:true})).toBeInViewport();expect(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await m.setViewportSize({width:390,height:844});
     room=await store.load(host.code);room.night.blockedId=medic.id;await store.save(room);await expect(m.locator('.patient-scene')).toHaveCount(0);expect((await read(m)).me.patientId).toBeNull();await expect(m.getByRole('heading',{name:'Your medicine is blocked.'})).toBeVisible();
     room=await store.load(host.code);room.night.blockedId=null;while(room.phase!=='voting')rules.advance(room);for(const p of rules.alive(room))rules.vote(room,p,{targetId:bad[0].id});await store.save(room);
