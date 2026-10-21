@@ -1,7 +1,7 @@
 {
   "name": "The Game Room",
   "short_name": "Game Room",
-  "description": "Competitive games for your table: Row of Reckoning and The Grand Con.",
+  "description": "Competitive games for your table: Row of Reckoning, The Grand Con, and Last Train.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1b1148",
