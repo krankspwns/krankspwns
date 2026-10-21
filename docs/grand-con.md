@@ -1,52 +1,51 @@
-# The Grand Con — first playable rules
+# The Grand Con — Truth Team vs Lie Team
 
-An original auction and social bluffing game for friends at the same table. Phones carry private information; conversation happens in person. No moderator or player elimination. Target 6–12 players; 4–5 is an experimental small-table mode. The initial economy needs real group playtesting before competitive balance is considered final.
+A discussion and deception game for 4–12 friends in the same room, each with a private phone. Best with 6–8. Nobody is eliminated. This replaces the original auction economy: no credits, bids, appraisal side bet, favors, or probabilistic leads.
 
-## Entry points
+## One decision and one score
 
-- `/` — The Game Room selector.
-- `/reckoning.html` — existing Row of Reckoning home and rooms.
-- `/grand-con.html` — The Grand Con home and rooms.
-- Existing `/?room=ABCD` links continue to open Row of Reckoning.
-- Grand Con invitations use `/grand-con.html?room=ABCD`.
-- Saved seats resume directly from `/`. `/?games=1` always shows the selector.
+Secret teams stay fixed for the match. The Lie Team has `floor(players / 3)` members; everyone else is on the Truth Team. Lie Team players know each other. Truth Team players know only their own allegiance.
 
-The two games use independent seat storage and room namespaces. New game storage uses the project's existing Redis connection, with versioned compare-and-set writes and a 12-hour expiry. No Redis configuration means local in-memory play, matching the existing game's development setup.
+For each round, the group votes **REAL** or **FAKE**: does the item match what the seller says? The Truth Team earns a point for a correct group answer. The Lie Team earns a point for the wrong group decision. First to three points wins, in three to five rounds. Only at the final team reveal do allegiances become public.
 
-## Win condition
+## Each round
 
-Players are secretly split as evenly as possible between the Gilt Society and the Onyx Circle. Players know their own allegiance, but do not know their teammates. Every player starts with 40 credits.
+1. **The setup — 30 seconds.** One Lie Team player sees the true case and chooses one player’s report to replace with a prewritten alteration. The editor rotates between Lie Team players. All Lie Team players see the truth and the editor’s options. A report may belong to either team, including the editor; otherwise revealing the altered report would confirm the recipient as Truth Team. No one receives their document until the alteration is committed. At the deadline the server chooses one automatically. If the editor leaves, another present Lie Team player takes over; if none remains, the server seals a report immediately.
+2. **Discussion — 45 seconds.** Each player receives a distinct document with a concrete fact, its limits, and a question to ask. One report is altered; all others are factually accurate but may be incomplete. A Truth Team player is not warned if their document was altered. Lie Team players see the final alteration. Talk out loud, compare dates and identifying marks, question what repairs explain, quote selectively, or lie. Anyone can add 30 seconds once per round. The host can open voting early.
+3. **Vote — 30 seconds.** Choose REAL or FAKE and confirm it. A vote cannot be changed. Other players see submission status, never the choice. More than half of the players present when voting opens must vote REAL. Ties and too few REAL votes answer FAKE. Missing votes add no REAL vote; leaving does not lower the fixed threshold, and already sealed votes remain. All votes in or timer expiry resolves the deal.
+4. **Reveal.** The server shows the truth, result, point awarded, votes, altered report, and its original wording. All original reports are available for review. Allegiances remain secret. The history preserves these details so players can question earlier statements. The host opens the next deal, or reveals the teams once either side reaches three points.
+5. **Rematch.** Present players receive fresh shuffled allegiances, cases, and report assignments. At least four players must be present.
 
-After five auctions, each player's wealth is their remaining credits plus their purchased objects' resale values. The syndicate with the highest **average** player wealth wins; comparisons use exact totals and team sizes, not rounded display values. Equal averages are a draw. Everyone tied for highest personal wealth shares the MVP distinction. Each bid, fee, insurance refund and appraisal reward affects wealth.
+## Clues
 
-## Each lot
+Five authored cases cover a painting, recording, crown, clock, and mask. Each has separate connected genuine and fake evidence sets, not random “probably original” hints. Every match shuffles the cases. Authenticity is chosen independently per deal; there is no fixed genuine/fake quota to count.
 
-1. **Discussion — 90 seconds.** A public object and seller's story appear. Each player gets a private lead. A lead agrees with authenticity with 70% probability, independently for each player. It is deliberately not proof. Say what you like about your evidence or allegiance. The host can end discussion early.
-2. **Secret favors — 45 seconds.** Choose one unused favor, or pass. Each favor costs 2 credits and each can be used once per match. Choices lock on submission. All remaining players submitting advances the phase early.
-3. **Sealed bidding — 45 seconds.** Submit an integer bid from 0 to your remaining credits and an appraisal vote: Genuine, Forged, or Abstain. Both lock together. Only your own bid is visible until resolution. Zero passes. Missing bids become zero with no appraisal.
-4. **Reveal.** The object, resale value, bids, favors and appraisals become public. Only the buyer pays their actual bid. The host opens the next lot after everyone has read the outcome.
-5. After lot five the host reveals the syndicates and final results. They can start a new match, resetting purses and favors and shuffling allegiances.
+Each case has six subject-specific reports. Four to six players receive the first four to six reports, shuffled among players. Larger tables also receive distinct reports about appearance, the seller’s story, delivery, displays, sales pages, and price. These supplementary reports distinguish a name or price from an actual check of the item. Each player gets one source, and exactly one source is changed. The Lie Team chooses a replacement; it cannot write arbitrary server-visible text.
 
-Exactly three of the five objects are genuine (14–28 credits each), and two are forgeries (0–5). Object values count toward wealth but cannot finance later bids. Players may use the history to deduce the remaining distribution.
+The same five cases can recur in later matches, with genuine/fake versions and different recipients. This is a first playable ruleset: automated checks establish correct mechanics and privacy, not competitive balance or whether a real group enjoys the discussion. Case variety, timing, and team sizes need table playtesting.
 
-## Favors
+## Plain English in the app
 
-- **Investigate:** receive a private, verified authenticity and exact resale-value report. The host cannot see another player's report.
-- **Insure:** if you buy a forgery on this lot, refund up to 8 credits of your actual bid. No refund if you do not win.
-- **Leverage:** add 3 to a positive bid for winner comparison only. Pay the bid entered, not the boosted comparison value. Zero remains a pass.
-- **Plant a rumor:** choose a public, anonymous claim that the lot is genuine or forged. Marked explicitly as unverified player information. It does not change the object's actual authenticity.
-- **Pass:** no fee or effect.
+The public names are **Truth Team / Lie Team**, and players vote **REAL / FAKE**. The private panel is **Your secret card**, containing **Your clue**. Buttons use direct actions such as **Start game**, **Start vote**, **Confirm REAL**, and **Next round**. The main rules show the two goals and three steps; timing and tie details are available under **More rules**. Each vote also shows the exact number of REAL votes needed.
 
-Equal effective bids use a public priority order that rotates one seat each lot. The priority seat is shown in the bidding panel. Inactive seats do not delay a phase once all remaining players submit; their missing choices pass. Already locked bids remain binding.
+All five cases and their questions use everyday English. Required facts are included in the clues, without assuming players know about art, clocks, or old objects. For example, the clock’s identifying number is described as “clock number 87,” and “working parts inside” replaces “mechanism.” Case clues use short sentences, with at most 23 words per clue version. Changes preserve the connected facts and the one changed clue.
 
-Correct appraisals earn 2 credits. Wrong appraisals lose up to 1 credit, without making the purse negative. Abstaining has no reward or penalty.
+Internal API names remain `house` / `ring` and `approve` / `reject`, so stored room state and request receipts remain compatible. `house` means Truth Team, `ring` means Lie Team, `approve` is displayed as REAL, and `reject` as FAKE. These internal values are never used as player-facing labels.
 
-## Privacy and recovery
+## Routing, persistence and recovery
 
-Each device holds a private seat token. All room state requests require it. Only the requesting player receives their allegiance, lead, chosen favor and sealed bid; the public history reveals submitted favors and bids after the lot closes. Allegiances become public only at the final reveal.
+- `/` — game selector; `/?games=1` always opens it, bypassing saved-seat resume.
+- `/reckoning.html` — existing game; legacy `/?room=ABCD` links still route here.
+- `/grand-con.html` — this game; invitations use `/grand-con.html?room=ABCD`.
 
-Save the private code under **Seat code**. To recover on another device, enter the room, same name and code. Recovery replaces the token and recovery code, invalidating the previous device. The host transfers when leaving. New players can join only before a match; existing seats can recover during play.
+Games keep independent seat storage and room namespaces. Grand Con uses the existing Redis connection, compare-and-set writes and 12-hour expiry, with in-memory development fallback. Requests have bounded retries and mutation receipts so duplicate forge/vote/next requests cannot apply twice.
+
+Only the requesting player receives their team, document, sealed vote, and recovery code. Lie Team-only briefings are filtered on the server, including for a Truth Team host. Public history reveals documents and votes only after resolution. Seat recovery rotates the token and recovery code, signing out the old device. New players join only in the lobby; existing seats can recover during play. The host transfers on departure.
+
+Persisted rooms from the old auction rules reset to the lobby on their first request, preserving player identities, tokens, and recovery codes. The UI explains the rules change. Old match data is discarded rather than interpreted as the new rules.
 
 ## Verification
 
-`npm test` includes the new API match tests. `npm run test:redis` runs both games against a real local Redis bridge. `npm run test:browser` covers routing, legacy invitations, four independent devices playing five auctions, seat reload, mobile layout and keyboard rules access, alongside the existing game regressions.
+`npm test` covers both games, a full five-round Grand Con match, Lie Team permissions, exact one-report alteration, private state, sealed voting, score replays, extension limits, timeout fallback, fixed vote thresholds, recovery, old-room migration, every case/truth with 4–12 assignments, and concurrent 12-player joins/votes.
+
+`npm run test:redis` repeats API checks through a real local Redis REST bridge, including CAS, TTL, and unavailable storage. `npm run test:browser` includes six independent devices playing five rounds, document selection, discussion extension, private reports, mobile layout, reload, final team reveal and rematch, hub navigation and keyboard rules access, alongside existing Row of Reckoning regressions.
