@@ -685,7 +685,7 @@ function stagePanel(active) {
   } else if (isCurrent && !guessing) {   // while the guesses are being made the guessing panel says it all
     const drinkWait = lateDrinkPending() || (drinkPendingRow() >= 0 && drinkPendingRow() < row);
     control = el('div', { class: 'stcontrol' },
-      st.isHost ? el('button', { class: 'big', disabled: guessing || drinkWait || pending > 0, onclick: (event) => { event.currentTarget.disabled = true; event.currentTarget.setAttribute('aria-busy', 'true'); act('flipRowAll', { row, up: true }); } }, guessing ? t('predWaitHost') : drinkWait ? t('drinkHold') : t('stageHost', { n: row + 1 })) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), drinkWait ? t('drinkHold') : t(guessing ? 'predWaitHost' : 'stageWaitHost')),
+      st.isHost ? nrSheen(el('button', { class: 'big nrbtn', disabled: guessing || drinkWait || pending > 0, onclick: (event) => { event.currentTarget.disabled = true; event.currentTarget.setAttribute('aria-busy', 'true'); act('flipRowAll', { row, up: true }); } }, guessing ? t('predWaitHost') : drinkWait ? t('drinkHold') : t('stageHost', { n: row + 1 }))) : el('div', { class: 'swait' }, el('span', { class: 'dot' }), drinkWait ? t('drinkHold') : t(guessing ? 'predWaitHost' : 'stageWaitHost')),
       el('div', { class: 'scount' }, t('openedN', { n: openedN, total: active.length })),
       );
   }
