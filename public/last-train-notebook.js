@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   window.createTrainNotebook = host => {
-    let key = '', marksKey = '', data = { text: '', strokes: [] }, launcher, book, canvas, ctx, status, phaseLabel, people = [], meId = '', peopleBox, reports = [], reportsBox;
+    let key = '', marksKey = '', data = { text: '', strokes: [] }, launcher, book, canvas, ctx, status, phaseLabel, people = [], meId = '', peopleBox, reportsKey = '', reportCount = 0, buildReports = null, reportsBox;
     const inks = [['Midnight', '#293248'], ['Ruby', '#a22d46'], ['Emerald', '#22745b'], ['Blue', '#275fbc'], ['Violet', '#7747a8'], ['Amber', '#976313']];
     let ink = inks[0][1];
     let current = null, activePointer = null, mode = 'people', tool = 'pen', dirty = false, saveTimer, observer, cleared = null;
@@ -23,13 +23,13 @@
       const others = people.filter(p => p.id !== meId && !p.departed);
       if (!others.length) { peopleBox.append(node('p', 'notebook-tip', 'Your fellow travellers will appear here.')); return; }
       for (const p of others) {
-        const row = node('div', 'people-row' + (p.alive === false ? ' out' : '')), mark = notes.marks[p.id] || '';
+        const row = node('div', 'people-row' + (p.alive === false ? ' out' : '')), mark = notes.marks[p.id] || 'unsure';
         const face = node('span', 'portrait portrait-passengers people-face'); const i = p.avatarIndex || 0;
         face.style.setProperty('--px', (i % 4 * 100 / 3) + '%'); face.style.setProperty('--py', (Math.floor(i / 4) * 50) + '%'); face.setAttribute('aria-hidden', 'true');
         const name = node('div', 'people-name'); name.append(node('b', '', p.name), node('small', '', p.alive === false ? 'Out' : p.seat ? 'Seat ' + p.seat : 'In the room'));
         const chips = node('div', 'trust-chips'); chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Your view of ' + p.name);
         for (const [value, label] of MARKS) {
-          const chip = button('', () => { writeMarks({ marks: { ...readMarks().marks, [p.id]: mark === value ? '' : value } }); renderPeople(); }, 'trust-chip ' + value);
+          const chip = button('', () => { writeMarks({ marks: { ...readMarks().marks, [p.id]: value } }); renderPeople(); }, 'trust-chip ' + value);
           chip.setAttribute('aria-pressed', String(mark === value)); const ic = node('span', 'trust-icon'); ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (window.TRAIN_ART?.trust?.[value] || '') + '</svg>'; chip.append(ic, node('small', '', label)); chips.append(chip);
         }
         const note = node('input', 'people-note'); note.maxLength = 80; note.placeholder = 'Claims, clues…'; note.value = notes.people[p.id] || ''; note.setAttribute('aria-label', 'Note about ' + p.name);
@@ -40,11 +40,7 @@
     // Private night results (Inspector checks, Witness sightings, promotions), newest first.
     function renderReports() {
       if (!reportsBox) return;
-      reportsBox.replaceChildren();
-      if (!reports.length) { const empty = node('p', 'reports-empty', 'Private results from your night power will appear here, such as a check or a sighting.'); reportsBox.append(empty); return; }
-      for (const r of [...reports].reverse()) {
-        const card = node('article', 'report-card ' + (r.tone || '')); card.append(node('small', '', 'NIGHT ' + r.round), node('p', '', r.text)); reportsBox.append(card);
-      }
+      reportsBox.replaceChildren(buildReports ? buildReports() : node('p', 'reports-empty', 'Private results from your night power will appear here.'));
     }
     function persist() {
       clearTimeout(saveTimer);
@@ -97,7 +93,7 @@
       const closeButton = button('×', close, 'notebook-close'); closeButton.setAttribute('aria-label', 'Close notebook'); top.append(title, closeButton);
       phaseLabel = node('p', 'notebook-phase'); phaseLabel.textContent = launcher.dataset.phase || 'Your private notes';
       const tabs = node('div', 'notebook-modes'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', 'Notebook mode');
-      for (const [value, label] of [['people', 'People'], ['reports', 'Reports' + (reports.length ? ' · ' + reports.length : '')], ['type', 'Type'], ['draw', 'Draw']]) {
+      for (const [value, label] of [['people', 'People'], ['reports', 'Reports' + (reportCount ? ' · ' + reportCount : '')], ['type', 'Type'], ['draw', 'Draw']]) {
         const tab = button(label, () => showMode(value)); tab.dataset.noteMode = value; tabs.append(tab);
       }
       const typing = node('div', 'notebook-typing'), label = node('label', '', 'Your notes'); label.htmlFor = 'notebook-text';
@@ -152,8 +148,9 @@
       // Avoid opening a phone keyboard until the player chooses the text area.
       closeButton.focus({ preventScroll: true });
     }
-    function sync(owner, phase, players = [], nextReports = []) {
-      if (JSON.stringify(nextReports) !== JSON.stringify(reports)) { reports = nextReports; renderReports(); const tab = book?.querySelector('[data-note-mode=reports]'); if (tab) tab.textContent = 'Reports' + (reports.length ? ' · ' + reports.length : ''); }
+    function sync(owner, phase, players = [], nextKey = '', builder = null) {
+      buildReports = builder;
+      if (nextKey !== reportsKey) { reportsKey = nextKey; reportCount = nextKey ? JSON.parse(nextKey).length : 0; renderReports(); const tab = book?.querySelector('[data-note-mode=reports]'); if (tab) tab.textContent = 'Reports' + (reportCount ? ' · ' + reportCount : ''); }
       const next = owner ? 'lt-notebook:' + [owner.code, owner.pid, owner.match].join(':') : '';
       marksKey = owner ? 'lt-night-notes:' + [owner.code, owner.pid, owner.match].join(':') : ''; meId = owner?.pid || '';
       const roster = JSON.stringify(players.map(p => [p.id, p.alive, p.departed]));

@@ -159,10 +159,10 @@
     retry.onclick = () => { if (retryClip) upload(retryClip); };
     // A custom player: round play button, a waveform that fills as it plays, and the time.
     const ICONS = {
-      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="#3fdc8c" stroke="#1d9c5c" stroke-width="1" stroke-linejoin="round"/><path d="M9.6 7.2l7 4.4-7-1.6z" fill="#fff" opacity=".35"/></svg>',
-      pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.3" fill="#ffc94d" stroke="#c98f12" stroke-width="1"/><rect x="13.5" y="5" width="4" height="14" rx="1.3" fill="#ffc94d" stroke="#c98f12" stroke-width="1"/></svg>',
-      lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="#c9d2e6" stroke-width="2.2" stroke-linecap="round"/><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.2" fill="#f5c95c" stroke="#b9841c" stroke-width="1"/><circle cx="12" cy="15" r="1.6" fill="#7a4d0a"/></svg>',
-      load: '<svg viewBox="0 0 24 24" aria-hidden="true" class="spin"><circle cx="12" cy="12" r="8" fill="none" stroke="#6bd6ff22" stroke-width="2.6"/><circle cx="12" cy="12" r="8" fill="none" stroke="#6bd6ff" stroke-width="2.6" stroke-dasharray="30 60" stroke-linecap="round"/></svg>',
+      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.2v11.6a1.1 1.1 0 0 0 1.7.93l9.1-5.8a1.1 1.1 0 0 0 0-1.86l-9.1-5.8A1.1 1.1 0 0 0 9 6.2z" fill="currentColor"/></svg>',
+      pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="6" width="3.6" height="12" rx="1.4" fill="currentColor"/><rect x="13.4" y="6" width="3.6" height="12" rx="1.4" fill="currentColor"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 10.5V8.3a3.5 3.5 0 0 1 7 0v2.2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><rect x="6" y="10.5" width="12" height="9" rx="2.4" fill="currentColor"/></svg>',
+      load: '<svg viewBox="0 0 24 24" aria-hidden="true" class="spin"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="2.4"/><path d="M12 4.5a7.5 7.5 0 0 1 7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     };
     const clock = sec => Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
     function player(message) {
@@ -181,6 +181,7 @@
         box.append(button, wave, time, audio, info); entry = { box, button, wave, time, audio, info, url: null, loading: false }; players.set(id, entry);
         const paint = () => {
           const done = audio.duration && isFinite(audio.duration) ? audio.currentTime / audio.duration : 0;
+          button.style.setProperty('--ring', (done * 360).toFixed(1) + 'deg');
           const lit = Math.round(done * wave.children.length); [...wave.children].forEach((bar, i) => bar.classList.toggle('on', i < lit));
           time.textContent = audio.paused && !audio.currentTime ? clock(total) : clock(audio.currentTime) + ' / ' + clock(total);
           const playing = !audio.paused && !audio.ended;

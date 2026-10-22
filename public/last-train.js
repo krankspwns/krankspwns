@@ -467,7 +467,7 @@
     return n;
   }
   const nightNotesKey = () => 'lt-night-notes:' + [state.code, state.meId, state.match].join(':');
-  const nightNotes = () => read(nightNotesKey()) || { marks: {}, stories: {} };
+  const nightNotes = () => ({ marks: {}, stories: {}, people: {}, ...(read(nightNotesKey()) || {}) });
   function updateNightNotes(change) { save(nightNotesKey(), { ...nightNotes(), ...change }); }
   const coverStory = () => nightNotes().stories?.[state.round] || '';
   function nightNotebook() {
@@ -479,9 +479,12 @@
       !preparingStory ? el('div', { class: 'night-trust-list' }, ...state.players.filter(p => p.alive && p.id !== state.meId).map(p =>
         el('div', { class: 'night-trust-row' }, avatar(p), txt('span', '', p.name),
           el('div', { class: 'trust-chips', role: 'group', 'aria-label': 'Your view of ' + p.name }, ...[['trust', 'Trust'], ['unsure', 'Unsure'], ['suspect', 'Suspect']].map(([value, label]) => {
-            const chip = el('button', { type: 'button', class: 'trust-chip ' + value, 'aria-pressed': String(notes.marks?.[p.id] === value), disabled: state.paused, 'data-focus': 'trust-' + p.id + '-' + value,
-              onclick: () => { updateNightNotes({ marks: { ...nightNotes().marks, [p.id]: nightNotes().marks?.[p.id] === value ? '' : value } }); render(); } }, txt('span', 'trust-icon', ''), txt('small', '', label));
-            chip.firstChild.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + window.TRAIN_ART.trust[value] + '</svg>'; return chip; }))))) :
+            const chip = el('button', { type: 'button', class: 'trust-chip ' + value, 'aria-pressed': String((notes.marks?.[p.id] || 'unsure') === value), disabled: state.paused, 'data-focus': 'trust-' + p.id + '-' + value,
+              onclick: () => { updateNightNotes({ marks: { ...nightNotes().marks, [p.id]: value } }); render(); } }, txt('span', 'trust-icon', ''), txt('small', '', label));
+            chip.firstChild.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + window.TRAIN_ART.trust[value] + '</svg>'; return chip; })),
+          // A clue or claim per traveller, shared with Notes · People on this device.
+          el('input', { id: 'night-clue-' + p.id, class: 'night-clue', maxLength: 80, value: notes.people?.[p.id] || '', placeholder: 'Clues or claims…', autocomplete: 'off', 'aria-label': 'Clues or claims about ' + p.name, disabled: state.paused,
+            oninput: e => updateNightNotes({ people: { ...(nightNotes().people || {}), [p.id]: e.target.value } }) })))) :
         el('div', { class: 'night-question' },
           txt('p', 'console-hint', 'What will you tell the group? Write your made-up story here to remember it during discussion.'),
           el('label', { htmlFor: 'night-cover-story' }, 'Your private cover story'),
@@ -660,7 +663,28 @@
     if (r.type === 'check-blocked') return 'Your check was blocked. No result is known.';
     return 'You are now ' + role(r.role).name + '. Your new power starts next night.';
   }
-  function reportsDialog() { const d = dialog('Your private reports', ...[...state.me.reports].reverse().map(r => el('div', { class: 'report' }, txt('small','','ROUND ' + r.round), txt('p','',reportMessage(r))))); d.append(btn('Close', () => d.close(), 'gold')); }
+  // Private reports, oldest night first: one card per result with the person, an icon and a clear verdict.
+  const REPORT_ICONS = {
+    check: '<circle cx="13.5" cy="13.5" r="8.5" fill="#bdf6ff33" stroke="#e8fdff" stroke-width="3"/><path d="M20 20l7.5 7.5" stroke="#f2ce86" stroke-width="4.5" stroke-linecap="round"/>',
+    watch: '<path d="M2.5 16Q16 3.5 29.5 16 16 28.5 2.5 16z" fill="#e8fdff"/><circle cx="16" cy="16" r="6" fill="#2a8fd8"/><circle cx="16" cy="16" r="2.6" fill="#071a2a"/><circle cx="18" cy="14" r="1.3" fill="#fff"/>',
+    blocked: '<circle cx="16" cy="16" r="11" fill="none" stroke="#b9aed0" stroke-width="3.6"/><path d="M8.5 8.5l15 15" stroke="#b9aed0" stroke-width="3.6" stroke-linecap="round"/>',
+    promotion: '<path d="M16 3l3.8 7.8 8.6 1.2-6.2 6 1.5 8.6L16 22.5l-7.7 4.1 1.5-8.6-6.2-6 8.6-1.2z" fill="#ffd56b" stroke="#c98f12" stroke-width="1.2" stroke-linejoin="round"/>',
+  };
+  function reportCard(r) {
+    const kind = r.type.endsWith('-blocked') ? 'blocked' : r.type === 'promotion' ? 'promotion' : r.type;
+    const icon = el('span', { class: 'report-icon', 'aria-hidden': 'true' }); icon.innerHTML = '<svg viewBox="0 0 32 32">' + REPORT_ICONS[kind] + '</svg>';
+    const title = { check: 'Inspector check', watch: 'Witness sighting', blocked: 'Power blocked', promotion: 'Promotion' }[kind];
+    const verdict = kind === 'check' ? txt('span', 'report-verdict ' + r.alignment, r.alignment.toUpperCase()) : kind === 'watch' && r.targetId ? txt('span', 'report-verdict watch', 'TARGET') : null;
+    return el('article', { class: 'report-item ' + kind + (r.alignment ? ' ' + r.alignment : '') },
+      icon, el('div', { class: 'report-body' }, txt('small', '', title), txt('p', '', reportMessage(r))),
+      r.targetId && kind !== 'blocked' ? el('div', { class: 'report-target' }, avatar(r.targetId, 'report-face'), verdict) : kind === 'promotion' ? rolePortrait(r.role, 'report-face') : null);
+  }
+  function reportList() {
+    const rounds = [...new Set(state.me.reports.map(r => r.round))].sort((a, b) => a - b);
+    if (!rounds.length) return txt('p', 'reports-empty', 'Private results from your night power will appear here, such as a check or a sighting.');
+    return el('div', { class: 'report-list' }, ...rounds.map(round => el('section', { class: 'report-night' }, el('h3', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0'))), ...state.me.reports.filter(r => r.round === round).map(reportCard))));
+  }
+  function reportsDialog() { const d = dialog('Your private reports', txt('p', 'muted small', 'Only you can see these. Night 1 is at the top.'), reportList()); d.classList.add('reports-dialog'); d.append(btn('Close', () => d.close(), 'gold')); }
   function setRoleCard(open) {
     showCard = !!open;
     if (!dockNode) return;
@@ -951,7 +975,7 @@
     voice.sync(state, seat);
     soundtrack.sync(state, !!seat, boardingVideo);
     syncBoardingVideo();
-    notebook.sync(state && seat ? { ...seat, match: state.match || 1 } : null, state ? (state.phase === 'lobby' ? 'Waiting to board' : 'Round ' + state.round + ' · ' + (state.paused ? 'Paused' : state.phase === 'night' ? (state.nightPhase ? 'Night phase ' + state.nightPhase + ' of 2' : roleName(state.nightRole) + ' turn') : ({ briefing:'Meet the teams', boarding:'All aboard', settling:'Nightfall', gathering:'Gathering', morning:'Morning', discussion:'Discussion', voting:'Voting', revoteInfo:'Tied vote', voteResult:'Vote results', finished:'Journey ended' }[state.phase] || ''))) : '', state?.players || [], state && seat && state.me.role ? state.me.reports.map(r => ({ round: r.round, text: reportMessage(r), tone: r.alignment || r.type })) : []);
+    notebook.sync(state && seat ? { ...seat, match: state.match || 1 } : null, state ? (state.phase === 'lobby' ? 'Waiting to board' : 'Round ' + state.round + ' · ' + (state.paused ? 'Paused' : state.phase === 'night' ? (state.nightPhase ? 'Night phase ' + state.nightPhase + ' of 2' : roleName(state.nightRole) + ' turn') : ({ briefing:'Meet the teams', boarding:'All aboard', settling:'Nightfall', gathering:'Gathering', morning:'Morning', discussion:'Discussion', voting:'Voting', revoteInfo:'Tied vote', voteResult:'Vote results', finished:'Journey ended' }[state.phase] || ''))) : '', state?.players || [], state && seat && state.me.role ? JSON.stringify(state.me.reports) : '', reportList);
     sfx.wheels(!!seat && !!state && ['settling', 'night'].includes(state.phase) && !state.paused);
     if (!state) return;
     if (cinemaNode && !state.paused) {
