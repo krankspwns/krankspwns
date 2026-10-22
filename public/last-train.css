@@ -1305,3 +1305,13 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
 .voice-message:has(.voice-play-status:not(:empty)) { flex-wrap: wrap !important; }
 
 .lounge-seat .seat-caption { position: relative; z-index: 2; }
+/* suspect pins: a clear chip under the name, never hidden behind a neighbour's seat number */
+.seat-caption .seat-pins { position: static; display: inline-flex; align-items: center; gap: 3px; margin-top: 3px; padding: 2px 8px 2px 4px; border-radius: 10px; background: linear-gradient(180deg, #ff8fa6, #e8456a); border: 1px solid #ffc2cf; box-shadow: 0 3px 10px #e8456a66, inset 0 1px #ffffff55; color: #fff; font: 800 11px/1 Inter, sans-serif; white-space: nowrap; animation: pin-pop .35s cubic-bezier(.3,1.6,.5,1); }
+.seat-caption .seat-pins small { font: 700 9px Inter, sans-serif; opacity: .9; }
+.pin-svg { display: block; width: 14px; height: 14px; }
+.pin-svg svg { width: 100%; height: 100%; }
+@keyframes pin-pop { from { transform: scale(.5); opacity: 0; } }
+@media (max-width: 680px) { .seat-caption .seat-pins { font-size: 10px; padding: 1px 6px 1px 3px; } .pin-svg { width: 12px; height: 12px; } }
+.pin-svg path { fill: #fff; } .pin-svg path + path { fill: #ffe0e8; }
+.seat-caption .seat-pins { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); z-index: 5; } .lounge-seat .seat-caption { position: relative; }
+.seat-caption .seat-pins { width: max-content; } .seat-caption .pin-svg { flex: none; }

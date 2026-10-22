@@ -552,6 +552,7 @@
         patient),
       settling ? el('div', { class: 'curtain-message' }, txt('span','','☾'), txt('p','','Settle into your cabin…')) : el('div', { class: 'night-panels' }, actionConsole(), state.nightPhase && me.alive ? nightNotebook() : null));
   }
+  const svgPin = () => { const n = el('span', { class: 'pin-svg', 'aria-hidden': 'true' }); n.innerHTML = '<svg viewBox="0 0 32 32">' + TONE_ICONS.pin + '</svg>'; return n; };
   function loungeSeats() {
     const perRow = compactScene.matches ? 4 : 6;
     const rows = Math.ceil(state.players.length / perRow);
@@ -566,8 +567,8 @@
       const slots = groups[count].flatMap(([center, n]) => n === 2 ? [center - width * .41, center + width * .41] : [center]);
       const x = slots[col];
       return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', 'data-seat-pair': Math.floor(col / 2), style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) + ';--depth:' + depth.toFixed(2) },
-        el('span', { class: 'seat-number', 'aria-label': 'Seat ' + p.seat + (!p.alive ? ' · Out' : '') }, String(p.seat).padStart(2,'0')), !p.alive ? el('span', { class: 'out-stamp', 'aria-hidden': 'true' }, 'OUT') : null, p.pins ? el('span', { class: 'seat-pins', 'aria-label': p.pins + ' suspect pins' }, '📌 ' + p.pins) : null, el('div', { class: 'seat-figure' }, el('span', { class: 'seat-shadow', 'aria-hidden': 'true' }), seatedTraveller(p)),
-        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD')));
+        el('span', { class: 'seat-number', 'aria-label': 'Seat ' + p.seat + (!p.alive ? ' · Out' : '') }, String(p.seat).padStart(2,'0')), !p.alive ? el('span', { class: 'out-stamp', 'aria-hidden': 'true' }, 'OUT') : null, el('div', { class: 'seat-figure' }, el('span', { class: 'seat-shadow', 'aria-hidden': 'true' }), seatedTraveller(p)),
+        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), p.pins ? el('span', { class: 'seat-pins', 'aria-label': p.pins + (p.pins === 1 ? ' suspect pin' : ' suspect pins') }, svgPin(), txt('b', '', String(p.pins)), txt('small', '', p.pins === 1 ? 'pin' : 'pins')) : null));
     });
     const banks = [];
     for (let i = 0; i < seats.length; i += perRow) banks.push(el('div', { class: 'sofa-row' }, ...seats.slice(i, i + perRow)));
