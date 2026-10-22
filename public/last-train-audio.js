@@ -3,7 +3,7 @@
 (() => {
   'use strict';
   window.createTrainSoundtrack = onGesture => {
-    let context, master, musicGain, source, buffer, loading, current, enabled = false, video;
+    let context, master, musicGain, source, buffer, loading, current, enabled = false, video, voiceActive = false;
     const routed = new WeakMap();
     const live = () => enabled && current && current.phase !== 'lobby' && !current.paused && !document.hidden;
     function routeVideo() {
@@ -18,7 +18,7 @@
     function level() {
       if (!context) return;
       const phase = current?.phase;
-      const target = !live() || phase === 'boarding' ? 0 : phase === 'discussion' ? .07 : phase === 'finished' ? .22 : .16;
+      const target = !live() || voiceActive || phase === 'boarding' ? 0 : phase === 'discussion' ? .07 : phase === 'finished' ? .22 : .16;
       musicGain.gain.cancelScheduledValues(context.currentTime);
       musicGain.gain.setTargetAtTime(target, context.currentTime, .45);
       if (live()) { context.resume().then(startMusic).catch(() => {}); }
@@ -38,7 +38,7 @@
     for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, unlock, { passive: true });
     document.addEventListener('visibilitychange', level);
     window.addEventListener('pagehide', () => { source?.stop(); source = null; context?.suspend().catch(() => {}); });
-    return { sync(state, hasSeat, nextVideo) {
+    return { setVoiceActive(active) { if (voiceActive !== active) { voiceActive = active; if (active && musicGain) { musicGain.gain.cancelScheduledValues(context.currentTime); musicGain.gain.setValueAtTime(0, context.currentTime); } level(); } }, sync(state, hasSeat, nextVideo) {
       if (video && video !== nextVideo) routed.get(video)?.disconnect();
       current = state; enabled = hasSeat; video = nextVideo; routeVideo();
       if (enabled && state && state.phase !== 'lobby' && !loading) {

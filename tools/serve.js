@@ -10,7 +10,7 @@ const types = { '.woff2': 'font/woff2', '.html': 'text/html', '.js': 'text/javas
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (['/api/game','/api/grand-con','/api/last-train'].includes(url.pathname)) {
-    let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 8000) { res.writeHead(413); res.end(); return; } }
+    let body = ''; for await (const chunk of req) { body += chunk; if (body.length > (url.pathname === '/api/last-train' ? 360000 : 8000)) { res.writeHead(413); res.end(); return; } }
     req.body = body; req.query = Object.fromEntries(url.searchParams);
     res.status = (code) => { res.statusCode = code; return res; };
     res.json = (data) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); };

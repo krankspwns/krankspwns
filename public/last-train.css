@@ -720,3 +720,23 @@ body:has(.letters-launcher) .lt-header { padding-right: 130px; flex-wrap: wrap; 
   .vote-group-heading .vote-person .portrait { width: 29px; height: 29px; }
 }
 @media (prefers-reduced-motion: reduce) { .boarding-departure { display: none; animation: none; } }
+
+/* Voice notes share the carriage's brass, wine and midnight colors. */
+.speech-options { display: grid; gap: 14px; }
+.voice-recorder { padding: 17px; border: 1px solid #d1b27242; border-radius: 14px; background: linear-gradient(135deg,#4b2b363b,#19182b70); }
+.voice-recorder > b { display: block; color: #f4dfb8; font-size: 14px; }
+.voice-hint { font-size: 11px; line-height: 1.6; color: #b9adbf; margin: 5px 0 13px; }
+.voice-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.voice-record { display: inline-flex; align-items: center; justify-content: center; gap: 9px; color: #ffe1a1; border-color: #d4b57673; background: linear-gradient(130deg,#65413688,#34233d); }
+.voice-record svg { width: 18px; height: 22px; }
+.voice-time { margin-left: auto; font-size: 12px; color: #f2aaaf; font-variant-numeric: tabular-nums; }
+.voice-feedback { margin-top: 9px; font-size: 11px; line-height: 1.6; color: #dfc393; }
+.voice-feedback:empty { display: none; }
+.voice-recorder.is-recording { border-color: #e3a1a387; box-shadow: inset 0 0 25px #d4637620; }
+.speech-or { text-align: center; font-size: 8px; letter-spacing: 2px; color: #a898ac; }
+.voice-message { min-width: 0; padding-top: 9px; }
+.voice-play { display: block; max-width: 100%; color: #f0d39c; font-size: 12px; background: #b98a5520; border-color: #cdb07655; }
+.voice-message audio { display: block; max-width: 100%; width: 290px; height: 42px; border-radius: 12px; }
+.voice-play-status { display: block; font-size: 10px; margin-top: 6px; color: #d2b992; }
+.voice-recorder [hidden], .voice-message [hidden] { display: none !important; }
+@media(max-width: 400px) { .voice-recorder { padding: 13px; } .voice-actions { gap: 6px; } .voice-actions button { font-size: 11px; padding-inline: 11px; } .voice-time { font-size: 10px; } }
