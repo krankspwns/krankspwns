@@ -45,6 +45,31 @@ function engineTests() {
   rejected(()=>r.validateLoadout(7,{crew:['trainee'],passengers:[],saboteur:'normal'}),400);
   rejected(()=>r.validateLoadout(7,{crew:['medic','medic'],passengers:[],saboteur:'normal'}),400);
   rejected(()=>r.validateLoadout(5,{crew:['medic'],passengers:[],saboteur:'blocker'}),400);
+  // Letters are recipient-only, never public history, and only that recipient can dismiss them.
+  {
+    const room=fixture(),[sender,recipient,other]=room.players;
+    r.sendLetter(room,sender,recipient.id,'Meet me near cabin 4.');
+    const id=r.view(room,recipient).me.letters[0].id;
+    assert.equal(r.view(room,recipient).me.letters[0].text,'Meet me near cabin 4.');
+    for(const p of [sender,other]){assert.deepEqual(r.view(room,p).me.letters,[]);assert.ok(!JSON.stringify(r.view(room,p)).includes('Meet me near cabin 4.'));}
+    r.dismissLetters(room,other,[id]);assert.equal(room.letters.length,1);
+    r.dismissLetters(room,recipient,[id]);assert.equal(room.letters.length,0);
+    r.dismissLetters(room,recipient,[id]);assert.equal(room.letters.length,0);
+    rejected(()=>r.sendLetter(room,sender,sender.id,'Self'),400);
+    rejected(()=>r.sendLetter(room,sender,'not-here','No'),400);
+    rejected(()=>r.sendLetter(room,sender,recipient.id,' '.repeat(20)),400);
+    rejected(()=>r.sendLetter(room,sender,recipient.id,'x'.repeat(501)),400);
+    rejected(()=>r.dismissLetters(room,recipient,'all'),400);
+    sender.alive=false;rejected(()=>r.sendLetter(room,sender,recipient.id,'A clue from beyond'),403);
+    rejected(()=>r.sendLetter(room,recipient,sender.id,'A clue'),403);
+    other.alive=false;r.sendLetter(room,sender,other.id,'We can watch together.');
+    r.start(room);assert.deepEqual(room.letters,[]);assert.deepEqual(room.letterRate,{});
+  }
+  {
+    const room=fixture(),[sender,recipient]=room.players;
+    for(let i=0;i<8;i++)r.sendLetter(room,sender,recipient.id,'Letter '+i);
+    rejected(()=>r.sendLetter(room,sender,recipient.id,'Too fast'),429);
+  }
   // Closed roles remain private in every public path, including history and group counts.
   {
     const room=fixture(),before=r.view(room,room.players[0]).counts;
@@ -167,6 +192,15 @@ function engineTests() {
     const save=async room=>redis?redis.client.set('last-train:room:'+host.code,JSON.stringify(room)):globalThis.__lastTrainRooms.set(host.code,structuredClone(room));
     const expire=async()=>{const room=await raw();room.deadline=Date.now()-1;await save(room);return (await get(host)).j;};
     const custom={crew:['medic'],passengers:[],saboteur:'normal'};
+    // Authenticated, idempotent delivery and recipient-only removal survive ordinary phase changes.
+    const mailView=(await get(host)).j,mailReq={action:'letter',code:host.code,pid:host.meId,tok:host.tok,requestId:uuid(),match:mailView.match,round:mailView.round,step:mailView.step,targetId:seats[1].meId,text:'Private API letter.'};
+    assert.equal((await call(handler,mailReq)).s,200);assert.equal((await call(handler,mailReq)).s,200);
+    const inbox=(await get(seats[1])).j.me.letters;assert.equal(inbox.length,1);assert.equal(inbox[0].text,'Private API letter.');
+    assert.deepEqual((await get(host)).j.me.letters,[]);assert.deepEqual((await get(seats[2])).j.me.letters,[]);
+    assert.equal((await post(seats[2],'dismissLetters',{letterIds:[inbox[0].id]})).s,200);assert.equal((await get(seats[1])).j.me.letters.length,1);
+    assert.equal((await post(seats[1],'dismissLetters',{letterIds:[inbox[0].id],round:-1,step:-1})).s,200);assert.equal((await get(seats[1])).j.me.letters.length,0);
+    assert.equal((await post(host,'letter',{targetId:seats[1].meId,text:'Old journey',match:99})).s,409);
+    assert.equal((await call(handler,{...mailReq,requestId:uuid(),tok:'wrong-token'})).s,401);
     assert.equal((await post(seats[1],'shuffleRoles')).s,403);
     assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:{crew:['trainee'],passengers:[],saboteur:'normal'}})).s,400);
     assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:custom})).s,200);

@@ -12,6 +12,7 @@
   let cinemaNode = null, cinemaKey = '', cinemaEnd = null;
   const overlayRoot = document.getElementById('lt-overlays');
   const notebook = window.createTrainNotebook(overlayRoot);
+  const letters = window.createTrainLetters(overlayRoot, { request, onState: (data, owner) => { if (seat?.tok === owner.tok && seat.code === owner.code) { adopt(data); render(); } } });
   const testPlayers = new URLSearchParams(location.search).get('test') === '1' ? window.createTrainTestPlayers(root) : null;
   const compactScene = matchMedia('(max-width: 680px)');
   const motionOK = !matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -48,8 +49,8 @@
   const panel = (...children) => el('section', { class: 'panel' }, ...children);
   const train = cls => el('div', { class: 'train-art ' + (cls || ''), 'aria-hidden': 'true' }, el('img', { src: '/last-train/train-icon.webp', alt: '', width: 1254, height: 1254 }));
   const announce = text => document.getElementById('lt-announcer').textContent = text;
-  async function request(action, extra = {}, owner = seat) {
-    const payload = { action, ...owner, ...extra, requestId: crypto.randomUUID(), match: state?.match || 0, round: state?.round || 0, step: state?.step || 0 };
+  async function request(action, extra = {}, owner = seat, context = state) {
+    const payload = { action, ...owner, ...extra, requestId: crypto.randomUUID(), match: context?.match || 0, round: context?.round || 0, step: context?.step || 0 };
     for (let attempt = 0; ; attempt++) {
       const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 8000);
       try {
@@ -365,7 +366,7 @@
     const handle = dockNode.querySelector('.drawer-handle'), content = dockNode.querySelector('.drawer-content');
     const arrow = el('span', { class: 'drawer-arrow', 'aria-hidden': 'true' });
     arrow.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10l4-4 4 4"/></svg>';
-    handle.replaceChildren(arrow, txt('span', '', showCard ? 'Hide role' : 'Show role'), !showCard && state.me.reports.length ? txt('small', 'drawer-report-count', String(state.me.reports.length)) : null);
+    handle.replaceChildren(...[arrow, txt('span', '', showCard ? 'Hide role' : 'Show role'), !showCard && state.me.reports.length ? txt('small', 'drawer-report-count', String(state.me.reports.length)) : null].filter(Boolean));
     handle.setAttribute('aria-label', showCard ? 'Hide role' : 'Show role');
     handle.setAttribute('aria-expanded', String(showCard));
     content.inert = !showCard;
@@ -480,7 +481,9 @@
   }
   function standingTraveller(p) {
     const index = p.avatarIndex ?? Math.max(0, p.seat - 1);
-    return el('div', { class: 'standing-traveller', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + (index % 4 * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%' });
+    // Alpha bounds differ in each atlas cell. Center the person, rather than the transparent cell.
+    const centerOffsets = [-17.2, -1.76, 2.88, 7.96, -14.17, -5.75, 3.04, 1.43, -7.64, -8.31, 4.15, 2.71];
+    return el('div', { class: 'standing-traveller', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + (index % 4 * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%;--figure-shift:' + (centerOffsets[index] || 0) + '%' });
   }
   function finale() {
     const latest = state.history.at(-1), bad = state.winner === 'bad';
@@ -516,6 +519,7 @@
     syncRoleDock(playing && !['briefing','boarding','finished'].includes(state.phase));
     updateOverlayViewport();
     syncElimination();
+    letters.sync(state, seat);
     const restored = focusId ? document.getElementById(focusId) : [...root.querySelectorAll('[data-focus]')].find(n => n.dataset.focus === focusKey);
     if (restored) { restored.focus({preventScroll:true}); if(typeof cursor === 'number' && restored.setSelectionRange) try{restored.setSelectionRange(cursor,cursor);}catch{} }
     root.dataset.round = String(state?.round || 0); root.dataset.paused = String(!!state?.paused); root.dataset.phase = state?.phase || 'home'; root.dataset.nightRole = state?.nightRole || '';

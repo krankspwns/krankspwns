@@ -11,7 +11,7 @@ function player(name) { const tok = secret(); return { p: { id: crypto.randomUUI
 function view(room, me) { const result = rules.view(room, me); result.me.recoveryCode = recovery(room, me); return result; }
 async function execute(req, body) {
   const action = req.method === 'GET' ? 'state' : body.action;
-  need(['state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'vote', 'pause', 'resume', 'leave'].includes(action), 400, 'Unknown choice. Please reload.');
+  need(['state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave'].includes(action), 400, 'Unknown choice. Please reload.');
   if (action === 'create') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     let code;
@@ -54,16 +54,17 @@ async function execute(req, body) {
   }
   const me = room.players.find(p => p.id === body.pid);
   need(me && body.tok && equal(me.tokenHash, hash(body.tok)), 401, 'Use your private rejoin code to return to the game.');
-  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles]));
+  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles, body.letterIds]));
   const receipt = (room.receipts || []).find(r => r.pid === me.id && r.id === body.requestId);
   if (action !== 'state' && receipt) { need(receipt.fingerprint === fingerprint, 409, 'That request was already used. Reload the game.'); return view(room, me); }
-  need(!me.departed || action === 'state', 403, 'Use your rejoin code to come back.');
+  need(!me.departed || ['state', 'dismissLetters'].includes(action), 403, 'Use your rejoin code to come back.');
   const changed = rules.timed(room);
   if (action === 'state') { if (changed || upgraded) await store.save(room); return view(room, me); }
   // Versioned phase fences stop delayed choices applying to a different night or phase.
-  if (!['leave'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
+  if (['letter', 'dismissLetters'].includes(action)) need(body.match === (room.match || 0), 409, 'A new journey has started. Open your letters again.');
+  else if (action !== 'leave') need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
   const host = () => need(room.hostId === me.id, 403, 'Only the host can do that.');
-  need(!room.paused || ['resume', 'leave'].includes(action), 409, 'The game is paused.');
+  need(!room.paused || ['resume', 'leave', 'dismissLetters'].includes(action), 409, 'The game is paused.');
   if (action === 'settings') {
     host(); need(['lobby','finished'].includes(room.phase), 409, 'Change roles before the game starts.');
     need(['brave', 'speaker'].includes(body.extra) && typeof body.blocker === 'boolean' && ['in-person', 'chat'].includes(body.discussion), 400, 'Choose the role mix on screen.');
@@ -82,6 +83,8 @@ async function execute(req, body) {
   if (action === 'vote') rules.vote(room, me, body);
   if (action === 'speak') rules.speak(room, me, body.text);
   if (action === 'whisper') rules.whisper(room, me, body.text);
+  if (action === 'letter') rules.sendLetter(room, me, body.targetId, body.text);
+  if (action === 'dismissLetters') rules.dismissLetters(room, me, body.letterIds);
   if (action === 'finishSpeech') rules.finishSpeech(room, me);
   if (action === 'advance') {
     host(); need(['morning', 'voteResult'].includes(room.phase), 409, 'Everyone gets their full turn. Wait for this step to finish.'); rules.advance(room);

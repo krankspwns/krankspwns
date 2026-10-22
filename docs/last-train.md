@@ -104,6 +104,10 @@ The host can open `/last-train.html?room=ROOM&test=1` on the browser where their
 
 Keep the test-mode page open while playing. Stop/Resume autoplay is available during the game; Remove test players is available only in the lobby. Bot seats are saved locally for reload recovery. No bots join until the host presses Add; guests and ordinary game URLs have no test controls. These are flow-testing clients, not strategic opponents.
 
+## Private letters
+
+Private letters are available from the floating envelope beside Notes. Choose a traveller, write up to 500 characters and send. Only the recipient receives the body in their private API view; there is no sent archive or public history entry. The badge counts unopened letters. Letters displayed in the inbox are deleted when it closes (including Escape or reload); unopened letters remain. Failed deletion requests are retried, and only deletion IDs are kept locally so read letters stay hidden after a reload. Starting another journey clears all letters. During play, living players can write only to living players, and eliminated players only to other eliminated players. Pausing stops sending but still allows reading and dismissal. Delivery is limited to eight letters per minute per sender, twenty waiting letters per recipient, and 120 per room.
+
 ## Verification
 
 - `npm test`: existing game/recovery suites and Last Train rules/API tests.

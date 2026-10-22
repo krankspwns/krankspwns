@@ -556,7 +556,7 @@ textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px
 .winner-cast { display: grid; grid-template-columns: repeat(var(--winner-columns,3), minmax(0,1fr)); gap: 22px 8px; width: min(780px,100%); margin: 0 auto; justify-content: center; }
 .winner-person { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0 3px 12px; min-width: 0; }
 .winner-person::before { content: ''; position: absolute; z-index: -1; inset: 12% -20% 12%; background: radial-gradient(ellipse at 50% 0%, #e9cb8929, transparent 65%); }
-.standing-traveller { width: 100%; max-width: 235px; aspect-ratio: 3/4; background: url('/last-train/standing.webp') var(--px) var(--py) / 400% 300% no-repeat; filter: saturate(.85) drop-shadow(0 13px 7px #0007); }
+.standing-traveller { width: 100%; max-width: 235px; aspect-ratio: 3/4; background: url('/last-train/standing.webp') var(--px) var(--py) / 400% 300% no-repeat; transform: translateX(var(--figure-shift,0%)); filter: saturate(.85) drop-shadow(0 13px 7px #0007); }
 .winner-nameplate { width: 100%; text-align: center; border-top: 1px solid #e0c48670; padding: 11px 4px 0; background: radial-gradient(ellipse at 50% 0, #edc2770d, transparent 70%); }
 .winner-nameplate b { display: block; color: #f1dfba; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
 .winner-nameplate small { display: block; color: #b9a88e; font-size: 10px; margin-top: 3px; }
@@ -637,3 +637,49 @@ body:has(.notebook-launcher) .lt-header { padding-right: 63px; }
 .lounge-seat.speaking .seated-traveller { filter: saturate(.92) brightness(1) drop-shadow(0 0 7px #d6b57c22) drop-shadow(0 7px 5px #10081666); }
 .lounge-seat.empty .seated-traveller { filter: saturate(.15) brightness(.65); }
 .notebook textarea, .notebook input { -webkit-touch-callout: default; touch-action: auto; }
+
+/* Sealed letters sit beside the notebook, clear of the carriage artwork. */
+.letters-launcher { pointer-events: auto; position: absolute; top: 20px; right: max(81px, calc(env(safe-area-inset-right) + 65px)); display: flex; flex-direction: column; align-items: center; gap: 3px; width: 57px; min-height: 63px; padding: 10px 6px 7px; border: 1px solid #d3bc8c80; border-radius: 11px; color: #efd7a5; background: linear-gradient(135deg,#493b50f5,#231c2df5); box-shadow: 0 4px 18px #0006,inset 0 1px #fff1; font-size: 9px; }
+.letters-launcher svg { width: 25px; height: 25px; }
+.letters-launcher.has-letters { border-color: #f5d498; box-shadow: 0 0 18px #d4ae6630; }
+.letters-badge { position: absolute; top: -7px; right: -5px; display: grid; place-items: center; background: #a8435c; color: #fff3e8; border: 1px solid #edb7aa; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 50%; font-size: 10px; }
+.letters-badge[hidden] { display: none; }
+body:has(.letters-launcher) .lt-header { padding-right: 130px; flex-wrap: wrap; gap: 10px 16px; }
+.letters-dialog { width: min(620px,calc(100% - 28px)); max-height: calc(100dvh - 28px); padding: 0; overflow: auto; color: #f0e3cc; background: radial-gradient(ellipse at 0 0,#51354766,transparent 65%),#1b1622; border: 1px solid #d8bc7e80; border-radius: 21px; box-shadow: 0 24px 100px #000a; }
+.letters-dialog::backdrop { background: #060712cf; backdrop-filter: blur(9px); }
+.letters-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 25px 12px; }
+.letters-header h2 { font-size: 29px; margin-top: 6px; }
+.letters-close { font-size: 25px; font-weight: 400; width: 44px; height: 44px; padding: 0; flex: none; }
+.letters-warning { font-size: 12px; color: #c0acb6; margin: 0 25px 20px; line-height: 1.6; }
+.letters-received { margin: 0 25px; }
+.letters-dialog h3 { font-size: 15px; letter-spacing: -.2px; }
+.letters-inbox { display: grid; gap: 12px; margin-top: 12px; }
+.letter-empty { color: #b9a7b5; border: 1px dashed #c4a56b44; border-radius: 11px; padding: 19px; font-size: 12px; }
+.private-letter { padding: 17px; border: 1px solid #ddc68b70; border-radius: 13px 13px 13px 3px; background: linear-gradient(130deg,#f5e9cf,#e7d6b5); color: #382c36; box-shadow: 0 5px 18px #0003; }
+.letter-byline { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid #62475a25; }
+.letter-face { width: 37px; height: 37px; border-radius: 9px; }
+.letter-byline b { display: block; font-size: 13px; }
+.letter-byline small { display: block; font-size: 8px; letter-spacing: 1px; color: #6f5966; margin-top: 2px; }
+.letter-text { font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; margin-top: 12px; user-select: text; -webkit-user-select: text; }
+.letter-compose { margin: 22px 25px 25px; border-top: 1px solid #c8a46e30; padding-top: 20px; display: grid; gap: 9px; }
+.letter-compose h3 { margin-bottom: 5px; }
+.letter-compose label { color: #cbb8bf; font-size: 11px; }
+.letter-compose select,.letter-compose textarea { width: 100%; padding: 12px; background: #100f1b; color: #f2e5cf; border: 1px solid #cfb27b44; border-radius: 10px; font: inherit; font-size: 13px; }
+.letter-compose textarea { min-height: 120px; resize: vertical; }
+.letter-compose textarea:focus-visible { outline: 2px solid #e5c58c; outline-offset: 3px; }
+.letter-compose-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 5px; }
+.letter-compose-footer small { color: #af9daa; font-size: 10px; }
+.letter-compose-footer button { flex: none; font-size: 12px; }
+.letter-feedback { font-size: 12px; line-height: 1.5; color: #e6cd99; min-height: 18px; }
+@media(max-width:680px) {
+  .letters-launcher { width: 46px; min-height: 60px; top: 16px; right: max(60px,calc(env(safe-area-inset-right) + 54px)); padding: 9px 4px 6px; font-size: 8px; }
+  .letters-launcher svg { width: 23px; height: 23px; }
+  body:has(.letters-launcher) .lt-header { padding-right: 100px; gap: 8px 12px; }
+  .letters-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: 15px; }
+  .letters-header { padding: 20px 17px 12px; }
+  .letters-header h2 { font-size: 26px; }
+  .letters-warning { margin-inline: 17px; font-size: 11px; }
+  .letters-received { margin-inline: 17px; }
+  .letter-compose { margin-inline: 17px; }
+  .private-letter { padding: 14px; }
+}
