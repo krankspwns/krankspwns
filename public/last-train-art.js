@@ -40,3 +40,9 @@ window.TRAIN_ART = {"emotes":{"laugh":"<circle cx=\"24\" cy=\"24\" r=\"21\" fill
 "#fff1d0"],"bomb":["💣",
 "boom"],"fireworks":["🎆",
 "fireworks"]}};
+/* Trust marks: a shield for Trust, a question for Unsure, a warning for Suspect (24×24). */
+window.TRAIN_ART.trust = {
+  trust: '<path d="M12 2.5l8 3v6c0 5-3.6 8.7-8 10-4.4-1.3-8-5-8-10v-6z" fill="currentColor" opacity=".22"/><path d="M12 2.5l8 3v6c0 5-3.6 8.7-8 10-4.4-1.3-8-5-8-10v-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.3 12l2.6 2.6L16 9.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  unsure: '<circle cx="12" cy="12" r="9.2" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.3 9.4a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2 1-1.2 1.9v.4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.25" fill="currentColor"/>',
+  suspect: '<path d="M12 3.2l9.4 16.3a1.4 1.4 0 0 1-1.2 2.1H3.8a1.4 1.4 0 0 1-1.2-2.1z" fill="currentColor" opacity=".22"/><path d="M12 3.2l9.4 16.3a1.4 1.4 0 0 1-1.2 2.1H3.8a1.4 1.4 0 0 1-1.2-2.1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.3v5.4" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/>',
+};

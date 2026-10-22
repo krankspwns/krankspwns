@@ -7,17 +7,24 @@
     const MAX_BYTES = 512 * 1024, PLAYBACK_PHASES = ['settling','night','gathering','morning','discussion','voting','revoteInfo','voteResult','finished'];
     const players = new Map();
     const pane = document.createElement('section'); pane.className = 'voice-recorder'; pane.setAttribute('aria-label', 'Record a voice message');
-    const title = document.createElement('b'); title.textContent = 'Record your message';
-    const hint = document.createElement('p'); hint.className = 'voice-hint'; hint.textContent = 'Record during your turn. Everyone can listen after it ends.';
-    const actions = document.createElement('div'); actions.className = 'voice-actions';
-    const record = document.createElement('button'); record.type = 'button'; record.className = 'voice-record';
-    record.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="2" width="8" height="13" rx="4" fill="currentColor"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Record voice</span>';
-    const stop = document.createElement('button'); stop.type = 'button'; stop.className = 'gold'; stop.textContent = 'Stop & share';
-    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'text-button'; cancel.textContent = 'Discard';
-    const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'secondary'; retry.textContent = 'Retry sharing';
+    const MIC = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="2.5" width="8" height="12.5" rx="4" fill="currentColor"/><path d="M5 10.5v1.5a7 7 0 0 0 14 0v-1.5M12 19v2.5M8.5 21.5h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+    // Idle: one big card. Recording: a live panel with a timer, moving bars, Stop & Share and Discard.
+    const record = document.createElement('button'); record.type = 'button'; record.className = 'speak-choice record-choice';
+    record.setAttribute('aria-label', 'Record Voice'); record.innerHTML = '<span class="choice-icon">' + MIC + '</span><span class="choice-copy"><b>Record Voice</b><small>Up to 20 seconds</small></span>';
+    const live = document.createElement('div'); live.className = 'voice-live';
+    const liveHead = document.createElement('div'); liveHead.className = 'voice-live-head';
     const meter = document.createElement('span'); meter.className = 'voice-time';
+    liveHead.innerHTML = '<span class="rec-dot" aria-hidden="true"></span><b>Recording</b>'; liveHead.append(meter);
+    const bars = document.createElement('div'); bars.className = 'voice-live-bars'; bars.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 24; i++) { const bar = document.createElement('i'); bar.style.setProperty('--d', (i * 53 % 17) / 17 + 's'); bars.append(bar); }
+    const progress = document.createElement('div'); progress.className = 'voice-progress'; progress.innerHTML = '<i></i>';
+    const stop = document.createElement('button'); stop.type = 'button'; stop.className = 'gold'; stop.textContent = 'Stop & Share';
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'text-button'; cancel.textContent = 'Discard';
+    const liveActions = document.createElement('div'); liveActions.className = 'voice-actions'; liveActions.append(stop, cancel);
+    live.append(liveHead, bars, progress, liveActions);
+    const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'secondary'; retry.textContent = 'Retry Sharing';
     const feedback = document.createElement('p'); feedback.className = 'voice-feedback'; feedback.setAttribute('role', 'status');
-    actions.append(record, stop, cancel, retry, meter); pane.append(title, hint, actions, feedback);
+    pane.append(record, live, retry, feedback);
     const supported = () => !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
     const ownTurn = () => state?.phase === 'discussion' && state.speakerId === state.meId && state.me.alive;
     const hasShared = () => state?.speeches.some(m => m.round === state.round && m.id === state.meId);
@@ -29,11 +36,14 @@
       const active = recording || pending;
       record.hidden = active || uploading || finalizing || !!retryClip;
       record.disabled = !supported() || !ownTurn() || state.paused || hasShared();
-      stop.hidden = !recording; stop.disabled = state?.paused;
+      live.hidden = !active; stop.hidden = !recording; stop.disabled = state?.paused;
       cancel.hidden = !active; retry.hidden = !retryClip || uploading;
       retry.disabled = state?.paused;
-      meter.hidden = !recording; meter.textContent = (state?.paused ? 'Paused · ' : '● ') + Math.min(20, Math.floor(elapsed() / 1000)) + 's / 20s';
-      pane.classList.toggle('is-recording', recording);
+      const secs = Math.min(20, Math.floor(elapsed() / 1000));
+      meter.textContent = state?.paused ? 'Paused' : '0:' + String(secs).padStart(2, '0') + ' / 0:20';
+      progress.firstChild.style.width = Math.min(100, elapsed() / 200) + '%';
+      liveHead.querySelector('b').textContent = recording ? 'Recording' : 'Starting the microphone…';
+      pane.classList.toggle('is-recording', recording); pane.classList.toggle('is-busy', active || uploading || finalizing || !!retryClip);
       feedback.textContent = !supported() ? 'Voice recording is not supported here. You can still type or speak aloud.' : status;
       duck();
     }
@@ -108,9 +118,15 @@
       }
       throw Error('This browser cannot record a supported audio format. You can still type or speak aloud.');
     }
+    async function micPermission() {
+      try { return (await navigator.permissions?.query({ name: 'microphone' }))?.state || 'prompt'; } catch { return 'prompt'; }
+    }
     async function start() {
       if (!ownTurn() || state.paused || hasShared() || pending || recording || uploading || finalizing || recorder) return;
-      const op = ++operation, snapshot = { ...state }, seat = { ...owner }; pending = true; status = 'Allow microphone access to record.'; playback.forEach(audio => audio.pause()); changed();
+      const op = ++operation, snapshot = { ...state }, seat = { ...owner }; pending = true; playback.forEach(audio => audio.pause());
+      // Only ask people to allow the microphone when the browser is actually going to ask.
+      const permission = await micPermission();
+      status = permission === 'denied' ? 'The microphone is blocked for this site. Allow it in your browser’s site settings, then tap Record Voice again.' : permission === 'granted' ? '' : 'Allow microphone access to record.'; changed();
       let media;
       try {
         media = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
@@ -135,24 +151,48 @@
       } catch (e) {
         if (recorder && !recording && !recorder.finished) recorder = null;
         media?.getTracks().forEach(t => t.stop()); if (stream === media) stream = null;
-        if (op === operation) status = e.name === 'NotAllowedError' ? 'Microphone access was denied. You can still type or speak aloud.' : e.message || 'The microphone is unavailable. You can still type or speak aloud.';
+        if (op === operation) status = e.name === 'NotAllowedError' ? 'Microphone access is off for this site. Allow it in your browser’s site settings to record, or type instead.' : e.message || 'The microphone is unavailable. You can still type or speak aloud.';
       } finally { if (op === operation) { pending = false; changed(); } }
     }
     record.onclick = start; stop.onclick = () => stopRecording(true);
     cancel.onclick = () => { operation++; pending = false; if (recording) stopRecording(false); else release(); status = 'Recording discarded.'; changed(); };
     retry.onclick = () => { if (retryClip) upload(retryClip); };
+    // A custom player: round play button, a waveform that fills as it plays, and the time.
+    const ICONS = {
+      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></svg>',
+      pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.3" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.3" fill="currentColor"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.2" fill="currentColor"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+      load: '<svg viewBox="0 0 24 24" aria-hidden="true" class="spin"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-dasharray="30 60" stroke-linecap="round"/></svg>',
+    };
+    const clock = sec => Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
     function player(message) {
-      const id = message.audio.id;
+      const id = message.audio.id, total = Math.max(1, Math.ceil(message.audio.durationMs / 1000));
       let entry = players.get(id);
       if (!entry) {
         const box = document.createElement('div'); box.className = 'voice-message';
         const button = document.createElement('button'); button.type = 'button'; button.className = 'voice-play';
-        const audio = document.createElement('audio'); audio.controls = true; audio.preload = 'none'; audio.hidden = true; audio.setAttribute('aria-label', 'Recording by ' + (state.players.find(p => p.id === message.id)?.name || 'a traveller'));
+        const wave = document.createElement('div'); wave.className = 'voice-wave'; wave.setAttribute('aria-hidden', 'true');
+        // The bar heights come from the clip ID, so every phone draws the same shape.
+        let seed = [...id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+        for (let i = 0; i < 30; i++) { seed = (seed * 1103515245 + 12345) >>> 0; const bar = document.createElement('i'); bar.style.height = (22 + (seed % 78) * (i % 6 === 0 ? .6 : 1)) + '%'; wave.append(bar); }
+        const time = document.createElement('span'); time.className = 'voice-dur';
+        const audio = document.createElement('audio'); audio.preload = 'none'; audio.hidden = true; audio.setAttribute('aria-label', 'Recording by ' + (state.players.find(p => p.id === message.id)?.name || 'a traveller'));
         const info = document.createElement('span'); info.className = 'voice-play-status'; info.setAttribute('role', 'status');
-        box.append(button, audio, info); entry = { box, button, audio, info, url: null, loading: false }; players.set(id, entry);
+        box.append(button, wave, time, audio, info); entry = { box, button, wave, time, audio, info, url: null, loading: false }; players.set(id, entry);
+        const paint = () => {
+          const done = audio.duration && isFinite(audio.duration) ? audio.currentTime / audio.duration : 0;
+          const lit = Math.round(done * wave.children.length); [...wave.children].forEach((bar, i) => bar.classList.toggle('on', i < lit));
+          time.textContent = audio.paused && !audio.currentTime ? clock(total) : clock(audio.currentTime) + ' / ' + clock(total);
+          const playing = !audio.paused && !audio.ended;
+          box.classList.toggle('playing', playing);
+          button.innerHTML = entry.loading ? ICONS.load : !entry.available ? ICONS.lock : playing ? ICONS.pause : ICONS.play;
+          button.setAttribute('aria-label', !entry.available ? 'Voice message, ready after their turn' : (playing ? 'Pause' : 'Play') + ' voice message, ' + total + ' seconds');
+        };
+        entry.paint = paint;
         button.onclick = async () => {
           if (recording || pending || entry.loading) return;
-          entry.loading = true; button.disabled = true; info.textContent = 'Loading recording…';
+          if (entry.url) { if (audio.paused) audio.play().catch(() => { info.textContent = 'Tap again to listen.'; }); else audio.pause(); return; }
+          entry.loading = true; button.disabled = true; info.textContent = ''; paint();
           const expected = roomKey, seat = { ...owner };
           try {
             const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 10000);
@@ -160,17 +200,22 @@
             const clip = await response.json(); if (!response.ok) throw Error(clip.error || 'Recording unavailable.');
             if (expected !== roomKey) return;
             const bytes = Uint8Array.from(atob(clip.data), c => c.charCodeAt(0));
-            entry.url = URL.createObjectURL(new Blob([bytes], { type: clip.mimeType })); audio.src = entry.url; audio.hidden = false; button.hidden = true; info.textContent = '';
+            entry.url = URL.createObjectURL(new Blob([bytes], { type: clip.mimeType })); audio.src = entry.url;
             try { await audio.play(); } catch { info.textContent = 'Tap play to listen.'; }
           } catch (e) { if (expected === roomKey) info.textContent = e.name === 'AbortError' ? 'Loading took too long. Tap to retry.' : e.message; }
-          finally { entry.loading = false; button.disabled = false; }
+          finally { entry.loading = false; button.disabled = false; paint(); }
         };
-        audio.onplay = () => { if (recording || pending) return audio.pause(); for (const other of playback) if (other !== audio) other.pause(); playback.add(audio); duck(); };
-        audio.onpause = audio.onended = () => { playback.delete(audio); duck(); };
-        audio.onerror = () => { playback.delete(audio); info.textContent = 'This recording cannot be played on this browser.'; duck(); };
+        audio.onplay = () => { if (recording || pending) return audio.pause(); for (const other of playback) if (other !== audio) other.pause(); playback.add(audio); duck(); paint(); };
+        audio.ontimeupdate = paint;
+        audio.onpause = audio.onended = () => { playback.delete(audio); duck(); if (audio.ended) audio.currentTime = 0; paint(); };
+        audio.onerror = () => { playback.delete(audio); info.textContent = 'This recording cannot be played on this browser.'; duck(); paint(); };
       }
+      entry.available = message.audio.available;
       entry.button.disabled = !message.audio.available || recording || pending || entry.loading;
-      entry.button.textContent = message.audio.available ? '▶ Play voice · ' + Math.ceil(message.audio.durationMs / 1000) + 's' : 'Voice ready after their turn';
+      entry.box.classList.toggle('locked', !message.audio.available);
+      if (!message.audio.available) entry.info.textContent = 'Ready after their turn';
+      else if (entry.info.textContent === 'Ready after their turn') entry.info.textContent = '';
+      entry.paint();
       return entry.box;
     }
     function reset() {

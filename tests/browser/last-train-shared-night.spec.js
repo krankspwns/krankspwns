@@ -30,9 +30,9 @@ test('shared nights give everyone private activities, preserve notes and keep po
     await chip('Suspect').click();await passenger.page.reload();await expect(chip('Suspect')).toHaveAttribute('aria-pressed','true');
     expect(passenger.requests).toHaveLength(0);
     await blocker.page.locator('.team-chat summary').click();
-    expect(await blocker.page.getByLabel('Whisper to your team',{exact:true}).evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
+    expect(await blocker.page.getByLabel('Whisper To Your Team',{exact:true}).evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await blocker.page.getByRole('button',{name:'Choose Target',exact:true}).click();let d=blocker.page.getByRole('dialog');await d.locator('[data-id="'+passenger.person.id+'"]').click();await d.getByRole('button',{name:/^Confirm:/}).click();
-    await blocker.page.getByRole('button',{name:'Use Blocker power',exact:true}).click();d=blocker.page.getByRole('dialog');await d.locator('[data-id="'+inspector.person.id+'"]').click();await d.getByRole('button',{name:/^Confirm:/}).click();
+    await blocker.page.getByRole('button',{name:'Use Blocker Power',exact:true}).click();d=blocker.page.getByRole('dialog');await d.locator('[data-id="'+inspector.person.id+'"]').click();await d.getByRole('button',{name:/^Confirm:/}).click();
     await expect(blocker.page.locator('.bad-console')).toContainText('Block used: '+inspector.person.name);
     let room=await store.load(b.host.code);expect(room.phase).toBe('night');expect(room.duration).toBe(25);expect(room.night.choices[blocker.person.id].attackId).toBe(passenger.person.id);
     rules.advance(room);await b.save(room);
@@ -79,7 +79,7 @@ test('mobile controls keep text at 16px including lobby, discussion, private let
     expect(await notebook.locator('textarea').evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await page.keyboard.press('Escape');
     let room=await store.load(b.host.code);rules.beginDiscussion(room);room.speakerIndex=room.speakingOrder.indexOf(a.person.id);room.settings.discussion='chat';await b.save(room);
-    await expect(page.getByLabel('Your findings',{exact:true})).toBeVisible();
+    await page.getByRole('button',{name:'Type Message'}).click();await expect(page.getByLabel('Your findings',{exact:true})).toBeVisible();
     expect(await page.getByLabel('Your findings',{exact:true}).evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await page.getByRole('button',{name:/^Open private letters/}).click();
     await page.getByRole('dialog',{name:'Private letters'}).locator('.letters-person').first().click();
@@ -87,6 +87,7 @@ test('mobile controls keep text at 16px including lobby, discussion, private let
     for(const control of await letterFields.all())expect(await control.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await page.keyboard.press('Escape');
     await page.evaluate(()=>localStorage.removeItem('lt-seat'));await page.goto('/last-train.html');
+    const typeMessage=page.getByRole('button',{name:'Type Message'});if(await typeMessage.isVisible().catch(()=>false))await typeMessage.click();
     const fields=page.locator('input:not([type=checkbox]):not([type=radio]),textarea,select');expect(await fields.count()).toBeGreaterThan(0);
     for(const control of await fields.all())expect(await control.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(a.errors).toEqual([]);

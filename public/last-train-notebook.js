@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   window.createTrainNotebook = host => {
-    let key = '', marksKey = '', data = { text: '', strokes: [] }, launcher, book, canvas, ctx, status, phaseLabel, people = [], meId = '', peopleBox;
+    let key = '', marksKey = '', data = { text: '', strokes: [] }, launcher, book, canvas, ctx, status, phaseLabel, people = [], meId = '', peopleBox, reports = [], reportsBox;
     const inks = [['Midnight', '#293248'], ['Ruby', '#a22d46'], ['Emerald', '#22745b'], ['Blue', '#275fbc'], ['Violet', '#7747a8'], ['Amber', '#976313']];
     let ink = inks[0][1];
     let current = null, activePointer = null, mode = 'people', tool = 'pen', dirty = false, saveTimer, observer, cleared = null;
@@ -28,13 +28,22 @@
         face.style.setProperty('--px', (i % 4 * 100 / 3) + '%'); face.style.setProperty('--py', (Math.floor(i / 4) * 50) + '%'); face.setAttribute('aria-hidden', 'true');
         const name = node('div', 'people-name'); name.append(node('b', '', p.name), node('small', '', p.alive === false ? 'Out' : p.seat ? 'Seat ' + p.seat : 'In the room'));
         const chips = node('div', 'trust-chips'); chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Your view of ' + p.name);
-        for (const [value, label, sign] of MARKS) {
+        for (const [value, label] of MARKS) {
           const chip = button('', () => { writeMarks({ marks: { ...readMarks().marks, [p.id]: mark === value ? '' : value } }); renderPeople(); }, 'trust-chip ' + value);
-          chip.setAttribute('aria-pressed', String(mark === value)); chip.append(node('span', '', sign), node('small', '', label)); chips.append(chip);
+          chip.setAttribute('aria-pressed', String(mark === value)); const ic = node('span', 'trust-icon'); ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (window.TRAIN_ART?.trust?.[value] || '') + '</svg>'; chip.append(ic, node('small', '', label)); chips.append(chip);
         }
         const note = node('input', 'people-note'); note.maxLength = 80; note.placeholder = 'Claims, clues…'; note.value = notes.people[p.id] || ''; note.setAttribute('aria-label', 'Note about ' + p.name);
         note.addEventListener('input', () => writeMarks({ people: { ...readMarks().people, [p.id]: note.value } }));
         row.append(face, name, chips, note); peopleBox.append(row);
+      }
+    }
+    // Private night results (Inspector checks, Witness sightings, promotions), newest first.
+    function renderReports() {
+      if (!reportsBox) return;
+      reportsBox.replaceChildren();
+      if (!reports.length) { const empty = node('p', 'reports-empty', 'Private results from your night power will appear here, such as a check or a sighting.'); reportsBox.append(empty); return; }
+      for (const r of [...reports].reverse()) {
+        const card = node('article', 'report-card ' + (r.tone || '')); card.append(node('small', '', 'NIGHT ' + r.round), node('p', '', r.text)); reportsBox.append(card);
       }
     }
     function persist() {
@@ -76,8 +85,8 @@
     function showMode(next) {
       finish(); mode = next;
       for (const b of book.querySelectorAll('[data-note-mode]')) b.setAttribute('aria-pressed', String(b.dataset.noteMode === mode));
-      book.querySelector('.notebook-typing').hidden = mode !== 'type'; book.querySelector('.notebook-drawing').hidden = mode !== 'draw'; peopleBox.hidden = mode !== 'people';
-      if (mode === 'people') renderPeople();
+      book.querySelector('.notebook-typing').hidden = mode !== 'type'; book.querySelector('.notebook-drawing').hidden = mode !== 'draw'; peopleBox.hidden = mode !== 'people'; reportsBox.hidden = mode !== 'reports';
+      if (mode === 'people') renderPeople(); if (mode === 'reports') renderReports();
       if (mode === 'draw') resize();
     }
     function open() {
@@ -88,7 +97,7 @@
       const closeButton = button('×', close, 'notebook-close'); closeButton.setAttribute('aria-label', 'Close notebook'); top.append(title, closeButton);
       phaseLabel = node('p', 'notebook-phase'); phaseLabel.textContent = launcher.dataset.phase || 'Your private notes';
       const tabs = node('div', 'notebook-modes'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', 'Notebook mode');
-      for (const [value, label] of [['people', 'People'], ['type', 'Type'], ['draw', 'Draw']]) {
+      for (const [value, label] of [['people', 'People'], ['reports', 'Reports' + (reports.length ? ' · ' + reports.length : '')], ['type', 'Type'], ['draw', 'Draw']]) {
         const tab = button(label, () => showMode(value)); tab.dataset.noteMode = value; tabs.append(tab);
       }
       const typing = node('div', 'notebook-typing'), label = node('label', '', 'Your notes'); label.htmlFor = 'notebook-text';
@@ -100,7 +109,7 @@
         b.dataset.noteTool = value; b.setAttribute('aria-pressed', String(tool === value)); tools.append(b);
       }
       const undo = button('Undo', () => { finish(); if (cleared) { data.strokes = cleared; cleared = null; } else data.strokes.pop(); changed(); persist(); redraw(); }); undo.dataset.noteUndo = ''; tools.append(undo);
-      tools.append(button('Clear drawing', () => { finish(); if (!data.strokes.length) return; cleared = data.strokes; data.strokes = []; changed(); persist(); redraw(); }));
+      tools.append(button('Clear Drawing', () => { finish(); if (!data.strokes.length) return; cleared = data.strokes; data.strokes = []; changed(); persist(); redraw(); }));
       const palette = node('div', 'notebook-palette'); palette.setAttribute('role', 'group'); palette.setAttribute('aria-label', 'Ink colors');
       for (const [name, color] of inks) {
         const swatch = button('', () => { finish(); ink = color; tool = 'pen'; for (const n of palette.children) n.setAttribute('aria-pressed', String(n.dataset.color === ink)); for (const n of tools.querySelectorAll('[data-note-tool]')) n.setAttribute('aria-pressed', String(n.dataset.noteTool === tool)); }, 'ink-swatch');
@@ -131,11 +140,11 @@
       paper.append(canvas); drawing.append(toolbar, paper, node('p', 'notebook-tip', 'Draw with a finger, pen or mouse. Your notes stay private.'));
       status = node('span', 'notebook-save'); status.setAttribute('role', 'status'); status.textContent = dirty ? 'Saving…' : 'Saved on this device';
       const footer = node('footer', 'notebook-footer'); footer.append(status, node('span', '', 'Only you · This game · This device'));
-      peopleBox = node('div', 'notebook-people');
-      book.append(top, phaseLabel, tabs, peopleBox, typing, drawing, footer);
+      peopleBox = node('div', 'notebook-people'); reportsBox = node('div', 'notebook-reports');
+      book.append(top, phaseLabel, tabs, peopleBox, reportsBox, typing, drawing, footer);
       book.addEventListener('cancel', e => { e.preventDefault(); close(); });
       book.addEventListener('close', () => {
-        finish(); persist(); observer?.disconnect(); book.remove(); book = canvas = ctx = status = phaseLabel = peopleBox = null;
+        finish(); persist(); observer?.disconnect(); book.remove(); book = canvas = ctx = status = phaseLabel = peopleBox = reportsBox = null;
         document.body.classList.remove('notebook-open'); launcher?.focus({ preventScroll: true });
       });
       document.body.append(book); book.showModal(); document.body.classList.add('notebook-open');
@@ -143,7 +152,8 @@
       // Avoid opening a phone keyboard until the player chooses the text area.
       closeButton.focus({ preventScroll: true });
     }
-    function sync(owner, phase, players = []) {
+    function sync(owner, phase, players = [], nextReports = []) {
+      if (JSON.stringify(nextReports) !== JSON.stringify(reports)) { reports = nextReports; renderReports(); const tab = book?.querySelector('[data-note-mode=reports]'); if (tab) tab.textContent = 'Reports' + (reports.length ? ' · ' + reports.length : ''); }
       const next = owner ? 'lt-notebook:' + [owner.code, owner.pid, owner.match].join(':') : '';
       marksKey = owner ? 'lt-night-notes:' + [owner.code, owner.pid, owner.match].join(':') : ''; meId = owner?.pid || '';
       const roster = JSON.stringify(players.map(p => [p.id, p.alive, p.departed]));

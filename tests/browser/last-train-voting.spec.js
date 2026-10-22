@@ -29,24 +29,24 @@ test('tied ballots open one restricted re-vote, retain grouped voters on reload 
     for(let i=0;i<6;i++)await post(seats[i],'vote',{targetId:targets[i%2]});
     await expect(page.locator('#lt-app')).toHaveAttribute('data-phase','revoteInfo');
     const notice=page.getByRole('dialog',{name:'The vote is tied.',exact:true});await expect(notice).toBeVisible();await expect(notice.locator('.revote-candidate')).toHaveCount(2);
-    await expect(page.getByRole('button',{name:'Choose a player or Skip',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Choose A Player Or Skip',exact:true})).toHaveCount(0);
     let pending=await store.load(b.host.code);expect(pending.duration).toBe(7);expect(pending.votes).toEqual({});
-    await page.screenshot({path:info.outputPath('revote-info-mobile.png')});await notice.getByRole('button',{name:'Got it',exact:true}).click();
+    await page.screenshot({path:info.outputPath('revote-info-mobile.png')});await notice.getByRole('button',{name:'Got It',exact:true}).click();
     pending.deadline=Date.now()-1;await store.save(pending);
     await expect(page.getByRole('heading',{name:'A tie. Vote once more.'})).toBeVisible();
     let room=await store.load(b.host.code);expect(room.voteAttempt).toBe(2);expect(room.votes).toEqual({});
     const stale=await call(handler,{action:'vote',requestId:crypto.randomUUID(),code:b.host.code,pid:b.host.meId,tok:b.host.tok,match:before.match,round:before.round,step:before.step,targetId:targets[0]});expect(stale.s).toBe(409);
     await page.reload();await expect(page.getByRole('heading',{name:'A tie. Vote once more.'})).toBeVisible();
-    await page.getByText('See the first vote',{exact:true}).click();
+    await page.getByText('See The First Vote',{exact:true}).click();
     const grouped=page.locator('.previous-vote .vote-group');await expect(grouped).toHaveCount(2);
     for(let i=0;i<2;i++){await expect(grouped.nth(i).locator('.vote-row')).toHaveCount(3);await expect(grouped.nth(i).locator('.vote-total')).toHaveText('3 votes');}
-    await page.getByRole('button',{name:'Choose a player or Skip',exact:true}).click();
+    await page.getByRole('button',{name:'Choose A Player Or Skip',exact:true}).click();
     const dialog=page.getByRole('dialog');await expect(dialog.locator('.manifest-target')).toHaveCount(3);
     await dialog.locator('[data-id="'+targets[0]+'"]').click();await dialog.getByRole('button',{name:/^Confirm:/}).click();
     for(let i=1;i<6;i++)await post(seats[i],'vote',{targetId:targets[i%2]});
     await expect(page.locator('#lt-app')).toHaveAttribute('data-phase','voteResult');
     room=await store.load(b.host.code);expect(room.history).toHaveLength(2);expect(room.history[1].reason).toBe('random');expect(targets).toContain(room.history[1].outs[0].id);
-    if(await page.getByRole('dialog').count())await page.getByRole('button',{name:'View votes',exact:true}).click();
+    if(await page.getByRole('dialog').count())await page.getByRole('button',{name:'View Votes',exact:true}).click();
     await expect(page.locator('.inline-votes .vote-group')).toHaveCount(2);await expect(page.locator('.inline-votes .vote-row')).toHaveCount(6);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.screenshot({path:info.outputPath('grouped-revote-mobile.png'),fullPage:true});
@@ -59,7 +59,7 @@ test('five Skip ballots do not cancel the sole player vote',async({browser})=>{
     for(let i=0;i<6;i++)await b.post(b.seats[i],'vote',{targetId:i===0?b.seats[1].meId:null});
     const room=await store.load(b.host.code);expect(room.history[0].outs[0].id).toBe(b.seats[1].meId);
     await expect(b.page.locator('#lt-app')).toHaveAttribute('data-phase','voteResult');
-    if(await b.page.getByRole('dialog').count())await b.page.getByRole('button',{name:'View votes',exact:true}).click();
+    if(await b.page.getByRole('dialog').count())await b.page.getByRole('button',{name:'View Votes',exact:true}).click();
     const votes=b.page.locator('.inline-votes');await expect(votes.locator('.vote-group')).toHaveCount(2);await expect(votes.locator('.vote-group[data-target="'+b.seats[1].meId+'"] .vote-row')).toHaveCount(1);await expect(votes.locator('.abstained .vote-row')).toHaveCount(5);
   }finally{await b.context.close();}
 });

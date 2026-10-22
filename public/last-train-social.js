@@ -144,7 +144,7 @@
       }
       if (!state.me.alive && !['lobby', 'finished'].includes(state.phase)) { tray.append(node('p', 'tray-note', 'Players who are out can only react.')); return; }
       const gifts = Object.entries(wallet().gifts || {}).filter(([, n]) => n > 0);
-      if (!gifts.length) { tray.append(node('p', 'tray-note', 'You have nothing to throw yet.')); const s = button('tray-shop gold', null, () => { closeTray(); openShop('gifts'); }); s.textContent = 'Visit the shop'; tray.append(s); return; }
+      if (!gifts.length) { tray.append(node('p', 'tray-note', 'You have nothing to throw yet.')); const s = button('tray-shop gold', null, () => { closeTray(); openShop('gifts'); }); s.textContent = 'Visit The Shop'; tray.append(s); return; }
       if (!throwItem || !(wallet().gifts[throwItem] > 0)) throwItem = gifts[0][0];
       const items = node('div', 'throw-items');
       for (const [k, n] of gifts) { const b = button('throw-item' + (throwItem === k ? ' on' : ''), GIFT_NAMES[k], () => { throwItem = k; renderTray(); }); b.append(svg(ART.gifts[k]), node('small', '', '×' + n)); items.append(b); }

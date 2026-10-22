@@ -27,7 +27,7 @@ test('Inspector and Witness see immediate private results in a centered card, ke
     room=await store.load(b.host.code);expect(room.phase).toBe('night');expect(rules.nightRole(room)).toBe('inspector');expect(room.players.find(p=>p.id===inspector.id).reports).toHaveLength(1);
     await expect(o.page.locator('.night-result-dialog')).toHaveCount(0);await expect(w.page.locator('.night-result-dialog')).toHaveCount(0);
     const view=(await call(handler,null,{code:o.seat.code,pid:o.seat.meId},{'x-tok':o.seat.tok})).j;expect(view.me.reports).toEqual([]);expect(view.players.find(p=>p.id===bad.id).role).toBeUndefined();
-    await a.page.waitForTimeout(500);await a.page.screenshot({path:info.outputPath('inspector-immediate-mobile.png')});await result.getByRole('button',{name:'Got it',exact:true}).click();await expect(a.page.locator('.action-console .result-verdict')).toHaveText('BAD');
+    await a.page.waitForTimeout(500);await a.page.screenshot({path:info.outputPath('inspector-immediate-mobile.png')});await result.getByRole('button',{name:'Got It',exact:true}).click();await expect(a.page.locator('.action-console .result-verdict')).toHaveText('BAD');
     await a.page.reload();await expect(a.page.locator('.night-result-dialog')).toHaveCount(0);await expect(a.page.locator('.action-console .result-verdict')).toHaveText('BAD');
     rules.advance(room);room.deadline=Date.now()+120000;await store.save(room);await expect(w.page.locator('#lt-app')).toHaveAttribute('data-night-role','witness');await w.page.getByRole('button',{name:'Watch',exact:true}).click();
     const watched=w.page.getByRole('dialog',{name:'Your private result',exact:true});await expect(watched.locator('.result-verdict')).toHaveText('ATTACK TARGET');await expect(watched.getByRole('heading',{name:inspector.name,exact:true})).toBeVisible();
@@ -42,7 +42,7 @@ test('a blocked check shows no target alignment, and Saboteur role cards identif
     const a=await b.open(inspector),s=await b.open(bad);
     await a.page.getByRole('button',{name:'Choose',exact:true}).click();const target=a.page.getByRole('dialog');await target.locator('[data-id="'+bad.id+'"]').click();await target.getByRole('button',{name:/^Confirm:/}).click();
     const result=a.page.getByRole('dialog',{name:'Your private result',exact:true});await expect(result.getByRole('heading',{name:'Your power was blocked.',exact:true})).toBeVisible();await expect(result.locator('.result-verdict')).toHaveCount(0);
-    await s.page.getByRole('button',{name:'Show role',exact:true}).click();const allies=room.players.filter(p=>rules.group(p)==='saboteur'&&p.id!==bad.id);await expect(s.page.locator('.ticket-ally')).toHaveCount(2);
+    await s.page.getByRole('button',{name:'Show Role',exact:true}).click();const allies=room.players.filter(p=>rules.group(p)==='saboteur'&&p.id!==bad.id);await expect(s.page.locator('.ticket-ally')).toHaveCount(2);
     for(const ally of allies){const row=s.page.locator('.ticket-ally[data-player="'+ally.id+'"]');await expect(row).toContainText(ally.name);await expect(row.locator('.portrait')).toHaveAttribute('data-avatar-index',String(ally.avatarIndex));}
     await expect(a.page.locator('.ticket-allies')).toHaveCount(0);await s.page.waitForTimeout(400);await s.page.screenshot({path:info.outputPath('saboteur-teammates-mobile.png')});
     room=await store.load(b.host.code);rules.remove(room,[allies[0].id]);await store.save(room);await expect(s.page.locator('.ticket-ally[data-player="'+allies[0].id+'"]')).toHaveClass(/is-out/);await expect(s.page.locator('.ticket-ally[data-player="'+allies[0].id+'"]')).toContainText('Out');
@@ -51,5 +51,5 @@ test('a blocked check shows no target alignment, and Saboteur role cards identif
 });
 test('a single Saboteur role card says there are no teammates',async({browser})=>{
   const b=await fixture(browser,5);
-  try{const bad=b.room.players.find(p=>p.role==='saboteur'),s=await b.open(bad);await s.page.getByRole('button',{name:'Show role',exact:true}).click();await expect(s.page.locator('.ticket-allies')).toHaveText('YOUR TEAMMATESYou are the only Saboteur.');await expect(s.page.locator('.ticket-ally')).toHaveCount(0);}finally{await Promise.all(b.contexts.map(c=>c.close()));}
+  try{const bad=b.room.players.find(p=>p.role==='saboteur'),s=await b.open(bad);await s.page.getByRole('button',{name:'Show Role',exact:true}).click();await expect(s.page.locator('.ticket-allies')).toHaveText('YOUR TEAMMATESYou are the only Saboteur.');await expect(s.page.locator('.ticket-ally')).toHaveCount(0);}finally{await Promise.all(b.contexts.map(c=>c.close()));}
 });

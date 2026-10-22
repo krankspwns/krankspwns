@@ -13,15 +13,15 @@
     const actions = document.createElement('div'); actions.className = 'test-player-actions';
     const add = document.createElement('button'); add.type = 'button'; add.className = 'secondary';
     const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'secondary';
-    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button'; remove.textContent = 'Remove test players';
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button'; remove.textContent = 'Remove Test Players';
     actions.append(add, toggle, remove); panel.append(title, hint, status, actions);
     const save = () => { try { localStorage.setItem(key, JSON.stringify(bots.map(({ code, pid, tok, name, memory }) => ({ code, pid, tok, name, memory })))); } catch {} };
     function update() {
       const count = bots.length;
       status.textContent = message || (count ? count + ' test players · ' + (running ? 'Playing automatically' : 'Stopped') : 'No test players added.');
-      add.textContent = (count > targetCount ? 'Use ' : count ? 'Complete ' : 'Add ') + targetCount + ' test players';
+      add.textContent = (count > targetCount ? 'Use ' : count ? 'Complete ' : 'Add ') + targetCount + ' Test Players';
       add.hidden = count === targetCount; add.disabled = working || state?.phase !== 'lobby' || (state?.players.length || 0) + Math.max(0, targetCount - count) > 12;
-      toggle.hidden = !count; toggle.textContent = running ? 'Stop autoplay' : 'Resume autoplay'; toggle.disabled = working;
+      toggle.hidden = !count; toggle.textContent = running ? 'Stop Autoplay' : 'Resume Autoplay'; toggle.disabled = working;
       remove.hidden = !count; remove.disabled = working || state?.phase !== 'lobby';
     }
     async function request(bot, action, view, extra = {}) {

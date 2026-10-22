@@ -21,15 +21,15 @@ test('a recorded turn is shared without poll payloads, then another phone can pl
   const b=await fixture(browser),a=await b.open(b.host),other=await b.open(b.seats[1]);
   try{
     expect(await a.page.evaluate(()=>window.micRequests)).toBe(0);
-    await a.page.getByRole('button',{name:'Record voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & share',exact:true})).toBeVisible();
-    await expect(a.page.getByLabel('Your findings')).toBeDisabled();await a.page.waitForTimeout(1200);
-    await a.page.getByRole('button',{name:'Stop & share',exact:true}).click();await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
+    await a.page.getByRole('button',{name:'Record Voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & Share',exact:true})).toBeVisible();
+    await expect(a.page.getByRole('button',{name:'Type Message'})).toHaveCount(0);await a.page.waitForTimeout(1200);
+    await a.page.getByRole('button',{name:'Stop & Share',exact:true}).click();await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
     let room=await store.load(b.host.code);const message=room.speeches[0];expect(message.audio.durationMs).toBeGreaterThan(900);expect(message.audio.durationMs).toBeLessThanOrEqual(20000);expect(message.audio.data).toBeUndefined();
     expect(room.speakerIndex).toBe(1);expect(room.speakingOrder[1]).toBe(b.seats[1].meId);
-    await expect(other.page.getByRole('button',{name:/^▶ Play voice/})).toBeEnabled();
+    await expect(other.page.getByRole('button',{name:/^Play voice message/})).toBeEnabled();
     expect(await a.page.evaluate(()=>window.recordedStream.getTracks().every(t=>t.readyState==='ended'))).toBe(true);
-    await other.page.getByRole('button',{name:/^▶ Play voice/}).click();const audio=other.page.locator('.voice-message audio');
-    await expect(audio).toBeVisible();await expect.poll(()=>audio.evaluate(a=>a.readyState)).toBeGreaterThanOrEqual(2);expect(await audio.evaluate(a=>a.duration)).toBeGreaterThan(.5);
+    await other.page.getByRole('button',{name:/^Play voice message/}).click();const audio=other.page.locator('.voice-message audio');
+    await expect(other.page.getByRole('button',{name:/^Pause voice message/})).toBeVisible();await expect.poll(()=>audio.evaluate(a=>a.readyState)).toBeGreaterThanOrEqual(2);expect(await audio.evaluate(a=>a.duration)).toBeGreaterThan(.5);
     // Play state and the loaded URL survive ordinary room updates; the clip is not fetched by polling.
     await audio.evaluate(a=>{window.savedVoicePlayer=a;a.loop=true;return a.play();});
     room=await store.load(b.host.code);room.notice='Voice retained';await store.save(room);await expect(other.page.locator('.waiting')).toContainText('Voice retained');
@@ -41,10 +41,10 @@ test('a recorded turn is shared without poll payloads, then another phone can pl
 test('turn expiry auto-shares a recording, while pause and discard release the microphone without a message',async({browser})=>{
   const b=await fixture(browser),a=await b.open(b.host);
   try{
-    await a.page.getByRole('button',{name:'Record voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & share',exact:true})).toBeVisible();await a.page.waitForTimeout(500);
-    await b.post('pause');await expect(a.page.locator('.voice-time')).toContainText('Paused');await expect(a.page.getByRole('button',{name:'Stop & share',exact:true})).toBeDisabled();
+    await a.page.getByRole('button',{name:'Record Voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & Share',exact:true})).toBeVisible();await a.page.waitForTimeout(500);
+    await b.post('pause');await expect(a.page.locator('.voice-time')).toContainText('Paused');await expect(a.page.getByRole('button',{name:'Stop & Share',exact:true})).toBeDisabled();
     await a.page.getByRole('button',{name:'Discard',exact:true}).click();expect(await a.page.evaluate(()=>window.recordedStream.getTracks().every(t=>t.readyState==='ended'))).toBe(true);expect((await store.load(b.host.code)).speeches).toHaveLength(0);
-    await b.post('resume');await expect(a.page.getByRole('button',{name:'Record voice',exact:true})).toBeEnabled();await a.page.getByRole('button',{name:'Record voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & share',exact:true})).toBeVisible();await a.page.waitForTimeout(500);
+    await b.post('resume');await expect(a.page.getByRole('button',{name:'Record Voice',exact:true})).toBeEnabled();await a.page.getByRole('button',{name:'Record Voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & Share',exact:true})).toBeVisible();await a.page.waitForTimeout(500);
     let room=await store.load(b.host.code);room.deadline=Date.now()+700;room.duration=20;await store.save(room);await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
     expect(await a.page.evaluate(()=>window.recordedStream.getTracks().every(t=>t.readyState==='ended'))).toBe(true);expect(a.errors).toEqual([]);
   }finally{await Promise.all(b.contexts.map(c=>c.close()));}
@@ -52,15 +52,15 @@ test('turn expiry auto-shares a recording, while pause and discard release the m
 test('denied microphone leaves typed discussion available without changing another player’s turn',async({browser})=>{
   const b=await fixture(browser,{denied:true}),a=await b.open(b.host);
   try{
-    await a.page.getByRole('button',{name:'Record voice',exact:true}).click();await expect(a.page.locator('.voice-feedback')).toContainText('Microphone access was denied');
-    await expect(a.page.getByLabel('Your findings')).toBeEnabled();await a.page.getByLabel('Your findings').fill('I can still share a typed message.');await a.page.getByRole('button',{name:'Share findings',exact:true}).click();
+    await a.page.getByRole('button',{name:'Record Voice',exact:true}).click();await expect(a.page.locator('.voice-feedback')).toContainText('Microphone access is off');
+    await a.page.getByRole('button',{name:'Type Message'}).click();await expect(a.page.getByLabel('Your findings')).toBeEnabled();await a.page.getByLabel('Your findings').fill('I can still share a typed message.');await a.page.getByRole('button',{name:'Share Message',exact:true}).click();
     await expect.poll(async()=>(await store.load(b.host.code)).speeches[0]?.text).toBe('I can still share a typed message.');expect(a.errors).toEqual([]);
   }finally{await Promise.all(b.contexts.map(c=>c.close()));}
 });
 test('in-person rooms can also record their turn and replay it after moving to the next speaker',async({browser})=>{
   const b=await fixture(browser,{mode:'in-person'}),a=await b.open(b.host);
   try{
-    await a.page.getByRole('button',{name:'Record voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & share',exact:true})).toBeVisible();await a.page.waitForTimeout(700);await a.page.getByRole('button',{name:'Stop & share',exact:true}).click();await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
-    expect((await store.load(b.host.code)).speakerIndex).toBe(1);await expect(a.page.getByRole('button',{name:'I’m done speaking',exact:true})).toHaveCount(0);await expect(a.page.getByRole('heading',{name:'Conversations aboard',exact:true})).toBeVisible();await expect(a.page.getByRole('button',{name:/^▶ Play voice/})).toBeEnabled();expect(a.errors).toEqual([]);
+    await a.page.getByRole('button',{name:'Record Voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & Share',exact:true})).toBeVisible();await a.page.waitForTimeout(700);await a.page.getByRole('button',{name:'Stop & Share',exact:true}).click();await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
+    expect((await store.load(b.host.code)).speakerIndex).toBe(1);await expect(a.page.getByRole('button',{name:'I’m Done Speaking',exact:true})).toHaveCount(0);await expect(a.page.getByRole('heading',{name:'Conversations aboard',exact:true})).toBeVisible();await expect(a.page.getByRole('button',{name:/^Play voice message/})).toBeEnabled();expect(a.errors).toEqual([]);
   }finally{await Promise.all(b.contexts.map(c=>c.close()));}
 });
