@@ -695,6 +695,17 @@ body:has(.letters-launcher) .lt-header { padding-right: 130px; flex-wrap: wrap; 
   .notebook-launcher svg, .letters-launcher svg { width: 28px; height: 28px; }
 }
 
+/* Private tools rest on the right edge, just below the middle of the screen, stacked Notes over Letters. */
+.notebook-launcher, .letters-launcher { right: max(14px, env(safe-area-inset-right)); bottom: auto; }
+.notebook-launcher { top: 54%; }
+.letters-launcher { top: calc(54% + 66px); }
+body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header { padding-right: 0; }
+@media(max-width:680px) {
+  .notebook-launcher, .letters-launcher { right: max(8px, env(safe-area-inset-right)); }
+  .notebook-launcher { top: 53%; }
+  .letters-launcher { top: calc(53% + 54px); }
+}
+
 /* Keep the final boarding frame while the cabin darkens, then let the lamps return. */
 .boarding-departure { position: fixed; inset: 0; z-index: 500; overflow: hidden; background: #0b111e; pointer-events: auto; touch-action: none; animation: carriage-handoff 1.9s linear both; }
 .boarding-departure-frame { position: absolute; inset: 0; animation: carriage-dim 1.9s ease-in-out both; }

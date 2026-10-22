@@ -3,7 +3,8 @@
   'use strict';
   window.createTrainVoice = api => {
     let state, owner, roomKey = '', operation = 0, recorder, stream, chunks = [], session, recording = false, pending = false, uploading = false, sharing = false, finalizing = false;
-    let started = 0, recorded = 0, status = '', retryClip, playback = new Set();
+    let started = 0, recorded = 0, running = false, stopTimer, status = '', retryClip, playback = new Set();
+    const MAX_BYTES = 512 * 1024, PLAYBACK_PHASES = ['settling','night','gathering','morning','discussion','voting','revoteInfo','voteResult','finished'];
     const players = new Map();
     const pane = document.createElement('section'); pane.className = 'voice-recorder'; pane.setAttribute('aria-label', 'Record a voice message');
     const title = document.createElement('b'); title.textContent = 'Record your message';
@@ -20,7 +21,8 @@
     const supported = () => !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
     const ownTurn = () => state?.phase === 'discussion' && state.speakerId === state.meId && state.me.alive;
     const hasShared = () => state?.speeches.some(m => m.round === state.round && m.id === state.meId);
-    const elapsed = () => recorded + (recording && recorder?.state === 'recording' ? performance.now() - started : 0);
+    const elapsed = () => recorded + (running ? performance.now() - started : 0);
+    const published = clip => !!state?.speeches.some(m => m.audio?.id === clip.id);
     const release = () => { stream?.getTracks().forEach(track => track.stop()); stream = null; };
     const duck = () => api.onAudio(recording || pending || playback.size > 0);
     function update() {
@@ -39,16 +41,72 @@
     async function upload(clip) {
       finalizing = false; uploading = true; retryClip = null; status = 'Sharing your recording…'; changed();
       try {
-        const result = await api.request('speakVoice', { voiceId: clip.id, audioData: clip.data, mimeType: clip.mimeType, durationMs: clip.durationMs }, clip.owner, clip.state);
-        if (clip.roomKey === roomKey) { status = 'Voice shared. The next player has the floor.'; api.onState(result, clip.owner); }
+        // One stable request ID per clip makes every retry idempotent, even when an earlier reply was lost.
+        for (let attempt = 0; ; attempt++) {
+          try {
+            const result = await api.request('speakVoice', { voiceId: clip.id, audioData: clip.data, mimeType: clip.mimeType, durationMs: clip.durationMs, requestId: clip.requestId }, clip.owner, clip.state, { timeout: 25000 });
+            if (clip.roomKey === roomKey) { status = 'Voice shared. The next player has the floor.'; api.onState(result, clip.owner); }
+            return;
+          } catch (e) {
+            if ((e.status && e.status < 500) || attempt >= 2 || clip.roomKey !== roomKey) throw e;
+            await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+          }
+        }
       } catch (e) {
-        if (clip.roomKey === roomKey) { retryClip = clip; status = e.status && e.status < 500 ? e.message : 'The upload did not finish. Retry sharing while this turn is still recent.'; }
+        if (clip.roomKey !== roomKey) return;
+        if (published(clip)) { status = 'Voice shared. The next player has the floor.'; return; }
+        retryClip = clip; status = e.status && e.status < 500 ? e.message : 'The upload did not finish. Retry sharing while this turn is still recent.';
       } finally { uploading = false; changed(); }
+    }
+    function finish(rec) {
+      if (rec.finished) return;
+      rec.finished = true; clearTimeout(stopTimer);
+      const send = sharing, capture = session, durationMs = Math.min(20000, Math.round(recorded));
+      // Some browsers report an empty recorder type; fall back to the requested container.
+      const blob = new Blob(chunks, { type: rec.mimeType || rec.requestedType });
+      release(); recording = false; running = false; sharing = false; if (recorder === rec) recorder = null; chunks = []; duck();
+      if (!send || !capture || capture.roomKey !== roomKey) { finalizing = false; changed(); return; }
+      if (!blob.size || durationMs < 100) { finalizing = false; status = 'No usable recording was captured. Try again or type your message.'; changed(); return; }
+      if (blob.size > MAX_BYTES) { finalizing = false; status = 'That recording is too large to share. Try a shorter message or type it.'; changed(); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (capture.roomKey !== roomKey) { finalizing = false; changed(); return; }
+        upload({ ...capture, requestId: crypto.randomUUID(), mimeType: blob.type, durationMs, data: String(reader.result).split(',')[1] || '' });
+      };
+      reader.onerror = () => { finalizing = false; status = 'The recording could not be read. Please try again.'; changed(); };
+      reader.readAsDataURL(blob);
     }
     function stopRecording(share) {
       if (!recorder || recorder.state === 'inactive') return;
-      recorded = elapsed(); sharing = share; finalizing = share; recorder.stop(); recording = false; release();
+      const rec = recorder;
+      recorded = elapsed(); running = false; sharing = share; finalizing = share; recording = false;
+      // Keep the microphone open until the recorder flushes its final chunk; Safari can drop it otherwise.
+      try { rec.stop(); } catch { finish(rec); }
+      if (!share) release();
+      clearTimeout(stopTimer); stopTimer = setTimeout(() => finish(rec), 3000);
       status = share ? 'Preparing your recording…' : 'Recording discarded.'; changed();
+    }
+    // isTypeSupported() can claim a format the encoder then rejects (Chrome: AAC in MP4 → EncodingError).
+    // Start each candidate briefly and fall through to the next one if it fails before producing audio.
+    const failedTypes = new Set();
+    async function openRecorder(media) {
+      const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].filter(t => !failedTypes.has(t) && MediaRecorder.isTypeSupported(t));
+      for (const mimeType of types) {
+        let rec;
+        try { rec = new MediaRecorder(media, { mimeType, audioBitsPerSecond: 32000 }); } catch { failedTypes.add(mimeType); continue; }
+        rec.requestedType = mimeType.split(';')[0];
+        const ok = await new Promise(resolve => {
+          const timer = setTimeout(() => resolve(rec.state === 'recording'), 700);
+          rec.onerror = () => { clearTimeout(timer); resolve(false); };
+          rec.ondataavailable = e => { if (e.data?.size) chunks.push(e.data); clearTimeout(timer); resolve(rec.state === 'recording'); };
+          try { rec.start(250); rec.startedAt = performance.now(); } catch { clearTimeout(timer); resolve(false); }
+        });
+        if (ok) return rec;
+        failedTypes.add(mimeType); chunks = [];
+        rec.ondataavailable = rec.onerror = null; try { if (rec.state !== 'inactive') rec.stop(); } catch {}
+        if (media.getAudioTracks().every(t => t.readyState === 'ended')) break;
+      }
+      throw Error('This browser cannot record a supported audio format. You can still type or speak aloud.');
     }
     async function start() {
       if (!ownTurn() || state.paused || hasShared() || pending || recording || uploading || finalizing || recorder) return;
@@ -60,26 +118,22 @@
         stream = media;
         const result = await api.request('beginVoice', {}, seat, snapshot);
         if (op !== operation || !ownTurn() || state.paused || result.speakerId !== seat.pid) { media.getTracks().forEach(t => t.stop()); if (stream === media) stream = null; return; }
-        const mimeType = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t));
-        if (!mimeType) throw Error('This browser cannot record a supported audio format. You can still type or speak aloud.');
         session = { owner: seat, state: snapshot, roomKey, id: result.me.voiceDraft.id };
         chunks = []; recorded = 0; sharing = false;
-        recorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 });
-        recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-        recorder.onerror = () => { stopRecording(false); status = 'The microphone stopped. You can still type or speak aloud.'; changed(); };
-        recorder.onstop = async () => {
-          const send = sharing, capture = session, durationMs = Math.min(20000, Math.round(recorded)), blob = new Blob(chunks, { type: recorder.mimeType });
-          release(); recording = false; recorder = null; chunks = []; duck();
-          if (!send || capture.roomKey !== roomKey) { finalizing = false; changed(); return; }
-          if (blob.size > 256 * 1024 || durationMs < 100 || !blob.size) { finalizing = false; status = 'No usable recording was captured. Try again or type your message.'; changed(); return; }
-          const reader = new FileReader();
-          reader.onload = () => { if (capture.roomKey === roomKey) upload({ ...capture, mimeType: blob.type, durationMs, data: reader.result.split(',')[1] }); };
-          reader.onerror = () => { finalizing = false; status = 'The recording could not be read. Please try again.'; changed(); };
-          reader.readAsDataURL(blob);
+        const rec = await openRecorder(media);
+        if (op !== operation || !ownTurn() || state.paused) { rec.ondataavailable = rec.onerror = null; try { rec.stop(); } catch {} media.getTracks().forEach(t => t.stop()); if (stream === media) stream = null; chunks = []; return; }
+        recorder = rec;
+        rec.ondataavailable = e => { if (e.data?.size) chunks.push(e.data); };
+        rec.onerror = () => { stopRecording(false); status = 'The microphone stopped. You can still type or speak aloud.'; changed(); };
+        rec.onstop = () => {
+          // The microphone can end on its own (a call, another app, an unplugged headset). Share what was captured.
+          if (recording && recorder === rec) { recorded = elapsed(); running = false; recording = false; sharing = true; finalizing = true; status = 'The microphone stopped early. Sharing what was recorded…'; }
+          finish(rec);
         };
-        started = performance.now(); recording = true; recorder.start(250); status = 'Recording. It will share automatically when your time ends.';
+        started = rec.startedAt; running = true; recording = true; status = 'Recording. It will share automatically when your time ends.';
         api.onState(result, seat);
       } catch (e) {
+        if (recorder && !recording && !recorder.finished) recorder = null;
         media?.getTracks().forEach(t => t.stop()); if (stream === media) stream = null;
         if (op === operation) status = e.name === 'NotAllowedError' ? 'Microphone access was denied. You can still type or speak aloud.' : e.message || 'The microphone is unavailable. You can still type or speak aloud.';
       } finally { if (op === operation) { pending = false; changed(); } }
@@ -132,15 +186,16 @@
         if (nextKey !== roomKey) { reset(); roomKey = nextKey; }
         const newRound = state && next && state.round !== next.round;
         state = next; owner = seat;
-        if (!['gathering','morning','discussion','voting','revoteInfo','voteResult','finished'].includes(state?.phase)) playback.forEach(audio => audio.pause());
+        if (!PLAYBACK_PHASES.includes(state?.phase)) playback.forEach(audio => audio.pause());
+        if (retryClip && published(retryClip)) { retryClip = null; status = 'Voice shared. The next player has the floor.'; }
         if (retryClip && retryClip.state.round !== state?.round) { retryClip = null; status = ''; }
         if (newRound && !recording && !pending && !uploading) { retryClip = null; status = ''; }
         if (recording) {
           if (!seat || !state || hasShared()) stopRecording(false);
           else if (!ownTurn()) stopRecording(true);
           else {
-            if (state.paused && recorder.state === 'recording') { recorded = elapsed(); recorder.pause(); }
-            else if (!state.paused && recorder.state === 'paused') { started = performance.now(); recorder.resume(); }
+            if (state.paused && recorder.state === 'recording') { recorded = elapsed(); running = false; recorder.pause(); }
+            else if (!state.paused && recorder.state === 'paused') { started = performance.now(); running = true; recorder.resume(); }
             const remaining = state.remainingMs - (state.paused ? 0 : Date.now() - state.receivedAt);
             if (!state.paused && (elapsed() >= 19500 || remaining <= 500)) stopRecording(true);
           }

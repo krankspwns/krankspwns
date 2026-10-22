@@ -18,7 +18,7 @@ const { call, startRedis } = require('./helpers');
     assert.equal((await post(other,'speakVoice',payload)).s,409);
     assert.equal((await post(first,'speakVoice',{...payload,durationMs:20001})).s,400);
     assert.equal((await post(first,'speakVoice',{...payload,mimeType:'text/html'})).s,400);
-    assert.equal((await post(first,'speakVoice',{...payload,audioData:Buffer.alloc(270000,1).toString('base64')})).s,413);
+    assert.equal((await post(first,'speakVoice',{...payload,audioData:Buffer.alloc(600000,1).toString('base64')})).s,413);
     assert.equal((await post(first,'speakVoice',{...payload,audioData:Buffer.alloc(80,1).toString('base64')})).s,400);
     // Reserve during the turn, then allow a short upload grace period without accepting another speaker's identity.
     const original=await store.load(host.code);rules.nextSpeaker(original);await store.save(original);

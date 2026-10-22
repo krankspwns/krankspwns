@@ -56,10 +56,10 @@
   const panel = (...children) => el('section', { class: 'panel' }, ...children);
   const train = cls => el('div', { class: 'train-art ' + (cls || ''), 'aria-hidden': 'true' }, el('img', { src: '/last-train/train-icon.webp', alt: '', width: 1254, height: 1254 }));
   const announce = text => document.getElementById('lt-announcer').textContent = text;
-  async function request(action, extra = {}, owner = seat, context = state) {
-    const payload = { action, ...owner, ...extra, requestId: crypto.randomUUID(), match: context?.match || 0, round: context?.round || 0, step: context?.step || 0 };
+  async function request(action, extra = {}, owner = seat, context = state, { timeout: limit = 8000 } = {}) {
+    const payload = { action, ...owner, ...extra, requestId: extra.requestId || crypto.randomUUID(), match: context?.match || 0, round: context?.round || 0, step: context?.step || 0 };
     for (let attempt = 0; ; attempt++) {
-      const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 8000);
+      const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), limit);
       try {
         const response = await fetch('/api/last-train', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: controller.signal });
         const data = await response.json();
@@ -521,12 +521,14 @@
     overlayRoot.style.height = (viewport?.height || innerHeight) + 'px';
   }
   function chatLog() {
-    if ((state.settings.discussion !== 'chat' && !state.speeches.length) || !['gathering','morning','discussion','voting','revoteInfo','voteResult','finished'].includes(state.phase)) return null;
+    const night = ['settling','night'].includes(state.phase);
+    // At night, earlier conversations stay readable (and playable) from the cabin.
+    if ((state.settings.discussion !== 'chat' && !state.speeches.length) || (night && !state.speeches.length) || !['settling','night','gathering','morning','discussion','voting','revoteInfo','voteResult','finished'].includes(state.phase)) return null;
     const rounds = [...new Set(state.speeches.map(m => m.round))];
     return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'Conversations aboard'), txt('small','muted','ONE VOICE AT A TIME')),
       rounds.length ? el('div', { class: 'night-accordions' }, ...rounds.map(round => {
         const messages = state.speeches.filter(m => m.round === round);
-        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === state.round }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'The morning conversation'), txt('small', '', messages.length + ' voices'), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{},who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : txt('p','',m.text))))));
+        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'The morning conversation'), txt('small', '', messages.length + ' voices'), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{},who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : txt('p','',m.text))))));
       })) : txt('p','muted small','Messages will appear here when the conversation begins.'));
   }
   function history() {
