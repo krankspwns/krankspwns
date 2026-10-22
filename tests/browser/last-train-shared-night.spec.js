@@ -26,7 +26,8 @@ test('shared nights give everyone private activities, preserve notes and keep po
     const passenger=await b.open('passenger'),inspector=await b.open('inspector'),blocker=await b.open('blocker');
     await expect(passenger.page.locator('.scene-hud h1')).toHaveText('Night phase 1 of 2.');
     await expect(inspector.page.getByRole('button',{name:'Choose',exact:true})).toHaveCount(0);
-    const mark=passenger.page.getByLabel('Your view of '+blocker.person.name,{exact:true});await mark.selectOption('suspect');await passenger.page.reload();await expect(mark).toHaveValue('suspect');
+    const marks=passenger.page.getByRole('group',{name:'Your view of '+blocker.person.name,exact:true}),chip=label=>marks.getByRole('button',{name:new RegExp(label)});
+    await chip('Suspect').click();await passenger.page.reload();await expect(chip('Suspect')).toHaveAttribute('aria-pressed','true');
     expect(passenger.requests).toHaveLength(0);
     await blocker.page.locator('.team-chat summary').click();
     expect(await blocker.page.getByLabel('Whisper to your team',{exact:true}).evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
@@ -36,7 +37,7 @@ test('shared nights give everyone private activities, preserve notes and keep po
     let room=await store.load(b.host.code);expect(room.phase).toBe('night');expect(room.duration).toBe(25);expect(room.night.choices[blocker.person.id].attackId).toBe(passenger.person.id);
     rules.advance(room);await b.save(room);
     await expect(passenger.page.locator('.scene-hud h1')).toHaveText('Night phase 2 of 2.');
-    await expect(mark).toHaveValue('suspect');await mark.selectOption('trust');await passenger.page.reload();await expect(mark).toHaveValue('trust');
+    await expect(chip('Suspect')).toHaveAttribute('aria-pressed','true');await chip('Trust').click();await passenger.page.reload();await expect(chip('Trust')).toHaveAttribute('aria-pressed','true');await expect(chip('Suspect')).toHaveAttribute('aria-pressed','false');
     await expect(passenger.page.getByRole('heading',{name:'Who do you trust?',exact:true})).toBeVisible();
     await expect(passenger.page.getByLabel('Your private cover story',{exact:true})).toHaveCount(0);
     const story=blocker.page.getByLabel('Your private cover story',{exact:true});await story.fill('I watched the corridor and saw nothing.');await blocker.page.reload();await expect(story).toHaveValue('I watched the corridor and saw nothing.');
@@ -46,13 +47,13 @@ test('shared nights give everyone private activities, preserve notes and keep po
     await expect(passenger.page.getByRole('dialog',{name:'Your private result',exact:true})).toHaveCount(0);
     const medic=await b.open('medic');await expect(medic.page.locator('.patient-heading')).toContainText(passenger.person.name+' was attacked.');
     await passenger.page.screenshot({path:info.outputPath('passenger-night-notebook-mobile.png'),fullPage:true});
-    await passenger.page.getByRole('button',{name:/^Open private letters/}).click();const message=passenger.page.getByLabel('Your message',{exact:true});expect(await message.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);await message.fill('Hello');await passenger.page.keyboard.press('Escape');
+    await passenger.page.getByRole('button',{name:/^Open private letters/}).click();await passenger.page.locator('.letters-person').first().click();const message=passenger.page.locator('.thread-compose textarea');expect(await message.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);await message.fill('Hello');await passenger.page.keyboard.press('Escape');
     room=await store.load(b.host.code);rules.medicineChoice(room,room.players.find(p=>p.role==='medic'),{power:'heal'});rules.advance(room);rules.advance(room);rules.advance(room);room.speakerIndex=room.speakingOrder.indexOf(blocker.person.id);await b.save(room);
     await expect(blocker.page.locator('.private-question')).toContainText('I watched the corridor and saw nothing.');
     await expect(passenger.page.locator('.private-question')).toHaveCount(0);
     room=await store.load(b.host.code);rules.beginNight(room);rules.advance(room);rules.advance(room);await b.save(room);
     await expect(blocker.page.getByLabel('Your private cover story',{exact:true})).toHaveValue('');
-    await expect(mark).toHaveValue('trust');
+    await expect(chip('Trust')).toHaveAttribute('aria-pressed','true');
     expect(await passenger.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     expect([...passenger.errors,...inspector.errors,...blocker.errors,...medic.errors]).toEqual([]);
   } finally {await b.close();}
@@ -81,7 +82,9 @@ test('mobile controls keep text at 16px including lobby, discussion, private let
     await expect(page.getByLabel('Your findings',{exact:true})).toBeVisible();
     expect(await page.getByLabel('Your findings',{exact:true}).evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await page.getByRole('button',{name:/^Open private letters/}).click();
-    for(const control of await page.locator('.letter-compose textarea,.letter-compose select').all())expect(await control.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
+    await page.getByRole('dialog',{name:'Private letters'}).locator('.letters-person').first().click();
+    const letterFields=page.locator('.thread-compose textarea');await expect(letterFields).toHaveCount(1);
+    for(const control of await letterFields.all())expect(await control.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await page.keyboard.press('Escape');
     await page.evaluate(()=>localStorage.removeItem('lt-seat'));await page.goto('/last-train.html');
     const fields=page.locator('input:not([type=checkbox]):not([type=radio]),textarea,select');expect(await fields.count()).toBeGreaterThan(0);

@@ -2,10 +2,10 @@
 (() => {
   'use strict';
   window.createTrainNotebook = host => {
-    let key = '', data = { text: '', strokes: [] }, launcher, book, canvas, ctx, status, phaseLabel;
+    let key = '', marksKey = '', data = { text: '', strokes: [] }, launcher, book, canvas, ctx, status, phaseLabel, people = [], meId = '', peopleBox;
     const inks = [['Midnight', '#293248'], ['Ruby', '#a22d46'], ['Emerald', '#22745b'], ['Blue', '#275fbc'], ['Violet', '#7747a8'], ['Amber', '#976313']];
     let ink = inks[0][1];
-    let current = null, activePointer = null, mode = 'type', tool = 'pen', dirty = false, saveTimer, observer, cleared = null;
+    let current = null, activePointer = null, mode = 'people', tool = 'pen', dirty = false, saveTimer, observer, cleared = null;
     const node = (tag, cls, text) => {
       const n = document.createElement(tag); n.className = cls || ''; if (text) n.textContent = text; return n;
     };
@@ -13,6 +13,30 @@
       const n = node('button', cls, text); n.type = 'button'; n.addEventListener('click', click); return n;
     };
     const icon = '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false"><defs><linearGradient id="lt-notes-cover" x1="5" y1="2" x2="25" y2="27" gradientUnits="userSpaceOnUse"><stop stop-color="#64d7c1"/><stop offset=".5" stop-color="#249e9d"/><stop offset="1" stop-color="#155a76"/></linearGradient></defs><ellipse cx="16" cy="29.5" rx="12" ry="1.8" fill="#081723" fill-opacity=".45"/><g transform="rotate(-7 15 16)"><rect x="5" y="3" width="20" height="26" rx="3" fill="#145466" stroke="#b9e4d5" stroke-width=".7"/><path d="M8 25h16v3H8a1.5 1.5 0 0 1 0-3" fill="#fff0d1"/><path d="M9 26.4h13" stroke="#b9a17d" stroke-width=".7"/><path d="M8 2h15a2 2 0 0 1 2 2v21H8a3 3 0 0 0-3 2V5a3 3 0 0 1 3-3" fill="url(#lt-notes-cover)" stroke="#97dfcb" stroke-width=".7"/><path d="M10 3v21" stroke="#f4ce79" stroke-width="1.3"/><path d="M20 2v10l-2-1.7-2 1.7V2z" fill="#d65789"/><rect x="12.5" y="14" width="9" height="5" rx="1" fill="#f3db9f"/><path d="M14.5 16.5h5" stroke="#946035" stroke-width=".9" stroke-linecap="round"/><path d="M4 9h3M4 18h3" stroke="#ffe2a1" stroke-width="1.8" stroke-linecap="round"/></g><path d="m27 9-8 15-.8 4.2 3-2.8 8-15z" fill="#edc47a" stroke="#174560" stroke-width=".6"/><path d="m27 9-8 15 2.2 1.4 8-15z" fill="#86c8f5"/><path d="m28 6.8 1.1.6a1.5 1.5 0 0 1 .6 2L29 11l-3-1.7.7-1.4a1 1 0 0 1 1.3-1.1" fill="#e993b2"/><path d="m18.2 28.2.6-2.2 1.1.7z" fill="#393452"/></svg>';
+    // Trust marks are shared with the night notebook in the cabin: same device, same game.
+    const MARKS = [['trust', 'Trust', '✓'], ['unsure', 'Unsure', '?'], ['suspect', 'Suspect', '✕']];
+    const readMarks = () => { try { const v = JSON.parse(localStorage.getItem(marksKey) || 'null'); return v && typeof v === 'object' ? { marks: {}, stories: {}, people: {}, ...v } : { marks: {}, stories: {}, people: {} }; } catch { return { marks: {}, stories: {}, people: {} }; } };
+    const writeMarks = change => { try { localStorage.setItem(marksKey, JSON.stringify({ ...readMarks(), ...change })); if (status) status.textContent = 'Saved on this device'; } catch {} };
+    function renderPeople() {
+      if (!peopleBox) return;
+      const notes = readMarks(); peopleBox.replaceChildren();
+      const others = people.filter(p => p.id !== meId && !p.departed);
+      if (!others.length) { peopleBox.append(node('p', 'notebook-tip', 'Your fellow travellers will appear here.')); return; }
+      for (const p of others) {
+        const row = node('div', 'people-row' + (p.alive === false ? ' out' : '')), mark = notes.marks[p.id] || '';
+        const face = node('span', 'portrait portrait-passengers people-face'); const i = p.avatarIndex || 0;
+        face.style.setProperty('--px', (i % 4 * 100 / 3) + '%'); face.style.setProperty('--py', (Math.floor(i / 4) * 50) + '%'); face.setAttribute('aria-hidden', 'true');
+        const name = node('div', 'people-name'); name.append(node('b', '', p.name), node('small', '', p.alive === false ? 'Out' : p.seat ? 'Seat ' + p.seat : 'In the room'));
+        const chips = node('div', 'trust-chips'); chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Your view of ' + p.name);
+        for (const [value, label, sign] of MARKS) {
+          const chip = button('', () => { writeMarks({ marks: { ...readMarks().marks, [p.id]: mark === value ? '' : value } }); renderPeople(); }, 'trust-chip ' + value);
+          chip.setAttribute('aria-pressed', String(mark === value)); chip.append(node('span', '', sign), node('small', '', label)); chips.append(chip);
+        }
+        const note = node('input', 'people-note'); note.maxLength = 80; note.placeholder = 'Claims, clues…'; note.value = notes.people[p.id] || ''; note.setAttribute('aria-label', 'Note about ' + p.name);
+        note.addEventListener('input', () => writeMarks({ people: { ...readMarks().people, [p.id]: note.value } }));
+        row.append(face, name, chips, note); peopleBox.append(row);
+      }
+    }
     function persist() {
       clearTimeout(saveTimer);
       if (!key || !dirty) return;
@@ -52,7 +76,8 @@
     function showMode(next) {
       finish(); mode = next;
       for (const b of book.querySelectorAll('[data-note-mode]')) b.setAttribute('aria-pressed', String(b.dataset.noteMode === mode));
-      book.querySelector('.notebook-typing').hidden = mode !== 'type'; book.querySelector('.notebook-drawing').hidden = mode !== 'draw';
+      book.querySelector('.notebook-typing').hidden = mode !== 'type'; book.querySelector('.notebook-drawing').hidden = mode !== 'draw'; peopleBox.hidden = mode !== 'people';
+      if (mode === 'people') renderPeople();
       if (mode === 'draw') resize();
     }
     function open() {
@@ -63,7 +88,7 @@
       const closeButton = button('×', close, 'notebook-close'); closeButton.setAttribute('aria-label', 'Close notebook'); top.append(title, closeButton);
       phaseLabel = node('p', 'notebook-phase'); phaseLabel.textContent = launcher.dataset.phase || 'Your private notes';
       const tabs = node('div', 'notebook-modes'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', 'Notebook mode');
-      for (const [value, label] of [['type', 'Type'], ['draw', 'Draw']]) {
+      for (const [value, label] of [['people', 'People'], ['type', 'Type'], ['draw', 'Draw']]) {
         const tab = button(label, () => showMode(value)); tab.dataset.noteMode = value; tabs.append(tab);
       }
       const typing = node('div', 'notebook-typing'), label = node('label', '', 'Your notes'); label.htmlFor = 'notebook-text';
@@ -106,10 +131,11 @@
       paper.append(canvas); drawing.append(toolbar, paper, node('p', 'notebook-tip', 'Draw with a finger, pen or mouse. Your notes stay private.'));
       status = node('span', 'notebook-save'); status.setAttribute('role', 'status'); status.textContent = dirty ? 'Saving…' : 'Saved on this device';
       const footer = node('footer', 'notebook-footer'); footer.append(status, node('span', '', 'Only you · This game · This device'));
-      book.append(top, phaseLabel, tabs, typing, drawing, footer);
+      peopleBox = node('div', 'notebook-people');
+      book.append(top, phaseLabel, tabs, peopleBox, typing, drawing, footer);
       book.addEventListener('cancel', e => { e.preventDefault(); close(); });
       book.addEventListener('close', () => {
-        finish(); persist(); observer?.disconnect(); book.remove(); book = canvas = ctx = status = phaseLabel = null;
+        finish(); persist(); observer?.disconnect(); book.remove(); book = canvas = ctx = status = phaseLabel = peopleBox = null;
         document.body.classList.remove('notebook-open'); launcher?.focus({ preventScroll: true });
       });
       document.body.append(book); book.showModal(); document.body.classList.add('notebook-open');
@@ -117,8 +143,11 @@
       // Avoid opening a phone keyboard until the player chooses the text area.
       closeButton.focus({ preventScroll: true });
     }
-    function sync(owner, phase) {
+    function sync(owner, phase, players = []) {
       const next = owner ? 'lt-notebook:' + [owner.code, owner.pid, owner.match].join(':') : '';
+      marksKey = owner ? 'lt-night-notes:' + [owner.code, owner.pid, owner.match].join(':') : ''; meId = owner?.pid || '';
+      const roster = JSON.stringify(players.map(p => [p.id, p.alive, p.departed]));
+      if (roster !== JSON.stringify(people.map(p => [p.id, p.alive, p.departed]))) { people = players; if (mode === 'people') renderPeople(); } else people = players;
       if (next !== key) {
         if (book) close(); persist(); key = next; data = { text: '', strokes: [] }; dirty = false; cleared = null;
         if (key) try { const saved = JSON.parse(localStorage.getItem(key)); if (typeof saved?.text === 'string' && Array.isArray(saved.strokes)) data = saved; } catch {}

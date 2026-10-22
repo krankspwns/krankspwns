@@ -2,10 +2,10 @@
    Web Audio follows the browser/OS audio policy. A normal game tap unlocks it. */
 (() => {
   'use strict';
-  window.createTrainSoundtrack = onGesture => {
+  window.createTrainSoundtrack = (onGesture, musicAllowed = () => true) => {
     let context, master, musicGain, source, buffer, loading, current, enabled = false, video, voiceActive = false;
     const routed = new WeakMap();
-    const live = () => enabled && current && current.phase !== 'lobby' && !current.paused && !document.hidden;
+    const live = () => musicAllowed() && enabled && current && current.phase !== 'lobby' && !current.paused && !document.hidden;
     function routeVideo() {
       if (!context || !video || routed.has(video)) return;
       try { const node = context.createMediaElementSource(video); node.connect(master); routed.set(video, node); } catch {}
@@ -38,7 +38,7 @@
     for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, unlock, { passive: true });
     document.addEventListener('visibilitychange', level);
     window.addEventListener('pagehide', () => { source?.stop(); source = null; context?.suspend().catch(() => {}); });
-    return { setVoiceActive(active) { if (voiceActive !== active) { voiceActive = active; if (active && musicGain) { musicGain.gain.cancelScheduledValues(context.currentTime); musicGain.gain.setValueAtTime(0, context.currentTime); } level(); } }, sync(state, hasSeat, nextVideo) {
+    return { refresh: level, setVoiceActive(active) { if (voiceActive !== active) { voiceActive = active; if (active && musicGain) { musicGain.gain.cancelScheduledValues(context.currentTime); musicGain.gain.setValueAtTime(0, context.currentTime); } level(); } }, sync(state, hasSeat, nextVideo) {
       if (video && video !== nextVideo) routed.get(video)?.disconnect();
       current = state; enabled = hasSeat; video = nextVideo; routeVideo();
       if (enabled && state && state.phase !== 'lobby' && !loading) {

@@ -136,7 +136,7 @@
         running = !!bots.length; schedule();
       }
       if (!key) { panel.remove(); return; }
-      root.querySelector('.room-bar')?.after(panel); update();
+      root.querySelector('.lt-header')?.after(panel); update();
       if (autoSetup && autoAttemptedKey !== key && next.phase === 'lobby') {
         autoAttemptedKey = key;
         if (bots.length !== targetCount) {

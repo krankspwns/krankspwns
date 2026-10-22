@@ -61,6 +61,49 @@ function sharedNightTests() {
   r.advance(room);assert.equal(room.duration,25);r.advance(room);assert.equal(room.phase,'gathering');
   const old=fixture();delete old.nightMode;assert.equal(r.nightRole(old),'saboteur');r.beginNight(old);r.advance(old);assert.equal(r.nightRole(old),'moves');assert.equal(old.duration,25);
 }
+function socialTests() {
+  // Reactions, shop, throws and pins: separate Last Train wallet, never at night, never on the step fence.
+  const room=fixture(['careful','brave','witness','passenger','inspector','medic','trainee','saboteur','blocker']);room.nightMode='shared';
+  const [a,b,c]=room.players,bad=person(room,'saboteur');
+  assert.equal(room.phase,'night');rejected(()=>r.emote(room,a,'laugh',1000),409);rejected(()=>r.throwGift(room,a,'tomato',b.id,1000),409);
+  room.phase='gathering';rejected(()=>r.emote(room,a,'ez',1000),400);
+  assert.equal(r.emote(room,a,'sus',1000),true);assert.equal(r.emote(room,a,'shh',1500),false);assert.equal(r.emote(room,a,'eyes',2000),true);
+  assert.deepEqual(r.view(room,b).emotes.map(x=>x.e),['sus','eyes']);
+  a.alive=false;assert.equal(r.emote(room,a,'rip',4000),true);a.alive=true; // ghosts may still react
+  assert.equal(r.view(room,a).me.wallet.wp,r.START_WP);
+  rejected(()=>r.buy(room,a,'frame','rainbow'),402);rejected(()=>r.buy(room,a,'hat','x'),400);rejected(()=>r.buy(room,a,'gift','ghost'),400);
+  r.buy(room,a,'frame','silver');rejected(()=>r.buy(room,a,'frame','silver'),409);
+  assert.equal(r.view(room,a).me.wallet.wp,r.START_WP-15);assert.equal(r.view(room,b).players.find(p=>p.id===a.id).frame,'silver');
+  r.wear(room,a,'');assert.equal(r.view(room,b).players.find(p=>p.id===a.id).frame,'');rejected(()=>r.wear(room,a,'gold'),403);
+  rejected(()=>r.throwGift(room,a,'tomato',b.id,5000),403);
+  r.buy(room,a,'gift','tomato');assert.equal(r.view(room,a).me.wallet.gifts.tomato,3);
+  rejected(()=>r.throwGift(room,a,'tomato',a.id,5000),400);
+  assert.equal(r.throwGift(room,a,'tomato',b.id,5000),true);assert.equal(r.throwGift(room,a,'tomato',b.id,5500),false);
+  assert.equal(r.view(room,c).gifts[0].to,b.id);assert.equal(r.view(room,a).me.wallet.gifts.tomato,2);
+  // A speaker's first five seconds are protected.
+  room.phase='discussion';room.speakingOrder=[b.id];room.speakerIndex=0;room.duration=20;room.deadline=Date.now()+18000;
+  rejected(()=>r.throwGift(room,a,'tomato',b.id,Date.now()),409);room.deadline=Date.now()+10000;assert.equal(r.throwGift(room,a,'tomato',b.id,Date.now()),true);
+  // Suspect pins are public counts only, and reset each night.
+  room.phase='voting';r.suspect(room,a,bad.id);r.suspect(room,b,bad.id);rejected(()=>r.suspect(room,c,c.id),400);
+  const pinned=r.view(room,c);assert.equal(pinned.players.find(p=>p.id===bad.id).pins,2);assert.equal(pinned.me.suspect,null);assert.equal(r.view(room,a).me.suspect,bad.id);
+  assert.ok(!JSON.stringify(pinned).includes('"suspects"'));
+  r.suspect(room,a,null);assert.equal(r.view(room,c).players.find(p=>p.id===bad.id).pins,1);
+  r.beginNight(room);assert.deepEqual(room.suspects,{});
+  // Vote WP, last words and the longer result screen.
+  room.phase='voting';room.electorate=r.alive(room).map(p=>p.id);room.votes={};room.voteAttempt=1;
+  for(const p of r.alive(room))room.votes[p.id]={targetId:p.id===bad.id?a.id:bad.id,weight:1};
+  const before=r.balance(room,b);r.resolveVote(room);
+  assert.equal(room.phase,'voteResult');assert.equal(room.duration,20);assert.equal(r.balance(room,b),before+5);
+  rejected(()=>r.lastWords(room,a,'Not me'),403);r.lastWords(room,bad,'  You will regret this  ');rejected(()=>r.lastWords(room,bad,'Again'),409);
+  assert.equal(r.view(room,a).history.at(-1).lastWords.text,'You will regret this');
+  assert.ok(r.view(room,b).history.at(-1).votes.length>0);
+  // Finishing pays the winners, survivors and awards, and keeps a session tally.
+  room.winner='good';r.finish(room);assert.equal(room.phase,'finished');
+  const v=r.view(room,b);assert.ok(v.me.wallet.earnings.some(e=>e.reason==='Your team won'&&e.n===20));
+  assert.ok(v.awards.eye.includes(b.id));assert.equal(v.session[b.id].wins,1);assert.equal(v.session[bad.id].wins,0);
+  // Speaking time setting
+  room.settings.speakSeconds=45;r.beginDiscussion(room);assert.equal(room.duration,45);
+}
 function engineTests() {
   const counts = [[3,1,1],[2,2,2],[3,2,2],[4,2,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
   for(let n=5;n<=12;n++){
@@ -109,16 +152,18 @@ function engineTests() {
   rejected(()=>r.validateLoadout(7,{crew:['trainee'],passengers:[],saboteur:'normal'}),400);
   rejected(()=>r.validateLoadout(7,{crew:['medic','medic'],passengers:[],saboteur:'normal'}),400);
   rejected(()=>r.validateLoadout(5,{crew:['medic'],passengers:[],saboteur:'blocker'}),400);
-  // Letters are recipient-only, never public history, and only that recipient can dismiss them.
+  // Letters are private to sender and recipient, never public history, and stay in the letterbox once read.
   {
     const room=fixture(),[sender,recipient,other]=room.players;
     r.sendLetter(room,sender,recipient.id,'Meet me near cabin 4.');
     const id=r.view(room,recipient).me.letters[0].id;
     assert.equal(r.view(room,recipient).me.letters[0].text,'Meet me near cabin 4.');
-    for(const p of [sender,other]){assert.deepEqual(r.view(room,p).me.letters,[]);assert.ok(!JSON.stringify(r.view(room,p)).includes('Meet me near cabin 4.'));}
-    r.dismissLetters(room,other,[id]);assert.equal(room.letters.length,1);
-    r.dismissLetters(room,recipient,[id]);assert.equal(room.letters.length,0);
-    r.dismissLetters(room,recipient,[id]);assert.equal(room.letters.length,0);
+    assert.equal(r.view(room,recipient).me.letters[0].read,false);
+    assert.equal(r.view(room,sender).me.letters[0].to,recipient.id);assert.equal(r.view(room,sender).me.letters[0].read,true);
+    assert.deepEqual(r.view(room,other).me.letters,[]);assert.ok(!JSON.stringify(r.view(room,other)).includes('Meet me near cabin 4.'));
+    r.dismissLetters(room,other,[id]);assert.equal(room.letters[0].read,false);
+    r.dismissLetters(room,recipient,[id]);assert.equal(room.letters.length,1);assert.equal(r.view(room,recipient).me.letters[0].read,true);
+    r.dismissLetters(room,recipient,[id]);assert.equal(room.letters.length,1);
     rejected(()=>r.sendLetter(room,sender,sender.id,'Self'),400);
     rejected(()=>r.sendLetter(room,sender,'not-here','No'),400);
     rejected(()=>r.sendLetter(room,sender,recipient.id,' '.repeat(20)),400);
@@ -127,7 +172,7 @@ function engineTests() {
     sender.alive=false;rejected(()=>r.sendLetter(room,sender,recipient.id,'A clue from beyond'),403);
     rejected(()=>r.sendLetter(room,recipient,sender.id,'A clue'),403);
     other.alive=false;r.sendLetter(room,sender,other.id,'We can watch together.');
-    r.start(room);assert.deepEqual(room.letters,[]);assert.deepEqual(room.letterRate,{});
+    const kept=room.letters.length;room.players.forEach(p=>{p.alive=true;p.departed=false;});r.start(room);assert.equal(room.letters.length,kept);
   }
   {
     const room=fixture(),[sender,recipient]=room.players;
@@ -270,7 +315,7 @@ function engineTests() {
   }
 }
 (async()=>{
-  engineTests();sharedNightTests();const redis=process.argv.includes('--redis')?await startRedis():null;
+  engineTests();sharedNightTests();socialTests();const redis=process.argv.includes('--redis')?await startRedis():null;
   try{
     if(redis){process.env.UPSTASH_REDIS_REST_URL=redis.url;process.env.UPSTASH_REDIS_REST_TOKEN='test';}
     const handler=require('../api/last-train');assert.equal((await call(handler,'null')).s,400);
@@ -287,11 +332,16 @@ function engineTests() {
     const mailView=(await get(host)).j,mailReq={action:'letter',code:host.code,pid:host.meId,tok:host.tok,requestId:uuid(),match:mailView.match,round:mailView.round,step:mailView.step,targetId:seats[1].meId,text:'Private API letter.'};
     assert.equal((await call(handler,mailReq)).s,200);assert.equal((await call(handler,mailReq)).s,200);
     const inbox=(await get(seats[1])).j.me.letters;assert.equal(inbox.length,1);assert.equal(inbox[0].text,'Private API letter.');
-    assert.deepEqual((await get(host)).j.me.letters,[]);assert.deepEqual((await get(seats[2])).j.me.letters,[]);
-    assert.equal((await post(seats[2],'dismissLetters',{letterIds:[inbox[0].id]})).s,200);assert.equal((await get(seats[1])).j.me.letters.length,1);
-    assert.equal((await post(seats[1],'dismissLetters',{letterIds:[inbox[0].id],round:-1,step:-1})).s,200);assert.equal((await get(seats[1])).j.me.letters.length,0);
+    assert.equal((await get(host)).j.me.letters[0].to,seats[1].meId);assert.deepEqual((await get(seats[2])).j.me.letters,[]);
+    assert.equal((await post(seats[2],'dismissLetters',{letterIds:[inbox[0].id]})).s,200);assert.equal((await get(seats[1])).j.me.letters[0].read,false);
+    assert.equal((await post(seats[1],'dismissLetters',{letterIds:[inbox[0].id],round:-1,step:-1})).s,200);assert.equal((await get(seats[1])).j.me.letters[0].read,true);
     assert.equal((await post(host,'letter',{targetId:seats[1].meId,text:'Old journey',match:99})).s,409);
     assert.equal((await call(handler,{...mailReq,requestId:uuid(),tok:'wrong-token'})).s,401);
+    // Reactions and the shop are not turn actions: a stale step never rejects them.
+    assert.equal((await post(seats[1],'emote',{e:'laugh',step:-5})).s,200);assert.equal((await get(host)).j.emotes.at(-1).e,'laugh');
+    assert.equal((await post(seats[1],'emote',{e:'trophy'})).s,400);
+    assert.equal((await post(seats[1],'buy',{kind:'frame',key:'gold',step:-5})).s,200);assert.equal((await get(host)).j.players.find(p=>p.id===seats[1].meId).frame,'gold');
+    assert.equal((await post(seats[1],'buy',{kind:'frame',key:'rainbow'})).s,402);
     assert.equal((await post(seats[1],'shuffleRoles')).s,403);
     assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:{crew:['trainee'],passengers:[],saboteur:'normal'}})).s,400);
     assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:custom})).s,200);
