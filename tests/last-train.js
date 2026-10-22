@@ -107,14 +107,18 @@ function engineTests() {
     assert.equal(target.alive,false);assert.equal(bad[2].alive,false);assert.equal(room.medicine.poison,0);
     r.beginNight(room);r.advance(room);turn(room,'medic');rejected(()=>r.medicineChoice(room,m,{power:'poison',targetId:w.id}),409);
   }
-  // A split is genuinely random among tied top proposals. Skip, including a missing pick, participates.
+  // Only actual attack targets count. Missing choices and Skip never cancel one.
   {
     const room=fixture(),bad=room.players.filter(p=>r.group(p)==='saboteur');
     r.nightChoice(room,bad[0],{attackId:bad[0].id});r.nightChoice(room,bad[1],{attackId:bad[1].id});
     const original=crypto.randomInt;
-    try{for(const [index,expected] of [bad[0].id,bad[1].id,null].entries()){crypto.randomInt=()=>index;r.settleAttack(room);assert.equal(room.night.attackId,expected);}}finally{crypto.randomInt=original;}
+    try{for(const [index,expected] of [bad[0].id,bad[1].id].entries()){crypto.randomInt=()=>index;r.settleAttack(room);assert.equal(room.night.attackId,expected);}}finally{crypto.randomInt=original;}
     r.nightChoice(room,bad[2],{attackId:bad[0].id});r.settleAttack(room);assert.equal(room.night.attackId,bad[0].id);
     const skipped=fixture();r.settleAttack(skipped);assert.equal(skipped.night.attackId,null);
+    const solo=fixture(r.plan(6)),team=solo.players.filter(p=>r.group(p)==='saboteur'),target=person(solo,'witness');
+    r.nightChoice(solo,team[0],{attackId:target.id});r.settleAttack(solo);assert.equal(solo.night.attackId,target.id);
+    r.nightChoice(solo,team[1],{attackId:null});r.settleAttack(solo);assert.equal(solo.night.attackId,target.id);
+    morning(solo);assert.equal(target.alive,false);
   }
   // Brave now shields, never redirects. Heal + shield kills the original target by overdose.
   for(const healed of [false,true]){
@@ -171,9 +175,31 @@ function engineTests() {
     const room=fixture(),bad=person(room,'saboteur'),w=person(room,'witness');r.whisper(room,bad,'Choose seat two.');assert.equal(r.view(room,bad).me.whispers.length,1);assert.ok(!('whispers' in r.view(room,w).me));rejected(()=>r.whisper(room,w,'I can see you'),403);
     turn(room,'medic');assert.ok(!('whispers' in r.view(room,bad).me));rejected(()=>r.whisper(room,bad,'Too late'),403);r.remove(room,[bad.id]);r.beginNight(room);r.advance(room);assert.ok(!('teamChoices' in r.view(room,bad).me));
   }
-  for(const kind of ['skip','tie','missing']){
-    const room=fixture();r.beginVote(room);const bad=person(room,'saboteur');
-    if(kind!=='missing')for(let i=0;i<room.electorate.length;i++)room.votes[room.electorate[i]]={targetId:kind==='tie'&&i<6?bad.id:null,weight:1};r.resolveVote(room);assert.equal(bad.alive,true);assert.equal(room.history[0].outs.length,0);
+  for(const kind of ['skip','missing']){
+    const room=fixture();r.beginVote(room);
+    if(kind==='skip')for(const id of room.electorate)room.votes[id]={targetId:null,weight:1};
+    r.resolveVote(room);assert.equal(room.phase,'voteResult');assert.equal(room.history[0].reason,'skip');assert.equal(room.history[0].outs.length,0);
+  }
+  // One player vote beats every abstention, including when the other ballots time out.
+  for(const explicit of [true,false]){
+    const room=fixture(r.plan(6));r.beginVote(room);const target=person(room,'saboteur');
+    if(explicit)for(const id of room.electorate)room.votes[id]={targetId:null,weight:1};
+    room.votes[room.electorate[0]]={targetId:target.id,weight:1};r.resolveVote(room);
+    assert.equal(target.alive,false);assert.equal(room.history[0].outs[0].id,target.id);assert.equal(room.voteAttempt,1);
+  }
+  // A first tie resets every ballot and fences late requests. Only tied players can receive runoff votes.
+  for(const outcome of ['decided','tied','all-skip']){
+    const room=fixture(),targets=room.players.filter(p=>r.group(p)==='saboteur').slice(0,2);r.beginVote(room);const step=room.step;
+    room.electorate.forEach((id,i)=>room.votes[id]={targetId:targets[i%2].id,weight:1});r.resolveVote(room);
+    assert.equal(room.phase,'voting');assert.equal(room.voteAttempt,2);assert.equal(room.step,step+1);assert.deepEqual(room.votes,{});
+    assert.deepEqual(room.voteCandidates,targets.map(p=>p.id));assert.equal(room.history[0].reason,'revote');assert.ok(targets.every(p=>p.alive));
+    assert.equal(r.view(room,targets[0]).voteAttempt,2);assert.equal(r.view(room,targets[0]).me.vote,null);
+    rejected(()=>r.vote(room,room.players[0],{targetId:person(room,'witness').id}),400);
+    room.electorate.forEach((id,i)=>room.votes[id]={targetId:outcome==='all-skip'?null:targets[outcome==='decided'?0:i%2].id,weight:1});
+    const original=crypto.randomInt;try{crypto.randomInt=()=>1;r.resolveVote(room);}finally{crypto.randomInt=original;}
+    assert.equal(room.phase,'voteResult');assert.equal(room.history.length,2);assert.equal(room.history[1].attempt,2);
+    assert.equal(room.history[1].reason,outcome==='decided'?'voted':'random');assert.equal(room.history[1].outs[0].id,targets[outcome==='decided'?0:1].id);
+    r.advance(room);assert.equal(room.phase,'settling');assert.equal(room.voteAttempt,1);assert.equal(room.voteCandidates,null);
   }
   {
     const room=fixture(r.plan(12,{extra:'speaker'})),s=person(room,'speaker'),bad=person(room,'saboteur');r.beginVote(room);const others=room.players.filter(p=>p.id!==s.id);others.forEach((p,i)=>room.votes[p.id]={targetId:i<5?bad.id:null,weight:1});r.vote(room,s,{targetId:bad.id,doubled:true});assert.equal(bad.alive,false);assert.equal(s.used.double,true);assert.equal(room.history[0].votes.find(v=>v.id===s.id).weight,2);
@@ -249,6 +275,6 @@ function engineTests() {
     // Old local seats survive the journey upgrade, but obsolete simultaneous-night matches reset safely.
     const old=await raw();delete old.rulesVersion;old.phase='quiet';await save(old);const upgrade=(await get(returned.j)).j;assert.equal(upgrade.phase,'lobby');assert.equal(upgrade.me.role,null);assert.ok(upgrade.notice);
     if(redis){assert.ok(await redis.client.ttl('last-train:room:'+host.code)>0);redis.fault.unavailable=true;assert.equal((await get(returned.j)).s,503);redis.fault.unavailable=false;}
-    console.log('Last Train '+(redis?'Redis':'memory')+': cinematic phases, sealed introduction, fixed seats, six sequential 20-second turns, editable self/team attacks, random ties/Skip, overdose, medicine limits, private chat, reports, promotion, ordered speaking, voting, 12-player concurrency, recovery and migration passed');
+    console.log('Last Train '+(redis?'Redis':'memory')+': cinematic phases, sealed introduction, fixed seats, six sequential 20-second turns, editable self/team attacks, target abstentions, runoff votes, random second ties, overdose, medicine limits, private chat, reports, promotion, ordered speaking, voting, 12-player concurrency, recovery and migration passed');
   }finally{if(redis)await redis.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

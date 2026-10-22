@@ -22,7 +22,7 @@ async function boarding(browser, { reducedMotion = 'no-preference', blockedDownl
   await context.addInitScript(seat => localStorage.setItem('lt-seat', JSON.stringify(seat)), owner);
   if (blockedAutoplay || blockedSound) await context.addInitScript(({ blockedAutoplay }) => {
     const play = HTMLMediaElement.prototype.play;
-    document.addEventListener('click', e => { if (e.target.closest('.boarding-sound')) window.boardingSoundGesture = true; }, true);
+    document.addEventListener('click', e => { window.boardingSoundGesture = true; }, true);
     HTMLMediaElement.prototype.play = function () {
       return this.classList.contains('boarding-video') && (blockedAutoplay || (!this.muted && !window.boardingSoundGesture)) ? Promise.reject(new DOMException('Autoplay blocked', 'NotAllowedError')) : play.call(this);
     };
@@ -51,12 +51,10 @@ test('boarding video seeks on reload, survives updates, pauses and resumes on se
     await expect.poll(() => video.evaluate(v => v.readyState)).toBeGreaterThanOrEqual(2);
     await expect.poll(() => video.evaluate(v => Math.abs(v.currentTime - 3))).toBeLessThan(.1);
     expect(await video.evaluate(v => ({ paused: v.paused, muted: v.muted, inline: v.playsInline, loop: v.loop }))).toEqual({ paused: true, muted: false, inline: true, loop: false });
-    await page.getByRole('button', { name: 'Mute sound', exact: true }).click();
-    await expect(video).toHaveJSProperty('muted', true);
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('lt-boarding-sound')))).toBe(false);
+    await expect(page.locator('.boarding-audio-controls,.boarding-sound')).toHaveCount(0);
+    // An old saved mute preference no longer controls the soundtrack.
+    await page.evaluate(() => localStorage.setItem('lt-boarding-sound', 'false'));
     await page.reload();
-    await expect(page.locator('.boarding-video')).toHaveJSProperty('muted', true);
-    await page.getByRole('button', { name: 'Turn sound on', exact: true }).click();
     await expect(page.locator('.boarding-video')).toHaveJSProperty('muted', false);
     await page.evaluate(() => { window.savedBoardingVideo = document.querySelector('.boarding-video'); });
     const room = await store.load(b.host.code); room.notice = 'Manifest confirmed'; await store.save(room);
@@ -87,7 +85,10 @@ test('boarding video seeks on reload, survives updates, pauses and resumes on se
     await page.screenshot({ path: info.outputPath('boarding-desktop.png'), fullPage: true });
     await b.post('resume');
     await expect(page.locator('#lt-app')).toHaveAttribute('data-phase', 'settling', { timeout: 7000 });
-    await expect(page.locator('.boarding-video')).toHaveCount(0);
+    await expect(page.locator('.boarding-departure')).toBeVisible();
+    await expect(page.locator('.boarding-departure canvas')).toHaveCount(1);
+    await expect(page.locator('video.boarding-video')).toHaveCount(0);
+    await expect(page.locator('.boarding-departure')).toHaveCount(0);
     expect(b.errors).toEqual([]);
   } finally { await b.context.close(); }
 });
@@ -118,7 +119,7 @@ test('blocked audible autoplay falls back to video and a tap restores the origin
     await expect(video).toHaveJSProperty('paused', false);
     await expect(video).toHaveJSProperty('muted', true);
     const before = await video.evaluate(v => v.currentTime);
-    await b.page.getByRole('button', { name: 'Turn sound on', exact: true }).click();
+    await b.page.locator('.scene-hud h1').click();
     await expect(video).toHaveJSProperty('muted', false);
     await expect(video).toHaveJSProperty('paused', false);
     expect(await video.evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(before);

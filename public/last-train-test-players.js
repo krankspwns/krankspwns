@@ -67,7 +67,7 @@
           if (Date.now() >= bot.speechAt) await request(bot, 'finishSpeech', view);
         }
       }
-      if (phase === 'voting' && !me.vote) await request(bot, 'vote', view, { targetId: choose(others)?.id || null });
+      if (phase === 'voting' && !me.vote) await request(bot, 'vote', view, { targetId: choose(view.voteCandidates ? view.players.filter(p => p.alive && view.voteCandidates.includes(p.id)) : others)?.id || null });
     }
     function schedule() {
       clearTimeout(timer);
