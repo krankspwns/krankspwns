@@ -341,26 +341,25 @@
     return n;
   }
   const nightNotesKey = () => 'lt-night-notes:' + [state.code, state.meId, state.match].join(':');
-  const nightNotes = () => read(nightNotesKey()) || { marks: {}, question: '', questionTarget: '' };
+  const nightNotes = () => read(nightNotesKey()) || { marks: {}, stories: {} };
   function updateNightNotes(change) { save(nightNotesKey(), { ...nightNotes(), ...change }); }
+  const coverStory = () => nightNotes().stories?.[state.round] || '';
   function nightNotebook() {
-    const notes = nightNotes(), first = state.nightPhase === 1;
+    const notes = nightNotes(), preparingStory = state.me.group === 'saboteur' && state.nightPhase === 2;
     return el('section', { class: 'night-notebook', 'aria-label': 'Private night notebook' },
       txt('span', 'eyebrow', 'YOUR PRIVATE NIGHT NOTEBOOK'),
-      el('h2', {}, first ? 'Who do you trust?' : 'Prepare your next turn.'),
+      el('h2', {}, preparingStory ? 'Prepare your cover story.' : 'Who do you trust?'),
       txt('p', 'console-hint', 'Optional. Only you can see this, on this device. It never casts a vote.'),
-      first ? el('div', { class: 'night-trust-list' }, ...state.players.filter(p => p.alive && p.id !== state.meId).map(p =>
+      !preparingStory ? el('div', { class: 'night-trust-list' }, ...state.players.filter(p => p.alive && p.id !== state.meId).map(p =>
         el('label', { class: 'night-trust-row' }, avatar(p), txt('span', '', p.name),
           el('select', { id: 'trust-' + p.id, 'aria-label': 'Your view of ' + p.name, disabled: state.paused,
             onchange: e => updateNightNotes({ marks: { ...nightNotes().marks, [p.id]: e.target.value } }) },
             ...[['', 'Mark…'], ['trust', 'Trust'], ['unsure', 'Unsure'], ['suspect', 'Suspect']].map(([value, label]) => el('option', { value, selected: notes.marks?.[p.id] === value }, label)))))) :
-        el('div', { class: 'night-question' }, el('label', { htmlFor: 'night-question-target' }, 'Who would you like to ask?'),
-          el('select', { id: 'night-question-target', disabled: state.paused, onchange: e => updateNightNotes({ questionTarget: e.target.value }) },
-            el('option', { value: '', selected: !notes.questionTarget }, 'Choose someone (optional)'),
-            ...state.players.filter(p => p.alive && p.id !== state.meId).map(p => el('option', { value: p.id, selected: notes.questionTarget === p.id }, p.name))),
-          el('label', { htmlFor: 'night-question' }, 'Your question or reminder'),
-          el('textarea', { id: 'night-question', rows: 3, maxLength: 280, value: notes.question || '', disabled: state.paused,
-            placeholder: 'What would you like to ask in the lounge?', oninput: e => updateNightNotes({ question: e.target.value }) })),
+        el('div', { class: 'night-question' },
+          txt('p', 'console-hint', 'What will you tell the group? Write your made-up story here to remember it during discussion.'),
+          el('label', { htmlFor: 'night-cover-story' }, 'Your private cover story'),
+          el('textarea', { id: 'night-cover-story', rows: 4, maxLength: 280, value: coverStory(), disabled: state.paused,
+            placeholder: 'What did you claim to see or do tonight?', oninput: e => updateNightNotes({ stories: { ...nightNotes().stories, [state.round]: e.target.value } }) })),
       txt('p', 'console-hint', 'Saved on this device. You can also open Notes to write or draw.'));
   }
   function actionConsole() {
@@ -463,7 +462,7 @@
     const said = state.speeches.find(m => m.round === state.round && m.id === state.meId);
     return el('section', { class: 'speech-console' }, el('div', { class: 'speaking-person' }, avatar(state.speakerId), el('div', {}, txt('small', '', 'SEAT ' + player(state.speakerId).seat + ' · ' + (state.speakerIndex + 1) + '/' + state.speakingOrder.length), el('h2', {}, own ? 'It’s your turn.' : who(state.speakerId) + ' has the floor.')), txt('span','countdown speaker-seconds','')),
       txt('p', 'console-hint', own ? mode === 'chat' ? 'What happened last night? Type or record one short message.' : 'Tell the group what you know. You have up to 20 seconds.' : mode === 'chat' ? 'Read their message, or play their recording after this turn. Your turn follows the seat numbers.' : 'Listen to their story. Your turn follows the seat numbers.'),
-      own && me.alive && nightNotes().question ? el('aside', { class: 'private-question' }, txt('small', '', 'YOUR PRIVATE REMINDER' + (nightNotes().questionTarget ? ' · ' + who(nightNotes().questionTarget) : '')), txt('p', '', nightNotes().question)) : null,
+      own && me.alive && me.group === 'saboteur' && coverStory() ? el('aside', { class: 'private-question' }, txt('small', '', 'YOUR PRIVATE COVER STORY'), txt('p', '', coverStory())) : null,
       own && me.alive ? mode === 'chat' ? said ? txt('p','choice-saved',said.audio ? 'Voice shared. The next player has the floor.' : 'You’ve had your say. Let’s hear the next traveller.') : el('div', { class: 'speech-options' }, voice.controls(), txt('p', 'speech-or', 'OR TYPE YOUR MESSAGE'), el('form', { class: 'speech-form', onsubmit: async e => { e.preventDefault(); if (!speechDraft.trim()) return; const text = speechDraft; await send('speak', { text }); } }, el('textarea', { id: 'lt-speech', rows: 3, maxLength: 280, value: speechDraft, placeholder: 'What did you find? Who do you trust?', 'aria-label': 'Your findings', disabled: busy || state.paused || voice.busy(), oninput: e => speechDraft = e.target.value }), el('button', { type: 'submit', class: 'gold', disabled: busy || state.paused || voice.busy(), 'data-focus': 'share-findings' }, 'Share findings'))) : el('div', { class: 'speech-options' }, said ? txt('p', 'choice-saved', 'Voice shared. The next player has the floor.') : voice.controls(), btn('I’m done speaking', () => send('finishSpeech'), 'gold', state.paused || voice.busy())) : null);
   }
   function loungeScene() {

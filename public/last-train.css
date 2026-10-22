@@ -826,3 +826,8 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
 .boarding-video { opacity: 0; transition: opacity .18s ease-out; }
 .boarding-video[data-ready=true] { opacity: 1; }
 @media(prefers-reduced-motion:reduce) { .boarding-video { transition: none; } }
+
+/* iOS focuses controls smaller than 16px by zooming the page. Keep pinch zoom available. */
+@media(max-width:900px), (pointer:coarse) {
+  :root body :is(input:not([type=checkbox]):not([type=radio]), textarea, select) { font-size: 16px !important; }
+}
