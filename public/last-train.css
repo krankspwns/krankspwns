@@ -130,7 +130,7 @@ h1, h2, .scene-hud h1, .action-console h2, .speech-console h2, .lounge-console h
 .team-chat .whispers { background: #100d19a6; max-height: 78px; }
 .team-chat .whisper-form input { background: #16121f; font-size: 12px !important; }
 .patient-scene { position: absolute; inset: auto 0 0; height: 65%; z-index: 1; pointer-events: none; }
-.patient-body { width: min(66%, 360px); height: auto; aspect-ratio: 362 / 280; position: absolute; bottom: 17%; left: 50%; transform: translateX(-50%); background: url('/last-train/patients.webp?v=6') var(--px) var(--py) / 400% var(--patient-y-size, 678.75%) no-repeat; filter: drop-shadow(0 6px 5px #0008); }
+.patient-body { width: min(72%, 394px); height: auto; aspect-ratio: 396 / 280; position: absolute; bottom: 17%; left: 50%; transform: translateX(-50%); background: url('/last-train/patients.webp?v=6') var(--px) var(--py) / var(--patient-x-size, 365.7%) var(--patient-y-size, 387.9%) no-repeat; filter: drop-shadow(0 6px 5px #0008); }
 .patient-floor-label { position: absolute; left: 50%; transform: translateX(-50%); bottom: 6%; white-space: nowrap; font-size: 10px; letter-spacing: 1px; padding: 4px 10px; color: #f1cbbd; background: #140d1ab3; border-radius: 6px; }
 .treated .patient-body { filter: drop-shadow(0 0 14px #88ffae33) drop-shadow(0 6px 5px #0008); }
 .treated .patient-floor-label { color: var(--lt-good); }
@@ -294,7 +294,7 @@ body { background: radial-gradient(ellipse at 0 0, #5a334330, transparent 55%), 
   .team-proposals .proposal-name { font-size: 11px; }
   .team-proposals .proposal-by { font-size: 9px; }
   .bad-console .console-hint { font-size: 11px !important; }
-  .patient-body { width: min(68%, 280px); height: auto; bottom: 8%; }
+  .patient-body { width: min(74%, 306px); height: auto; bottom: 8%; }
   .patient-floor-label { bottom: 5%; font-size: 9px; }
   .lounge-scene > .scene-hud { padding: 19px 8px; }
   .lounge-room { aspect-ratio: 18 / 25; border-radius: 16px; }
@@ -331,7 +331,7 @@ body { background: radial-gradient(ellipse at 0 0, #5a334330, transparent 55%), 
   .cabin-scene .cabin-view { height: 265px; }
   .cabin-scene .action-console h2 { font-size: 21px !important; }
   .team-proposals .proposal-name { font-size: 10px; }
-  .patient-body { width: 68%; height: auto; bottom: 8%; }
+  .patient-body { width: 74%; height: auto; bottom: 8%; }
   .ticket-face { gap: 10px; }
   .ticket-copy b { font-size: 19px; }
   .ticket-subtitle { font-size: 9px; }
@@ -792,3 +792,12 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
 .revote-dialog > button { display: block; margin: 15px auto 0; min-width: 130px; }
 /* Dialog headings receive programmatic focus for screen readers, not a control outline. */
 .lt-dialog > h2:focus { outline: none; }
+
+/* Teammate list gets breathing room beneath the role summary. */
+.ticket-allies { margin-top: 18px; }
+
+/* Back-facing sprites in atlas rows 2 and 3 are cut flat across the head by the sheet. Round the top into a dome. */
+.lounge-seat[data-facing=away] .seated-traveller:not([data-atlas-row="0"]) {
+  -webkit-mask: linear-gradient(#000, #000) 0 100% / 100% 86% no-repeat, radial-gradient(ellipse 17% 14% at var(--head-x, 54%) 14%, #000 97%, #0000 100%) 0 0 / 100% 100% no-repeat;
+  mask: linear-gradient(#000, #000) 0 100% / 100% 86% no-repeat, radial-gradient(ellipse 17% 14% at var(--head-x, 54%) 14%, #000 97%, #0000 100%) 0 0 / 100% 100% no-repeat;
+}

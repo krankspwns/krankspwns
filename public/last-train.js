@@ -5,7 +5,7 @@
   const save = (key, value) => { try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, JSON.stringify(value)); } catch {} };
   const lastGame = () => { try { localStorage.setItem('arcade-last-game', 'last-train'); } catch {} };
   const invitation = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
-  let seat = read('lt-seat'), state = null, busy = false, error = '', connected = true, timer, polling;
+  let seat = read('lt-seat'), state = null, busy = false, error = '', connected = true, timer, polling, pollFails = 0, connectionError = false;
   let name = read('lt-name') || '', code = invitation, recovery = '', showCard = false, sceneKey = '', enteredKey = '';
   let speechDraft = '', whisperDraft = '', draftStep = '';
   let dockNode = null, dockStamp = '', drawerGesture = null, suppressDrawerClick = false;
@@ -91,9 +91,18 @@
           if ([401, 404].includes(response.status)) { seat = null; state = null; save('lt-seat', null); }
           throw Error(data.error || 'Please try again.');
         }
-        const changed = !state || state.version !== data.version || !connected;
+        const changed = !state || state.version !== data.version || !connected || connectionError;
+        pollFails = 0; if (connectionError) { error = ''; connectionError = false; }
         adopt(data); connected = true; if (changed) render(); else tick();
-      } catch (e) { if (seat !== owner && seat) return; connected = false; error = e.name === 'AbortError' ? 'No connection. Trying again…' : e.message; render(); }
+      } catch (e) {
+        if (seat !== owner && seat) return;
+        // Brief drops, slow replies and background tabs are normal on phones. Only warn after several misses in a row.
+        const network = e.name === 'AbortError' || e instanceof TypeError;
+        if (network) {
+          if (!document.hidden) pollFails++;
+          if (pollFails >= 3) { connected = false; connectionError = true; error = 'No connection. Trying again…'; render(); }
+        } else { connected = false; error = e.message; render(); }
+      }
       finally { clearTimeout(timeout); polling = null; if (seat === owner) schedule(); }
     })();
     return polling;
@@ -174,7 +183,7 @@
     const col = index % 4, row = Math.floor(index / 4);
     const bands = [[0,368,722,1086],[0,374,729,1086],[0,368,725,1086],[0,368,728,1086]][col];
     const y = bands[row], height = bands[row + 1] - y;
-    return el('div', { class: 'seated-traveller', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + (col * 100 / 3) + '%;--py:' + (y / (1086 - height) * 100) + '%;--sprite-y-size:' + (1086 / height * 100) + '%;--back-y:' + (row * 50) + '%' });
+    return el('div', { class: 'seated-traveller', 'data-avatar-index': index, 'data-atlas-row': row, 'aria-hidden': 'true', style: '--px:' + (col * 100 / 3) + '%;--py:' + (y / (1086 - height) * 100) + '%;--sprite-y-size:' + (1086 / height * 100) + '%;--back-y:' + (row * 50) + '%;--head-x:' + [57.5, 52.8, 51.4, 56][col] + '%' });
   }
   function roster() {
     return el('section', { class: 'panel roster-panel' }, el('div', { class: 'panel-heading' }, el('h3', {}, 'Your fellow travellers'), txt('small', 'muted', state.players.filter(p => !p.departed).length + '/12 IN ROOM')), el('div', { class: 'roster' }, ...state.players.map(p => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (!p.alive ? ' out' : '') }, avatar(p, 'avatar'), el('div', { class: 'seat-label' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.role ? role(p.role).name + ' · ' + (p.alive ? groupName(p.group) : 'OUT') : p.departed ? 'AWAY' : p.id === state.hostId ? 'HOST' : 'READY TO BOARD'))))));
@@ -331,12 +340,20 @@
         btn({ brave: 'Choose', careful: 'Lock door', inspector: 'Choose', witness: 'Watch' }[active], () => ['brave','inspector'].includes(active) ? chooseTarget(active === 'brave' ? 'Who will you protect?' : 'Who will you check?', active === 'brave' ? 'If they are also healed, they die from overdose.' : 'You see GOOD or BAD immediately after choosing.', 'night', { power }) : send('night', { power }), 'gold'),
         btn('Skip', () => send('night', { power: 'pass' }), 'secondary skip-power')));
   }
+  // Lying figures overhang their 362px atlas cells, so each is cropped from its own measured left edge (396px wide).
+  function patientCrop(index) {
+    const row = Math.floor(index / 4), col = index % 4;
+    const left = [[18,386,728,1104],[2,374,734,1094],[6,388,728,1096]][row][col], right = [[380,746,1098,1442],[380,746,1114,1446],[388,740,1108,1446]][row][col];
+    const start = Math.max(0, Math.min(1448 - 396, left - 8));
+    // Neighbouring figures overlap the crop, so clip to this figure's own extent.
+    return { x: start / (1448 - 396) * 100, clip: 'inset(0 ' + Math.max(0, (start + 396 - right - 3) / 396 * 100) + '% 0 ' + Math.max(0, (left - 3 - start) / 396 * 100) + '%)' };
+  }
   function patientScene() {
     const me = state.me;
     if (state.phase !== 'night' || state.nightRole !== 'medic' || me.role !== 'medic' || !me.alive || me.blocked || !me.patientId) return null;
     const p = player(me.patientId), index = p.avatarIndex ?? p.seat - 1;
     return el('div', { class: 'patient-scene' + (me.medicineChoice?.power === 'heal' ? ' treated' : ''), 'data-patient': p.id, 'aria-label': p.name + ' is unconscious on the cabin floor' },
-      el('div', { class: 'patient-body', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + (index % 4 * 100 / 3) + '%;--py:' + ([108,436,752][Math.floor(index / 4)] / 806 * 100) + '%;--patient-y-size:' + (1086 / 280 * 100) + '%' }),
+      el('div', { class: 'patient-body', 'data-avatar-index': index, 'aria-hidden': 'true', style: 'clip-path:' + patientCrop(index).clip + ';--px:' + patientCrop(index).x + '%;--py:' + ([100,436,752][Math.floor(index / 4)] / 806 * 100) + '%;--patient-x-size:' + (1448 / 396 * 100) + '%;--patient-y-size:' + (1086 / 280 * 100) + '%' }),
       txt('span', 'patient-floor-label', p.name + (me.medicineChoice?.power === 'heal' ? ' · HEAL GIVEN' : ' · ATTACKED')));
   }
   function cabinScene() {

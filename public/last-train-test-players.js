@@ -71,7 +71,13 @@
           if (Date.now() >= bot.speechAt) await request(bot, 'finishSpeech', view);
         }
       }
-      if (phase === 'voting' && !me.vote) await request(bot, 'vote', view, { targetId: choose(view.voteCandidates ? view.players.filter(p => p.alive && view.voteCandidates.includes(p.id)) : others)?.id || null });
+      if (phase === 'voting' && !me.vote) {
+        const pool = view.voteCandidates ? view.players.filter(p => p.alive && view.voteCandidates.includes(p.id) && p.id !== view.meId) : others;
+        // Mostly vote bots, but about 40% of the time pick any player so real players get voted for too.
+        const real = pool.filter(p => !p.name.startsWith('Bot '));
+        const target = real.length && Math.random() < .4 ? real[Math.floor(Math.random() * real.length)] : choose(pool);
+        await request(bot, 'vote', view, { targetId: target?.id || null });
+      }
     }
     function schedule() {
       clearTimeout(timer);
