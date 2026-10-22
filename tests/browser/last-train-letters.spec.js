@@ -70,11 +70,12 @@ test('a failed read receipt keeps the letter unread, and drafts survive night st
     fail=false;await b.page.keyboard.press('Escape');await b.page.keyboard.press('Escape');
     await b.page.getByRole('button',{name:'Open private letters (1 unread)',exact:true}).click();await letterbox(b.page).getByRole('button',{name:/^Letters with Benny/}).click();
     await expect.poll(async()=>(await store.load(seats[0].code)).letters[0].read).toBe(true);
+    // An open conversation reads arrivals at once, so the receiver closes theirs before the next letter.
+    await b.page.keyboard.press('Escape');await b.page.keyboard.press('Escape');await expect(letterbox(b.page)).toHaveCount(0);
     await openThread(a.page,'Mel');await letterbox(a.page).getByLabel('Your letter to Mel').fill('I want this draft to stay.');
     const room=await store.load(seats[0].code);rules.advance(room);room.deadline=Date.now()+120000;await store.save(room);
     await expect(a.page.locator('#lt-app')).toHaveAttribute('data-phase','night');await expect(letterbox(a.page).getByLabel('Your letter to Mel')).toHaveValue('I want this draft to stay.');
     await letterbox(a.page).getByRole('button',{name:'Send',exact:true}).click();await expect(letterbox(a.page).locator('.letter-bubble.mine').last()).toHaveText('I want this draft to stay.');
-    await b.page.keyboard.press('Escape');await b.page.keyboard.press('Escape');
     await b.page.getByRole('button',{name:'Open private letters (1 unread)',exact:true}).click();await letterbox(b.page).getByRole('button',{name:/^Letters with Benny/}).click();
     await expect(letterbox(b.page).locator('.letter-bubble')).toHaveText(['Read me twice.','I want this draft to stay.']);
     expect([...a.errors,...b.errors]).toEqual([]);
