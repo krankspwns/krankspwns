@@ -73,10 +73,10 @@
     if (state && state.code === data.code && data.version < state.version) return;
     const changed = state?.step !== data.step;
     if (state && (state.code !== data.code || state.match !== data.match || state.step !== data.step)) document.querySelectorAll('dialog[data-turn]').forEach(d => d.close());
-    if (state && (data.phase !== state.phase || data.nightRole !== state.nightRole)) showCard = false;
+    if (state && (data.phase !== state.phase || data.nightRole !== state.nightRole || data.nightPhase !== state.nightPhase)) showCard = false;
     if (data.me.role && state && !state.me.role && data.phase === 'settling') showCard = true;
     state = { ...data, receivedAt: Date.now() };
-    if (changed) announce(data.phase === 'night' ? roleName(data.nightRole) + ' turn. Everyone else rests in their cabin.' : data.phase === 'discussion' ? 'Speaking turn: ' + data.players.find(p => p.id === data.speakerId)?.name : ({ briefing: 'Meet the good and bad teams.', boarding: 'All aboard.', settling: 'Close your eyes. Your cabin is ready.', gathering: 'Meet in the lounge.', morning: 'Morning. See who is out.', revoteInfo: 'The vote is tied. A re-vote will begin shortly.', voting: data.voteAttempt === 2 ? 'The vote tied. Vote again between the tied players.' : 'Time to vote.', voteResult: 'The votes are in.', finished: 'The game has ended.' }[data.phase] || 'Room ready.'));
+    if (changed) announce(data.phase === 'night' ? (data.nightPhase ? 'Night phase ' + data.nightPhase + ' of 2. Everyone has 25 seconds.' : roleName(data.nightRole) + ' turn.') : data.phase === 'discussion' ? 'Speaking turn: ' + data.players.find(p => p.id === data.speakerId)?.name : ({ briefing: 'Meet the good and bad teams.', boarding: 'All aboard.', settling: 'Close your eyes. Your cabin is ready.', gathering: 'Meet in the lounge.', morning: 'Morning. See who is out.', revoteInfo: 'The vote is tied. A re-vote will begin shortly.', voting: data.voteAttempt === 2 ? 'The vote tied. Vote again between the tied players.' : 'Time to vote.', voteResult: 'The votes are in.', finished: 'The game has ended.' }[data.phase] || 'Room ready.'));
   }
   function schedule() { clearTimeout(timer); if (seat) timer = setTimeout(poll, 1000); }
   function poll() {
@@ -140,7 +140,7 @@
     const d = dialog('One train. Two secret teams.', txt('p', 'muted', '5–12 friends. Each person uses their own phone. Keep your role private.'),
       el('div', { class: 'rules-groups' }, el('div', {}, el('b', {}, 'GOOD · Passengers + Crew'), txt('p', '', 'Find every Saboteur. Keep at least one Passenger and one Crew member alive.')), el('div', {}, el('b', {}, 'BAD · Saboteurs'), txt('p', '', 'Get all Passengers OR all Crew out. Your teammates share a private cabin.'))),
       txt('p', 'muted small', '5 players: 1 Saboteur. 6–9 players: 2 Saboteurs. 10–12 players: 3 Saboteurs.'),
-      el('ol', {}, el('li', {}, el('b', {}, 'Meet the roles, then board. '), 'Seats are shuffled at the start. Your seat also sets your speaking order for the whole game.'), el('li', {}, el('b', {}, 'Close your eyes in your cabin. '), 'Each night turn lasts 20 seconds. Only the active role gets a choice; everyone else waits.'), el('li', {}, el('b', {}, 'Careful → Saboteurs → Medic → Brave → Inspector → Witness. '), 'Only roles included in your game take a turn. Saboteurs can change their target votes before time ends. Only player targets count toward the attack. A tie is random among tied players. If nobody picks a target, nobody is attacked.'), el('li', {}, el('b', {}, 'Meet in the lounge. '), 'Each living player gets up to 20 seconds, from the first seat to the last. Sharing a message or recording moves to the next player. Chat rooms let each player type or record one message. Voice recordings can be played after their turn. In-person rooms speak aloud.'), el('li', {}, el('b', {}, 'Vote, or Skip. '), 'The player with most votes is out. Skip is an abstention. A tie starts one re-vote between tied players. If that ties too, one tied player is out at random. Everyone then sees who voted for whom, and whether the removed player was good or bad.')),
+      el('ol', {}, el('li', {}, el('b', {}, 'Meet the roles, then board. '), 'Seats are shuffled at the start. Your seat also sets your speaking order for the whole game.'), el('li', {}, el('b', {}, 'Close your eyes in your cabin. '), 'Two shared night phases last 25 seconds each. Everyone can use their private night notebook in both phases.'), el('li', {}, el('b', {}, 'Phase 1: attack, block, protect and lock. Phase 2: heal, check and watch. '), 'The first phase resolves together before the second starts. Saboteurs can change their target votes before time ends. Only player targets count toward the attack. A tie is random among tied players. If nobody picks a target, nobody is attacked.'), el('li', {}, el('b', {}, 'Meet in the lounge. '), 'Each living player gets up to 20 seconds, from the first seat to the last. Sharing a message or recording moves to the next player. Chat rooms let each player type or record one message. Voice recordings can be played after their turn. In-person rooms speak aloud.'), el('li', {}, el('b', {}, 'Vote, or Skip. '), 'The player with most votes is out. Skip is an abstention. A tie starts one re-vote between tied players. If that ties too, one tied player is out at random. Everyone then sees who voted for whom, and whether the removed player was good or bad.')),
       txt('p', 'rule-highlight', 'Too much help is deadly: if Brave protects someone and Medic heals them on the same night, that player dies from overdose.'),
       el('details', {}, el('summary', {}, 'Powers and extra rules'), ...(state ? Object.entries(state.catalog).map(([,r]) => txt('p', '', r.name + ' — ' + r.description)) : [txt('p', '', 'Crew include Inspector, Medic and Trainee. Passenger powers include a door lock, protection and witnessing an attack.')]),
         txt('p', '', 'Medic gets one heal and one poison for the whole game. Only one medicine per night. Healing responds to the original attack. Brave now stops an attack rather than taking the hit. Poison and overdose bypass protection and a locked door.'),
@@ -317,22 +317,46 @@
     n.replaceChildren(el('img', { class: 'medicine-icon', src: '/last-train/medicine-' + kind + '.svg', alt: '', 'aria-hidden': 'true', width: 54, height: 54 }), txt('span', '', kind === 'heal' ? 'Heal' : 'Poison'));
     return n;
   }
+  const nightNotesKey = () => 'lt-night-notes:' + [state.code, state.meId, state.match].join(':');
+  const nightNotes = () => read(nightNotesKey()) || { marks: {}, question: '', questionTarget: '' };
+  function updateNightNotes(change) { save(nightNotesKey(), { ...nightNotes(), ...change }); }
+  function nightNotebook() {
+    const notes = nightNotes(), first = state.nightPhase === 1;
+    return el('section', { class: 'night-notebook', 'aria-label': 'Private night notebook' },
+      txt('span', 'eyebrow', 'YOUR PRIVATE NIGHT NOTEBOOK'),
+      el('h2', {}, first ? 'Who do you trust?' : 'Prepare your next turn.'),
+      txt('p', 'console-hint', 'Optional. Only you can see this, on this device. It never casts a vote.'),
+      first ? el('div', { class: 'night-trust-list' }, ...state.players.filter(p => p.alive && p.id !== state.meId).map(p =>
+        el('label', { class: 'night-trust-row' }, avatar(p), txt('span', '', p.name),
+          el('select', { id: 'trust-' + p.id, 'aria-label': 'Your view of ' + p.name, disabled: state.paused,
+            onchange: e => updateNightNotes({ marks: { ...nightNotes().marks, [p.id]: e.target.value } }) },
+            ...[['', 'Mark…'], ['trust', 'Trust'], ['unsure', 'Unsure'], ['suspect', 'Suspect']].map(([value, label]) => el('option', { value, selected: notes.marks?.[p.id] === value }, label)))))) :
+        el('div', { class: 'night-question' }, el('label', { htmlFor: 'night-question-target' }, 'Who would you like to ask?'),
+          el('select', { id: 'night-question-target', disabled: state.paused, onchange: e => updateNightNotes({ questionTarget: e.target.value }) },
+            el('option', { value: '', selected: !notes.questionTarget }, 'Choose someone (optional)'),
+            ...state.players.filter(p => p.alive && p.id !== state.meId).map(p => el('option', { value: p.id, selected: notes.questionTarget === p.id }, p.name))),
+          el('label', { htmlFor: 'night-question' }, 'Your question or reminder'),
+          el('textarea', { id: 'night-question', rows: 3, maxLength: 280, value: notes.question || '', disabled: state.paused,
+            placeholder: 'What would you like to ask in the lounge?', oninput: e => updateNightNotes({ question: e.target.value }) })),
+      txt('p', 'console-hint', 'Saved on this device. You can also open Notes to write or draw.'));
+  }
   function actionConsole() {
     const me = state.me, active = state.nightRole;
     if (state.paused) return el('section', { class: 'rest-note' }, txt('span','','Ⅱ'), el('h2', {}, 'Time stands still.'), txt('p', '', 'The host has paused the journey.'));
     if (!me.alive) return el('section', { class: 'rest-note' }, txt('span','','🎟️'), el('h2', {}, 'Your journey is over.'), txt('p', '', 'Watch quietly. The living players still have a train to save.'));
     if (active === 'saboteur' && me.group === 'saboteur') return badConsole();
+    if (active !== me.role && state.nightPhase) return el('section', { class: 'rest-note' }, txt('span', 'sleep-icon', '☾'), el('h2', {}, 'Keep your thoughts private.'), txt('p', '', 'Use your night notebook while the timer runs.'));
     if (active !== me.role) return el('section', { class: 'rest-note' }, txt('span', 'sleep-icon', '☾'), el('h2', {}, 'Rest in your cabin.'), txt('p', '', roleName(active) + ' are taking their turn. Keep your eyes closed and your role secret.'));
     if (active === 'medic') {
       const stock = txt('p', 'medicine-counts', 'HEAL ' + me.medicine.heal + '   /   POISON ' + me.medicine.poison);
       if (me.blocked) return el('section', { class: 'action-console' }, stock, el('h2', {}, 'Your medicine is blocked.'), txt('p', '', 'No patient is shown. No medicine is spent tonight.'));
-      if (me.medicineChoice) return el('section', { class: 'action-console' }, stock, txt('p', 'choice-saved', ({ heal: 'Medicine given.', poison: 'Poison delivered.', pass: 'You kept your medicine.' }[me.medicineChoice.power])), txt('p', 'console-hint', 'Keep quiet until the next role wakes up.'));
+      if (me.medicineChoice) return el('section', { class: 'action-console' }, stock, txt('p', 'choice-saved', ({ heal: 'Medicine given.', poison: 'Poison delivered.', pass: 'You kept your medicine.' }[me.medicineChoice.power])), txt('p', 'console-hint', 'Use your private night notebook while the timer runs.'));
       return el('section', { class: 'action-console medic-console' }, stock, el('div', { class: 'patient-heading' }, me.patientId ? avatar(me.patientId) : null, el('h2', {}, me.patientId ? who(me.patientId) + ' was attacked.' : 'No one was attacked.')), txt('p', 'console-hint', 'Heal, poison, or Skip. Only one medicine tonight.'),
         medicineButton('heal', 'Heal ' + (me.patientId ? who(me.patientId) : 'someone'), () => send('medicine', { power: 'heal' }), !me.patientId || !me.medicine.heal), medicineButton('poison', 'Poison someone', () => chooseTarget('Who will you poison?', 'They will be out tonight, even if protected. You might choose a good player.', 'medicine', { power: 'poison' }), !me.medicine.poison), btn('Skip', () => send('medicine', { power: 'pass' }), 'secondary skip-power'), txt('p', 'overdose-hint', 'If Brave also protects your healed patient, that player dies from overdose.'));
     }
-    if (me.nightChoice) return el('section', { class: 'action-console' }, currentPrivateResult() ? privateResultCard(currentPrivateResult()) : txt('p', 'choice-saved', 'Your turn is complete.'), txt('p', 'console-hint', 'Stay quiet. The next cabin wakes when the timer ends.'));
+    if (me.nightChoice) return el('section', { class: 'action-console' }, currentPrivateResult() ? privateResultCard(currentPrivateResult()) : txt('p', 'choice-saved', 'Your turn is complete.'), txt('p', 'console-hint', 'Use your private night notebook while the timer runs.'));
     const power = { brave: 'cover', careful: 'lock', inspector: 'check', witness: 'watch' }[active];
-    if (me.used[power]) return el('section', { class: 'action-console' }, el('h2', {}, 'Your power is already used.'), txt('p', 'console-hint', 'Save your story for the lounge. Your turn will pass automatically.'));
+    if (me.used[power]) return el('section', { class: 'action-console' }, el('h2', {}, 'Your power is already used.'), txt('p', 'console-hint', 'Use your private night notebook to prepare for the lounge.'));
     return el('section', { class: 'action-console power-console' }, rolePortrait(me.role, 'console-role-icon'), el('h2', {}, { brave: 'Who needs protection?', careful: 'Lock your door tonight?', inspector: 'Who will you check?', witness: 'Watch tonight’s attack?' }[active]),
       el('div', { class: 'power-description' }, txt('p', 'power-limit', active === 'inspector' ? 'Every night.' : 'Once per game.'),
         txt('p', 'console-hint', active === 'brave' ? 'Protection + Medic’s heal causes a deadly overdose.' : active === 'inspector' ? 'See GOOD or BAD as soon as you choose.' : active === 'careful' ? 'Stops an attack on you, but not poison or overdose.' : 'See the original attack target immediately.')),
@@ -363,10 +387,10 @@
     const patient = patientScene();
     return el('section', { class: 'world cabin-scene' + (badTogether ? ' conspiracy' : '') + (patient ? ' infirmary' : '') + (settling ? ' eyes-closing' : ''), 'aria-label': badTogether ? 'Your Saboteur team shares a private cabin' : 'Your private train cabin' },
       el('div', { class: 'cabin-view' }, art(badTogether || patient ? 'cabin-floor' : 'cabin'),
-        hud('NIGHT ' + state.round + ' · ' + (badTogether ? 'PRIVATE TEAM CABIN' : 'CABIN ' + String(player(state.meId).seat).padStart(2,'0')), settling ? 'Close your eyes.' : roleName(state.nightRole) + ', wake up.', settling ? 'Your secret role is on the ticket below.' : badTogether ? 'Only your team can see these choices.' : 'Only the active role acts. Everyone else rests.'),
+        hud('NIGHT ' + state.round + ' · ' + (badTogether ? 'PRIVATE TEAM CABIN' : 'CABIN ' + String(player(state.meId).seat).padStart(2,'0')), settling ? 'Close your eyes.' : state.nightPhase ? 'Night phase ' + state.nightPhase + ' of 2.' : roleName(state.nightRole) + ', wake up.', settling ? 'Your secret role is on the ticket below.' : state.nightPhase ? '25 seconds for everyone. Make your choices and keep your notes private.' : badTogether ? 'Only your team can see these choices.' : 'Only the active role acts. Everyone else rests.'),
         el('div', { class: 'cabin-travellers count-' + roommates.length }, ...roommates.map(p => el('div', { class: 'cabin-person', 'data-player': p.id }, seatedTraveller(p), txt('span', '', p.name)))),
         patient),
-      settling ? el('div', { class: 'curtain-message' }, txt('span','','☾'), txt('p','','Settle into your cabin…')) : actionConsole());
+      settling ? el('div', { class: 'curtain-message' }, txt('span','','☾'), txt('p','','Settle into your cabin…')) : el('div', { class: 'night-panels' }, actionConsole(), state.nightPhase && me.alive ? nightNotebook() : null));
   }
   function loungeSeats() {
     const perRow = compactScene.matches ? 4 : 6;
@@ -391,7 +415,7 @@
     if (!entry || !entry.outs.length) return txt('p', 'nobody-out', 'Everyone is still aboard.');
     return el('div', { class: 'revealed-outs' }, ...entry.outs.map(p => {
       const alignment = p.alignment || (p.group === 'saboteur' ? 'bad' : 'good');
-      return el('div', { class: 'revealed-out ' + alignment }, avatar(p.id, 'reveal-avatar'), el('div', {}, el('b', {}, who(p.id) + ' is out'), txt('span', 'alignment-stamp', alignment.toUpperCase()), state.phase === 'finished' && p.role ? txt('small', '', role(p.role).name) : txt('small', '', 'Their role stays secret until the journey ends.')));
+      return el('div', { class: 'revealed-out ' + alignment }, avatar(p.id, 'reveal-avatar'), el('div', {}, el('b', {}, who(p.id) + ' is out'), txt('span', 'alignment-stamp', alignment.toUpperCase()), entry.type === 'night' && p.causes?.length ? txt('span', 'death-cause', p.causes.map(c => ({ attack: 'Attacked', poison: 'Poisoned', overdose: 'Overdose' }[c])).filter(Boolean).join(' + ')) : null, state.phase === 'finished' && p.role ? txt('small', '', role(p.role).name) : txt('small', '', 'Their role stays secret until the journey ends.')));
     }));
   }
   function votePerson(id) {
@@ -416,6 +440,7 @@
     const said = state.speeches.find(m => m.round === state.round && m.id === state.meId);
     return el('section', { class: 'speech-console' }, el('div', { class: 'speaking-person' }, avatar(state.speakerId), el('div', {}, txt('small', '', 'SEAT ' + player(state.speakerId).seat + ' · ' + (state.speakerIndex + 1) + '/' + state.speakingOrder.length), el('h2', {}, own ? 'It’s your turn.' : who(state.speakerId) + ' has the floor.')), txt('span','countdown speaker-seconds','')),
       txt('p', 'console-hint', own ? mode === 'chat' ? 'What happened last night? Type or record one short message.' : 'Tell the group what you know. You have up to 20 seconds.' : mode === 'chat' ? 'Read their message, or play their recording after this turn. Your turn follows the seat numbers.' : 'Listen to their story. Your turn follows the seat numbers.'),
+      own && me.alive && nightNotes().question ? el('aside', { class: 'private-question' }, txt('small', '', 'YOUR PRIVATE REMINDER' + (nightNotes().questionTarget ? ' · ' + who(nightNotes().questionTarget) : '')), txt('p', '', nightNotes().question)) : null,
       own && me.alive ? mode === 'chat' ? said ? txt('p','choice-saved',said.audio ? 'Voice shared. The next player has the floor.' : 'You’ve had your say. Let’s hear the next traveller.') : el('div', { class: 'speech-options' }, voice.controls(), txt('p', 'speech-or', 'OR TYPE YOUR MESSAGE'), el('form', { class: 'speech-form', onsubmit: async e => { e.preventDefault(); if (!speechDraft.trim()) return; const text = speechDraft; await send('speak', { text }); } }, el('textarea', { id: 'lt-speech', rows: 3, maxLength: 280, value: speechDraft, placeholder: 'What did you find? Who do you trust?', 'aria-label': 'Your findings', disabled: busy || state.paused || voice.busy(), oninput: e => speechDraft = e.target.value }), el('button', { type: 'submit', class: 'gold', disabled: busy || state.paused || voice.busy(), 'data-focus': 'share-findings' }, 'Share findings'))) : el('div', { class: 'speech-options' }, said ? txt('p', 'choice-saved', 'Voice shared. The next player has the floor.') : voice.controls(), btn('I’m done speaking', () => send('finishSpeech'), 'gold', state.paused || voice.busy())) : null);
   }
   function loungeScene() {
@@ -640,7 +665,7 @@
     if (state) {
       const next = state.code + ':' + state.match;
       if (next !== sceneKey) { sceneKey = next; showCard = false; }
-      const step = [state.code,state.match,state.round,state.phase,state.nightRole,state.speakerId].join(':');
+      const step = [state.code,state.match,state.round,state.phase,state.nightRole,state.nightPhase,state.speakerId].join(':');
       if (step !== draftStep) { draftStep = step; speechDraft = ''; whisperDraft = ''; }
     }
     voice.sync(state, seat);
@@ -648,7 +673,7 @@
     const playing = !!state && !!seat && state.phase !== 'lobby';
     root.classList.toggle('on-journey',playing);
     const content = !seat ? landing() : !state ? panel(el('h2',{},'Finding your train…'),btn('Try again',poll,'secondary')) : state.phase === 'lobby' ? waitingRoom() : state.phase === 'finished' ? finale() : match();
-    const key = [state?.code,state?.match,state?.phase,state?.nightRole,state?.phase === 'discussion' ? state.speakerId : ''].join(':');
+    const key = [state?.code,state?.match,state?.phase,state?.nightRole,state?.nightPhase,state?.phase === 'discussion' ? state.speakerId : ''].join(':');
     root.replaceChildren(...[header(), error ? el('div',{class:'error',role:'alert'},error,btn('Close',()=>{error='';render();},'text-button')) : null, seat && !connected ? txt('p','connection','Reconnecting. Your ticket is saved.') : null, state && seat ? roomBar() : null, state?.notice ? txt('p','waiting',state.notice) : null,
       state?.paused ? el('div',{class:'pause-banner',role:'status'},txt('b','','Ⅱ Journey paused'),txt('span','','Timers and choices are on hold.'),state.hostId === state.meId ? btn('RESUME JOURNEY',()=>send('resume'),'host') : null) : null,
       content,txt('footer','','Last Train · Every cabin hides a secret.')].filter(Boolean));
@@ -683,7 +708,7 @@
     voice.sync(state, seat);
     soundtrack.sync(state, !!seat, boardingVideo);
     syncBoardingVideo();
-    notebook.sync(state && seat ? { ...seat, match: state.match || 1 } : null, state ? (state.phase === 'lobby' ? 'Waiting to board' : 'Round ' + state.round + ' · ' + (state.paused ? 'Paused' : state.phase === 'night' ? roleName(state.nightRole) + ' turn' : ({ briefing:'Meet the teams', boarding:'All aboard', settling:'Nightfall', gathering:'Gathering', morning:'Morning', discussion:'Discussion', voting:'Voting', revoteInfo:'Tied vote', voteResult:'Vote results', finished:'Journey ended' }[state.phase] || ''))) : '');
+    notebook.sync(state && seat ? { ...seat, match: state.match || 1 } : null, state ? (state.phase === 'lobby' ? 'Waiting to board' : 'Round ' + state.round + ' · ' + (state.paused ? 'Paused' : state.phase === 'night' ? (state.nightPhase ? 'Night phase ' + state.nightPhase + ' of 2' : roleName(state.nightRole) + ' turn') : ({ briefing:'Meet the teams', boarding:'All aboard', settling:'Nightfall', gathering:'Gathering', morning:'Morning', discussion:'Discussion', voting:'Voting', revoteInfo:'Tied vote', voteResult:'Vote results', finished:'Journey ended' }[state.phase] || ''))) : '');
     if (!state) return;
     if (cinemaNode && !state.paused) {
       const elapsed = (state.duration || 12) - (state.remainingMs || 0) / 1000 + (Date.now() - state.receivedAt) / 1000;

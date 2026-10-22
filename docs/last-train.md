@@ -23,7 +23,7 @@ Saboteur counts are 1 at five players, 2 at six to nine, and 3 at ten to twelve.
 
 These are initial mixes for group playtesting, not a claim of verified competitive balance. These are recommended mixes. Passengers outnumber Crew except at six players, where the recommended mix has two of each. Five-player rooms have one Crew slot (Inspector by default); six to eight have two (Inspector and Medic); nine to twelve have three (including Trainee). Recommended Passenger powers include Careful and Witness, plus Brave at nine or more. At twelve, one bad player defaults to Blocker.
 
-The host can choose roles before the first journey and before replay: one to three distinct Crew within the size limit, at least Inspector or Medic; any subset of the four special Passenger roles, including none; normal Passengers fill every remaining Passenger seat. One Saboteur is always normal. With two or three Saboteurs, the host can use all normal Saboteurs or replace one with Blocker. Roles are always dealt to people at random. Shuffle roles creates a valid random mix and Recommended roles restores the preset. Choices adapt if the room grows or shrinks. An already-dealt match keeps its original roles and night order.
+The host can choose roles before the first journey and before replay: one to three distinct Crew within the size limit, at least Inspector or Medic; any subset of the four special Passenger roles, including none; normal Passengers fill every remaining Passenger seat. One Saboteur is always normal. With two or three Saboteurs, the host can use all normal Saboteurs or replace one with Blocker. Roles are always dealt to people at random. Shuffle roles creates a valid random mix and Recommended roles restores the preset. Choices adapt if the room grows or shrinks. An already-dealt match keeps its original roles.
 
 | Role | Group | Power |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ The host can choose roles before the first journey and before replay: one to thr
 | Inspector | Good · Crew | Each night, check another living player. Immediately and privately learn GOOD or BAD, not their exact role. |
 | Medic | Good · Crew | See the original attack target, then heal them, poison another living player, or Skip. One heal and one poison for the whole game. Only one medicine each night. Can heal themselves if attacked. |
 | Trainee | Good · Crew | Starts with no night power. When Inspector or Medic is removed, privately take that job from the next night. Still Crew. Inherit only remaining medicine. If both jobs are lost together, Inspector takes priority. |
-| Saboteur | Bad · Saboteur | Know the bad team. Agree on one shared attack, or Skip, within 20 seconds. Anyone still alive is allowed, including themselves and teammates. |
+| Saboteur | Bad · Saboteur | Know the bad team. Agree on one shared attack, or Skip, within 25 seconds. Anyone still alive is allowed, including themselves and teammates. |
 | Blocker | Bad · Saboteur | Also proposes the shared attack. Once per game, block one other living player's night power during the Saboteur turn. Does not stop the team's base attack. |
 
 Living identities stay private. Eliminations reveal only GOOD or BAD; exact roles and Crew/Passenger membership remain hidden until the end. Public history is sanitized as well as the player list. Group counts stay at the starting totals during play so count changes cannot reveal a removed player’s good subgroup; finished games expose actual remaining counts and every role. A bottom-of-screen role ticket can be shown or hidden. It shows the role, good/bad group, remaining medicine or one-use power status, and access to private reports. Saboteurs also see their teammates’ public avatars, names, roles and alive/out status in the ticket. It first appears in the cabin, where it reveals the role to the owner.
@@ -48,16 +48,14 @@ Seat order is shuffled independently from role assignment at the start of the ma
 
 Boarding preserves the entire visible page with the final video frame, fades through full-screen darkness, then reveals the cabin and controls together; reduced-motion devices switch without this animation. `night-carriage.mp3` is a 53-second original piano-and-bowed-pad loop, composed locally without sampled or third-party music. It runs only in a joined journey, lowers during discussion, yields to boarding audio, and pauses when the game is paused or the page is hidden. `tools/compose-last-train.py` reproduces the score with numpy and ffmpeg.
 
-## Sequential night turns
+## Two shared night phases
 
-Each night role window lasts the full **20 seconds**, whether its owner has confirmed, skipped, used their power, is blocked, or was removed. Only roles included in the original mix get a window; a role's window remains after its owner is out. Trainee can fill the Inspector or Medic window next night. Other players wait in their own cabin and do not need to submit dummy Ready actions.
+Every phone gets two fixed **25-second** phases. Confirming, skipping, spending a power or losing a role never shortens either window. A night already running on the old sequential rules finishes safely; the next night uses the shared phases.
 
-1. **Careful Passenger**, if included. Choose whether to lock their own door before the Saboteur turn. The lock is resolved with all other effects at night end; Blocker can still disable it later that night.
-2. **Saboteurs.** Living bad players see known teammates in a shared cabin, propose an attack or Skip, and chat privately. Proposals remain editable for 20 seconds. Only player targets count. Ties draw randomly among the tied player targets. Missing proposals and Skip are abstentions, so one chosen player is attacked even when teammates make no choice. If nobody chooses a player, there is no attack. A confirmed Blocker power is fixed and spent.
-3. **Medic**, if included. See the original attack target, then heal, poison another person or Skip. A blocked Medic sees no patient and spends nothing.
-4. **Brave Passenger**, if included. Protect one person once per game. Protection plus healing on the same player causes overdose.
-5. **Inspector**, if included. Check one other player and immediately see GOOD or BAD in a private result card.
-6. **Witness**, if included. Immediately see the original attack target in a private result card. Blocked powers produce a failure report, never invented information.
+1. **Make your move.** Saboteurs propose their shared attack and whisper privately. Blocker also chooses a one-use block. Brave Passenger chooses protection and Careful Passenger chooses their door lock. At the deadline, player-target proposals settle into one attack: ties choose randomly, Skip and missing proposals are abstentions, and no selected targets means no attack. Blocks apply to the whole night, including protection and locks chosen earlier in the same phase.
+2. **Respond.** Medic sees the final attack target and chooses heal, poison or Skip. Inspector checks a player and Witness can watch the attack. Inspector and Witness get immediate private result cards; blocked powers reveal no result, and a blocked Medic sees no patient or medicine expenditure.
+
+Everyone can use a private night notebook in both phases, including players whose powers are used or whose role has no action. Phase 1 offers Trust / Unsure / Suspect marks beside public player portraits. Phase 2 lets players choose someone to question and prepare a short reminder, shown privately on their discussion turn. These activities are optional, stored only on that device for that seat and match, and never submit a vote or public message. The existing Notes tool remains available for writing and drawing. There is no public night completion indicator.
 
 All choices except Saboteur proposals lock on confirmation. A confirmed limited power is spent even if blocked or unnecessary. Missing choices skip without spending a limited power. Dead characters cannot act or receive future Saboteur chat, proposals, patient information or medicine stock.
 
@@ -71,7 +69,7 @@ Resolve all victims together, then promote a surviving Trainee, check the winner
 
 ## Gathering, speaking and voting
 
-At night end a 4-second gathering transition brings everyone to the train lounge. An 8-second morning reveal shows who is out and whether they were GOOD or BAD, without the exact role. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
+At night end a 4-second gathering transition brings everyone to the train lounge. An 8-second morning reveal shows who is out and whether they were GOOD or BAD, and the fatal cause: Attacked, Poisoned or Overdose. Multiple fatal causes are shown together. Exact roles remain secret. These causes also appear in the journey log; saved players are not announced as deaths. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
 
 The host chooses **In person** or **Chat room** before starting:
 

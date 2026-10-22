@@ -662,7 +662,7 @@ body:has(.letters-launcher) .lt-header { padding-right: 130px; flex-wrap: wrap; 
 .letter-compose { margin: 22px 25px 25px; border-top: 1px solid #c8a46e30; padding-top: 20px; display: grid; gap: 9px; }
 .letter-compose h3 { margin-bottom: 5px; }
 .letter-compose label { color: #cbb8bf; font-size: 11px; }
-.letter-compose select,.letter-compose textarea { width: 100%; padding: 12px; background: #100f1b; color: #f2e5cf; border: 1px solid #cfb27b44; border-radius: 10px; font: inherit; font-size: 13px; }
+.letter-compose select,.letter-compose textarea { width: 100%; padding: 12px; background: #100f1b; color: #f2e5cf; border: 1px solid #cfb27b44; border-radius: 10px; font: inherit; font-size: 16px; }
 .letter-compose textarea { min-height: 120px; resize: vertical; }
 .letter-compose textarea:focus-visible { outline: 2px solid #e5c58c; outline-offset: 3px; }
 .letter-compose-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 5px; }
@@ -801,3 +801,23 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
   -webkit-mask: linear-gradient(#000, #000) 0 100% / 100% 86% no-repeat, radial-gradient(ellipse 17% 14% at var(--head-x, 54%) 14%, #000 97%, #0000 100%) 0 0 / 100% 100% no-repeat;
   mask: linear-gradient(#000, #000) 0 100% / 100% 86% no-repeat, radial-gradient(ellipse 17% 14% at var(--head-x, 54%) 14%, #000 97%, #0000 100%) 0 0 / 100% 100% no-repeat;
 }
+
+/* Shared night windows give every traveller private choices to make. */
+.night-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 22px 30px 30px; align-items: start; }
+.night-panels > .action-console, .night-panels > .rest-note { width: 100%; margin: 0; box-sizing: border-box; }
+.night-notebook { min-width: 0; padding: 22px; border: 1px solid #a4cfbd45; border-radius: 18px; background: linear-gradient(140deg,#1c3337,#152330); display: grid; gap: 12px; }
+.night-notebook h2 { font-size: 25px; color: #eee0bd; }
+.night-notebook .eyebrow { color: #a7d5c1; font-size: 9px; }
+.night-trust-list { display: grid; gap: 8px; }
+.night-trust-row { display: grid; grid-template-columns: 38px minmax(0,1fr) 112px; align-items: center; gap: 10px; font-size: 13px; }
+.night-trust-row .portrait { width: 38px; height: 38px; border-radius: 50%; }
+.night-trust-row > span { overflow-wrap: anywhere; }
+.night-notebook select, .night-notebook textarea { min-width: 0; width: 100%; font: inherit; font-size: 16px; padding: 10px; color: #f3e6cd; background: #101e2b; border: 1px solid #c2ba8e50; border-radius: 9px; box-sizing: border-box; }
+.night-notebook textarea { resize: vertical; }
+.night-question { display: grid; gap: 9px; }
+.night-question label { font-size: 12px; color: #c4d6d1; }
+.private-question { padding: 13px 16px; border-left: 3px solid #99c8b5; border-radius: 6px; background: #8ac4a910; }
+.private-question small { color: #a7d5c1; font-size: 9px; }
+.private-question p { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.death-cause { display: block; color: #efc78e; font-size: 13px; font-weight: 700; margin: 6px 0; }
+@media(max-width:680px) { .night-panels { grid-template-columns: 1fr; padding: 16px 14px 24px; gap: 14px; } .night-notebook { padding: 18px 15px; } }

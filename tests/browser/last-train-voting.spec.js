@@ -5,7 +5,7 @@ async function fixture(browser, instrumentAudio = false) {
   const make = async (action,data) => { const r=await call(handler,{action,requestId:crypto.randomUUID(),...data},{},{'x-forwarded-for':test.info().testId});expect(r.s).toBe(200);return r.j; };
   const host=await make('create',{name:'Host'}),seats=[host];
   for(let i=1;i<6;i++)seats.push(await make('join',{code:host.code,name:i===1?'Luna':'Guest '+i}));
-  const room=await store.load(host.code);rules.start(room);rules.beginVote(room);await store.save(room);
+  const room=await store.load(host.code);rules.start(room);room.nightMode='legacy';rules.beginVote(room);await store.save(room);
   const context=await browser.newContext({viewport:{width:390,height:844}});
   await context.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:host.meId,tok:host.tok});
   if(instrumentAudio)await context.addInitScript(()=>{
