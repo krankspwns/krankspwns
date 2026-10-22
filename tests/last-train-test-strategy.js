@@ -1,3 +1,4 @@
+process.env.LAST_TRAIN_EVENTS = 'off';
 const assert=require('node:assert/strict');
 const {remember,statement}=require('../public/last-train-test-strategy');
 function view(role,extra={}) {

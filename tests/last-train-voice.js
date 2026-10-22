@@ -1,3 +1,4 @@
+process.env.LAST_TRAIN_EVENTS = 'off';
 const assert = require('node:assert/strict'), crypto = require('node:crypto');
 const { call, startRedis } = require('./helpers');
 (async () => {

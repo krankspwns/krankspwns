@@ -5,7 +5,7 @@ const { call, startRedis } = require('./helpers');
 const uuid = () => crypto.randomUUID();
 const rejected = (fn, status) => assert.throws(fn, e => e.status === status);
 function fixture(roles = r.plan(12), discussion = 'in-person') {
-  const room = { code: 'TEST', nightMode: 'legacy', rulesVersion: 2, version: 1, nightOrder: ['saboteur','medic','brave','careful','inspector','witness'], match: 1, round: 0, step: 0, settings: { extra: 'brave', blocker: true, discussion }, medicine: { heal: 1, poison: 1 }, history: [], speeches: [], players: roles.map((role,i) => ({ id: 'p'+i, name: role+i, role, originalRole: role, alive: true, used: {}, reports: [] })) };
+  const room = { code: 'TEST', nightMode: 'legacy', rulesVersion: 2, version: 1, nightOrder: ['saboteur','medic','brave','careful','inspector','witness'], match: 1, round: 0, step: 0, settings: { extra: 'brave', blocker: true, discussion, events: false }, medicine: { heal: 1, poison: 1 }, history: [], speeches: [], players: roles.map((role,i) => ({ id: 'p'+i, name: role+i, role, originalRole: role, alive: true, used: {}, reports: [] })) };
   room.hostId = room.players[0].id; room.seatOrder = room.players.map(p => p.id).reverse(); r.beginNight(room); r.advance(room); return room;
 }
 const person = (room, role) => room.players.find(p => p.role === role && p.alive);
@@ -104,6 +104,65 @@ function socialTests() {
   // Speaking time setting
   room.settings.speakSeconds=45;r.beginDiscussion(room);assert.equal(room.duration,45);
 }
+function roundFiveTests() {
+  const shared = (roles, event) => { const room = fixture(roles); room.nightMode = 'shared'; room.settings.events = false; if (event) room.event = { key: event, round: room.round }; r.phase(room, 'night', 25); return room; };
+  // Witness: two sightings, Watch or Glimpse; a glimpse shows two faces, one a Saboteur (three with a single Saboteur).
+  {
+    const room = shared(['witness','passenger','passenger','inspector','medic','saboteur','saboteur']), w = person(room,'witness');
+    r.advance(room); r.nightChoice(room, w, { power: 'glimpse' });
+    const g = w.reports.at(-1); assert.equal(g.type, 'glimpse'); assert.equal(g.ids.length, 2); assert.ok(!g.ids.includes(w.id));
+    assert.equal(g.ids.filter(id => r.group(room.players.find(p => p.id === id)) === 'saboteur').length, 1);
+    assert.equal(r.sightsLeft(w), 1); assert.equal(r.view(room, w).me.sightsLeft, 1);
+    w.used.sight = 1; room.night.choices = {}; r.nightChoice(room, w, { power: 'watch' }); assert.equal(r.sightsLeft(w), 0); assert.equal(w.used.watch, true);
+    room.night.choices = {}; rejected(() => r.nightChoice(room, w, { power: 'glimpse' }), 409);
+    const solo = shared(['witness','passenger','passenger','inspector','saboteur']), w2 = person(solo,'witness'); r.advance(solo); r.nightChoice(solo, w2, { power: 'glimpse' }); assert.equal(w2.reports.at(-1).ids.length, 3);
+    const legacy = shared(['witness','passenger','passenger','inspector','saboteur']), w3 = person(legacy,'witness'); w3.used.watch = true; r.advance(legacy); rejected(() => r.nightChoice(legacy, w3, { power: 'watch' }), 409);
+  }
+  // Forger: Disguise makes one Saboteur read GOOD to the Inspector tonight; allowed even as the only Saboteur.
+  {
+    r.validateLoadout(5, { crew: ['inspector'], passengers: [], saboteur: 'forger' }); rejected(() => r.validateLoadout(5, { crew: ['inspector'], passengers: [], saboteur: 'blocker' }), 400);
+    const room = shared(['passenger','passenger','inspector','medic','forger','saboteur']), f = person(room,'forger'), mate = person(room,'saboteur'), i = person(room,'inspector');
+    rejected(() => r.nightChoice(room, f, { power: 'disguise', targetId: i.id }), 400);
+    r.nightChoice(room, f, { power: 'disguise', targetId: mate.id }); rejected(() => r.nightChoice(room, f, { power: 'disguise', targetId: f.id }), 409);
+    r.nightChoice(room, f, { attackId: i.id }); assert.equal(room.night.choices[f.id].disguiseId, mate.id);
+    r.advance(room); r.nightChoice(room, i, { power: 'check', targetId: mate.id }); assert.equal(i.reports.at(-1).alignment, 'good');
+    const next = shared(['passenger','passenger','inspector','medic','forger','saboteur']), i2 = person(next,'inspector'); r.advance(next); r.nightChoice(next, i2, { power: 'check', targetId: person(next,'forger').id }); assert.equal(i2.reports.at(-1).alignment, 'bad');
+  }
+  // Carriage events.
+  {
+    const cut = shared(['witness','passenger','inspector','medic','saboteur'], 'power-cut'); r.advance(cut);
+    rejected(() => r.nightChoice(cut, person(cut,'inspector'), { power: 'check', targetId: person(cut,'saboteur').id }), 409); rejected(() => r.nightChoice(cut, person(cut,'witness'), { power: 'glimpse' }), 409); assert.equal(r.sightsLeft(person(cut,'witness')), 2);
+    const quiet = shared(['witness','passenger','inspector','medic','saboteur'], 'quiet'); rejected(() => r.sendLetter(quiet, quiet.players[0], quiet.players[1].id, 'Psst'), 409);
+    const moon = shared(['witness','passenger','inspector','medic','saboteur'], 'full-moon'); moon.deadline = Date.now() + 5000; rejected(() => r.nightChoice(moon, person(moon,'saboteur'), { attackId: moon.players[0].id }), 409);
+    moon.deadline = Date.now() + 24000; r.nightChoice(moon, person(moon,'saboteur'), { attackId: moon.players[0].id });
+    const day = shared(['witness','passenger','inspector','medic','saboteur'], 'express'); day.settings.speakSeconds = 30; r.beginDiscussion(day); assert.equal(day.duration, 15); r.beginVote(day); assert.equal(day.duration, 30);
+    day.event = { key: 'long-tunnel', round: day.round }; r.beginDiscussion(day); assert.equal(day.duration, 60);
+    day.event = { key: 'fog', round: day.round }; day.phase = 'discussion'; rejected(() => r.emote(day, day.players[0], 'laugh', 1), 409); assert.equal(r.view(day, day.players[0]).socialOpen, false);
+    const sealed = shared(['witness','passenger','inspector','medic','saboteur'], 'sealed'); sealed.sealedRounds = [sealed.round]; r.beginVote(sealed);
+    for (const p of r.alive(sealed)) sealed.votes[p.id] = { targetId: person(sealed,'passenger').id, weight: 1 };
+    r.resolveVote(sealed); assert.equal(r.view(sealed, sealed.players[0]).history.at(-1).votes, null); assert.equal(r.view(sealed, sealed.players[0]).history.at(-1).sealed, true);
+    const bag = shared(['witness','passenger','inspector','medic','saboteur'], 'luggage'); r.advance(bag); r.advance(bag);
+    for (const p of r.alive(bag)) { const clue = p.reports.find(x => x.type === 'clue'); assert.ok(clue); assert.notEqual(clue.targetId, p.id); const t = bag.players.find(q => q.id === clue.targetId); assert.notEqual(t.role, clue.role); assert.notEqual(r.group({ role: clue.role }), 'saboteur'); }
+    assert.equal(bag.nightLog.length, 1);
+    const view = r.view(bag, bag.players[0]); assert.equal(view.nightLog, null); assert.ok(!JSON.stringify(view).includes('"nightLog":['));
+  }
+  // Ghost guess: only out good players, once, scored at the finale.
+  {
+    const room = shared(['witness','passenger','inspector','medic','saboteur','saboteur']), out = person(room,'passenger'), bad = room.players.filter(p => r.group(p) === 'saboteur');
+    rejected(() => r.ghostGuess(room, out, bad.map(p => p.id)), 409);
+    out.alive = false; rejected(() => r.ghostGuess(room, out, [bad[0].id]), 400); r.ghostGuess(room, out, bad.map(p => p.id)); rejected(() => r.ghostGuess(room, out, bad.map(p => p.id)), 409);
+    bad[0].alive = false; rejected(() => r.ghostGuess(room, bad[0], [out.id, room.players[0].id]), 403);
+    room.winner = 'good'; r.finish(room); const v = r.view(room, out);
+    assert.ok(v.me.wallet.earnings.some(e => e.reason === 'Ghost guess: 2 right' && e.n === 10)); assert.ok(v.me.wallet.earnings.some(e => e.reason === 'Ghost guess: all right')); assert.ok(v.ghosts[out.id]); assert.ok(Array.isArray(v.nightLog));
+  }
+  // Restart: deal again or back to the platform, seating observers.
+  {
+    const room = shared(['witness','passenger','inspector','medic','saboteur']); room.observers = [{ id: 'o1', name: 'Late', observer: true, alive: false, avatarIndex: 3, used: {}, reports: [] }];
+    r.restart(room, 'lobby'); assert.equal(room.phase, 'lobby'); assert.equal(room.players.length, 6); assert.deepEqual(room.observers, []); assert.ok(room.players.every(p => !p.role && p.alive === undefined)); assert.equal(room.seatOrder, null);
+    assert.equal(r.view(room, room.players[5]).players.length, 6);
+    r.restart(room, 'deal'); assert.equal(room.phase, 'briefing'); assert.ok(room.players.every(p => p.role));
+  }
+}
 function engineTests() {
   const counts = [[3,1,1],[2,2,2],[3,2,2],[4,2,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
   for(let n=5;n<=12;n++){
@@ -114,7 +173,7 @@ function engineTests() {
   assert.deepEqual(r.plan(4),[]);assert.deepEqual(r.plan(13),[]);assert.ok(r.plan(12,{extra:'speaker',blocker:false}).includes('speaker'));
   // Starting thresholds and the real deal agree at every supported player count.
   for(let n=5;n<=12;n++){
-    const room={players:Array.from({length:n},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat'}};
+    const room={players:Array.from({length:n},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat',events:false}};
     r.start(room);assert.equal(room.players.length,n);assert.ok(room.players.every(p=>p.role));
     const view=r.view(room,room.players[0]);assert.deepEqual(['passenger','crew','saboteur'].map(g=>view.counts[g]),counts[n-5]);
     assert.equal(view.mix.reduce((total,m)=>total+m.count,0),n);assert.equal(view.me.role,null);
@@ -128,7 +187,7 @@ function engineTests() {
   }
   // Every new journey asks for fresh shuffle entropy; refreshing the same match preserves the deal.
   {
-    const room={players:Array.from({length:6},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat'}};
+    const room={players:Array.from({length:6},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat',events:false}};
     const original=crypto.randomInt;let calls=0;
     try {
       crypto.randomInt=limit=>{calls++;return limit-1;};r.start(room);const first=room.players.map(p=>p.role);
@@ -192,7 +251,7 @@ function engineTests() {
   }
   // Opening sequence keeps identities sealed until the cabin. Seats are a separate fixed shuffle.
   {
-    const room={players:Array.from({length:12},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat'}};
+    const room={players:Array.from({length:12},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat',events:false}};
     r.start(room);assert.equal(room.phase,'briefing');assert.equal(room.duration,20);assert.equal(new Set(room.seatOrder).size,12);
     for(const p of room.players){const v=r.view(room,p);assert.equal(v.me.role,null);assert.ok(!('allies' in v.me));assert.ok(v.players.every(q=>!q.role));}
     const seats=[...room.seatOrder];r.advance(room);assert.equal(room.phase,'boarding');assert.equal(r.view(room,room.players[0]).me.role,null);
@@ -315,7 +374,7 @@ function engineTests() {
   }
 }
 (async()=>{
-  engineTests();sharedNightTests();socialTests();const redis=process.argv.includes('--redis')?await startRedis():null;
+  engineTests();sharedNightTests();socialTests();roundFiveTests();const redis=process.argv.includes('--redis')?await startRedis():null;
   try{
     if(redis){process.env.UPSTASH_REDIS_REST_URL=redis.url;process.env.UPSTASH_REDIS_REST_TOKEN='test';}
     const handler=require('../api/last-train');assert.equal((await call(handler,'null')).s,400);
@@ -343,16 +402,20 @@ function engineTests() {
     assert.equal((await post(seats[1],'buy',{kind:'frame',key:'gold',step:-5})).s,200);assert.equal((await get(host)).j.players.find(p=>p.id===seats[1].meId).frame,'gold');
     assert.equal((await post(seats[1],'buy',{kind:'frame',key:'rainbow'})).s,402);
     assert.equal((await post(seats[1],'shuffleRoles')).s,403);
-    assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:{crew:['trainee'],passengers:[],saboteur:'normal'}})).s,400);
-    assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:custom})).s,200);
+    assert.equal((await post(host,'settings',{events:false,extra:'brave',blocker:true,discussion:'chat',roles:{crew:['trainee'],passengers:[],saboteur:'normal'}})).s,400);
+    assert.equal((await post(host,'settings',{events:false,extra:'brave',blocker:true,discussion:'chat',roles:custom})).s,200);
     assert.equal((await get(host)).j.mix.find(m=>m.role==='passenger').count,8);
     const shuffleView=(await get(host)).j,shuffleReq={action:'shuffleRoles',code:host.code,pid:host.meId,tok:host.tok,requestId:uuid(),match:shuffleView.match,round:shuffleView.round,step:shuffleView.step};
     const shuffled=await call(handler,shuffleReq);assert.equal(shuffled.s,200);assert.deepEqual((await call(handler,shuffleReq)).j.settings.roles,shuffled.j.settings.roles);
-    assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat',roles:null})).s,200);
+    assert.equal((await post(host,'settings',{events:false,extra:'brave',blocker:true,discussion:'chat',roles:null})).s,200);
     assert.equal((await post(seats[1],'settings',{extra:'brave',blocker:true,discussion:'chat'})).s,403);
-    assert.equal((await post(host,'settings',{extra:'brave',blocker:true,discussion:'chat'})).s,200);assert.equal((await post(host,'start')).j.phase,'briefing');
+    assert.equal((await post(host,'settings',{events:false,extra:'brave',blocker:true,discussion:'chat'})).s,200);assert.equal((await post(host,'start')).j.phase,'briefing');
     for(const s of seats){const v=(await get(s)).j;assert.equal(v.me.role,null);assert.ok(v.players.every(p=>!p.role));}
-    assert.equal((await enter('join',{code:host.code,name:'Late'})).s,409);
+    // A late arrival watches as an Observer: no role, no actions, and a seat at the next journey.
+    const late=await enter('join',{code:host.code,name:'Late'});assert.equal(late.s,200);assert.equal(late.j.me.observer,true);assert.equal(late.j.me.role,null);assert.equal(late.j.me.alive,false);
+    const lateSeat={code:host.code,meId:late.j.meId,tok:late.j.tok};assert.equal((await post(lateSeat,'ready')).s,403);assert.equal((await post(lateSeat,'emote',{e:'wow'})).s,409);
+    assert.ok((await get(host)).j.observers.some(o=>o.name==='Late'));assert.ok(!(await get(host)).j.players.some(p=>p.name==='Late'));
+    assert.equal((await post(lateSeat,'leave')).s,200);assert.ok(!(await get(host)).j.observers.some(o=>o.name==='Late'));
     const ready=await Promise.all(seats.map(s=>post(s,'ready')));assert.ok(ready.every(v=>v.s===200));assert.equal((await get(host)).j.phase,'boarding');await expire();assert.equal((await get(host)).j.phase,'settling');await expire();
     assert.equal((await get(host)).j.nightPhase,1);assert.equal((await get(host)).j.duration,25);
     const views=(await Promise.all(seats.map(get))).map(v=>v.j);assert.equal(new Set(views[0].players.map(p=>p.avatarIndex)).size,12,'neutral human portraits are unique and independent of roles');const bad=views.filter(v=>v.me.group==='saboteur'),w=views.find(v=>v.me.role==='witness'),m=views.find(v=>v.me.role==='medic'),ins=views.find(v=>v.me.role==='inspector');

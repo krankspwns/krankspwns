@@ -17,7 +17,7 @@
       const n = ++uniq, html = inner.replace(/id="([^"]+)"/g, (m, id) => 'id="' + id + '-' + n + '"').replace(/url\(#([^)]+)\)/g, (m, id) => 'url(#' + id + '-' + n + ')');
       const s = node('span', 'art48 ' + cls); s.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' + html + '</svg>'; return s;
     }
-    const player = id => state?.players.find(p => p.id === id);
+    const player = id => state?.players.find(p => p.id === id) || state?.observers?.find(p => p.id === id);
     function portrait(p, cls = '') {
       const i = p?.avatarIndex ?? 0, face = node('span', 'portrait portrait-passengers ' + (p?.frame ? 'has-frame bd-' + p.frame + ' ' : '') + cls);
       face.style.setProperty('--px', (i % 4) * 100 / 3 + '%'); face.style.setProperty('--py', Math.floor(i / 4) * 50 + '%'); face.setAttribute('aria-hidden', 'true');
