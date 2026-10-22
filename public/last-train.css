@@ -556,7 +556,7 @@ textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px
 .winner-cast { display: grid; grid-template-columns: repeat(var(--winner-columns,3), minmax(0,1fr)); gap: 22px 8px; width: min(780px,100%); margin: 0 auto; justify-content: center; }
 .winner-person { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0 3px 12px; min-width: 0; }
 .winner-person::before { content: ''; position: absolute; z-index: -1; inset: 12% -20% 12%; background: radial-gradient(ellipse at 50% 0%, #e9cb8929, transparent 65%); }
-.standing-traveller { width: 100%; max-width: 235px; aspect-ratio: 3/4; background: url('/last-train/standing.webp') var(--px) var(--py) / 400% 300% no-repeat; transform: translateX(var(--figure-shift,0%)); filter: saturate(.85) drop-shadow(0 13px 7px #0007); }
+.standing-traveller { width: 100%; max-width: 235px; aspect-ratio: 3/4; background: url('/last-train/standing.webp') var(--px) var(--py) / 400% 300% no-repeat; transform: translate(var(--figure-shift,0%),var(--ground-shift,0%)); filter: saturate(.85) drop-shadow(0 13px 7px #0007); }
 .winner-nameplate { width: 100%; text-align: center; border-top: 1px solid #e0c48670; padding: 11px 4px 0; background: radial-gradient(ellipse at 50% 0, #edc2770d, transparent 70%); }
 .winner-nameplate b { display: block; color: #f1dfba; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
 .winner-nameplate small { display: block; color: #b9a88e; font-size: 10px; margin-top: 3px; }

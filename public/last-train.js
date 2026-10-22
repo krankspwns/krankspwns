@@ -481,9 +481,10 @@
   }
   function standingTraveller(p) {
     const index = p.avatarIndex ?? Math.max(0, p.seat - 1);
-    // Alpha bounds differ in each atlas cell. Center the person, rather than the transparent cell.
+    // Alpha bounds differ in each atlas cell. Center the person and place their soles on the nameplate's ground line.
     const centerOffsets = [-17.2, -1.76, 2.88, 7.96, -14.17, -5.75, 3.04, 1.43, -7.64, -8.31, 4.15, 2.71];
-    return el('div', { class: 'standing-traveller', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + (index % 4 * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%;--figure-shift:' + (centerOffsets[index] || 0) + '%' });
+    const groundOffsets = [1.435, .239, 1.435, 0, .957, 1.196, 1.435, 1.675, 4.067, 5.742, 5.024, 5.263];
+    return el('div', { class: 'standing-traveller', 'data-avatar-index': index, 'aria-hidden': 'true', style: '--px:' + (index % 4 * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%;--figure-shift:' + (centerOffsets[index] || 0) + '%;--ground-shift:' + (groundOffsets[index] || 0) + '%' });
   }
   function finale() {
     const latest = state.history.at(-1), bad = state.winner === 'bad';

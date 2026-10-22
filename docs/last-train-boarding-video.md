@@ -1,6 +1,6 @@
 # Walking boarding sequence
 
-Status: proposed video production, not yet generated or installed. The available video-generation connector currently requires the user's Figma account to be linked to Weave. A model and generation cost must be quoted and approved before starting a paid run.
+Status: proposed video production, not yet generated or installed. The user's Figma/Weave account is linked, but Weave rejected the no-spend quote request with “Video models are only available on paid plans.” The current free plan cannot generate this clip. No video generation was started. A model and generation cost must be quoted and approved before starting a paid run.
 
 ## Visual direction
 
