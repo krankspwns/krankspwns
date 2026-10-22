@@ -8,14 +8,14 @@
     let state, owner, key = '', bots = [], running = false, working = false, message = '', timer, epoch = 0, autoAttemptedKey = '';
     const panel = document.createElement('section'); panel.className = 'panel test-players'; panel.setAttribute('aria-label', 'Test players');
     const title = document.createElement('h3'); title.textContent = 'Playtest with bots';
-    const hint = document.createElement('p'); hint.className = 'muted small'; hint.textContent = targetCount + ' simulated players can ready up, use powers, speak and vote. Friends can join with the normal room link. Keep this test-mode page open while playing.';
+    const hint = document.createElement('p'); hint.className = 'muted small'; hint.textContent = targetCount + ' simulated players can ready up, use powers, share role claims and vote. Saboteurs make false claims. Friends can join with the normal room link. Keep this test-mode page open while playing.';
     const status = document.createElement('p'); status.className = 'test-player-status'; status.setAttribute('role', 'status');
     const actions = document.createElement('div'); actions.className = 'test-player-actions';
     const add = document.createElement('button'); add.type = 'button'; add.className = 'secondary';
     const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'secondary';
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button'; remove.textContent = 'Remove test players';
     actions.append(add, toggle, remove); panel.append(title, hint, status, actions);
-    const save = () => { try { localStorage.setItem(key, JSON.stringify(bots.map(({ code, pid, tok, name }) => ({ code, pid, tok, name })))); } catch {} };
+    const save = () => { try { localStorage.setItem(key, JSON.stringify(bots.map(({ code, pid, tok, name, memory }) => ({ code, pid, tok, name, memory })))); } catch {} };
     function update() {
       const count = bots.length;
       status.textContent = message || (count ? count + ' test players · ' + (running ? 'Playing automatically' : 'Stopped') : 'No test players added.');
@@ -35,6 +35,7 @@
     }
     async function act(bot, view) {
       const me = view.me, phase = view.phase;
+      if (window.trainTestStrategy.remember(bot, view)) save();
       if (view.paused || !me.alive || me.departed) return;
       const others = view.players.filter(p => p.alive && p.id !== view.meId);
       const choose = players => { const tests = players.filter(p => p.name.startsWith('Bot ')); const list = tests.length ? tests : players; return list[Math.floor(Math.random() * list.length)]; };
@@ -50,7 +51,8 @@
           if (active === 'medic') {
             if (!me.blocked && !me.medicineChoice) {
               const power = me.patientId && me.medicine.heal ? 'heal' : 'pass';
-              await request(bot, 'medicine', view, { power });
+              const result = await request(bot, 'medicine', view, { power });
+              if (window.trainTestStrategy.remember(bot, result)) save();
             }
           } else if (['brave', 'careful', 'inspector', 'witness'].includes(active)) {
             let power = { brave: 'cover', careful: 'lock', inspector: 'check', witness: 'watch' }[active];
@@ -60,9 +62,10 @@
         }
       }
       if (phase === 'discussion' && view.speakerId === view.meId) {
-        if (view.settings.discussion === 'chat') {
-          if (!view.speeches.some(s => s.round === view.round && s.id === view.meId)) await request(bot, 'speak', view, { text: 'I’m a test player. I’m listening to everyone before I vote.' });
-        } else {
+        if (!view.speeches.some(s => s.round === view.round && s.id === view.meId)) {
+          await request(bot, 'speak', view, { text: window.trainTestStrategy.statement(bot, view) });
+        }
+        if (view.settings.discussion !== 'chat') {
           if (bot.speechStep !== view.step) { bot.speechStep = view.step; bot.speechAt = Date.now() + 4000; }
           if (Date.now() >= bot.speechAt) await request(bot, 'finishSpeech', view);
         }

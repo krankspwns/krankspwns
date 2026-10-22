@@ -34,6 +34,19 @@ function engineTests() {
     assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,1);
     r.start(room);assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,2);
   }
+  // Every new journey asks for fresh shuffle entropy; refreshing the same match preserves the deal.
+  {
+    const room={players:Array.from({length:6},(_,i)=>({id:'p'+i,name:'Player '+i})),settings:{discussion:'chat'}};
+    const original=crypto.randomInt;let calls=0;
+    try {
+      crypto.randomInt=limit=>{calls++;return limit-1;};r.start(room);const first=room.players.map(p=>p.role);
+      assert.equal(calls,10);assert.equal(room.match,1);assert.deepEqual(room.players.map(p=>p.id),['p0','p1','p2','p3','p4','p5']);
+      for(const p of room.players)r.view(room,p);assert.equal(calls,10);assert.deepEqual(room.players.map(p=>p.role),first);
+      crypto.randomInt=()=>{calls++;return 0;};r.start(room);
+      assert.equal(calls,20);assert.equal(room.match,2);assert.notDeepEqual(room.players.map(p=>p.role),first);
+      assert.deepEqual(room.players.map(p=>p.role).sort(),first.sort());
+    }finally{crypto.randomInt=original;}
+  }
   // Custom mixes allow all normal Passengers, one special Saboteur at most, and more Passengers than Crew except the six-player 2/2 split.
   for(let n=5;n<=12;n++){
     const slots=r.teamSlots(n),roles={crew:['medic'],passengers:[],saboteur:n===5?'normal':'blocker'};

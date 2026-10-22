@@ -274,7 +274,7 @@ test('test mode chats once per turn and removes only its five seats from the lob
     await controls.getByRole('button',{name:'Remove test players'}).click();await expect(p.locator('.seat')).toHaveCount(1);expect((await store.load(host.code)).players.map(p=>p.id)).toEqual([host.meId]);
     await controls.getByRole('button',{name:'Add 5 test players'}).click();await expect(p.locator('.seat')).toHaveCount(6);
     let room=await store.load(host.code);room.settings.discussion='chat';rules.start(room);rules.beginDiscussion(room);if(rules.speakerId(room)===host.meId)rules.nextSpeaker(room);await store.save(room);
-    await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(1);room=await store.load(host.code);const first=room.speeches[0];expect(first.text).toContain('test player');expect(first.id).not.toBe(host.meId);
+    await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(1);room=await store.load(host.code);const first=room.speeches[0];expect(first.text).toMatch(/I'm (?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|Trainee|a Passenger)/);expect(first.id).not.toBe(host.meId);
     // A new speaker gets a distinct single statement; the first is never duplicated.
     rules.nextSpeaker(room);if(rules.speakerId(room)===host.meId)rules.nextSpeaker(room);await store.save(room);await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(2);room=await store.load(host.code);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(2);
     await expect(controls.getByRole('button',{name:'Remove test players'})).toBeDisabled();
@@ -337,5 +337,39 @@ test('night accordions retain their state and the larger colored notebook preven
     const view=await read(p);expect(view.players.filter(p=>!p.alive).every(p=>!p.role&&!p.group)).toBe(true);expect(view.history.flatMap(e=>e.outs).every(p=>!p.role&&!p.group)).toBe(true);expect(view.counts).toEqual({passenger:6,crew:3,saboteur:3});
     await p.getByRole('button',{name:'Open private notebook'}).click();const book=p.getByRole('dialog',{name:'My notebook'});await book.getByRole('button',{name:'Draw',exact:true}).click();await book.getByRole('button',{name:'Ruby ink',exact:true}).click();const canvas=book.locator('canvas'),bounds=await canvas.boundingBox();expect(bounds.height).toBeGreaterThan(400);await p.mouse.move(bounds.x+35,bounds.y+60);await p.mouse.down();await p.mouse.move(bounds.x+130,bounds.y+110,{steps:10});await p.mouse.up();await expect(book.getByRole('status')).toHaveText('Saved on this device');expect(await p.evaluate(()=>getSelection().toString())).toBe('');
     const note=await p.evaluate(()=>JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>k.startsWith('lt-notebook:')))));expect(note.strokes[0].color).toBe('#a22d46');expect(await canvas.evaluate(c=>{const a=c.getContext('2d').getImageData(0,0,c.width,c.height).data;for(let i=0;i<a.length;i+=4)if(a[i]>a[i+1]+30&&a[i+3]>100)return true;return false;})).toBe(true);await book.getByRole('button',{name:'Eraser',exact:true}).click();await book.getByRole('button',{name:'Blue ink',exact:true}).click();await expect(book.locator('[data-note-tool=pen]')).toHaveAttribute('aria-pressed','true');await p.screenshot({path:info.outputPath('notebook-large-colors.png')});await p.keyboard.press('Escape');await p.reload();await p.getByRole('button',{name:'Open private notebook'}).click();await p.getByRole('dialog',{name:'My notebook'}).getByRole('button',{name:'Draw',exact:true}).click();expect(await canvas.evaluate(c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((n,i)=>i%4===3&&n>0))).toBe(true);
+  }finally{await c.close();}
+});
+
+test('bot discussion reports an actual check, remembered heal and door lock while Saboteurs claim good roles',async({browser})=>{
+  const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
+  const host=(await call(handler,{action:'create',name:'Benny',requestId:crypto.randomUUID()})).j;
+  const c=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+    await c.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:host.code,pid:host.meId,tok:host.tok});
+    await c.route('**/api/last-train**',async route=>{const req=route.request(),q=new URL(req.url());const r=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});
+    const p=await c.newPage();await p.goto('/last-train.html?test=1');const controls=p.getByRole('region',{name:'Test players'});await controls.getByRole('button',{name:'Add 5 test players'}).click();await expect(p.locator('.seat')).toHaveCount(6);
+    await controls.getByRole('button',{name:'Stop autoplay',exact:true}).click();
+    let room=await store.load(host.code);room.settings.discussion='chat';rules.start(room);
+    const [human,inspector,medic,careful,bad,ally]=room.players;
+    for(const [i,role] of ['witness','inspector','medic','careful','saboteur','saboteur'].entries())Object.assign(room.players[i],{role,originalRole:role});
+    rules.beginNight(room);rules.advance(room);rules.nightChoice(room,careful,{power:'lock'});rules.advance(room);
+    for(const b of [bad,ally])rules.nightChoice(room,b,{attackId:human.id});rules.advance(room);await store.save(room);
+    await expect(p.locator('#lt-app')).toHaveAttribute('data-night-role','medic');await controls.getByRole('button',{name:'Resume autoplay',exact:true}).click();
+    await expect.poll(async()=>(await store.load(host.code)).night.medicine?.power).toBe('heal');
+    room=await store.load(host.code);rules.advance(room);rules.nightChoice(room,room.players.find(a=>a.id===inspector.id),{power:'check',targetId:bad.id});
+    while(room.phase==='night')rules.advance(room);room.deadline=Date.now()+120000;await store.save(room);
+    // The Medic's private action survives a host refresh without publishing medicine in normal room state.
+    await expect.poll(()=>p.evaluate(()=>{const k=Object.keys(localStorage).find(k=>k.startsWith('lt-test-players:'));return JSON.parse(localStorage.getItem(k)||'[]').find(b=>b.memory?.medicine?.power==='heal')?.memory.medicine.targetId;})).toBe(human.id);
+    await p.reload();await expect(p.locator('#lt-app')).toHaveAttribute('data-phase','gathering');
+    room=await store.load(host.code);rules.beginDiscussion(room);room.speakingOrder=[inspector.id,medic.id,careful.id,bad.id,ally.id,human.id];await store.save(room);
+    const speech=async id=>(await store.load(host.code)).speeches.find(s=>s.id===id)?.text;
+    await expect.poll(()=>speech(inspector.id)).toBe("I'm Inspector. I checked "+bad.name+' last night: BAD.');
+    room=await store.load(host.code);rules.nextSpeaker(room);await store.save(room);
+    await expect.poll(()=>speech(medic.id)).toBe("I'm Medic. I used my heal on Benny last night.");
+    room=await store.load(host.code);rules.nextSpeaker(room);await store.save(room);
+    await expect.poll(()=>speech(careful.id)).toBe("I'm Careful Passenger. I used my door lock last night.");
+    room=await store.load(host.code);rules.nextSpeaker(room);await store.save(room);
+    await expect.poll(()=>speech(bad.id)).toMatch(/^I'm (?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|a Passenger)/);
+    expect(await speech(bad.id)).not.toContain(ally.name);room=await store.load(host.code);expect(room.speeches).toHaveLength(4);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(4);
   }finally{await c.close();}
 });
