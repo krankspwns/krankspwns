@@ -434,7 +434,7 @@
     const confirm = btn('Choose Someone', () => { if (fence() !== bound) return d.close(); d.close(); send(action, { ...extra, ...(action === 'vote' ? { targetId: selected === 'skip' ? null : selected, doubled: double } : action === 'night' && state.nightRole === 'saboteur' && extra.power !== 'block' ? { attackId: selected === 'skip' ? null : selected } : { targetId: selected }) }); }, tone === 'vote' ? 'gold' : ['attack', 'poison', 'block'].includes(tone) ? 'danger' : tone === 'protect' ? 'heal' : 'secondary', true, 'confirm-target');
     const select = id => {
       selected = id; list.querySelectorAll('button').forEach(b => { b.classList.toggle('selected', b.dataset.id === id); b.setAttribute('aria-pressed', b.dataset.id === id); });
-      confirm.disabled = false; confirm.replaceChildren(id === 'skip' ? txt('span', 'confirm-skip', '⊘') : avatar(id, 'confirm-avatar'), txt('span', '', 'Confirm: ' + (id === 'skip' ? 'Skip' : who(id))));
+      confirm.disabled = false; confirm.replaceChildren(id === 'skip' ? el('span', { class: 'confirm-skip', 'aria-hidden': 'true' }, '⊘') : avatar(id, 'confirm-avatar'), txt('span', '', 'Confirm: ' + (id === 'skip' ? 'Skip' : who(id))));
       if (id === 'skip') { double = false; if (doubleInput) { doubleInput.checked = false; doubleInput.disabled = true; } } else if (doubleInput) doubleInput.disabled = false;
     };
     let doubleInput;
