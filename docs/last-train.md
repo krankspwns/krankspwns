@@ -11,7 +11,7 @@ The journey now uses illustrated train scenes: team introductions → boarding o
 | Players | Passengers | Crew | Saboteurs |
 | --- | --- | --- | --- |
 | 5 | 3 | 1 | 1 |
-| 6 | 3 | 1 | 2 |
+| 6 | 2 | 2 | 2 |
 | 7 | 3 | 2 | 2 |
 | 8 | 4 | 2 | 2 |
 | 9 | 4 | 3 | 2 |
@@ -21,7 +21,7 @@ The journey now uses illustrated train scenes: team introductions → boarding o
 
 Saboteur counts are 1 at five players, 2 at six to nine, and 3 at ten to twelve. A running game keeps its dealt roles and original role summary; the new mix applies when the host starts another journey.
 
-These are initial mixes for group playtesting, not a claim of verified competitive balance. These are recommended mixes. Passengers strictly outnumber Crew. Five/six-player rooms have one Crew slot (Inspector by default); seven/eight have two (Inspector and Medic); nine to twelve have three (including Trainee). Recommended Passenger powers include Careful and Witness, plus Brave at nine or more. At twelve, one bad player defaults to Blocker.
+These are initial mixes for group playtesting, not a claim of verified competitive balance. These are recommended mixes. Passengers outnumber Crew except at six players, where the recommended mix has two of each. Five-player rooms have one Crew slot (Inspector by default); six to eight have two (Inspector and Medic); nine to twelve have three (including Trainee). Recommended Passenger powers include Careful and Witness, plus Brave at nine or more. At twelve, one bad player defaults to Blocker.
 
 The host can choose roles before the first journey and before replay: one to three distinct Crew within the size limit, at least Inspector or Medic; any subset of the four special Passenger roles, including none; normal Passengers fill every remaining Passenger seat. One Saboteur is always normal. With two or three Saboteurs, the host can use all normal Saboteurs or replace one with Blocker. Roles are always dealt to people at random. Shuffle roles creates a valid random mix and Recommended roles restores the preset. Choices adapt if the room grows or shrinks. An already-dealt match keeps its original roles and night order.
 

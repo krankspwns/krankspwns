@@ -13,7 +13,7 @@ function turn(room, role) { while (room.phase === 'night' && r.nightRole(room) !
 function morning(room) { while(room.phase === 'night')r.advance(room); assert.equal(room.phase,'gathering'); r.advance(room); assert.equal(room.phase,'morning'); }
 function attack(room, target) { for(const p of r.alive(room).filter(p=>r.group(p)==='saboteur'))r.nightChoice(room,p,{attackId:target}); }
 function engineTests() {
-  const counts = [[3,1,1],[3,1,2],[3,2,2],[4,2,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
+  const counts = [[3,1,1],[2,2,2],[3,2,2],[4,2,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];
   for(let n=5;n<=12;n++){
     const roles=r.plan(n);assert.equal(roles.length,n);assert.ok(roles.includes('witness'));
     assert.deepEqual(['passenger','crew','saboteur'].map(g=>roles.filter(role=>r.ROLES[role].group===g).length),counts[n-5]);
@@ -34,13 +34,15 @@ function engineTests() {
     assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,1);
     r.start(room);assert.equal(r.view(room,room.players[0]).mix.find(m=>m.role==='saboteur').count,2);
   }
-  // Custom mixes allow all normal Passengers, one special Saboteur at most, and strictly more Passengers than Crew.
+  // Custom mixes allow all normal Passengers, one special Saboteur at most, and more Passengers than Crew except the six-player 2/2 split.
   for(let n=5;n<=12;n++){
     const slots=r.teamSlots(n),roles={crew:['medic'],passengers:[],saboteur:n===5?'normal':'blocker'};
     r.validateLoadout(n,roles);const mix=r.plan(n,{roles});assert.equal(mix.length,n);assert.equal(mix.filter(k=>k==='passenger').length,slots.good-1);
     assert.equal(mix.filter(k=>k==='blocker').length,n===5?0:1);
-    for(let i=0;i<20;i++){const chosen=r.randomLoadout(n);r.validateLoadout(n,chosen);const mix=r.plan(n,{roles:chosen});assert.equal(mix.length,n);assert.ok(mix.filter(k=>r.ROLES[k].group==='passenger').length>chosen.crew.length);}
+    for(let i=0;i<20;i++){const chosen=r.randomLoadout(n);r.validateLoadout(n,chosen);const mix=r.plan(n,{roles:chosen});assert.equal(mix.length,n);const passengers=mix.filter(k=>r.ROLES[k].group==='passenger').length;assert.ok(n===6?passengers>=chosen.crew.length:passengers>chosen.crew.length);}
   }
+  r.validateLoadout(6,{crew:['inspector','medic'],passengers:[],saboteur:'normal'});
+  rejected(()=>r.validateLoadout(6,{crew:['inspector','medic','trainee'],passengers:[],saboteur:'normal'}),400);
   rejected(()=>r.validateLoadout(5,{crew:['inspector','medic'],passengers:[],saboteur:'normal'}),400);
   rejected(()=>r.validateLoadout(7,{crew:['trainee'],passengers:[],saboteur:'normal'}),400);
   rejected(()=>r.validateLoadout(7,{crew:['medic','medic'],passengers:[],saboteur:'normal'}),400);

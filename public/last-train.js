@@ -195,7 +195,7 @@
     const slots = state.teamSlots; if (!slots || state.hostId !== state.meId) return;
     const selectedMix = state.phase === 'finished' ? state.nextMix : state.mix;
     let draft = { crew: selectedMix.filter(m => role(m.role).group === 'crew').map(m => m.role), passengers: selectedMix.filter(m => role(m.role).group === 'passenger' && m.role !== 'passenger').map(m => m.role), saboteur: selectedMix.some(m => m.role === 'blocker') ? 'blocker' : 'normal' };
-    const d = dialog('Choose tonight’s roles', txt('p', 'muted small', 'Choose the role mix. Players receive their roles at random. Passengers always outnumber Crew.'));
+    const d = dialog('Choose tonight’s roles', txt('p', 'muted small', 'Choose the role mix. Players receive their roles at random. ' + (state.players.filter(p => !p.departed).length === 6 ? 'Six players can have two Passengers and two Crew.' : 'Passengers outnumber Crew.')));
     d.classList.add('role-picker'); d.dataset.turn = fence();
     const content = el('div', { class: 'role-picker-content' });
     const commit = btn('Use these roles', () => { d.close(); setting({ roles: draft }); }, 'gold');

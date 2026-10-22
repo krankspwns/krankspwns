@@ -281,7 +281,7 @@ test('test mode chats once per turn and removes only its five seats from the lob
   }finally{await context.close();}
 });
 
-for(const count of [5,6])test(count+' players can start and replay with the correct Saboteur count',async({browser})=>{
+for(const count of [5,6])test(count+' players can start and replay with the correct team counts',async({browser})=>{
   const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
   const enter=(action,data)=>call(handler,{action,requestId:crypto.randomUUID(),...data});
   const host=(await enter('create',{name:'Small host'})).j;
@@ -294,9 +294,10 @@ for(const count of [5,6])test(count+' players can start and replay with the corr
     const early=await enter('start',{code:host.code,pid:host.meId,tok:host.tok,match:0,round:0,step:0});expect(early.s).toBe(409);expect(early.j.error).toContain('5–12');
     for(let i=4;i<count;i++)await enter('join',{code:host.code,name:'Guest '+i});await expect(p.locator('.seat')).toHaveCount(count);await expect(p.getByRole('button',{name:'START JOURNEY'})).toBeEnabled();
     const badCount=count===5?1:2;await expect(p.locator('.role-mix > span').filter({hasText:'Saboteur'})).toContainText(badCount+'×');
-    await p.getByRole('button',{name:'START JOURNEY'}).click();await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();const view=await read(p);expect(view.counts.saboteur).toBe(badCount);expect(view.me.role).toBeNull();expect(view.players.every(a=>!a.role)).toBe(true);
+    if(count===6){await p.getByRole('button',{name:'Choose roles',exact:true}).click();const d=p.getByRole('dialog');await expect(d.locator('.role-budget')).toHaveText('2 Passengers2 Crew2 Saboteurs');await expect(d.locator('.role-option').filter({has:p.getByText('Medic',{exact:true})}).getByRole('checkbox')).toBeChecked();await d.getByRole('button',{name:'Use these roles'}).click();}
+    await p.getByRole('button',{name:'START JOURNEY'}).click();await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();const view=await read(p);expect(view.counts).toEqual(count===6?{passenger:2,crew:2,saboteur:2}:{passenger:3,crew:1,saboteur:1});expect(view.me.role).toBeNull();expect(view.players.every(a=>!a.role)).toBe(true);
     // Replay at the new minimum uses the same rules as the initial deal.
-    const room=await store.load(host.code);room.phase='finished';room.winner='good';room.winReason='Test game finished.';room.deadline=null;await store.save(room);await expect(p.getByRole('button',{name:'PLAY AGAIN'})).toBeEnabled();await p.getByRole('button',{name:'PLAY AGAIN'}).click();await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();expect((await read(p)).counts.saboteur).toBe(badCount);expect((await read(p)).match).toBe(2);
+    const room=await store.load(host.code);room.phase='finished';room.winner='good';room.winReason='Test game finished.';room.deadline=null;await store.save(room);await expect(p.getByRole('button',{name:'PLAY AGAIN'})).toBeEnabled();await p.getByRole('button',{name:'PLAY AGAIN'}).click();await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();expect((await read(p)).counts).toEqual(view.counts);expect((await read(p)).match).toBe(2);
     expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   }finally{await context.close();}
 });
