@@ -5,7 +5,7 @@ const rules = require('../../lib/last-train-rules');
 const store = require('../../lib/last-train-store');
 const mediaPath = '/last-train/boarding.c0472ce51f03.mp4';
 
-async function boarding(browser, { reducedMotion = 'no-preference', blockedDownload = false, blockedAutoplay = false, blockedSound = false } = {}) {
+async function boarding(browser, { reducedMotion = 'no-preference', blockedDownload = false, blockedAutoplay = false, blockedSound = false, holdFirstFrame = false, phase = 'boarding', paused = true } = {}) {
   const headers = { 'x-forwarded-for': test.info().testId };
   const make = async body => {
     const result = await call(handler, { requestId: crypto.randomUUID(), ...body }, {}, headers);
@@ -14,12 +14,16 @@ async function boarding(browser, { reducedMotion = 'no-preference', blockedDownl
   const host = await make({ action: 'create', name: 'Boarding host' });
   for (let i = 1; i < 12; i++) await make({ action: 'join', code: host.code, name: 'Traveller ' + i });
   const room = await store.load(host.code);
-  rules.start(room); rules.board(room);
-  Object.assign(room, { paused: true, pauseRemaining: 3000, deadline: null });
+  rules.start(room); if (phase === 'boarding') rules.board(room);
+  Object.assign(room, paused ? { paused: true, pauseRemaining: 3000, deadline: null } : { paused: false, deadline: Date.now() + 6000 });
   await store.save(room);
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion });
   const owner = { code: host.code, pid: host.meId, tok: host.tok };
   await context.addInitScript(seat => localStorage.setItem('lt-seat', JSON.stringify(seat)), owner);
+  if (holdFirstFrame) await context.addInitScript(() => {
+    const frame = HTMLVideoElement.prototype.requestVideoFrameCallback;
+    HTMLVideoElement.prototype.requestVideoFrameCallback = function(callback) { return frame.call(this, (...args) => { window.releaseBoardingFrame = () => callback(...args); }); };
+  });
   if (blockedAutoplay || blockedSound) await context.addInitScript(({ blockedAutoplay }) => {
     const play = HTMLMediaElement.prototype.play;
     document.addEventListener('click', e => { window.boardingSoundGesture = true; }, true);
@@ -37,7 +41,7 @@ async function boarding(browser, { reducedMotion = 'no-preference', blockedDownl
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (request.url().endsWith(mediaPath)) mediaRequests.push(request.url()); });
   await page.goto('/last-train.html');
-  await expect(page.locator('#lt-app')).toHaveAttribute('data-phase', 'boarding');
+  await expect(page.locator('#lt-app')).toHaveAttribute('data-phase', phase);
   return { page, context, errors, mediaRequests, host, post: async action => {
     const current = await store.load(host.code);
     return make({ action, ...owner, match: current.match, round: current.round, step: current.step });
@@ -172,4 +176,34 @@ test('repeat video loads reuse the browser cache', async ({ browser, baseURL }) 
     expect(range.status()).toBe(206);
     expect((await range.body()).length).toBe(100);
   } finally { await context.close(); }
+});
+
+
+test('boarding keeps the poster over the initial seek until a decoded frame is presented', async ({browser}) => {
+  const b = await boarding(browser, {holdFirstFrame: true, paused: false});
+  try {
+    const video=b.page.locator('.boarding-video');
+    await expect.poll(()=>video.evaluate(v=>v.readyState)).toBeGreaterThanOrEqual(2);
+    await expect.poll(()=>b.page.evaluate(()=>typeof window.releaseBoardingFrame)).toBe('function');
+    expect(await video.evaluate(v=>getComputedStyle(v).opacity)).toBe('0');
+    await expect(b.page.locator('.boarding-poster')).toBeVisible();
+    await b.page.evaluate(()=>window.releaseBoardingFrame());
+    await expect(video).toHaveAttribute('data-ready','true');
+    await expect.poll(()=>video.evaluate(v=>getComputedStyle(v).opacity)).toBe('1');
+    expect(b.errors).toEqual([]);
+  } finally {await b.context.close();}
+});
+test('the introduction preloads the approved clip and reuses it when boarding begins', async ({browser}) => {
+  const b=await boarding(browser,{phase:'briefing'});
+  try {
+    await expect.poll(()=>b.mediaRequests.length).toBeGreaterThan(0);
+    await expect(b.page.locator('.boarding-video')).toHaveCount(0);
+    const before=b.mediaRequests.length;
+    const room=await store.load(b.host.code);rules.board(room);Object.assign(room,{paused:true,pauseRemaining:6000,deadline:null});await store.save(room);
+    const video=b.page.locator('.boarding-video');await expect(video).toBeAttached();
+    await expect(video).toHaveAttribute('data-ready','true');
+    expect(await video.evaluate(v=>v.currentTime)).toBeLessThan(.1);
+    expect(b.mediaRequests.length).toBe(before);
+    expect(b.errors).toEqual([]);
+  }finally{await b.context.close();}
 });

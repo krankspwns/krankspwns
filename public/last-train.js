@@ -232,17 +232,35 @@
   const art = name => { const mobile = { cabin:'cabin', 'lounge-room':'lounge-room-mobile' }[name]; return el('picture', { class: 'world-picture' }, mobile ? el('source', { media: '(max-width: 680px)', srcset: '/last-train/' + mobile + '.webp' }) : null, el('img', { class: 'world-art', src: '/last-train/' + name + '.webp', alt: '', 'aria-hidden': 'true' })); };
   const rolePreview = { passenger: 'Listen, share and vote.', careful: 'Lock your own door once.', brave: 'Protect someone once. Heal + protection is deadly.', witness: 'Watch the attack target once.', speaker: 'Use a double vote once.', inspector: 'Check GOOD or BAD each night.', medic: 'One heal and one poison. Choose one per night.', trainee: 'Take a fallen Crew member’s job.', saboteur: 'Choose one shared attack. Anyone can be a target.', blocker: 'A Saboteur who can also block one power once.' };
   function introScene() {
+    prepareBoardingVideo();
     const groups = [['good', 'GOOD TEAM', 'Passengers + Crew', 'Find every Saboteur. Keep both good groups alive.'], ['bad', 'BAD TEAM', 'Saboteurs', 'Get all Passengers OR all Crew out. Your team knows each other.']];
     return el('section', { class: 'role-intro scene-panel' }, art('platform'), hud('BEFORE WE DEPART', 'Meet the two teams.', 'These are the roles aboard tonight. Who gets which role stays secret.'), el('div', { class: 'team-intros' }, ...groups.map(([g,tag,title,goal]) => el('section', { class: 'team-intro ' + g }, txt('span', 'team-label', tag), el('h2', {}, title), txt('p', 'team-intro-goal', goal), el('div', { class: 'introduced-roles' }, ...state.mix.filter(m => (role(m.role).group === 'saboteur') === (g === 'bad')).map(m => el('div', { class: 'introduced-role' }, rolePortrait(m.role, 'intro-portrait'), el('div', {}, el('b', {}, role(m.role).name, txt('small', '', ' ×' + m.count)), txt('p', '', rolePreview[m.role]), g === 'good' ? txt('small', 'intro-kind ' + role(m.role).group, role(m.role).group === 'crew' ? 'CREW' : 'PASSENGER') : null))))))),
       el('div', { class: 'intro-footer' }, txt('p', 'muted small', 'Seats are shuffled separately from roles. Your seat number sets your speaking order.'), state.me.ready ? txt('p', 'choice-saved', '✓ Ready to board. Waiting for the others…') : btn('I’m ready · board the train', () => send('ready'), 'gold')));
   }
-  function boardingScene() {
+  function prepareBoardingVideo() {
     const key = [state.code, state.match, 'boarding'].join(':');
-    if (motionOK && (!boardingVideo || boardingVideoKey !== key)) {
-      boardingVideo?.pause();
-      boardingVideoKey = key;
-      boardingVideo = el('video', { class: 'boarding-video', src: '/last-train/boarding.c0472ce51f03.mp4', poster: '/last-train/boarding-poster.webp', muted: false, defaultMuted: false, playsInline: true, preload: 'auto', tabIndex: -1, onloadedmetadata: syncBoardingVideo, onerror: e => { e.currentTarget.hidden = true; } });
-    }
+    if (!motionOK || (boardingVideo && boardingVideoKey === key)) return;
+    boardingVideo?.pause();
+    boardingVideoKey = key;
+    boardingVideo = el('video', { class: 'boarding-video', src: '/last-train/boarding.c0472ce51f03.mp4', poster: '/last-train/boarding-poster.webp', muted: false, defaultMuted: false, playsInline: true, preload: 'auto', tabIndex: -1,
+      onloadedmetadata: syncBoardingVideo, onloadeddata: syncBoardingVideo, onseeked: syncBoardingVideo,
+      onerror: e => { e.currentTarget.hidden = true; } });
+    // Warm the approved clip during the introduction, before the shared boarding clock starts.
+    boardingVideo.load();
+  }
+  function revealBoardingFrame(video) {
+    if (video.framePending || video.dataset.ready || video.seeking || video.readyState < 2) return;
+    video.framePending = true;
+    const reveal = () => {
+      video.framePending = false;
+      if (boardingVideo === video && video.isConnected && !video.seeking && video.readyState >= 2 && state?.phase === 'boarding') video.dataset.ready = 'true';
+    };
+    // Keep the poster visible until the correctly positioned frame has actually been decoded.
+    if (video.requestVideoFrameCallback && !state.paused) video.requestVideoFrameCallback(reveal);
+    else requestAnimationFrame(reveal);
+  }
+  function boardingScene() {
+    prepareBoardingVideo();
     return el('section', { style: '--elapsed:' + Math.max(0,(state.duration || 6) - (state.remainingMs || 0)/1000) + 's', class: 'world platform-scene', 'aria-label': 'Everyone boards the train' },
       el('div', { class: 'boarding-cinema', 'aria-hidden': 'true' }, el('img', { class: 'boarding-poster', src: '/last-train/boarding-poster.webp', alt: '' }), motionOK ? boardingVideo : null),
       hud('ALL ABOARD', 'Next stop: the unknown.', 'The carriage is ready. Find your cabin.'),
@@ -265,18 +283,23 @@
   function syncBoardingVideo() {
     const video = boardingVideo;
     if (!video) return;
+    if (state?.phase === 'briefing' && seat) return;
     if (state?.phase !== 'boarding' || !seat) {
       video.pause(); video.removeAttribute('src'); video.load();
       boardingVideo = null; boardingVideoKey = ''; return;
     }
 
-    if (!video.isConnected || video.hidden || video.readyState < 1) return;
+    if (!video.isConnected || video.hidden || video.readyState < 1 || !Number.isFinite(video.duration)) return;
     const elapsed = Math.max(0, (state.duration || 6) - (state.remainingMs || 0) / 1000 + (state.paused ? 0 : (Date.now() - state.receivedAt) / 1000));
     const target = Math.min(elapsed, video.duration);
     // Server time owns the transition; media completion never advances the room.
-    if (Math.abs(video.currentTime - target) > (state.paused ? .05 : .65)) {
-      try { video.currentTime = target; } catch { return; }
+    if (video.seeking) return;
+    if (Math.abs(video.currentTime - target) > (state.paused || !video.positioned ? .05 : 1.25)) {
+      try { video.positioned = true; video.currentTime = target; } catch { return; }
+      return;
     }
+    video.positioned = true;
+    revealBoardingFrame(video);
     if (state.paused || document.hidden || elapsed >= video.duration) video.pause();
     else if (video.paused && !video.playPending) playBoardingVideo(video);
   }
