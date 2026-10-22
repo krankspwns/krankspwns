@@ -22,6 +22,7 @@
   const role = key => state?.catalog?.[key] || { name: 'Secret role', icon: '🔒', description: '' };
   const who = id => state?.players.find(p => p.id === id)?.name || 'Nobody';
   const ROLE_ART = { passenger:0, careful:1, brave:2, witness:3, speaker:4, inspector:5, medic:6, trainee:7, saboteur:8, blocker:9 };
+  let crestSerial = 0;
   function portrait(index, set, cls = '', label = '') {
     return el('span', { class: 'portrait portrait-' + set + ' ' + cls, style: '--px:' + ((index % 4) * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%', 'aria-hidden': 'true', 'data-portrait-set': set, ...(label ? { 'data-role-art': label } : {}) });
   }
@@ -145,7 +146,8 @@
   }
   function trainMark(cls = '') {
     const n = el('span', { class: 'train-mark ' + cls, 'aria-hidden': 'true' });
-    n.innerHTML = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 35V19a15 15 0 0 1 30 0v16M14 35h20M17 39l-3 5M31 39l3 5"/><rect x="15" y="12" width="18" height="24" rx="6"/><path d="M16 23h16M24 13v10M20 8h8"/><circle cx="20" cy="29" r="1.5"/><circle cx="28" cy="29" r="1.5"/></svg>';
+    const id = 'train-crest-' + ++crestSerial;
+    n.innerHTML = '<svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="' + id + '-gold" x1="7" y1="3" x2="39" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#fff0b4"/><stop offset=".44" stop-color="#dca343"/><stop offset=".65" stop-color="#fff0ad"/><stop offset="1" stop-color="#bd7823"/></linearGradient><linearGradient id="' + id + '-body" x1="15" y1="12" x2="34" y2="35" gradientUnits="userSpaceOnUse"><stop stop-color="#5dd7c3"/><stop offset=".45" stop-color="#147c83"/><stop offset="1" stop-color="#194250"/></linearGradient><linearGradient id="' + id + '-glass" x1="16" y1="14" x2="31" y2="24" gradientUnits="userSpaceOnUse"><stop stop-color="#c5efff"/><stop offset=".48" stop-color="#4c98c4"/><stop offset="1" stop-color="#56509b"/></linearGradient></defs><path d="M8 35V19a16 16 0 0 1 32 0v16" stroke="url(#' + id + '-gold)" stroke-width="1.8"/><path d="M12 35V19a12 12 0 0 1 24 0v16" stroke="#f0c16a" stroke-opacity=".35"/><rect x="14" y="11" width="20" height="26" rx="7" fill="url(#' + id + '-body)" stroke="url(#' + id + '-gold)" stroke-width="1.6"/><path d="M15 26h18v5a6 6 0 0 1-6 5h-6a6 6 0 0 1-6-5z" fill="#a94260"/><rect x="17" y="15" width="14" height="9" rx="2" fill="url(#' + id + '-glass)" stroke="#f3d58e" stroke-width=".9"/><path d="M24 15v9M19 17h4M19 19h2" stroke="#e6f7ff" stroke-opacity=".75" stroke-linecap="round"/><path d="M21 8h6M19 39l-4 5M29 39l4 5M18 42h12" stroke="url(#' + id + '-gold)" stroke-width="1.7" stroke-linecap="round"/><circle cx="19.5" cy="29.5" r="2" fill="#ffeaa4"/><circle cx="28.5" cy="29.5" r="2" fill="#ffeaa4"/><path d="M21 33h6" stroke="#f5b88b" stroke-width="1.2" stroke-linecap="round"/></svg>';
     return n;
   }
   function header() { return el('header', { class: 'lt-header' }, el('a', { href: '/?games=1', class: 'back' }, '← All games'), el('a', { href: '/last-train.html', class: 'wordmark' }, trainMark('brand-icon'), el('span', {}, txt('small', '', 'THE GAME ROOM'), txt('b', '', 'LAST TRAIN'))), btn('How to play', rules, 'text-button')); }
@@ -175,7 +177,7 @@
     const n = btn(replay ? 'PLAY AGAIN' : 'START JOURNEY', () => send('start'), 'host departure-button', disabled);
     n.setAttribute('aria-label', replay ? 'PLAY AGAIN' : 'START JOURNEY');
     const icon = el('span', { class: 'departure-icon', 'aria-hidden': 'true' });
-    icon.innerHTML = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="4" width="18" height="22" rx="5"/><path d="M8 15h16M13 4v11M19 4v11M11 26l-3 4M21 26l3 4M12 8h8"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>';
+    icon.append(trainMark('ticket-train'));
     n.replaceChildren(icon, el('span', { class: 'departure-copy' }, txt('small', '', replay ? 'A NEW DEAL. A NEW SECRET.' : 'ALL ABOARD'), txt('b', '', replay ? 'Another Journey' : 'Start Journey')), txt('span', 'departure-arrow', '→'));
     return n;
   }

@@ -2,6 +2,13 @@
 
 Status: proposed video production, not yet generated or installed. The user's Figma/Weave account is linked, but Weave rejected the no-spend quote request with “Video models are only available on paid plans.” The current free plan cannot generate this clip. No video generation was started. A model and generation cost must be quoted and approved before starting a paid run.
 
+## Free alternatives checked
+
+- [NiftyVid](https://igorcsis.github.io/nifty-vid/) / [project source](https://github.com/IgorCSIS/nifty-vid): the author documents no signup or API key, with public Wan 2.2 image-to-video inference. The live page caps video length at 4.5 seconds because its upstream free Space times out around five seconds. This is a candidate for a short experimental clip, not a verified six-second production solution. Normal requests from this workspace to the demo and Hugging Face both received proxy CONNECT 403, so no generation was submitted or completed.
+- [Wan2.Video](https://wan2.video/free-ai-video-generator): advertises an anonymous free interface backed by public Gradio Spaces; queues, sleeping models and changing availability still apply. A completed anonymous generation has not been verified here.
+- [Local Wan 2.2](https://github.com/Wan-Video/Wan2.2): open-source generation avoids a service account, but the official 5B example requires a GPU with at least 24GB VRAM. This workspace has no available NVIDIA GPU, about 9.7GB RAM, and no installed video-inference stack, so that path is not practical here.
+- A custom animated boarding scene built with local code/artwork requires no external account, credits, or hosted inference. This is the directly available approach, but it is an illustrated animation and needs its own walk-cycle artwork, character motion, stair contact, lighting and doorway masking. Do not describe it as a generated cinematic video or install another camera-zoom stand-in.
+
 ## Visual direction
 
 Use the existing first-class midnight train and its public cast as references:
