@@ -515,19 +515,14 @@ textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px
 .drawing-paper { touch-action: none; }
 .drawing-paper canvas { touch-action: none; }
 
-/* A real camera move into the carriage, with passenger boarding checks below. */
+/* Locally served boarding footage, with the exact room manifest below. */
 .world.platform-scene { padding: 0 0 22px; min-height: 0; background: #17121c; overflow: hidden; }
 .platform-scene::after { display: none; }
-.boarding-cinema { position: relative; isolation: isolate; height: 430px; overflow: hidden; }
-.boarding-cinema .world-art { object-position: 26% 60%; animation: enter-carriage 6s cubic-bezier(.3,.1,.7,1) both; animation-delay: calc(-1 * var(--elapsed, 0s)); transform-origin: 25% 68%; }
-.boarding-door-shade { position: absolute; inset: 0; background: #060912; opacity: 0; animation: carriage-darken 6s both; animation-delay: calc(-1 * var(--elapsed, 0s)); }
-.boarding-destination { position: absolute; right: 30px; top: 30px; display: grid; justify-items: center; gap: 8px; padding: 16px 22px; color: #e8d3aa; border: 1px solid #d6b88166; background: #1a1521b3; border-radius: 14px; backdrop-filter: blur(12px); }
-.boarding-destination .train-mark { width: 42px; height: 42px; }
-.boarding-destination > span { font-size: 8px; letter-spacing: 2px; }
-.boarding-destination b { font-size: 18px; }
+.boarding-cinema { position: relative; isolation: isolate; width: 100%; aspect-ratio: 16 / 9; max-height: 520px; overflow: hidden; background: #0b1019; }
+.boarding-poster, .boarding-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .platform-scene .scene-hud { text-align: center; display: block; background: transparent; padding: 22px; }
 .platform-scene .scene-hud .journey-clock { display: none; }
-.platform-scene .boarding-queue { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; padding: 0 24px; margin: 0; width: 100%; max-width: none; position: relative; top: auto; bottom: auto; left: auto; right: auto; }
+.platform-scene .boarding-queue { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; padding: 0 24px; margin: 0; width: 100%; height: auto; max-width: none; position: relative; top: auto; bottom: auto; left: auto; right: auto; }
 .platform-scene .boarding-person { display: flex; gap: 9px; justify-content: flex-start; align-items: center; border: 1px solid #c7ac7c2e; border-radius: 9px; background: #d0b18206; padding: 9px; margin: 0; width: auto; position: relative; inset: auto; opacity: 1; transform: none; animation: boarding-checked .5s both; animation-delay: calc(var(--order) / var(--total) * 3.5s - var(--elapsed, 0s)); }
 .platform-scene .boarding-person { flex-direction: row; }
 .boarding-person .boarding-avatar { width: 35px; height: 35px; border-radius: 7px; padding: 0; background-image: url('/last-train/passengers.webp'); background-size: 400% 300%; background-position: var(--px) var(--py); background-repeat: no-repeat; }
@@ -535,8 +530,6 @@ textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px
 .boarding-person b { display: block; font-size: 11px; font-weight: 600; overflow-wrap: anywhere; }
 .boarding-person small { display: block; color: #a99caa; font-size: 8px; letter-spacing: 1px; margin-top: 2px; }
 .platform-scene .boarding-person > .boarding-check { width: auto; max-width: none; margin-left: auto; background: transparent; padding: 0; color: #bbd4bc; font-size: 15px; }
-@keyframes enter-carriage { 0% { transform: scale(1); } 85%, 100% { transform: scale(1.46); } }
-@keyframes carriage-darken { 0%, 78% { opacity: 0; } 100% { opacity: .9; } }
 @keyframes boarding-checked { from { opacity: .35; border-color: #c7ac7c20; } to { opacity: 1; border-color: #d7bc7d66; } }
 #lt-app[data-paused=true] .boarding-cinema *, #lt-app[data-paused=true] .boarding-person { animation-play-state: paused !important; }
 
@@ -604,9 +597,6 @@ textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px
   .notebook .ink-swatch { width: 40px; min-height: 35px; }
   .notebook-tip { margin-top: 6px; font-size: 9px; }
   .notebook-footer { padding: 12px 16px; font-size: 8px; }
-  .boarding-cinema { height: 310px; }
-  .boarding-destination { right: 16px; top: 16px; padding: 12px 15px; }
-  .boarding-destination .train-mark { width: 33px; height: 35px; }
   .platform-scene .scene-hud { padding: 19px 15px; }
   .platform-scene .boarding-queue { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; padding-inline: 14px; }
   .platform-scene .boarding-person { padding: 8px; gap: 7px; }
@@ -631,8 +621,7 @@ textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px
   .finale-scene .final-role b { font-size: 10px; }
 }
 @media(prefers-reduced-motion:reduce) {
-  .boarding-cinema .world-art, .boarding-door-shade, .platform-scene .boarding-person { animation: none; }
-  .boarding-door-shade { opacity: 0; }
+  .platform-scene .boarding-person { animation: none; }
   .drawer-arrow, .accordion-chevron { transition: none; }
 }
 /* Keep the notebook within reach without covering anyone in the carriage. */

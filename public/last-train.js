@@ -10,6 +10,7 @@
   let speechDraft = '', whisperDraft = '', draftStep = '';
   let dockNode = null, dockStamp = '', drawerGesture = null, suppressDrawerClick = false;
   let cinemaNode = null, cinemaKey = '', cinemaEnd = null;
+  let boardingVideo = null, boardingVideoKey = '';
   const overlayRoot = document.getElementById('lt-overlays');
   const notebook = window.createTrainNotebook(overlayRoot);
   const letters = window.createTrainLetters(overlayRoot, { request, onState: (data, owner) => { if (seat?.tok === owner.tok && seat.code === owner.code) { adopt(data); render(); } } });
@@ -221,10 +222,36 @@
       el('div', { class: 'intro-footer' }, txt('p', 'muted small', 'Seats are shuffled separately from roles. Your seat number sets your speaking order.'), state.me.ready ? txt('p', 'choice-saved', '✓ Ready to board. Waiting for the others…') : btn('I’m ready · board the train', () => send('ready'), 'gold')));
   }
   function boardingScene() {
+    const key = [state.code, state.match, 'boarding'].join(':');
+    if (motionOK && (!boardingVideo || boardingVideoKey !== key)) {
+      boardingVideo?.pause();
+      boardingVideoKey = key;
+      boardingVideo = el('video', { class: 'boarding-video', src: '/last-train/boarding.mp4', poster: '/last-train/boarding-poster.webp', muted: true, defaultMuted: true, playsInline: true, preload: 'auto', tabIndex: -1, onloadedmetadata: syncBoardingVideo, onerror: e => { e.currentTarget.hidden = true; } });
+    }
     return el('section', { style: '--elapsed:' + Math.max(0,(state.duration || 6) - (state.remainingMs || 0)/1000) + 's', class: 'world platform-scene', 'aria-label': 'Everyone boards the train' },
-      el('div', { class: 'boarding-cinema', 'aria-hidden': 'true' }, art('platform'), el('div', { class: 'boarding-door-shade' }), el('div', { class: 'boarding-destination' }, trainMark(), txt('span', '', 'PLATFORM 07'), txt('b', '', 'Last call.'))),
+      el('div', { class: 'boarding-cinema', 'aria-hidden': 'true' }, el('img', { class: 'boarding-poster', src: '/last-train/boarding-poster.webp', alt: '' }), motionOK ? boardingVideo : null),
       hud('ALL ABOARD', 'Next stop: the unknown.', 'The carriage is ready. Find your cabin.'),
       el('div', { class: 'boarding-queue', 'aria-label': 'Passenger boarding checks' }, ...state.players.map((p,i) => el('div', { class: 'boarding-person', style: '--order:' + i + ';--total:' + state.players.length }, avatar(p, 'boarding-avatar'), el('div', {}, txt('b', '', p.name), txt('small', '', 'CABIN ' + String(p.seat).padStart(2, '0'))), txt('span', 'boarding-check', '✓')))));
+  }
+  function syncBoardingVideo() {
+    const video = boardingVideo;
+    if (!video) return;
+    if (state?.phase !== 'boarding' || !seat) {
+      video.pause(); video.removeAttribute('src'); video.load();
+      boardingVideo = null; boardingVideoKey = ''; return;
+    }
+    if (!video.isConnected || video.hidden || video.readyState < 1) return;
+    const elapsed = Math.max(0, (state.duration || 6) - (state.remainingMs || 0) / 1000 + (state.paused ? 0 : (Date.now() - state.receivedAt) / 1000));
+    const target = Math.min(elapsed, video.duration);
+    // Server time owns the transition; media completion never advances the room.
+    if (Math.abs(video.currentTime - target) > (state.paused ? .05 : .65)) {
+      try { video.currentTime = target; } catch { return; }
+    }
+    if (state.paused || elapsed >= video.duration) video.pause();
+    else if (video.paused && !video.playPending) {
+      video.playPending = true;
+      video.play().catch(e => { if (e.name !== 'AbortError' && boardingVideo === video) { video.hidden = true; video.pause(); } }).finally(() => { video.playPending = false; });
+    }
   }
   function chooseTarget(title, kind, action, extra = {}, { self = false, skip = false } = {}) {
     const bound = fence(); let selected = null, double = false;
@@ -528,7 +555,7 @@
     root.dataset.round = String(state?.round || 0); root.dataset.paused = String(!!state?.paused); root.dataset.phase = state?.phase || 'home'; root.dataset.nightRole = state?.nightRole || '';
     const sceneChanged = key !== enteredKey;
     if (sceneChanged) {
-      root.querySelector('.world,.scene-panel,.lobby-grid,.landing')?.classList.add(motionOK ? 'scene-enter' : 'scene-static'); enteredKey = key;
+      root.querySelector('.world,.scene-panel,.lobby-grid,.landing')?.classList.add(motionOK && !state?.paused ? 'scene-enter' : 'scene-static'); enteredKey = key;
     }
     if (sceneChanged) {
       const ownTurn = state?.phase === 'discussion' && state.speakerId === state.meId;
@@ -543,6 +570,7 @@
     tick();
   }
   function tick() {
+    syncBoardingVideo();
     notebook.sync(state && seat ? { ...seat, match: state.match || 1 } : null, state ? (state.phase === 'lobby' ? 'Waiting to board' : 'Round ' + state.round + ' · ' + (state.paused ? 'Paused' : state.phase === 'night' ? roleName(state.nightRole) + ' turn' : ({ briefing:'Meet the teams', boarding:'All aboard', settling:'Nightfall', gathering:'Gathering', morning:'Morning', discussion:'Discussion', voting:'Voting', voteResult:'Vote results', finished:'Journey ended' }[state.phase] || ''))) : '');
     if (!state) return;
     if (cinemaNode && !state.paused) {

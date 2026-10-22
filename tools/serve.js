@@ -6,7 +6,7 @@ const handler = require('../api/game');
 const grandCon = require('../api/grand-con');
 const lastTrain = require('../api/last-train');
 const root = path.resolve(__dirname, '../public');
-const types = { '.woff2': 'font/woff2', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.webmanifest': 'application/manifest+json' };
+const types = { '.woff2': 'font/woff2', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (['/api/game','/api/grand-con','/api/last-train'].includes(url.pathname)) {
@@ -21,6 +21,19 @@ const server = http.createServer(async (req, res) => {
   if (!file.startsWith(root + '/') || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end(); return; }
   res.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream');
   res.setHeader('Cache-Control', 'no-store');
-  fs.createReadStream(file).pipe(res);
+  const size = fs.statSync(file).size;
+  res.setHeader('Accept-Ranges', 'bytes');
+  let start = 0, end = size - 1;
+  if (req.headers.range) {
+    const match = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range);
+    start = match ? Number(match[1]) : size;
+    end = match?.[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+    if (start > end || start >= size) { res.writeHead(416, { 'Content-Range': 'bytes */' + size }); res.end(); return; }
+    res.statusCode = 206;
+    res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+  }
+  res.setHeader('Content-Length', Math.max(0, end - start + 1));
+  if (req.method === 'HEAD' || size === 0) { res.end(); return; }
+  fs.createReadStream(file, { start, end }).pipe(res);
 });
 server.listen(Number(process.env.PORT || 3000), '127.0.0.1', () => console.log('Local game server ready'));
