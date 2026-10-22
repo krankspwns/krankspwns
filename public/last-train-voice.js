@@ -40,7 +40,7 @@
       finalizing = false; uploading = true; retryClip = null; status = 'Sharing your recording…'; changed();
       try {
         const result = await api.request('speakVoice', { voiceId: clip.id, audioData: clip.data, mimeType: clip.mimeType, durationMs: clip.durationMs }, clip.owner, clip.state);
-        if (clip.roomKey === roomKey) { status = 'Voice shared. Everyone can listen after your turn.'; api.onState(result, clip.owner); }
+        if (clip.roomKey === roomKey) { status = 'Voice shared. The next player has the floor.'; api.onState(result, clip.owner); }
       } catch (e) {
         if (clip.roomKey === roomKey) { retryClip = clip; status = e.status && e.status < 500 ? e.message : 'The upload did not finish. Retry sharing while this turn is still recent.'; }
       } finally { uploading = false; changed(); }
@@ -132,7 +132,7 @@
         if (nextKey !== roomKey) { reset(); roomKey = nextKey; }
         const newRound = state && next && state.round !== next.round;
         state = next; owner = seat;
-        if (!['gathering','morning','discussion','voting','voteResult','finished'].includes(state?.phase)) playback.forEach(audio => audio.pause());
+        if (!['gathering','morning','discussion','voting','revoteInfo','voteResult','finished'].includes(state?.phase)) playback.forEach(audio => audio.pause());
         if (retryClip && retryClip.state.round !== state?.round) { retryClip = null; status = ''; }
         if (newRound && !recording && !pending && !uploading) { retryClip = null; status = ''; }
         if (recording) {

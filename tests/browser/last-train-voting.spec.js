@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const { call } = require('../helpers');
 const handler = require('../../api/last-train'), rules = require('../../lib/last-train-rules'), store = require('../../lib/last-train-store');
 async function fixture(browser, instrumentAudio = false) {
-  const make = async (action,data) => { const r=await call(handler,{action,requestId:crypto.randomUUID(),...data});expect(r.s).toBe(200);return r.j; };
+  const make = async (action,data) => { const r=await call(handler,{action,requestId:crypto.randomUUID(),...data},{},{'x-forwarded-for':test.info().testId});expect(r.s).toBe(200);return r.j; };
   const host=await make('create',{name:'Host'}),seats=[host];
   for(let i=1;i<6;i++)seats.push(await make('join',{code:host.code,name:i===1?'Luna':'Guest '+i}));
   const room=await store.load(host.code);rules.start(room);rules.beginVote(room);await store.save(room);
@@ -27,6 +27,12 @@ test('tied ballots open one restricted re-vote, retain grouped voters on reload 
   try{
     const before=await store.load(b.host.code),targets=before.players.filter(p=>rules.group(p)==='saboteur').map(p=>p.id);
     for(let i=0;i<6;i++)await post(seats[i],'vote',{targetId:targets[i%2]});
+    await expect(page.locator('#lt-app')).toHaveAttribute('data-phase','revoteInfo');
+    const notice=page.getByRole('dialog',{name:'The vote is tied.',exact:true});await expect(notice).toBeVisible();await expect(notice.locator('.revote-candidate')).toHaveCount(2);
+    await expect(page.getByRole('button',{name:'Choose a player or Skip',exact:true})).toHaveCount(0);
+    let pending=await store.load(b.host.code);expect(pending.duration).toBe(7);expect(pending.votes).toEqual({});
+    await page.screenshot({path:info.outputPath('revote-info-mobile.png')});await notice.getByRole('button',{name:'Got it',exact:true}).click();
+    pending.deadline=Date.now()-1;await store.save(pending);
     await expect(page.getByRole('heading',{name:'A tie. Vote once more.'})).toBeVisible();
     let room=await store.load(b.host.code);expect(room.voteAttempt).toBe(2);expect(room.votes).toEqual({});
     const stale=await call(handler,{action:'vote',requestId:crypto.randomUUID(),code:b.host.code,pid:b.host.meId,tok:b.host.tok,match:before.match,round:before.round,step:before.step,targetId:targets[0]});expect(stale.s).toBe(409);

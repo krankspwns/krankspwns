@@ -25,9 +25,9 @@ test('a recorded turn is shared without poll payloads, then another phone can pl
     await expect(a.page.getByLabel('Your findings')).toBeDisabled();await a.page.waitForTimeout(1200);
     await a.page.getByRole('button',{name:'Stop & share',exact:true}).click();await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
     let room=await store.load(b.host.code);const message=room.speeches[0];expect(message.audio.durationMs).toBeGreaterThan(900);expect(message.audio.durationMs).toBeLessThanOrEqual(20000);expect(message.audio.data).toBeUndefined();
-    await expect(other.page.getByRole('button',{name:'Voice ready after their turn',exact:true})).toBeDisabled();
+    expect(room.speakerIndex).toBe(1);expect(room.speakingOrder[1]).toBe(b.seats[1].meId);
+    await expect(other.page.getByRole('button',{name:/^▶ Play voice/})).toBeEnabled();
     expect(await a.page.evaluate(()=>window.recordedStream.getTracks().every(t=>t.readyState==='ended'))).toBe(true);
-    rules.nextSpeaker(room);await store.save(room);
     await other.page.getByRole('button',{name:/^▶ Play voice/}).click();const audio=other.page.locator('.voice-message audio');
     await expect(audio).toBeVisible();await expect.poll(()=>audio.evaluate(a=>a.readyState)).toBeGreaterThanOrEqual(2);expect(await audio.evaluate(a=>a.duration)).toBeGreaterThan(.5);
     // Play state and the loaded URL survive ordinary room updates; the clip is not fetched by polling.
@@ -61,6 +61,6 @@ test('in-person rooms can also record their turn and replay it after moving to t
   const b=await fixture(browser,{mode:'in-person'}),a=await b.open(b.host);
   try{
     await a.page.getByRole('button',{name:'Record voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & share',exact:true})).toBeVisible();await a.page.waitForTimeout(700);await a.page.getByRole('button',{name:'Stop & share',exact:true}).click();await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
-    await a.page.getByRole('button',{name:'I’m done speaking',exact:true}).click();await expect(a.page.getByRole('heading',{name:'Conversations aboard',exact:true})).toBeVisible();await expect(a.page.getByRole('button',{name:/^▶ Play voice/})).toBeEnabled();expect(a.errors).toEqual([]);
+    expect((await store.load(b.host.code)).speakerIndex).toBe(1);await expect(a.page.getByRole('button',{name:'I’m done speaking',exact:true})).toHaveCount(0);await expect(a.page.getByRole('heading',{name:'Conversations aboard',exact:true})).toBeVisible();await expect(a.page.getByRole('button',{name:/^▶ Play voice/})).toBeEnabled();expect(a.errors).toEqual([]);
   }finally{await Promise.all(b.contexts.map(c=>c.close()));}
 });

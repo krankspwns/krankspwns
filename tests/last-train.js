@@ -171,17 +171,17 @@ function engineTests() {
     const room=fixture(['passenger','careful','witness','medic','saboteur']),m=person(room,'medic'),bad=person(room,'saboteur');attack(room,m.id);turn(room,'medic');r.medicineChoice(room,m,{power:'poison',targetId:bad.id});morning(room);assert.equal(room.winner,'good');r.advance(room);assert.equal(room.phase,'finished');
   }
   for(const g of ['passenger','crew']){const room=fixture();r.remove(room,room.players.filter(p=>r.group(p)===g).map(p=>p.id));assert.equal(room.winner,'bad');}
-  // Private truthful reports only for survivors; no new power in a promotion night.
+  // Private truthful reports appear before night resolution; no new power in a promotion night.
   for(const dies of [true,false]){
     const room=fixture(),w=person(room,'witness'),ins=person(room,'inspector'),bad=person(room,'saboteur');attack(room,dies?ins.id:bad.id);turn(room,'inspector');r.nightChoice(room,ins,{power:'check',targetId:bad.id});turn(room,'witness');r.nightChoice(room,w,{power:'watch'});morning(room);
-    assert.equal(ins.reports.length,dies?0:1);if(!dies)assert.equal(ins.reports[0].alignment,'bad');assert.equal(w.reports[0].targetId,dies?ins.id:bad.id);
+    assert.equal(ins.reports.length,1);assert.equal(ins.reports[0].alignment,'bad');assert.equal(w.reports[0].targetId,dies?ins.id:bad.id);
   }
   // Statements enforce seat order and one statement per 20-second turn, even for host.
   {
     const room=fixture(undefined,'chat');morning(room);r.advance(room);const order=[...room.speakingOrder],first=room.players.find(p=>p.id===order[0]),other=room.players.find(p=>p.id!==first.id);
-    rejected(()=>r.speak(room,other,'My claim'),403);r.speak(room,first,'  I saw   the target.  ');assert.equal(room.speeches[0].text,'I saw the target.');rejected(()=>r.speak(room,first,'Another message'),409);rejected(()=>r.finishSpeech(room,first),409);
-    assert.equal(r.speakerId(room),first.id,'chat submit never takes someone else’s speaking time');
-    for(const id of order){assert.equal(r.speakerId(room),id);r.advance(room);}assert.equal(room.phase,'voting');assert.deepEqual(room.seatOrder,order);
+    rejected(()=>r.speak(room,other,'My claim'),403);r.speak(room,first,'  I saw   the target.  ');assert.equal(room.speeches[0].text,'I saw the target.');rejected(()=>r.speak(room,first,'Another message'),409);rejected(()=>r.finishSpeech(room,first),403);
+    assert.equal(r.speakerId(room),order[1],'sharing hands the floor to the next player immediately');
+    for(const id of order.slice(1)){assert.equal(r.speakerId(room),id);r.speak(room,room.players.find(p=>p.id===id),'My turn is complete.');}assert.equal(room.phase,'voting');assert.deepEqual(room.seatOrder,order);
   }
   // Private team chat rejects outsiders and stops being delivered after the Saboteur turn or death.
   {
@@ -204,9 +204,10 @@ function engineTests() {
   for(const outcome of ['decided','tied','all-skip']){
     const room=fixture(),targets=room.players.filter(p=>r.group(p)==='saboteur').slice(0,2);r.beginVote(room);const step=room.step;
     room.electorate.forEach((id,i)=>room.votes[id]={targetId:targets[i%2].id,weight:1});r.resolveVote(room);
-    assert.equal(room.phase,'voting');assert.equal(room.voteAttempt,2);assert.equal(room.step,step+1);assert.deepEqual(room.votes,{});
+    assert.equal(room.phase,'revoteInfo');assert.equal(room.duration,7);assert.equal(room.voteAttempt,2);assert.equal(room.step,step+1);assert.deepEqual(room.votes,{});
     assert.deepEqual(room.voteCandidates,targets.map(p=>p.id));assert.equal(room.history[0].reason,'revote');assert.ok(targets.every(p=>p.alive));
     assert.equal(r.view(room,targets[0]).voteAttempt,2);assert.equal(r.view(room,targets[0]).me.vote,null);
+    rejected(()=>r.vote(room,room.players[0],{targetId:targets[0].id}),409);r.advance(room);assert.equal(room.phase,'voting');assert.equal(room.duration,45);
     rejected(()=>r.vote(room,room.players[0],{targetId:person(room,'witness').id}),400);
     room.electorate.forEach((id,i)=>room.votes[id]={targetId:outcome==='all-skip'?null:targets[outcome==='decided'?0:i%2].id,weight:1});
     const original=crypto.randomInt;try{crypto.randomInt=()=>1;r.resolveVote(room);}finally{crypto.randomInt=original;}
@@ -274,7 +275,7 @@ function engineTests() {
     const order=[...speaking.speakingOrder];assert.equal(order.length,10);
     for(const pid of order){
       const s=seats.find(s=>s.meId===pid);assert.equal((await get(s)).j.speakerId,pid);
-      assert.equal((await post(s,'speak',{text:'I think the last Saboteur is still hiding.'})).s,200);assert.equal((await post(s,'speak',{text:'Again'})).s,409);await expire();
+      assert.equal((await post(s,'speak',{text:'I think the last Saboteur is still hiding.'})).s,200);assert.equal((await post(s,'speak',{text:'Again'})).s,409);
     }
     const voting=(await get(host)).j;assert.equal(voting.phase,'voting');assert.equal(voting.speeches.length,10);
     const living=seats.filter(s=>order.includes(s.meId));const voted=await Promise.all(living.map(s=>post(s,'vote',{targetId:bad[2].meId})));assert.ok(voted.every(v=>v.s===200));

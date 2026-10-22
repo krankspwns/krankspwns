@@ -696,9 +696,13 @@ body:has(.letters-launcher) .lt-header { padding-right: 130px; flex-wrap: wrap; 
 }
 
 /* Keep the final boarding frame while the cabin darkens, then let the lamps return. */
-.boarding-departure { position: fixed; z-index: 150; pointer-events: none; overflow: hidden; border-radius: 23px; background: #080911; animation: carriage-departure 1.1s ease-in-out both; }
-.boarding-departure > .platform-scene { margin: 0; width: 100%; animation: none !important; }
-@keyframes carriage-departure { 0%,15% { opacity: 1; filter: brightness(1); } 65% { opacity: 1; filter: brightness(.02); } 100% { opacity: 0; filter: brightness(.02); } }
+.boarding-departure { position: fixed; inset: 0; z-index: 500; overflow: hidden; background: #0b111e; pointer-events: auto; touch-action: none; animation: carriage-handoff 1.9s linear both; }
+.boarding-departure-frame { position: absolute; inset: 0; animation: carriage-dim 1.9s ease-in-out both; }
+.boarding-departure-shade { position: absolute; inset: 0; background: #060810; animation: carriage-blackout 1.9s ease-in-out both; }
+.boarding-departure .scene-enter { animation: none !important; }
+@keyframes carriage-handoff { 0%, 95% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes carriage-dim { 0%, 8% { opacity: 1; filter: brightness(1); } 40%, 100% { opacity: 0; filter: brightness(.12); } }
+@keyframes carriage-blackout { 0% { opacity: 0; } 40%, 55% { opacity: 1; } 100% { opacity: 0; } }
 .cabin-scene.eyes-closing.scene-enter { animation: none; }
 .previous-vote { margin-top: 18px; border-top: 1px solid #c9a96a30; padding-top: 10px; }
 .grouped-votes, .inline-votes .grouped-votes { align-items: start; }
@@ -740,3 +744,40 @@ body:has(.letters-launcher) .lt-header { padding-right: 130px; flex-wrap: wrap; 
 .voice-play-status { display: block; font-size: 10px; margin-top: 6px; color: #d2b992; }
 .voice-recorder [hidden], .voice-message [hidden] { display: none !important; }
 @media(max-width: 400px) { .voice-recorder { padding: 13px; } .voice-actions { gap: 6px; } .voice-actions button { font-size: 11px; padding-inline: 11px; } .voice-time { font-size: 10px; } }
+
+/* Private power results appear at once, with the same result kept beside the cabin. */
+.private-night-result { display: grid; justify-items: center; gap: 12px; padding: 22px; text-align: center; border: 1px solid #cfb27750; border-radius: 17px; background: radial-gradient(ellipse at top,#634d382b,transparent 70%),#17182a; }
+.private-night-result .result-portrait { width: 100px; height: 100px; border-radius: 22px; border: 1px solid #dfc48680; box-shadow: 0 10px 35px #0005; }
+.private-night-result h3 { color: #fff0d8; font-size: 25px; overflow-wrap: anywhere; }
+.private-night-result .result-verdict { font-size: 27px; letter-spacing: 3px; color: #e7c88b; }
+.private-night-result.good { border-color: #69c7aa77; background-color: #15272a; }
+.private-night-result.good .result-verdict { color: #8ee4b5; }
+.private-night-result.bad { border-color: #e37b9177; background-color: #2d1927; }
+.private-night-result.bad .result-verdict { color: #ff94a5; }
+.private-night-result p { max-width: 310px; font-size: 12px; color: #c1b4c8; }
+.private-night-result .result-symbol { font-size: 45px; color: #d5ba8c; }
+.night-result-dialog { width: min(430px,calc(100vw - 32px)); }
+.night-result-dialog > h2 { font-size: 20px; margin-bottom: 15px; }
+.night-result-dialog > button { display: block; margin: 18px auto 0; min-width: 130px; }
+@media(prefers-reduced-motion:no-preference) { .night-result-dialog .private-night-result { animation: private-result-arrive .45s ease-out; } }
+@keyframes private-result-arrive { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+
+.ticket-allies { padding: 13px; border: 1px solid #cb8f9c3b; border-radius: 13px; background: #50243525; margin-bottom: 14px; }
+.ticket-allies-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 9px; }
+.ticket-ally { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1 1 150px; }
+.ticket-ally .ally-portrait { width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1px solid #dbb47866; }
+.ticket-ally b { display: block; font-size: 13px; color: #f3dcc0; overflow-wrap: anywhere; }
+.ticket-ally small { display: block; font-size: 10px; color: #c8a8bb; }
+.ticket-ally.is-out { opacity: .5; }
+.ticket-allies > p { font-size: 12px; margin-top: 7px; color: #d4bbca; }
+.revote-info { text-align: center; padding: 15px 0; }
+.revote-candidates { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin: 20px 0; }
+.revote-candidate { display: grid; justify-items: center; gap: 9px; flex: 0 1 120px; min-width: 0; }
+.revote-candidate .portrait { width: 72px; height: 72px; border-radius: 17px; border: 1px solid #ddc18588; box-shadow: 0 10px 25px #0004; }
+.revote-candidate b { font-size: 13px; color: #f4dfb8; overflow-wrap: anywhere; }
+.revote-info > p { color: #c9bed0; font-size: 13px; line-height: 1.7; }
+.revote-info .revote-countdown { margin-top: 18px; color: #e8c98b; font-size: 12px; }
+.revote-countdown .countdown { display: inline; font-size: inherit; }
+.revote-dialog > button { display: block; margin: 15px auto 0; min-width: 130px; }
+/* Dialog headings receive programmatic focus for screen readers, not a control outline. */
+.lt-dialog > h2:focus { outline: none; }

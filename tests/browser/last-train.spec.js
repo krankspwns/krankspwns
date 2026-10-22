@@ -65,9 +65,9 @@ test('ordered chat preserves drafts through pause, shows findings safely and ret
     const pages=[];for(const s of [first,second]){const c=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});contexts.push(c);await c.addInitScript(seat=>localStorage.setItem('lt-seat',JSON.stringify(seat)),{code:s.code,pid:s.meId,tok:s.tok});await c.route('**/api/last-train**',async route=>{const q=new URL(route.request().url()),req=route.request();const result=await call(handler,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:result.s,contentType:'application/json',body:JSON.stringify(result.j)});});const p=await c.newPage();pages.push(p);await p.goto('/last-train.html');}
     const [a,b]=pages;await expect(a.getByLabel('Your findings',{exact:true})).toBeVisible();await expect(b.getByLabel('Your findings',{exact:true})).toHaveCount(0);
     await a.getByLabel('Your findings',{exact:true}).fill('I am watching seat four.');await a.getByRole('button',{name:'Share findings',exact:true}).click();await expect(b.getByRole('log',{name:/Shared findings/})).toContainText('I am watching seat four.');
-    await expire();await expect(b.getByLabel('Your findings',{exact:true})).toBeVisible();await b.getByLabel('Your findings',{exact:true}).fill('This draft survives a pause.');await post(host,'pause');await expect(b.locator('.pause-banner')).toBeVisible();await expect(b.getByLabel('Your findings',{exact:true})).toBeDisabled();await post(host,'resume');await expect(b.getByLabel('Your findings',{exact:true})).toHaveValue('This draft survives a pause.');
+    await expect(b.getByLabel('Your findings',{exact:true})).toBeVisible();await b.getByLabel('Your findings',{exact:true}).fill('This draft survives a pause.');await post(host,'pause');await expect(b.locator('.pause-banner')).toBeVisible();await expect(b.getByLabel('Your findings',{exact:true})).toBeDisabled();await post(host,'resume');await expect(b.getByLabel('Your findings',{exact:true})).toHaveValue('This draft survives a pause.');
     await b.getByLabel('Your findings',{exact:true}).fill('<img src=x onerror=alert(1)> is only a story.');await b.getByRole('button',{name:'Share findings',exact:true}).click();await expect(a.getByRole('log',{name:/Shared findings/})).toContainText('<img src=x onerror=alert(1)>');await expect(a.locator('.public-message img')).toHaveCount(0);await b.screenshot({path:info.outputPath('journey-ordered-chat-mobile.png'),fullPage:true});
-    for(let i=0;i<5;i++)await expire();room=await store.load(host.code);expect(room.phase).toBe('voting');
+    for(let i=0;i<4;i++)await expire();room=await store.load(host.code);expect(room.phase).toBe('voting');
     await expect(a.locator('#lt-app')).toHaveAttribute('data-phase','voting');await a.getByRole('button',{name:'Choose a player or Skip',exact:true}).click();await expect(a.getByRole('dialog')).toBeVisible();
     for(const s of seats)await post(s,'vote',{targetId:null});await expect(a.locator('#lt-app')).toHaveAttribute('data-phase','voteResult');await expect(a.locator('.inline-votes .vote-row')).toHaveCount(6);await expect(a.getByRole('dialog')).toHaveCount(0);await expire();await expect(a.locator('.cabin-scene')).toBeVisible();await expect(a.locator('#lt-app')).toHaveAttribute('data-phase','settling');expect((await store.load(host.code)).round).toBe(2);
     await a.screenshot({path:info.outputPath('journey-return-to-cabin.png'),fullPage:true});
@@ -273,10 +273,10 @@ test('test mode chats once per turn and removes only its five seats from the lob
     expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await controls.getByRole('button',{name:'Remove test players'}).click();await expect(p.locator('.seat')).toHaveCount(1);expect((await store.load(host.code)).players.map(p=>p.id)).toEqual([host.meId]);
     await controls.getByRole('button',{name:'Add 5 test players'}).click();await expect(p.locator('.seat')).toHaveCount(6);
-    let room=await store.load(host.code);room.settings.discussion='chat';rules.start(room);rules.beginDiscussion(room);if(rules.speakerId(room)===host.meId)rules.nextSpeaker(room);await store.save(room);
+    let room=await store.load(host.code);room.settings.discussion='chat';rules.start(room);rules.beginDiscussion(room);room.speakingOrder=[...room.players.filter(p=>p.id!==host.meId).map(p=>p.id),host.meId];await store.save(room);
     await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(1);room=await store.load(host.code);const first=room.speeches[0];expect(first.text).toMatch(/I'm (?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|Trainee|a Passenger)/);expect(first.id).not.toBe(host.meId);
     // A new speaker gets a distinct single statement; the first is never duplicated.
-    rules.nextSpeaker(room);if(rules.speakerId(room)===host.meId)rules.nextSpeaker(room);await store.save(room);await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(2);room=await store.load(host.code);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(2);
+    await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(2);room=await store.load(host.code);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(2);
     await expect(controls.getByRole('button',{name:'Remove test players'})).toBeDisabled();
   }finally{await context.close();}
 });
@@ -364,12 +364,9 @@ test('bot discussion reports an actual check, remembered heal and door lock whil
     room=await store.load(host.code);rules.beginDiscussion(room);room.speakingOrder=[inspector.id,medic.id,careful.id,bad.id,ally.id,human.id];await store.save(room);
     const speech=async id=>(await store.load(host.code)).speeches.find(s=>s.id===id)?.text;
     await expect.poll(()=>speech(inspector.id)).toBe("I'm Inspector. I checked "+bad.name+' last night: BAD.');
-    room=await store.load(host.code);rules.nextSpeaker(room);await store.save(room);
     await expect.poll(()=>speech(medic.id)).toBe("I'm Medic. I used my heal on Benny last night.");
-    room=await store.load(host.code);rules.nextSpeaker(room);await store.save(room);
     await expect.poll(()=>speech(careful.id)).toBe("I'm Careful Passenger. I used my door lock last night.");
-    room=await store.load(host.code);rules.nextSpeaker(room);await store.save(room);
     await expect.poll(()=>speech(bad.id)).toMatch(/^I'm (?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|a Passenger)/);
-    expect(await speech(bad.id)).not.toContain(ally.name);room=await store.load(host.code);expect(room.speeches).toHaveLength(4);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(4);
+    expect(await speech(bad.id)).not.toContain(ally.name);room=await store.load(host.code);expect(room.speeches.length).toBeGreaterThanOrEqual(4);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(room.speeches.length);
   }finally{await c.close();}
 });

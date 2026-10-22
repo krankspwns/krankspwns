@@ -23,18 +23,18 @@ const { call, startRedis } = require('./helpers');
     // Reserve during the turn, then allow a short upload grace period without accepting another speaker's identity.
     const original=await store.load(host.code);rules.nextSpeaker(original);await store.save(original);
     const body={action:'speakVoice',requestId:crypto.randomUUID(),code:first.code,pid:first.meId,tok:first.tok,match:begun.match,round:begun.round,step:begun.step,...payload};
-    const sent=await call(handler,body);assert.equal(sent.s,200);assert.equal(sent.j.speeches.length,1);assert.equal(sent.j.speeches[0].audio.available,true);assert.ok(!JSON.stringify(sent.j).includes(audioData));
+    const sent=await call(handler,body);assert.equal(sent.s,200);assert.equal(sent.j.speeches.length,1);assert.equal(sent.j.speakerId,rules.speakerId(original),'late upload must not skip the next speaker');assert.equal(sent.j.speeches[0].audio.available,true);assert.ok(!JSON.stringify(sent.j).includes(audioData));
     assert.equal((await call(handler,body)).s,200);assert.equal((await store.load(host.code)).speeches.length,1);
     assert.equal((await post(first,'speakVoice',payload)).s,409);
     const downloaded=await get(other,{voice:draft.id});assert.equal(downloaded.s,200);assert.equal(downloaded.j.data,audioData);
     assert.equal((await call(handler,null,{code:host.code,pid:other.meId,voice:draft.id},{'x-tok':'wrong'})).s,401);
     assert.equal((await get(other,{voice:crypto.randomUUID()})).s,404);
-    // Audio is visible to its author immediately; other room members can play only after the speaking turn.
+    // Sharing voice ends the speaker's turn, making the clip immediately playable by the room.
     room=await store.load(host.code);const second=seats.find(s=>s.meId===rules.speakerId(room));const began=(await post(second,'beginVoice')).j;
+    assert.equal((await post(host,'pause')).s,200);
     assert.equal((await post(second,'speakVoice',{...payload,voiceId:began.me.voiceDraft.id})).s,200);
-    assert.equal((await get(first,{voice:began.me.voiceDraft.id})).s,409);assert.equal((await get(second,{voice:began.me.voiceDraft.id})).s,200);
+    assert.equal((await get(first,{voice:began.me.voiceDraft.id})).s,200);assert.notEqual((await get(first)).j.speakerId,second.meId);const paused=(await get(first)).j;assert.equal(paused.paused,true);assert.equal(paused.remainingMs,20000);assert.equal(paused.deadline,null);await post(host,'resume');assert.equal((await get(second,{voice:began.me.voiceDraft.id})).s,200);
     assert.equal((await post(second,'speak',{text:'A second submission'})).s,409);
-    room=await store.load(host.code);rules.nextSpeaker(room);await store.save(room);
     assert.equal((await get(first,{voice:began.me.voiceDraft.id})).s,200);
     // A late upload expires, and a previous match can never attach audio to the new game.
     room=await store.load(host.code);const third=seats.find(s=>s.meId===rules.speakerId(room)),thirdDraft=(await post(third,'beginVoice')).j.me.voiceDraft;

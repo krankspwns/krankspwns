@@ -87,6 +87,10 @@ test('boarding video seeks on reload, survives updates, pauses and resumes on se
     await expect(page.locator('#lt-app')).toHaveAttribute('data-phase', 'settling', { timeout: 7000 });
     await expect(page.locator('.boarding-departure')).toBeVisible();
     await expect(page.locator('.boarding-departure canvas')).toHaveCount(1);
+    const covering=await page.locator('.boarding-departure').evaluate(n=>{const r=n.getBoundingClientRect();return r.top===0&&r.left===0&&r.width===innerWidth&&r.height===innerHeight;});expect(covering).toBe(true);
+    await page.locator('.boarding-departure').evaluate(n=>n.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=950;}));
+    expect(await page.locator('.boarding-departure-shade').evaluate(n=>Number(getComputedStyle(n).opacity))).toBeGreaterThan(.95);
+    await page.screenshot({path:info.outputPath('boarding-handoff-blackout.png')});
     await expect(page.locator('video.boarding-video')).toHaveCount(0);
     await expect(page.locator('.boarding-departure')).toHaveCount(0);
     expect(b.errors).toEqual([]);

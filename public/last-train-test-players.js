@@ -64,6 +64,7 @@
       if (phase === 'discussion' && view.speakerId === view.meId) {
         if (!view.speeches.some(s => s.round === view.round && s.id === view.meId)) {
           await request(bot, 'speak', view, { text: window.trainTestStrategy.statement(bot, view) });
+          return; // Sharing has already handed the floor to the next player.
         }
         if (view.settings.discussion !== 'chat') {
           if (bot.speechStep !== view.step) { bot.speechStep = view.step; bot.speechAt = Date.now() + 4000; }
