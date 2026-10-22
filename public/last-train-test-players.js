@@ -2,13 +2,16 @@
 (() => {
   'use strict';
   window.createTrainTestPlayers = root => {
-    let state, owner, key = '', bots = [], running = false, working = false, message = '', timer, epoch = 0;
+    const params = new URLSearchParams(location.search), requested = Number(params.get('bots'));
+    const targetCount = Number.isInteger(requested) && requested >= 1 && requested <= 5 ? requested : 5;
+    const autoSetup = params.get('autobots') === '1';
+    let state, owner, key = '', bots = [], running = false, working = false, message = '', timer, epoch = 0, autoAttemptedKey = '';
     const panel = document.createElement('section'); panel.className = 'panel test-players'; panel.setAttribute('aria-label', 'Test players');
     const title = document.createElement('h3'); title.textContent = 'Playtest with bots';
-    const hint = document.createElement('p'); hint.className = 'muted small'; hint.textContent = 'Five simulated players can ready up, use powers, speak and vote. Keep this test-mode page open while playing.';
+    const hint = document.createElement('p'); hint.className = 'muted small'; hint.textContent = targetCount + ' simulated players can ready up, use powers, speak and vote. Friends can join with the normal room link. Keep this test-mode page open while playing.';
     const status = document.createElement('p'); status.className = 'test-player-status'; status.setAttribute('role', 'status');
     const actions = document.createElement('div'); actions.className = 'test-player-actions';
-    const add = document.createElement('button'); add.type = 'button'; add.className = 'secondary'; add.textContent = 'Add 5 test players';
+    const add = document.createElement('button'); add.type = 'button'; add.className = 'secondary';
     const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'secondary';
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button'; remove.textContent = 'Remove test players';
     actions.append(add, toggle, remove); panel.append(title, hint, status, actions);
@@ -16,7 +19,8 @@
     function update() {
       const count = bots.length;
       status.textContent = message || (count ? count + ' test players · ' + (running ? 'Playing automatically' : 'Stopped') : 'No test players added.');
-      add.hidden = count >= 5; add.disabled = working || state?.phase !== 'lobby' || (state?.players.length || 0) + 5 - count > 12;
+      add.textContent = (count > targetCount ? 'Use ' : count ? 'Complete ' : 'Add ') + targetCount + ' test players';
+      add.hidden = count === targetCount; add.disabled = working || state?.phase !== 'lobby' || (state?.players.length || 0) + Math.max(0, targetCount - count) > 12;
       toggle.hidden = !count; toggle.textContent = running ? 'Stop autoplay' : 'Resume autoplay'; toggle.disabled = working;
       remove.hidden = !count; remove.disabled = working || state?.phase !== 'lobby';
     }
@@ -83,17 +87,24 @@
     }
     add.addEventListener('click', async () => {
       if (working || state?.phase !== 'lobby' || state?.hostId !== owner?.pid) return;
+      running = false; epoch++; clearTimeout(timer);
       working = true; message = 'Adding test players…'; update(); const version = epoch, code = state.code;
       try {
         const names = ['Nova', 'Kai', 'Luna', 'Milo', 'Ash'];
-        while (bots.length < 5 && version === epoch) {
+        // Only this host browser's saved bot seats can be removed when a link requests fewer bots.
+        while (bots.length > targetCount && version === epoch) {
+          await request(bots[bots.length - 1], 'leave');
+          if (version !== epoch) return;
+          bots.pop(); save();
+        }
+        while (bots.length < targetCount && version === epoch) {
           const name = 'Bot ' + names[bots.length] + ' ' + crypto.randomUUID().slice(0, 3);
           const result = await request({ code }, 'join', null, { name });
           if (version !== epoch) { await request({ code, pid: result.meId, tok: result.tok }, 'leave'); return; }
           bots.push({ code, pid: result.meId, tok: result.tok, name }); save();
         }
         running = true; message = ''; schedule();
-      } catch (error) { message = 'Added ' + bots.length + '/5. ' + (error.name === 'AbortError' ? 'Connection stopped. Check the room before retrying.' : error.message); }
+      } catch (error) { message = 'Added ' + bots.length + '/' + targetCount + '. ' + (error.name === 'AbortError' ? 'Connection stopped. Check the room before retrying.' : error.message); }
       finally { working = false; update(); }
     });
     toggle.addEventListener('click', () => { running = !running; epoch++; message = ''; update(); schedule(); });
@@ -116,6 +127,13 @@
       }
       if (!key) { panel.remove(); return; }
       root.querySelector('.room-bar')?.after(panel); update();
+      if (autoSetup && autoAttemptedKey !== key && next.phase === 'lobby') {
+        autoAttemptedKey = key;
+        if (bots.length !== targetCount) {
+          if (add.disabled) { message = 'Not enough room for ' + targetCount + ' test players. Free a seat, then use the button below.'; update(); }
+          else queueMicrotask(() => { if (state?.code === next.code && key === nextKey && !working) add.click(); });
+        }
+      }
     }};
   };
 })();

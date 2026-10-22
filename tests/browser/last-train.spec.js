@@ -234,6 +234,34 @@ test('host test mode adds five independent players, readies them and plays throu
   }finally{await context.close();}
 });
 
+test('four-bot host links leave a friend seat, reuse saved bots and resize only owned bots',async({browser})=>{
+  const api=require('../../api/last-train'),store=require('../../lib/last-train-store');
+  const host=(await call(api,{action:'create',name:'Host with friend',requestId:crypto.randomUUID()})).j;
+  const contexts=[];
+  const open=async(seat)=>{
+    const c=await browser.newContext({viewport:{width:390,height:844}});contexts.push(c);
+    if(seat)await c.addInitScript(s=>localStorage.setItem('lt-seat',JSON.stringify(s)),{code:seat.code,pid:seat.meId,tok:seat.tok});
+    await c.route('**/api/last-train**',async route=>{const req=route.request(),q=new URL(req.url());const r=await call(api,req.method()==='POST'?JSON.parse(req.postData()):null,Object.fromEntries(q.searchParams),req.headers());await route.fulfill({status:r.s,contentType:'application/json',body:JSON.stringify(r.j)});});
+    return c.newPage();
+  };
+  try{
+    const p=await open(host),url='/last-train.html?room='+host.code+'&test=1&bots=4&autobots=1';await p.goto(url);const controls=p.getByRole('region',{name:'Test players'});
+    await expect(p.locator('.seat')).toHaveCount(5);await expect(controls.getByRole('status')).toContainText('4 test players');
+    const botIds=(await store.load(host.code)).players.filter(p=>p.name.startsWith('Bot ')).map(p=>p.id);
+    await p.reload();await expect(p.locator('.seat')).toHaveCount(5);expect((await store.load(host.code)).players.filter(p=>p.name.startsWith('Bot ')).map(p=>p.id)).toEqual(botIds);
+    const friend=await open();await friend.goto(url);await friend.getByLabel('Your name',{exact:true}).fill('My friend');await friend.getByRole('button',{name:'Join room',exact:true}).click();await expect(friend.locator('.seat')).toHaveCount(6);await expect(friend.getByRole('region',{name:'Test players'})).toHaveCount(0);
+    const friendId=(await read(friend)).meId;await expect(p.locator('.seat')).toHaveCount(6);
+    // A former five-bot setup is reduced to four without removing either human.
+    await p.goto(url.replace('bots=4','bots=5'));await expect(p.locator('.seat')).toHaveCount(7);await expect(controls.getByRole('status')).toContainText('5 test players');
+    await p.goto(url);await expect(p.locator('.seat')).toHaveCount(6);await expect(controls.getByRole('status')).toContainText('4 test players');
+    const room=await store.load(host.code);expect(room.players.filter(p=>p.name.startsWith('Bot ')).map(p=>p.id)).toEqual(botIds);expect(room.players.some(p=>p.id===friendId)).toBe(true);expect(room.players.some(p=>p.id===host.meId)).toBe(true);
+    await p.getByRole('button',{name:'START JOURNEY',exact:true}).click();await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();expect((await read(p)).counts.saboteur).toBe(2);
+    await expect.poll(async()=>{const r=await store.load(host.code);return botIds.every(id=>r.ready[id]);}).toBe(true);
+    await p.goto(url.replace('bots=4','bots=1'));await expect(p.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();expect((await store.load(host.code)).players).toHaveLength(6);
+    expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  }finally{await Promise.all(contexts.map(c=>c.close()));}
+});
+
 test('test mode chats once per turn and removes only its five seats from the lobby',async({browser})=>{
   const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
   const host=(await call(handler,{action:'create',name:'Chat host',requestId:crypto.randomUUID()})).j;

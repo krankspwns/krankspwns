@@ -102,7 +102,9 @@ Cabin, lounge and platform use local compressed WebP artwork with a violet, midn
 
 The host can open `/last-train.html?room=ROOM&test=1` on the browser where their host seat is saved, then press **Add 5 test players** in the lobby. The five clearly named Bot seats use their own ordinary API credentials and private views. They ready up, make simple legal night choices, post a labelled test statement in chat (or finish their in-person speaking turn after four seconds), and vote automatically. They prefer other bot seats as targets so the human can keep testing. They never start or advance a host-controlled phase or modify room settings.
 
-Keep the test-mode page open while playing. Stop/Resume autoplay is available during the game; Remove test players is available only in the lobby. Bot seats are saved locally for reload recovery. No bots join until the host presses Add; guests and ordinary game URLs have no test controls. These are flow-testing clients, not strategic opponents.
+Use `&bots=4` to request four test players (accepted counts are 1–5, default five). Adding `&autobots=1` explicitly sets up that count once when the host opens the link in the lobby. Reloading reuses the saved seats. Switching from five to four removes only the final saved bot owned by that host browser, keeping human players in the room. Guests never get bot controls or auto-setup. Share the normal `?room=ROOM` link with friends; the host keeps the test-mode page open to run the bots. A running game is never resized by a link.
+
+Keep the test-mode page open while playing. Stop/Resume autoplay is available during the game; Remove test players is available only in the lobby. Bot seats are saved locally for reload recovery. Without the explicit `autobots=1` link option, bots join only after the host presses Add; guests and ordinary game URLs have no test controls. These are flow-testing clients, not strategic opponents.
 
 ## Private letters
 
