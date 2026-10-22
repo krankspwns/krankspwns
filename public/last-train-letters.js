@@ -109,7 +109,7 @@
       state = next; owner = seat;
       if (!key) { launcher?.remove(); launcher = badge = null; return; }
       if (!launcher) {
-        launcher = node('button', 'letters-launcher'); launcher.type = 'button'; launcher.innerHTML = icon; launcher.append(node('span', '', 'Letters'));
+        launcher = node('button', 'letters-launcher'); launcher.type = 'button'; launcher.title = 'Private letters'; launcher.innerHTML = icon; launcher.append(node('span', '', 'Letters'));
         badge = node('b', 'letters-badge'); launcher.append(badge); launcher.onclick = open; launcher.setAttribute('aria-haspopup', 'dialog'); host.append(launcher);
       }
       updateLauncher(); renderInbox(); updateForm(); if (!book) discard();

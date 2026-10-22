@@ -125,7 +125,7 @@
       }
       if (!key) { launcher?.remove(); launcher = null; return; }
       if (!launcher) {
-        launcher = button('', open, 'notebook-launcher'); launcher.innerHTML = icon; launcher.append(node('span', '', 'Notes'));
+        launcher = button('', open, 'notebook-launcher'); launcher.title = 'My notebook'; launcher.innerHTML = icon; launcher.append(node('span', '', 'Notes'));
         launcher.setAttribute('aria-label', 'Open private notebook'); launcher.setAttribute('aria-haspopup', 'dialog'); host.append(launcher);
       }
       launcher.dataset.phase = phase; if (phaseLabel) phaseLabel.textContent = phase;

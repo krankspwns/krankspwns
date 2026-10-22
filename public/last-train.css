@@ -685,13 +685,14 @@ body:has(.letters-launcher) .lt-header { padding-right: 130px; flex-wrap: wrap; 
 }
 
 /* Painted stationery keeps the two private tools recognizable at phone sizes. */
-.notebook-launcher, .letters-launcher { min-height: 68px; gap: 3px; }
+.notebook-launcher, .letters-launcher { display: grid; place-items: center; width: 56px; height: 56px; min-height: 56px; padding: 0; gap: 0; border-radius: 50%; }
+.notebook-launcher > span, .letters-launcher > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .notebook-launcher svg, .letters-launcher svg { display: block; width: 30px; height: 30px; filter: drop-shadow(0 2px 2px #070b2240); }
 .notebook-launcher { background: linear-gradient(145deg,#265456f5,#192c43fa); border-color: #8ed5bc99; color: #e3efd5; box-shadow: 0 4px 18px #0006,inset 0 1px #d7fff02b; }
 .notebook-launcher:hover:not(:disabled) { background: linear-gradient(145deg,#30666a,#203b50); border-color: #b2edce; }
 .letters-launcher { background: linear-gradient(145deg,#64374ff5,#312139fa); border-color: #e6bc8299; color: #f8dfb1; box-shadow: 0 4px 18px #0006,inset 0 1px #ffe9cf2b; }
 .letters-launcher:hover:not(:disabled) { background: linear-gradient(145deg,#79475b,#422a47); border-color: #ffe0a1; }
 @media(max-width:680px) {
-  .notebook-launcher, .letters-launcher { min-height: 64px; }
-  .notebook-launcher svg, .letters-launcher svg { width: 27px; height: 27px; }
+  .notebook-launcher, .letters-launcher { width: 46px; height: 46px; min-height: 46px; }
+  .notebook-launcher svg, .letters-launcher svg { width: 28px; height: 28px; }
 }
