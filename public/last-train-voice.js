@@ -7,7 +7,7 @@
     const MAX_BYTES = 512 * 1024, PLAYBACK_PHASES = ['settling','night','gathering','morning','discussion','voting','revoteInfo','voteResult','finished'];
     const players = new Map();
     const pane = document.createElement('section'); pane.className = 'voice-recorder'; pane.setAttribute('aria-label', 'Record a voice message');
-    const MIC = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="2.5" width="8" height="12.5" rx="4" fill="currentColor"/><path d="M5 10.5v1.5a7 7 0 0 0 14 0v-1.5M12 19v2.5M8.5 21.5h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+    const MIC = '<svg fill="none" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="8" height="12.5" rx="4" fill="#ff5c7a" stroke="#c42f50" stroke-width="1"/><rect x="9.6" y="4" width="2" height="5" rx="1" fill="#fff" opacity=".45"/><path d="M5 10.5v1.5a7 7 0 0 0 14 0v-1.5" fill="none" stroke="#ffd66b" stroke-width="1.9" stroke-linecap="round"/><path d="M12 19v2.5M8.5 21.5h7" stroke="#ffd66b" stroke-width="1.9" stroke-linecap="round"/></svg>';
     // Idle: one big card. Recording: a live panel with a timer, moving bars, Stop & Share and Discard.
     const record = document.createElement('button'); record.type = 'button'; record.className = 'speak-choice record-choice';
     record.setAttribute('aria-label', 'Record Voice'); record.innerHTML = '<span class="choice-icon">' + MIC + '</span><span class="choice-copy"><b>Record Voice</b><small>Up to 20 seconds</small></span>';
@@ -159,10 +159,10 @@
     retry.onclick = () => { if (retryClip) upload(retryClip); };
     // A custom player: round play button, a waveform that fills as it plays, and the time.
     const ICONS = {
-      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></svg>',
-      pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.3" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.3" fill="currentColor"/></svg>',
-      lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.2" fill="currentColor"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
-      load: '<svg viewBox="0 0 24 24" aria-hidden="true" class="spin"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-dasharray="30 60" stroke-linecap="round"/></svg>',
+      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="#3fdc8c" stroke="#1d9c5c" stroke-width="1" stroke-linejoin="round"/><path d="M9.6 7.2l7 4.4-7-1.6z" fill="#fff" opacity=".35"/></svg>',
+      pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.3" fill="#ffc94d" stroke="#c98f12" stroke-width="1"/><rect x="13.5" y="5" width="4" height="14" rx="1.3" fill="#ffc94d" stroke="#c98f12" stroke-width="1"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="#c9d2e6" stroke-width="2.2" stroke-linecap="round"/><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.2" fill="#f5c95c" stroke="#b9841c" stroke-width="1"/><circle cx="12" cy="15" r="1.6" fill="#7a4d0a"/></svg>',
+      load: '<svg viewBox="0 0 24 24" aria-hidden="true" class="spin"><circle cx="12" cy="12" r="8" fill="none" stroke="#6bd6ff22" stroke-width="2.6"/><circle cx="12" cy="12" r="8" fill="none" stroke="#6bd6ff" stroke-width="2.6" stroke-dasharray="30 60" stroke-linecap="round"/></svg>',
     };
     const clock = sec => Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
     function player(message) {
