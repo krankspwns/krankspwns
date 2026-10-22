@@ -20,7 +20,9 @@ const server = http.createServer(async (req, res) => {
   const file = path.resolve(root, '.' + decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname));
   if (!file.startsWith(root + '/') || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end(); return; }
   res.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream');
-  res.setHeader('Cache-Control', 'no-store');
+  const boardingMedia = /^\/last-train\/boarding\.[a-f0-9]{12}\.mp4$/.test(url.pathname);
+  res.setHeader('Cache-Control', boardingMedia ? 'public, max-age=31536000, immutable' : 'no-store');
+  if (boardingMedia) res.setHeader('ETag', '"' + path.basename(file) + '"');
   const size = fs.statSync(file).size;
   res.setHeader('Accept-Ranges', 'bytes');
   let start = 0, end = size - 1;

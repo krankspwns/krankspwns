@@ -516,6 +516,8 @@ textarea.notebook-paper { padding: 18px 22px; font-size: 15px; line-height: 30px
 .drawing-paper canvas { touch-action: none; }
 
 /* Locally served boarding footage, with the exact room manifest below. */
+.boarding-audio-controls { display: flex; justify-content: center; padding: 0 15px 18px; }
+.boarding-sound { min-height: 44px; }
 .world.platform-scene { padding: 0 0 22px; min-height: 0; background: #17121c; overflow: hidden; }
 .platform-scene::after { display: none; }
 .boarding-cinema { position: relative; isolation: isolate; width: 100%; aspect-ratio: 16 / 9; max-height: 520px; overflow: hidden; background: #0b1019; }

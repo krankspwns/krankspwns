@@ -1,6 +1,6 @@
 # Walking boarding sequence
 
-Status: the user supplied an LTX-generated clip and approved its locally cleaned version for boarding on 2026-10-22. The approved video is installed as `public/last-train/boarding.mp4`, with `boarding-poster.webp` as its still fallback. The NiftyVid failures below are historical. No paid services were used by this task.
+Status: the user supplied an LTX-generated clip, approved its locally cleaned version for boarding, and requested its original soundtrack in the live game on 2026-10-22. The approved video is installed as `public/last-train/boarding.c0472ce51f03.mp4`, with `boarding-poster.webp` as its still fallback. The NiftyVid failures below are historical. No paid services were used by this task.
 
 Earlier, Figma/Weave rejected a no-spend quote request with “Video models are only available on paid plans.” No Weave generation was started.
 
@@ -8,17 +8,18 @@ Earlier, Figma/Weave rejected a no-spend quote request with “Video models are 
 
 - Source: user upload `stationary_wide_shot_three_travellers_in_emerald.mp4`; approved cleaned export `last-train-boarding-cleaned.mp4`.
 - Local repair: the lower-right watermark area was replaced with a feathered, vertically reflected patch of nearby platform reflections. There may be a subtle texture change in that corner. The original upload and the full-resolution cleaned export were preserved outside the game assets.
-- Delivery: silent H.264 MP4, 1280 × 720, 25 fps, exactly 6 seconds, approximately 2 MB, with fast-start metadata. The source was 1920 × 1080 and 6.12 seconds with audio; the installed copy trims the final 0.12 seconds and removes audio. The poster is the installed clip's first frame.
+- Delivery: H.264 MP4, 1280 × 720, 25 fps, 6 seconds of video, approximately 2.13 MB, with fast-start metadata and the original AAC soundtrack copied from the upload. AAC packet boundaries put the container duration at 6.016 seconds; the server's boarding phase remains exactly six seconds. The source was 1920 × 1080 and 6.12 seconds. The video stream is unchanged from the previously installed silent clip. The poster is the installed clip's first frame. No replacement or synthesized footsteps are included.
 - Review: source and cleaned frames were sampled throughout the clip. Travellers approach, lift their legs onto the steps and disappear into the carriage. The clip includes an additional leading traveller in navy and does not exactly preserve every portrait or outfit (the green outfit becomes a long dress). The user approved this clip as atmospheric group boarding; the separate room manifest remains authoritative for actual players and cabin numbers.
-- Playback: muted inline playback follows elapsed server phase time, including a reload or late arrival. The same video element survives room updates, pauses and resumes. Completion never advances the room; the server retains its six-second timer. Reduced motion omits the video entirely; rejected playback and failed downloads show the still poster. The full 16:9 composition fits inside the scene so feet and steps remain visible on phones.
+- Playback: inline playback with original sound enabled by default follows elapsed server phase time, including a reload or late arrival. A boarding sound button toggles the soundtrack and remembers the choice locally (`lt-boarding-sound`). If audible autoplay is blocked, retry muted and offer “Turn sound on”; the tap enables sound without restarting the clip. The same video element survives room updates, pauses and resumes. Completion never advances the room; the server retains its six-second timer. Reduced motion omits the video and sound entirely; rejected muted playback and failed downloads show the still poster. The full 16:9 composition fits inside the scene so feet and steps remain visible on phones.
+- Caching: the filename contains the first twelve digits of the MP4's SHA-256. Vercel serves this exact URL with `Cache-Control: public, max-age=31536000, immutable`; the browser can reuse its downloaded media across games and reloads. A changed file must receive a new hash filename, client reference and header entry. Local serving mirrors the cache policy and supports byte ranges. Browser storage eviction, private browsing and disabled caching can still require another download; no service worker or separate storage permission is needed.
 - Runtime: local files only, with no generation provider, external video host, new runtime package or service account dependency. The former platform zoom, fade and overlaid destination badge were removed.
 
 ## Integration verification
 
 - `npm test` passed the build, API/rule, recovery, Grand Con and Last Train suites.
-- Four dedicated Chromium browser tests passed with a twelve-player manifest: elapsed-time seeking on reload, persistent playback across updates and pause/resume, reduced motion without a video request, failed download fallback, rejected autoplay fallback, and server-timed cabin entry. Mobile and desktop screenshots confirmed the full frame and uncut checklist; an inherited fixed checklist height was removed.
+- Dedicated Chromium browser coverage uses a twelve-player manifest: elapsed-time seeking on reload, persistent playback across updates and pause/resume, sound preference persistence and audio decoding, reduced motion without a video request, failed download fallback, rejected autoplay fallback, audible autoplay fallback with tap-to-enable sound, and server-timed cabin entry. A separate test without Playwright request routing checks actual browser cache reuse for a second video element and byte-range support. Mobile and desktop screenshots confirm the full frame and uncut checklist; an inherited fixed checklist height was removed.
 - The existing 320px journey/settings test and twelve-phone journey through boarding, cabins, sequential night turns, speaking and vote reveal both passed.
-- Media inspection confirmed exactly six seconds of H.264 video with no audio stream. Local serving returns `video/mp4` and supports byte-range seeking (206 for a valid range, 416 for an out-of-bounds range).
+- Media inspection confirms six seconds of H.264 video and the source AAC audio packets. Local serving returns `video/mp4` and supports byte-range seeking (206 for a valid range, 416 for an out-of-bounds range).
 
 ## Free alternatives checked
 
@@ -82,8 +83,8 @@ A single six-second video cannot clearly introduce all twelve people one by one.
 
 ## Integration requirements
 
-- Silent, locally served MP4, with a poster and compact mobile/desktop framing; no external runtime dependency.
-- Autoplay muted with `playsinline`; do not loop or block the server's synchronized six-second boarding timer.
+- Locally served MP4 with the user-approved original soundtrack, a poster and compact mobile/desktop framing; no external runtime dependency.
+- Inline playback with a remembered sound toggle and muted autoplay fallback; do not loop or block the server's synchronized six-second boarding timer.
 - Seek to elapsed server time on late join/reload; pause and resume with the room.
 - Respect reduced motion with a still poster. A failed autoplay or video download must still allow the journey to continue on schedule.
 - Review the clip at normal speed and in individual frames before installing it, particularly feet/steps, facial consistency, silhouettes and the doorway occlusion.

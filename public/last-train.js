@@ -11,6 +11,7 @@
   let dockNode = null, dockStamp = '', drawerGesture = null, suppressDrawerClick = false;
   let cinemaNode = null, cinemaKey = '', cinemaEnd = null;
   let boardingVideo = null, boardingVideoKey = '';
+  let boardingSound = read('lt-boarding-sound') !== false;
   const overlayRoot = document.getElementById('lt-overlays');
   const notebook = window.createTrainNotebook(overlayRoot);
   const letters = window.createTrainLetters(overlayRoot, { request, onState: (data, owner) => { if (seat?.tok === owner.tok && seat.code === owner.code) { adopt(data); render(); } } });
@@ -226,12 +227,42 @@
     if (motionOK && (!boardingVideo || boardingVideoKey !== key)) {
       boardingVideo?.pause();
       boardingVideoKey = key;
-      boardingVideo = el('video', { class: 'boarding-video', src: '/last-train/boarding.mp4', poster: '/last-train/boarding-poster.webp', muted: true, defaultMuted: true, playsInline: true, preload: 'auto', tabIndex: -1, onloadedmetadata: syncBoardingVideo, onerror: e => { e.currentTarget.hidden = true; } });
+      boardingVideo = el('video', { class: 'boarding-video', src: '/last-train/boarding.c0472ce51f03.mp4', poster: '/last-train/boarding-poster.webp', muted: !boardingSound, defaultMuted: !boardingSound, playsInline: true, preload: 'auto', tabIndex: -1, onloadedmetadata: syncBoardingVideo, onerror: e => { e.currentTarget.hidden = true; updateBoardingSoundButton(); } });
     }
     return el('section', { style: '--elapsed:' + Math.max(0,(state.duration || 6) - (state.remainingMs || 0)/1000) + 's', class: 'world platform-scene', 'aria-label': 'Everyone boards the train' },
       el('div', { class: 'boarding-cinema', 'aria-hidden': 'true' }, el('img', { class: 'boarding-poster', src: '/last-train/boarding-poster.webp', alt: '' }), motionOK ? boardingVideo : null),
       hud('ALL ABOARD', 'Next stop: the unknown.', 'The carriage is ready. Find your cabin.'),
+      motionOK ? el('div', { class: 'boarding-audio-controls' }, el('button', { type: 'button', class: 'boarding-sound secondary', 'data-focus': 'boarding-sound', onclick: toggleBoardingSound })) : null,
       el('div', { class: 'boarding-queue', 'aria-label': 'Passenger boarding checks' }, ...state.players.map((p,i) => el('div', { class: 'boarding-person', style: '--order:' + i + ';--total:' + state.players.length }, avatar(p, 'boarding-avatar'), el('div', {}, txt('b', '', p.name), txt('small', '', 'CABIN ' + String(p.seat).padStart(2, '0'))), txt('span', 'boarding-check', '✓')))));
+  }
+  function updateBoardingSoundButton() {
+    const button = root.querySelector('.boarding-sound');
+    if (!button || !boardingVideo) return;
+    button.textContent = boardingVideo.muted ? 'Turn sound on' : 'Mute sound';
+    button.setAttribute('aria-pressed', String(!boardingVideo.muted));
+    button.disabled = boardingVideo.hidden;
+  }
+  function toggleBoardingSound() {
+    if (!boardingVideo) return;
+    boardingSound = boardingVideo.muted;
+    save('lt-boarding-sound', boardingSound);
+    boardingVideo.muted = !boardingSound;
+    // Call play during the tap so mobile browsers can grant audible playback.
+    syncBoardingVideo();
+  }
+  async function playBoardingVideo(video) {
+    video.playPending = true;
+    try { await video.play(); }
+    catch (e) {
+      if (boardingVideo !== video || e.name === 'AbortError') return;
+      if (e.name === 'NotAllowedError' && !video.muted) {
+        // A blocked soundtrack must not hide the movie or stop the room clock.
+        video.muted = true;
+        updateBoardingSoundButton();
+        try { await video.play(); }
+        catch (fallback) { if (fallback.name !== 'AbortError' && boardingVideo === video) { video.hidden = true; video.pause(); } }
+      } else { video.hidden = true; video.pause(); }
+    } finally { video.playPending = false; updateBoardingSoundButton(); }
   }
   function syncBoardingVideo() {
     const video = boardingVideo;
@@ -240,6 +271,7 @@
       video.pause(); video.removeAttribute('src'); video.load();
       boardingVideo = null; boardingVideoKey = ''; return;
     }
+    updateBoardingSoundButton();
     if (!video.isConnected || video.hidden || video.readyState < 1) return;
     const elapsed = Math.max(0, (state.duration || 6) - (state.remainingMs || 0) / 1000 + (state.paused ? 0 : (Date.now() - state.receivedAt) / 1000));
     const target = Math.min(elapsed, video.duration);
@@ -248,10 +280,7 @@
       try { video.currentTime = target; } catch { return; }
     }
     if (state.paused || elapsed >= video.duration) video.pause();
-    else if (video.paused && !video.playPending) {
-      video.playPending = true;
-      video.play().catch(e => { if (e.name !== 'AbortError' && boardingVideo === video) { video.hidden = true; video.pause(); } }).finally(() => { video.playPending = false; });
-    }
+    else if (video.paused && !video.playPending) playBoardingVideo(video);
   }
   function chooseTarget(title, kind, action, extra = {}, { self = false, skip = false } = {}) {
     const bound = fence(); let selected = null, double = false;

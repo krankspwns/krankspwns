@@ -3,6 +3,12 @@
   "outputDirectory": "public",
   "headers": [
     {
+      "source": "/last-train/boarding.c0472ce51f03.mp4",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
       "source": "/(avatars|audio)/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
