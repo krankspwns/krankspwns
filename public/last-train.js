@@ -645,6 +645,9 @@
             oninput: e => updateNightNotes({ people: { ...(nightNotes().people || {}), [p.id]: e.target.value } }) })))) :
         el('div', { class: 'night-question' },
           txt('p', 'console-hint', 'What will you tell the group? Write your made-up story here to remember it during discussion.'),
+          el('ul', { class: 'cover-tips' }, txt('li', '', 'Claim a role that is in tonight’s mix, but not one a teammate is claiming.'),
+            txt('li', '', 'Keep it small: one thing you did or saw. Big claims get checked.'), txt('li', '', 'Point gently at someone who is not on your team.')),
+          phraseBar('story'),
           el('label', { htmlFor: 'night-cover-story' }, 'Your private cover story'),
           el('textarea', { id: 'night-cover-story', rows: 4, maxLength: 280, value: coverStory(), disabled: state.paused,
             placeholder: 'What did you claim to see or do tonight?', oninput: e => updateNightNotes({ stories: { ...nightNotes().stories, [state.round]: e.target.value } }) })),
@@ -935,32 +938,37 @@
     clue: r => who(r.targetId) + ' isn’t ' + role(r.role).name,
   };
   const GOOD_ROLES = ['passenger', 'careful', 'brave', 'witness', 'speaker', 'inspector', 'medic', 'trainee'];
+  const fakeChips = () => [
+    { cls: 'cover', label: 'Claim a role…', roles: k => k === 'passenger' ? 'I’m just a Passenger, no night power.' : 'I’m the ' + role(k).name + '.' },
+    { cls: 'cover', label: 'Say … is GOOD', pick: n => 'I checked ' + n + ': GOOD.' }, { cls: 'cover', label: 'Say … is BAD', pick: n => 'I checked ' + n + ': BAD.' },
+    { cls: 'cover', label: 'Heard steps…', pick: n => 'I heard footsteps from ' + n + '’s side of the corridor.' },
+    { cls: 'cover', label: 'Protected…', pick: n => 'I protected ' + n + ' last night.' }, { cls: 'cover', label: 'Quiet night', text: 'I stayed in my cabin and heard nothing.' }];
   function phraseChips() {
     const me = state.me, reports = me.reports || [], round = Math.max(0, ...reports.map(r => r.round)), chips = [];
     for (const r of reports.filter(x => x.round === round && REPORT_CHIP[x.type])) chips.push({ cls: 'report', label: REPORT_CHIP[r.type](r), text: reportMessage(r) });
     // Saboteurs get believable fake lines: claim any good role, invent a check or a sound in the corridor.
-    if (me.group === 'saboteur') chips.push(...(coverStory() ? [{ cls: 'cover', label: '🎭 Cover story', text: coverStory() }] : []),
-      { cls: 'cover', label: 'Claim a role…', roles: k => k === 'passenger' ? 'I’m just a Passenger, no night power.' : 'I’m the ' + role(k).name + '.' },
-      { cls: 'cover', label: 'Say … is GOOD', pick: n => 'I checked ' + n + ': GOOD.' }, { cls: 'cover', label: 'Say … is BAD', pick: n => 'I checked ' + n + ': BAD.' },
-      { cls: 'cover', label: 'Heard steps…', pick: n => 'I heard footsteps from ' + n + '’s side of the corridor.' });
+    if (me.group === 'saboteur') chips.push(...(coverStory() ? [{ cls: 'cover', label: '🎭 Cover story', text: coverStory() }] : []), ...fakeChips());
     else chips.push({ cls: 'claim', label: role(me.role).name, text: me.role === 'passenger' ? 'I’m a Passenger, no night power.' : 'I’m the ' + role(me.role).name + '.' });
     chips.push({ label: 'I suspect…', pick: n => 'I suspect ' + n + '.' }, { label: 'I trust…', pick: n => 'I trust ' + n + '.' }, { label: 'Vote out…', pick: n => 'Let’s vote out ' + n + '.' },
       { label: 'No info', text: 'I have nothing from last night.' }, { label: 'Let’s skip', text: 'If we’re unsure, let’s skip this vote.' });
     return chips;
   }
-  function addPhrase(text) {
-    speechDraft = ((speechDraft.trim() ? speechDraft.trim() + ' ' : '') + text).slice(0, 280); phrasePick = null; render();
-    requestAnimationFrame(() => { const t = document.getElementById('lt-speech'); t?.focus(); t?.setSelectionRange(t.value.length, t.value.length); });
+  // Phrases go into the discussion message, or (for 'story') into tonight's private cover story.
+  function addPhrase(text, target) {
+    const join = cur => ((cur.trim() ? cur.trim() + ' ' : '') + text).slice(0, 280);
+    if (target === 'story') updateNightNotes({ stories: { ...nightNotes().stories, [state.round]: join(coverStory()) } }); else speechDraft = join(speechDraft);
+    phrasePick = null; render();
+    requestAnimationFrame(() => { const t = document.getElementById(target === 'story' ? 'night-cover-story' : 'lt-speech'); t?.focus(); t?.setSelectionRange(t.value.length, t.value.length); });
   }
-  function phraseBar() {
-    const off = busy || state.paused, chips = phraseChips(), picking = chips.find(c => c.label === phrasePick);
+  function phraseBar(target) {
+    const off = busy || state.paused, chips = target === 'story' ? fakeChips() : phraseChips(), picking = chips.find(c => c.label === phrasePick), add = text => addPhrase(text, target);
     return el('div', { class: 'phrase-bar', 'aria-label': 'Quick phrases' },
       el('div', { class: 'phrase-chips' }, ...chips.map(c => el('button', { type: 'button', class: 'phrase-chip' + (c.cls ? ' ' + c.cls : '') + (phrasePick === c.label ? ' on' : ''), disabled: off, 'data-focus': 'phrase-' + c.label,
-        onclick: () => { if (c.pick || c.roles) { phrasePick = phrasePick === c.label ? null : c.label; render(); } else addPhrase(c.text); } }, c.label))),
+        onclick: () => { if (c.pick || c.roles) { phrasePick = phrasePick === c.label ? null : c.label; render(); } else add(c.text); } }, c.label))),
       picking?.pick ? el('div', { class: 'phrase-people' }, ...state.players.filter(p => p.alive && p.id !== state.meId).map(p => el('button', { type: 'button', class: 'phrase-person', disabled: off, 'aria-label': p.name,
-        onclick: () => addPhrase(picking.pick(p.name)) }, avatar(p), txt('small', allyCls(p.id), p.name)))) : null,
-      picking?.roles ? el('div', { class: 'phrase-people phrase-roles' }, ...GOOD_ROLES.map(k => el('button', { type: 'button', class: 'phrase-person', disabled: off, 'aria-label': role(k).name,
-        onclick: () => addPhrase(picking.roles(k)) }, rolePortrait(k, 'phrase-role-art'), txt('small', '', role(k).name)))) : null);
+        onclick: () => add(picking.pick(p.name)) }, avatar(p), txt('small', allyCls(p.id), p.name)))) : null,
+      picking?.roles ? el('div', { class: 'phrase-people phrase-roles' }, ...GOOD_ROLES.filter(k => k === 'passenger' || !state.mix?.length || state.mix.some(m => m.role === k)).map(k => el('button', { type: 'button', class: 'phrase-person', disabled: off, 'aria-label': role(k).name,
+        onclick: () => add(picking.roles(k)) }, rolePortrait(k, 'phrase-role-art'), txt('small', '', role(k).name)))) : null);
   }
   function speechConsole() {
     const me = state.me, own = state.speakerId === state.meId, mode = state.settings.discussion;
@@ -1521,10 +1529,13 @@
     root.classList.toggle('on-journey',playing);
     const content = !seat ? landing() : !state ? panel(el('h2',{},'Finding your train…'),btn('Try Again',poll,'secondary')) : state.phase === 'lobby' ? waitingRoom() : state.phase === 'finished' ? finale() : match();
     const key = [state?.code,state?.match,state?.phase,state?.nightRole,state?.nightPhase,state?.phase === 'discussion' ? state.speakerId : ''].join(':');
+    // Sideways strips (the traveller strip, the face pickers) keep their scroll position when the page redraws.
+    const strips = new Map([...root.querySelectorAll('.lt-roster, .phrase-people')].map(n => [n.classList[0], n.scrollLeft]));
     root.replaceChildren(...[header(), error ? el('div',{class:'error',role:'alert'},error,btn('Close',()=>{error='';render();},'text-button')) : null, seat && !connected ? txt('p','connection','Reconnecting. Your ticket is saved.') : null, state?.notice ? txt('p','waiting',state.notice) : null,
       state?.me?.observer ? el('div',{class:'observer-banner',role:'status'},txt('span','','👀'),el('div',{},txt('b','','You are watching this journey.'),txt('small','','You see what everyone sees. You take a seat when the next journey starts.'))) : null,
       state?.paused ? el('div',{class:'pause-banner',role:'status'},txt('b','','Ⅱ Journey paused'),txt('span','','Timers and choices are on hold.'),state.hostId === state.meId ? btn('RESUME JOURNEY',()=>send('resume'),'host') : null) : null,
       content,txt('footer','','Last Train · Every cabin hides a secret.')].filter(Boolean));
+    for (const [cls, left] of strips) { const n = root.querySelector('.' + cls); if (n && left) n.scrollLeft = left; }
     for (const n of root.querySelectorAll('details[data-details]')) if (String(state?.round || 0) === root.dataset.round && detailStates.has(n.dataset.details)) n.open = detailStates.get(n.dataset.details);
     testPlayers?.sync(state, seat);
     syncRoleDock(playing && !state.me.observer && !['briefing','boarding','finished'].includes(state.phase));

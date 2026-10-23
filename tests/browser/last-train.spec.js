@@ -273,7 +273,7 @@ test('test mode chats once per turn and removes only its five seats from the lob
     await controls.getByRole('button',{name:'Remove Test Players'}).click();await expect(p.locator('.seat')).toHaveCount(1);expect((await store.load(host.code)).players.map(p=>p.id)).toEqual([host.meId]);
     await controls.getByRole('button',{name:'Add 5 Test Players'}).click();await expect(p.locator('.seat')).toHaveCount(6);
     let room=await store.load(host.code);room.settings.discussion='chat';rules.start(room);room.nightMode='legacy';rules.beginDiscussion(room);room.speakingOrder=[...room.players.filter(p=>p.id!==host.meId).map(p=>p.id),host.meId];await store.save(room);
-    await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(1);room=await store.load(host.code);const first=room.speeches[0];expect(first.text).toMatch(/I'm (?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|Trainee|a Passenger)/);expect(first.id).not.toBe(host.meId);
+    await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(1);room=await store.load(host.code);const first=room.speeches[0];expect(first.text).toMatch(/(?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|Trainee|Passenger)\./);expect(first.id).not.toBe(host.meId);
     // A new speaker gets a distinct single statement; the first is never duplicated.
     await expect.poll(async()=>(await store.load(host.code)).speeches.length).toBe(2);room=await store.load(host.code);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(2);
     await expect(controls.getByRole('button',{name:'Remove Test Players'})).toBeDisabled();

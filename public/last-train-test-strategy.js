@@ -45,10 +45,10 @@
   // The randomness is seeded by bot, journey and round, so asking the same bot twice gives the same line.
   function seeded(seed) { let a = Math.imul(hash(seed) ^ 0x9e3779b9, 0x85ebca6b) >>> 0; const next = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; next(); next(); return next; }
   const OPENERS = ['', '', '', 'Okay. ', 'Morning, everyone. ', 'Right, quick one. ', 'Listen. ', 'Alright. ', 'Honestly? ', 'So. '];
-  const CLAIMS = [r => 'I’m ' + r + '.', r => 'My role is ' + r + '.', r => 'I’ll be open: I’m ' + r + '.', r => 'Cards on the table, I’m ' + r + '.', r => 'For the record, I’m ' + r + '.'];
-  const PASSENGER_CLAIMS = ['I’m a Passenger.', 'Just a Passenger here.', 'I’m only a Passenger.', 'Cards on the table, I’m a Passenger.'];
-  const GOOD_TAKES = [n => 'I’m keeping an eye on ' + n + '.', n => n + ' has been very quiet.', n => 'I trust ' + n + ' for now.', n => 'Something about ' + n + '’s story feels off.', n => 'I want to hear from ' + n + ' next.', n => 'Can ' + n + ' explain last night?', () => 'Let’s not rush the vote.', () => 'Let’s compare every claim before voting.', () => ''];
-  const BAD_TAKES = [n => n + ' seems nervous to me.', n => 'I don’t buy ' + n + '’s story.', n => 'We should look hard at ' + n + '.', n => n + ' is dodging questions.', n => 'Did anyone else notice ' + n + ' changing their story?', () => ''];
+  const CLAIMS = [r => 'I\'m ' + r + '.', r => 'My role is ' + r + '.', r => 'I\'ll be open: I\'m ' + r + '.', r => 'Cards on the table, I\'m ' + r + '.', r => 'For the record, I\'m ' + r + '.'];
+  const PASSENGER_CLAIMS = ['I\'m a Passenger.', 'Just a Passenger here.', 'I\'m only a Passenger.', 'Cards on the table, I\'m a Passenger.'];
+  const GOOD_TAKES = [n => 'I\'m keeping an eye on ' + n + '.', n => n + ' has been very quiet.', n => 'I trust ' + n + ' for now.', n => 'Something about ' + n + '\'s story feels off.', n => 'I want to hear from ' + n + ' next.', n => 'Can ' + n + ' explain last night?', () => 'Let\'s not rush the vote.', () => 'Let\'s compare every claim before voting.', () => ''];
+  const BAD_TAKES = [n => n + ' seems nervous to me.', n => 'I don\'t buy ' + n + '\'s story.', n => 'We should look hard at ' + n + '.', n => n + ' is dodging questions.', n => 'Did anyone else notice ' + n + ' changing their story?', () => ''];
   function dress(bot, view, core) {
     const r = seeded([bot.pid || view.meId, view.match, view.round].join(':')), pick = list => list[Math.floor(r() * list.length)];
     const said = core.replace(/I'm (a |the )?(Passenger|Inspector|Medic|Witness|Brave Passenger|Careful Passenger|Speaker|Trainee)\./, (m, art, role) => role === 'Passenger' ? pick(PASSENGER_CLAIMS) : pick(CLAIMS)(role));
