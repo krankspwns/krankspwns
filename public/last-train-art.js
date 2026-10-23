@@ -52,3 +52,8 @@ window.TRAIN_ART.trustLines = {
     unsure: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.9"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1.1" fill="currentColor"/>',
     suspect: '<circle cx="12" cy="12" r="7.2" stroke="currentColor" stroke-width="1.9"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/>',
   };
+// Extra notebook tags: could have walked past (footsteps) and a clashing role claim.
+window.TRAIN_ART.noteTags = [
+  ['steps', 'Walk Path', '<g fill="currentColor"><ellipse cx="8" cy="8" rx="3" ry="4"/><ellipse cx="8" cy="15" rx="2.3" ry="2"/><ellipse cx="16.5" cy="11" rx="3" ry="4"/><ellipse cx="16.5" cy="18" rx="2.3" ry="2"/></g>'],
+  ['clash', 'Role Clash', '<path d="M5 19 15.5 8.5M15.5 8.5l1-3.5 3.5-1-1 3.5zM19 19 8.5 8.5M8.5 8.5l-1-3.5-3.5-1 1 3.5z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 16.5l3 3M19.5 16.5l-3 3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>'],
+];

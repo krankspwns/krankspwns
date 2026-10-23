@@ -2014,3 +2014,70 @@ button.team-proposal.mine .proposal-tap { color: #ff9db0; }
 @keyframes sunrise-glow { from { opacity: 0; } }
 .loop-map .map-walker { margin-top: 10px; }
 .loop-map .map-walker-face.portrait { width: 20px !important; height: 20px !important; }
+/* Notebook tags: Walk Path and Role Clash, beside Trust / Unsure / Suspect */
+.people-row { grid-template-areas: 'face name chips' 'face tags tags' 'face note note' !important; }
+.people-row .note-tags { grid-area: tags; }
+.night-trust-row .note-tags { grid-column: 2 / -1; }
+.note-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.note-tag { --c: #f2ce86; display: inline-flex !important; align-items: center; gap: 5px; min-height: 0 !important; padding: 4px 10px 4px 7px !important; border-radius: 999px !important; border: 1px dashed #ffffff2a !important; background: transparent !important; color: #a99ebc !important; box-shadow: none !important; transition: background .2s, color .2s, border-color .2s; }
+.note-tag.clash { --c: #ff9a5c; }
+.note-tag-icon { display: inline-grid; width: 15px; height: 15px; }
+.note-tag-icon svg { width: 15px; height: 15px; }
+.note-tag small { font: 700 10.5px Inter, sans-serif; }
+.note-tag[aria-pressed=true] { color: var(--c) !important; border-style: solid !important; border-color: color-mix(in srgb, var(--c) 60%, transparent) !important; background: color-mix(in srgb, var(--c) 14%, transparent) !important; }
+.tag-steps-button { display: inline-flex !important; align-items: center; gap: 6px; margin-top: 8px; min-height: 32px !important; padding: 0 12px !important; border-radius: 999px !important; border: 1px solid #f2ce8688 !important; background: #f2ce861a !important; color: #f2ce86 !important; font: 800 12px Inter, sans-serif !important; }
+.tag-steps-button.done { border-color: #6fe3a466 !important; background: #6fe3a414 !important; color: #8fe8bb !important; opacity: 1 !important; filter: none !important; }
+/* Round close buttons stay round: no inherited minimum height can stretch them */
+.notebook-close, .letters-close, .map-close { width: 38px !important; height: 38px !important; min-width: 38px !important; min-height: 38px !important; max-height: 38px !important; aspect-ratio: 1; padding: 0 !important; border-radius: 50% !important; flex: none; display: grid !important; place-items: center; line-height: 1 !important; }
+.lt-fabs .map-fab { order: 0; }
+.map-fab { position: relative; display: grid !important; place-items: center; width: 52px; height: 52px; min-height: 52px !important; padding: 0 !important; border-radius: 50% !important; border: 1px solid #f2ce8670; background: radial-gradient(circle at 35% 30%, #6a2638, #3d1220) !important; box-shadow: 0 8px 24px #000a, inset 0 1px #ffffff1a !important; cursor: pointer; }
+.map-fab[hidden] { display: none !important; }
+.map-fab svg { width: 29px; height: 29px; }
+.map-fab span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.map-fab:active { transform: scale(.94); }
+.map-dialog { width: min(520px, calc(100% - 24px)); }
+.map-dialog .loop-map { width: 100%; margin: 10px auto 6px; }
+/* ===== Ghost Climb ===== */
+.ghost-stack { display: grid; gap: 12px; }
+.climb-card { display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 18px; text-align: left; background: radial-gradient(ellipse 70% 120% at 0% 100%, #6a5a8a55, transparent 60%), linear-gradient(160deg, #1a2442, #0d1630); border: 1px solid #b8a6ff55; box-shadow: inset 0 1px #ffffff14, 0 10px 24px #0007; }
+.climb-card-art { flex: none; width: 74px; height: 74px; border-radius: 16px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 74 74'%3E%3Crect width='74' height='74' fill='%2324365e'/%3E%3Cpath d='M0 74 26 30l12 16 9-12 27 40z' fill='%238b97b3'/%3E%3Cpath d='M26 30l6 9-6-2-5 3z' fill='%23f4f8ff'/%3E%3Cpath d='M47 34l5 7-5-1-4 2z' fill='%23f4f8ff'/%3E%3Cpath d='M52 10v16' stroke='%23f3eadb' stroke-width='1.5'/%3E%3Cpath d='M52 10l10 4-10 4z' fill='%23ffd36a'/%3E%3Cpath d='M18 64c0-6 4-10 8-10s8 4 8 10l-2.7-2-2.6 2-2.7-2-2.7 2-2.6-2z' fill='%23f6f3ff'/%3E%3Ccircle cx='24' cy='59' r='1.2' fill='%232a1d55'/%3E%3Ccircle cx='28.5' cy='59' r='1.2' fill='%232a1d55'/%3E%3C/svg%3E") center / cover; box-shadow: inset 0 0 0 1px #ffffff22; }
+.climb-card-copy { min-width: 0; }
+.climb-card-copy .eyebrow { color: #c9bdff; font-size: 9px; letter-spacing: 1.6px; }
+.climb-card-copy h3 { margin: 3px 0 2px; font-size: 17px; color: #f6f3ff; }
+.climb-card-copy p { margin: 0 0 9px !important; font-size: 12px !important; color: #c9c3e0 !important; line-height: 1.4; }
+.climb-start { min-height: 38px !important; padding: 0 16px !important; font-size: 13px !important; }
+.climb-seen { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+.climb-seen-item { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 3px; border-radius: 999px; background: #ffffff0f; border: 1px solid #ffffff1a; }
+.climb-seen-face.portrait { width: 24px !important; height: 24px !important; border-radius: 50% !important; }
+.climb-seen-item b { display: block; font-size: 11px; color: #f6f3ff; line-height: 1.1; } .climb-seen-item small { display: block; font-size: 9.5px; color: #ffd36a; }
+.climb-dialog { width: min(480px, calc(100% - 16px)); max-height: calc(100dvh - 16px); padding: 12px !important; display: flex; flex-direction: column; gap: 10px; }
+.climb-dialog[open] { display: flex; }
+.climb-head { display: flex; align-items: center; gap: 10px; }
+.climb-head small { display: block; font: 800 8.5px Inter, sans-serif; letter-spacing: 1.5px; color: #c9bdff; }
+.climb-head b { display: block; font: 800 17px Inter, sans-serif; color: #f6f3ff; }
+.climb-time { margin-left: auto; font: 800 15px Inter, sans-serif; font-variant-numeric: tabular-nums; color: #ffd36a; }
+.climb-close { width: 36px !important; height: 36px !important; min-height: 36px !important; padding: 0 !important; border-radius: 50% !important; font-size: 22px !important; display: grid !important; place-items: center; background: #ffffff10 !important; border: 1px solid #ffffff22 !important; color: #f3eadb !important; }
+.climb-stage { position: relative; flex: 1; min-height: 0; height: min(62dvh, 560px); border-radius: 16px; overflow: hidden; border: 1px solid #ffffff1f; touch-action: none; }
+.climb-stage canvas { display: block; width: 100%; height: 100%; }
+.climb-progress { position: absolute; left: 10px; right: 10px; top: 10px; height: 5px; border-radius: 4px; background: #00000055; overflow: hidden; }
+.climb-progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8fd6ff, #ffd36a); }
+.climb-toast { position: absolute; left: 50%; top: 26px; transform: translateX(-50%); margin: 0; padding: 6px 12px; border-radius: 999px; background: #000000aa; color: #fff; font: 700 12px Inter, sans-serif; white-space: nowrap; }
+.climb-pad { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 10px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.climb-btn { min-height: 64px !important; border-radius: 18px !important; border: 1px solid #ffffff2a !important; background: linear-gradient(180deg, #2a3a66, #18223e) !important; color: #e8eeff !important; font: 900 22px Inter, sans-serif !important; box-shadow: inset 0 1px #ffffff26, 0 6px 14px #0007 !important; -webkit-tap-highlight-color: transparent; }
+.climb-btn.jump { background: linear-gradient(180deg, #ffe9a8, #e0aa45) !important; color: #2a1806 !important; font-size: 17px !important; letter-spacing: 1.5px; border-color: #fff0c0 !important; }
+.climb-btn.down { transform: translateY(2px) scale(.97); filter: brightness(1.15); }
+.reveal-result .reveal-role-art { display: block; width: 72px; height: 72px; margin: 6px auto; border-radius: 14px; }
+.climb-dialog { height: calc(100dvh - 20px) !important; max-height: calc(100dvh - 20px) !important; width: min(520px, calc(100% - 12px)) !important; padding: 12px !important; }
+.climb-stage { flex: 1 1 auto !important; height: auto !important; min-height: 240px; }
+@media (min-width: 681px) { .climb-dialog { height: min(820px, calc(100dvh - 40px)) !important; } }
+/* 3D climb: full-height stage with an on-screen stick and jump button */
+.climb-3d .climb-stage { position: relative; background: #000; }
+.climb-3d .climb-stage canvas { touch-action: none; }
+.climb-stick { position: absolute; left: 16px; bottom: 16px; width: 116px; height: 116px; border-radius: 50%; background: radial-gradient(circle, #ffffff22, #ffffff0a 70%); border: 2px solid #ffffff44; touch-action: none; display: grid; place-items: center; }
+.climb-stick i { display: block; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffffff, #c9c3e0); box-shadow: 0 4px 10px #0007; pointer-events: none; transition: transform .06s; }
+.climb-jump { position: absolute; right: 16px; bottom: 26px; width: 96px !important; height: 96px !important; min-height: 0 !important; padding: 0 !important; border-radius: 50% !important; background: radial-gradient(circle at 35% 30%, #fff1bf, #e0aa45) !important; border: 2px solid #fff0c0 !important; color: #2a1806 !important; font: 900 16px Inter, sans-serif !important; letter-spacing: 1.5px; box-shadow: 0 8px 20px #0008, inset 0 2px #fff8 !important; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.climb-jump.down { transform: scale(.94); filter: brightness(1.1); }
+.climb-hint { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); margin: 0; font: 600 10.5px Inter, sans-serif; color: #ffffffb0; text-shadow: 0 1px 3px #000; white-space: nowrap; pointer-events: none; }
+.climb-3d .climb-toast { top: 46px; }
+.climb-3d .climb-pad { display: none; }
+@media (min-width: 681px) { .climb-hint::after { content: ' · WASD / arrows + Space on a keyboard'; } }

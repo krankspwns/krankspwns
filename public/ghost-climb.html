@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#15243c"><title>Ghost Climb · The Game Room</title><link rel="icon" href="/icon.svg"><link rel="preload" href="/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/last-train.css"><script defer src="/last-train-sfx.js"></script><script defer src="/last-train-climb.js"></script>
+<style>
+.practice { min-height: 100dvh; display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+.practice-card { width: min(420px, 100%); padding: 26px 22px; border-radius: 22px; text-align: center; background: linear-gradient(140deg, #1d2a44e6, #121a2ef2); border: 1px solid #c9a96a40; box-shadow: 0 16px 60px #0006; }
+.practice-card h1 { margin: 6px 0 8px; font-size: 28px; letter-spacing: -.6px; color: #fff5df; }
+.practice-card p { margin: 0 0 18px; color: #c9c2d6; font-size: 14px; line-height: 1.5; }
+.practice-card .eyebrow { font-size: 10px; letter-spacing: 1.8px; }
+.practice-actions { display: grid; gap: 10px; }
+.practice-actions button { min-height: 48px; font-size: 15px; }
+.practice-seed { margin-top: 14px; font-size: 12px; color: #9aa3ba; }
+.practice-runs { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 6px; }
+.practice-runs li { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 10px; background: #ffffff0d; font-size: 13px; color: #e6dcc4; }
+</style></head>
+<body><main class="practice"><section class="practice-card">
+<span class="eyebrow">LAST TRAIN · PRACTICE</span>
+<h1>Ghost Climb</h1>
+<p>Move with the stick, drag to look, tap Jump. On a keyboard: WASD or arrows, Space to jump, Q / E to turn. Reach the flag at the peak.</p>
+<div class="practice-actions"><button type="button" class="gold" id="play">Start The Climb</button><button type="button" class="secondary" id="fresh">New Course</button></div>
+<div class="practice-seed" id="seed"></div>
+<ul class="practice-runs" id="runs"></ul>
+</section></main>
+<script>
+addEventListener('DOMContentLoaded', () => {
+  // ?seed=123 replays a course; otherwise each visit gets a random one.
+  const fromUrl = Number(new URLSearchParams(location.search).get('seed'));
+  let seed = Number.isInteger(fromUrl) && fromUrl > 0 ? fromUrl : 1 + Math.floor(Math.random() * 1e9);
+  const sfx = window.createTrainSfx?.(), seedEl = document.getElementById('seed'), runs = document.getElementById('runs');
+  const show = () => { seedEl.textContent = 'Course #' + seed; history.replaceState(null, '', '?seed=' + seed); };
+  document.getElementById('play').onclick = () => window.createGhostClimb({ seed, sfx, onClose: () => {}, onFinish: ({ seconds, falls }) => {
+    const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>';
+    li.firstChild.textContent = 'Course #' + seed + ' · ' + falls + ' fall' + (falls === 1 ? '' : 's'); li.lastChild.textContent = seconds.toFixed(1) + 's';
+    runs.prepend(li);
+  } });
+  document.getElementById('fresh').onclick = () => { seed = 1 + Math.floor(Math.random() * 1e9); show(); };
+  show();
+});
+</script></body></html>

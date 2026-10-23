@@ -223,6 +223,35 @@ function roundFiveTests() {
     while (room.phase !== 'gathering') r.advance(room); assert.equal(r.view(room, out).me.ghostOpen, false);
     assert.throws(() => r.ghostGuess(room, out, [bad.id]), /close/);
   }
+  // Ghost Climb: only for players who are out, after the ghost guess; a finished climb reveals one chosen role.
+  {
+    const room = shared(['passenger','passenger','passenger','inspector','medic','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), out = room.players.find(p => p.role === 'passenger'), alive = room.players.find(p => p.role === 'inspector');
+    assert.throws(() => r.ghostClimb(room, alive), /opens once/);
+    while (r.nightRole(room) !== 'moves') r.advance(room); r.nightChoice(room, bad, { attackId: out.id }); while (room.phase === 'night') r.advance(room);
+    assert.throws(() => r.ghostClimb(room, out), /opens once/); assert.equal(r.view(room, out).me.climbOpen, false);
+    r.ghostGuess(room, out, [bad.id]); assert.equal(r.view(room, out).me.climbOpen, true);
+    r.ghostClimb(room, out); assert.ok(r.view(room, out).me.ghostClimb.seed >= 0);
+    assert.throws(() => r.ghostReveal(room, out, alive.id), /peak/);
+    room.climbs[out.id].startedAt -= r.CLIMB_MIN_MS + 1; r.ghostReveal(room, out, alive.id);
+    assert.deepEqual(out.reports.at(-1), { type: 'ghostReveal', round: room.round, targetId: alive.id, role: 'inspector' });
+    assert.throws(() => r.ghostReveal(room, out, bad.id), /Start a climb/);
+    r.ghostClimb(room, out); room.climbs[out.id].startedAt -= r.CLIMB_MIN_MS + 1; assert.throws(() => r.ghostReveal(room, out, alive.id), /not seen/);
+    assert.equal(r.view(room, alive).me.climbOpen, false); assert.ok(!r.view(room, alive).me.reports.some(x => x.type === 'ghostReveal'));
+  }
+  // Ghost Climb courses: deterministic per seed, and every jump is proven possible with the game's own physics.
+  {
+    const fs = require('node:fs'), vm = require('node:vm'), sandbox = { window: {} };
+    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, '../public/last-train-climb.js'), 'utf8'), sandbox);
+    const { ghostClimbCourse, ghostClimbSim } = sandbox.window;
+    for (let seed = 1; seed <= 12; seed++) {
+      const a = ghostClimbCourse(seed), b = ghostClimbCourse(seed);
+      assert.deepEqual(a.blocks.map(x => [x.x, x.y, x.z, x.kind]), b.blocks.map(x => [x.x, x.y, x.z, x.kind]));
+      assert.ok(a.blocks.some(x => x.kind === 'peak') && a.blocks.some(x => x.kind === 'gold') && a.top > 4);
+    }
+    // Standing still on the start platform never falls through.
+    const sim = ghostClimbSim(ghostClimbCourse(3).blocks); for (let i = 0; i < 120; i++) sim.step(1 / 60, i * 16.7, 0, 0, false);
+    assert.equal(sim.me.y, .5); assert.ok(sim.me.ground);
+  }
   // Auto shuffle draws a valid new mix whenever a journey starts; mornings give everyone time to think.
   {
     const room = shared(['witness','passenger','inspector','medic','saboteur']); room.settings.autoShuffle = true; room.settings.roles = null;

@@ -22,6 +22,10 @@
   const overlayRoot = document.getElementById('lt-overlays');
   // Notes, Letters and Reactions sit together in one corner so they are always one tap away.
   const fabDock = document.createElement('div'); fabDock.className = 'lt-fabs'; overlayRoot.append(fabDock);
+  // The carriage map is one tap away for everyone, all journey long.
+  const mapFab = document.createElement('button'); mapFab.type = 'button'; mapFab.className = 'map-fab'; mapFab.hidden = true; mapFab.setAttribute('aria-label', 'Open carriage map'); mapFab.title = 'Carriage Map';
+  mapFab.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="ltmapfab" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1c9"/><stop offset="1" stop-color="#e9c46f"/></linearGradient></defs><path d="M4 8.5 11 6l10 3 7-2.5v17L21 26l-10-3-7 2.5z" fill="url(#ltmapfab)" stroke="#7a4c14" stroke-width="1.2" stroke-linejoin="round"/><path d="M11 6v17M21 9v17" stroke="#7a4c14" stroke-width="1.1" opacity=".55"/><rect x="8" y="11.5" width="16" height="9" rx="4.5" fill="none" stroke="#a8323f" stroke-width="1.8"/><circle cx="12" cy="11.5" r="1.4" fill="#a8323f"/><circle cx="20" cy="20.5" r="1.4" fill="#a8323f"/></svg><span>Map</span>';
+  mapFab.onclick = () => mapDialog(); fabDock.prepend(mapFab);
   const fromModule = (data, owner) => { if (seat?.tok === owner.tok && seat.code === owner.code) { adopt(data); render(); } };
   const notebook = window.createTrainNotebook(fabDock);
   const letters = window.createTrainLetters(fabDock, { request, onState: fromModule, sfx });
@@ -593,7 +597,21 @@
     return n;
   }
   const nightNotesKey = () => 'lt-night-notes:' + [state.code, state.meId, state.match].join(':');
-  const nightNotes = () => ({ marks: {}, stories: {}, people: {}, ...(read(nightNotesKey()) || {}) });
+  const nightNotes = () => ({ marks: {}, stories: {}, people: {}, tags: {}, ...(read(nightNotesKey()) || {}) });
+  // Optional tags beside Trust / Unsure / Suspect: could have walked past my door, and a clashing role claim.
+  function noteTags(p) {
+    const mine = nightNotes().tags[p.id] || [];
+    return el('div', { class: 'note-tags', role: 'group', 'aria-label': 'Tags for ' + p.name }, ...(window.TRAIN_ART.noteTags || []).map(([value, label, art]) => {
+      const tag = el('button', { type: 'button', class: 'note-tag ' + value, 'aria-pressed': String(mine.includes(value)), disabled: state.paused, 'data-focus': 'tag-' + p.id + '-' + value,
+        onclick: () => { const cur = nightNotes().tags[p.id] || []; updateNightNotes({ tags: { ...nightNotes().tags, [p.id]: cur.includes(value) ? cur.filter(x => x !== value) : [...cur, value] } }); render(); } }, el('span', { class: 'note-tag-icon' }), txt('small', '', label));
+      tag.firstChild.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + art + '</svg>'; return tag; }));
+  }
+  // The footsteps clue can tag every cabin it names in one tap.
+  function tagFootsteps(r) {
+    const ids = state.players.filter(p => r.from.includes(p.seat) && p.id !== state.meId).map(p => p.id), tags = { ...nightNotes().tags };
+    for (const id of ids) tags[id] = [...new Set([...(tags[id] || []), 'steps'])];
+    updateNightNotes({ tags }); render();
+  }
   function updateNightNotes(change) { save(nightNotesKey(), { ...nightNotes(), ...change }); }
   const coverStory = () => nightNotes().stories?.[state.round] || '';
   function nightNotebook() {
@@ -608,6 +626,7 @@
             const chip = el('button', { type: 'button', class: 'trust-chip ' + value, 'aria-pressed': String((notes.marks?.[p.id] || 'unsure') === value), disabled: state.paused, 'data-focus': 'trust-' + p.id + '-' + value,
               onclick: () => { updateNightNotes({ marks: { ...nightNotes().marks, [p.id]: value } }); render(); } }, txt('span', 'trust-icon', ''), txt('small', '', label));
             chip.firstChild.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' + window.TRAIN_ART.trustLines[value] + '</svg>'; return chip; })),
+          noteTags(p),
           // A clue or claim per traveller, shared with Notes · People on this device.
           el('input', { id: 'night-clue-' + p.id, class: 'night-clue', maxLength: 80, value: notes.people?.[p.id] || '', placeholder: 'Clues or claims…', autocomplete: 'off', 'aria-label': 'Clues or claims about ' + p.name, disabled: state.paused,
             oninput: e => updateNightNotes({ people: { ...(nightNotes().people || {}), [p.id]: e.target.value } }) })))) :
@@ -957,7 +976,16 @@
       carriageMap({ route: heard ? heardRoute(heard) : null, fade: true }), heard ? footstepsNote(heard) : txt('p', 'muted small map-hint', 'The corridor loops around the lounge. At night a Saboteur walks the shorter way round to attack, and one traveller they pass may hear footsteps.'));
   }
   function footstepsNote(r) {
-    return el('div', { class: 'footsteps-note' }, el('span', { class: 'footsteps-icon', 'aria-hidden': 'true' }), el('div', {}, txt('b', '', 'Someone walked past your door at ' + r.time + '.'), txt('p', '', (r.from.length ? 'They came from the direction of cabin ' + cabinList(r.from) + ', and kept walking past you.' : 'They kept walking past you.') + ' It could be a Saboteur, or a Brave Passenger going to protect someone.')));
+    return el('div', { class: 'footsteps-note' }, el('span', { class: 'footsteps-icon', 'aria-hidden': 'true' }), el('div', {}, txt('b', '', 'Someone walked past your door at ' + r.time + '.'), txt('p', '', (r.from.length ? 'They came from the direction of cabin ' + cabinList(r.from) + ', and kept walking past you.' : 'They kept walking past you.') + ' It could be a Saboteur, or a Brave Passenger going to protect someone.'),
+      r.from.length ? (() => { const tagged = r.from.every(c => { const p = state.players.find(q => q.seat === c); return !p || p.id === state.meId || (nightNotes().tags[p.id] || []).includes('steps'); });
+        return el('button', { type: 'button', class: 'tag-steps-button' + (tagged ? ' done' : ''), disabled: tagged, 'data-focus': 'tag-steps', onclick: e => { const b = e.currentTarget; tagFootsteps(r); b.classList.add('done'); b.disabled = true; b.textContent = '✓ Tagged As Walk Path'; } }, tagged ? '✓ Tagged As Walk Path' : '👣 Tag These Cabins'); })() : null));
+  }
+  function mapDialog() {
+    if (!state?.players.some(p => p.seat)) return;
+    const heard = (state.me.reports || []).filter(r => r.type === 'footsteps' && r.round === state.round);
+    const d = dialog('Carriage Map', txt('p', 'muted small', 'Cabin number = seat number. The corridor loops around the lounge.' + (state.me.allies?.length > 1 ? ' Your team is marked in red.' : '')),
+      carriageMap({ route: heard[0] ? heardRoute(heard[0]) : null, fade: true }), ...heard.map(footstepsNote));
+    d.classList.add('map-dialog'); d.append(btn('Close', () => d.close(), 'gold'));
   }
   function loungeScene() {
     const phase = state.phase, latest = state.history.at(-1), gathering = phase === 'gathering';
@@ -972,6 +1000,7 @@
     if (r.type === 'glimpse') return r.ids.length ? 'One of ' + r.ids.map(who).join(r.ids.length > 2 ? ', ' : ' and ').replace(/, ([^,]*)$/, ' and $1') + ' is a Saboteur.' : 'The corridor was empty.';
     if (r.type === 'glimpse-blocked') return 'Your glimpse was blocked. You saw no one.';
     if (r.type === 'footsteps') return 'Footsteps at ' + r.time + ': someone came past your door from the direction of cabin ' + cabinList(r.from) + '.';
+    if (r.type === 'ghostReveal') return 'From the peak: ' + who(r.targetId) + ' is the ' + role(r.role).name + '.';
     if (r.type === 'clue') return 'Lost luggage: ' + who(r.targetId) + ' is not the ' + role(r.role).name + '.';
     if (r.type === 'check') return who(r.targetId) + ' is ' + r.alignment.toUpperCase() + '.';
     if (r.type === 'check-blocked') return 'Your check was blocked. No result is known.';
@@ -985,12 +1014,13 @@
     glimpse: '<path d="M4 8h24v16H4z" fill="#1b2a44" stroke="#8fd6ff" stroke-width="2"/><path d="M4 8l9 8-9 8M28 8l-9 8 9 8" fill="#2d4a72"/><circle cx="16" cy="15" r="3.6" fill="#e8fdff"/><path d="M10 26q6-6 12 0z" fill="#e8fdff"/>',
     clue: '<rect x="5" y="9" width="22" height="17" rx="3" fill="#c9893f" stroke="#7a4e14" stroke-width="1.4"/><path d="M12 9V6.5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 20 6.5V9" fill="none" stroke="#7a4e14" stroke-width="2"/><rect x="13" y="14" width="10" height="7" rx="1" fill="#fff6dc"/><path d="M15 17h6" stroke="#7a4e14" stroke-width="1.3"/>',
     footsteps: '<g fill="#f2ce86"><ellipse cx="10" cy="9" rx="4" ry="5.2"/><ellipse cx="10" cy="18" rx="3" ry="2.6"/><ellipse cx="21" cy="14" rx="4" ry="5.2"/><ellipse cx="21" cy="23" rx="3" ry="2.6"/></g>',
+    ghostReveal: '<path d="M3 27 12 12l4 6 3-4 10 13z" fill="#8b97b3"/><path d="M12 12l2.4 3.6L12 15l-2 1.2z" fill="#f4f8ff"/><path d="M22 6v8" stroke="#f3eadb" stroke-width="1.4"/><path d="M22 6l6 2.2-6 2.2z" fill="#ffd36a"/>',
     promotion: '<path d="M16 3l3.8 7.8 8.6 1.2-6.2 6 1.5 8.6L16 22.5l-7.7 4.1 1.5-8.6-6.2-6 8.6-1.2z" fill="#ffd56b" stroke="#c98f12" stroke-width="1.2" stroke-linejoin="round"/>',
   };
   function reportCard(r) {
     const kind = r.type.endsWith('-blocked') ? 'blocked' : r.type === 'promotion' ? 'promotion' : r.type;
     const icon = el('span', { class: 'report-icon', 'aria-hidden': 'true' }); icon.innerHTML = '<svg viewBox="0 0 32 32">' + REPORT_ICONS[kind] + '</svg>';
-    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', blocked: 'Power blocked', promotion: 'Promotion' }[kind];
+    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', ghostReveal: 'Ghost climb', blocked: 'Power blocked', promotion: 'Promotion' }[kind];
     const verdict = kind === 'check' ? txt('span', 'report-verdict ' + r.alignment, r.alignment.toUpperCase()) : kind === 'watch' && r.targetId ? txt('span', 'report-verdict watch', 'TARGET') : null;
     return el('article', { class: 'report-item ' + kind + (r.alignment ? ' ' + r.alignment : '') },
       icon, el('div', { class: 'report-body' }, txt('small', '', title), txt('p', '', reportMessage(r))),
@@ -1249,7 +1279,38 @@
   // Ghost guess: right after going out, good players lock in who they think the Saboteurs are.
   const GHOST_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lt-ghost-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#e3dcff"/><stop offset="1" stop-color="#a996f2"/></linearGradient><radialGradient id="lt-ghost-glow"><stop offset="0" stop-color="#b8a6ff" stop-opacity=".55"/><stop offset="1" stop-color="#b8a6ff" stop-opacity="0"/></radialGradient></defs><circle cx="23" cy="24" r="22" fill="url(#lt-ghost-glow)"/><path d="M22 5.5c-8.6 0-14 6.6-14 15.2v17.6c0 1.5 1.7 2.3 2.9 1.3l2.5-2.1 2.9 2.5a2.3 2.3 0 0 0 3 0l2.7-2.4 2.7 2.4a2.3 2.3 0 0 0 3 0l2.9-2.5 2.5 2.1c1.2 1 2.9.2 2.9-1.3V20.7c0-8.6-5.4-15.2-14-15.2z" fill="url(#lt-ghost-body)" stroke="#6d5bd0" stroke-width="1.3" stroke-linejoin="round"/><path d="M13 13.5c1.6-3.3 4.7-5.3 8.4-5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/><ellipse cx="17.3" cy="20" rx="2.3" ry="3.1" fill="#2a1d55"/><ellipse cx="26.7" cy="20" rx="2.3" ry="3.1" fill="#2a1d55"/><circle cx="18" cy="18.9" r=".9" fill="#fff"/><circle cx="27.4" cy="18.9" r=".9" fill="#fff"/><ellipse cx="22" cy="26.6" rx="1.7" ry="2.1" fill="#2a1d55"/><circle cx="13.6" cy="24.6" r="1.9" fill="#ff9ec2" opacity=".55"/><circle cx="30.4" cy="24.6" r="1.9" fill="#ff9ec2" opacity=".55"/><path d="M33.5 27.5c2 .2 3.3 1 4 2.3" fill="none" stroke="#c9bdf7" stroke-width="3" stroke-linecap="round"/><circle cx="38.5" cy="33" r="5.2" fill="#bdf6ff55" stroke="#f2c86b" stroke-width="2.4"/><path d="M36.6 31.2a2.6 2.6 0 0 1 2.6-.9" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><path d="M42.2 36.7l3.3 3.3" stroke="#d99a2b" stroke-width="3.2" stroke-linecap="round"/></svg>';
   const ghostIcon = cls => { const n = el('span', { class: 'ghost-icon ' + (cls || ''), 'aria-hidden': 'true' }); n.innerHTML = GHOST_ICON; return n; };
+  // Ghost Climb: after the ghost guess, players who are out can climb to the peak to learn one traveller's role.
+  function climbCard() {
+    const me = state.me; if (!me.climbOpen || !window.createGhostClimb) return null;
+    const seen = (me.reports || []).filter(r => r.type === 'ghostReveal');
+    return el('section', { class: 'climb-card' }, el('div', { class: 'climb-card-art', 'aria-hidden': 'true' }), el('div', { class: 'climb-card-copy' },
+      txt('span', 'eyebrow', 'GHOST CLIMB'), el('h3', {}, 'Climb To The Peak'), txt('p', '', 'Move, jump and reach the flag to see one traveller’s role. Ghosts stay silent: no hints to the living.'),
+      seen.length ? el('div', { class: 'climb-seen' }, ...seen.map(r => el('span', { class: 'climb-seen-item' }, avatar(r.targetId, 'climb-seen-face'), el('span', {}, txt('b', '', who(r.targetId)), txt('small', '', role(r.role).name))))) : null,
+      // A finished climb whose reveal was not picked yet keeps its reward.
+      me.ghostClimb && !me.ghostClimb.done && climbedSeeds.has(me.ghostClimb.seed) ? btn('Choose Whose Role To See', pickReveal, 'gold climb-start', busy || state.paused, 'pick-reveal')
+        : btn(seen.length ? 'Climb Again' : 'Start The Climb', startClimb, 'gold climb-start', busy || state.paused, 'start-climb')));
+  }
+  const climbedSeeds = new Set();
+  async function startClimb() {
+    await send('ghostClimb'); const run = state?.me.ghostClimb; if (!run || run.done) return;
+    window.createGhostClimb({ seed: run.seed, sfx, onFinish: () => { climbedSeeds.add(run.seed); render(); pickReveal(); }, onClose: () => {} });
+  }
+  function pickReveal() {
+    const seen = new Set((state.me.reports || []).filter(r => r.type === 'ghostReveal').map(r => r.targetId));
+    const d = dialog('Whose role will you see?', el('div', { class: 'target-hint' }, ghostIcon('tone-icon ghost-tone'), txt('p', '', 'You reached the peak. Choose one traveller. Only you will see their role.'))); d.classList.add('target-dialog', 'tone-pin', 'reveal-dialog');
+    d.append(el('div', { class: 'manifest-targets' }, ...state.players.filter(p => p.id !== state.meId && !seen.has(p.id)).map(p => targetCard(p, async () => {
+      d.close(); await send('ghostReveal', { targetId: p.id });
+      const r = (state.me.reports || []).find(x => x.type === 'ghostReveal' && x.targetId === p.id); if (!r) return;
+      const res = dialog('From the peak', el('section', { class: 'private-night-result reveal-result' }, txt('span', 'eyebrow', 'ONLY YOU CAN SEE THIS'), avatar(r.targetId, 'result-portrait'), el('h3', {}, who(r.targetId)), rolePortrait(r.role, 'reveal-role-art'), txt('strong', 'result-verdict', role(r.role).name.toUpperCase()), txt('p', '', 'Keep it to yourself. Ghosts do not help the living.')));
+      res.append(btn('Got It', () => res.close(), 'gold')); sfx.play('chime');
+    }))), el('div', { class: 'confirm-bar' }, btn('Choose Later', () => d.close(), 'text-button')));
+  }
+  // The ghost area: the guess first, then the climb once the guess is settled.
   function ghostBlock() {
+    const guess = ghostGuessBlock(), climb = state.phase === 'finished' ? null : climbCard();
+    return guess || climb ? el('div', { class: 'ghost-stack' }, guess, climb) : null;
+  }
+  function ghostGuessBlock() {
     const me = state.me;
     if (me.observer || me.alive || me.group === 'saboteur' || !state.saboteurCount || ['lobby', 'finished'].includes(state.phase)) return null;
     if (me.ghostGuess) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', 'Your Ghost Guess Is Locked'), el('div', { class: 'ghost-faces' }, ...me.ghostGuess.ids.map(id => el('span', { class: 'ghost-face' }, avatar(id), txt('small', '', who(id))))), txt('small', '', 'Revealed at the end. +5 WP for each right guess.')));
@@ -1373,6 +1434,7 @@
     if (!state?.pinsOpen) document.querySelectorAll('dialog.tone-pin[open]').forEach(d => d.close());
     if (state?.phase === 'voteResult') requestAnimationFrame(flyVotes);
     letters.sync(state?.me?.observer ? null : state, state?.me?.observer ? null : seat);
+    mapFab.hidden = !(seat && state && !['lobby', 'briefing', 'boarding'].includes(state.phase) && state.players.some(p => p.seat));
     social.sync(state, seat);
     syncPrivateResult();
     syncRevoteNotice();

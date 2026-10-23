@@ -15,7 +15,7 @@
     const icon = '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false"><defs><linearGradient id="lt-notes-cover" x1="5" y1="2" x2="25" y2="27" gradientUnits="userSpaceOnUse"><stop stop-color="#64d7c1"/><stop offset=".5" stop-color="#249e9d"/><stop offset="1" stop-color="#155a76"/></linearGradient></defs><ellipse cx="16" cy="29.5" rx="12" ry="1.8" fill="#081723" fill-opacity=".45"/><g transform="rotate(-7 15 16)"><rect x="5" y="3" width="20" height="26" rx="3" fill="#145466" stroke="#b9e4d5" stroke-width=".7"/><path d="M8 25h16v3H8a1.5 1.5 0 0 1 0-3" fill="#fff0d1"/><path d="M9 26.4h13" stroke="#b9a17d" stroke-width=".7"/><path d="M8 2h15a2 2 0 0 1 2 2v21H8a3 3 0 0 0-3 2V5a3 3 0 0 1 3-3" fill="url(#lt-notes-cover)" stroke="#97dfcb" stroke-width=".7"/><path d="M10 3v21" stroke="#f4ce79" stroke-width="1.3"/><path d="M20 2v10l-2-1.7-2 1.7V2z" fill="#d65789"/><rect x="12.5" y="14" width="9" height="5" rx="1" fill="#f3db9f"/><path d="M14.5 16.5h5" stroke="#946035" stroke-width=".9" stroke-linecap="round"/><path d="M4 9h3M4 18h3" stroke="#ffe2a1" stroke-width="1.8" stroke-linecap="round"/></g><path d="m27 9-8 15-.8 4.2 3-2.8 8-15z" fill="#edc47a" stroke="#174560" stroke-width=".6"/><path d="m27 9-8 15 2.2 1.4 8-15z" fill="#86c8f5"/><path d="m28 6.8 1.1.6a1.5 1.5 0 0 1 .6 2L29 11l-3-1.7.7-1.4a1 1 0 0 1 1.3-1.1" fill="#e993b2"/><path d="m18.2 28.2.6-2.2 1.1.7z" fill="#393452"/></svg>';
     // Trust marks are shared with the night notebook in the cabin: same device, same game.
     const MARKS = [['trust', 'Trust', '✓'], ['unsure', 'Unsure', '?'], ['suspect', 'Suspect', '✕']];
-    const readMarks = () => { try { const v = JSON.parse(localStorage.getItem(marksKey) || 'null'); return v && typeof v === 'object' ? { marks: {}, stories: {}, people: {}, ...v } : { marks: {}, stories: {}, people: {} }; } catch { return { marks: {}, stories: {}, people: {} }; } };
+    const readMarks = () => { try { const v = JSON.parse(localStorage.getItem(marksKey) || 'null'); return v && typeof v === 'object' ? { marks: {}, stories: {}, people: {}, tags: {}, ...v } : { marks: {}, stories: {}, people: {}, tags: {} }; } catch { return { marks: {}, stories: {}, people: {} }; } };
     const writeMarks = change => { try { localStorage.setItem(marksKey, JSON.stringify({ ...readMarks(), ...change })); if (status) status.textContent = 'Saved on this device'; } catch {} };
     function renderPeople() {
       if (!peopleBox) return;
@@ -34,7 +34,13 @@
         }
         const note = node('input', 'people-note'); note.maxLength = 80; note.placeholder = 'Claims, clues…'; note.value = notes.people[p.id] || ''; note.setAttribute('aria-label', 'Note about ' + p.name);
         note.addEventListener('input', () => writeMarks({ people: { ...readMarks().people, [p.id]: note.value } }));
-        row.append(face, name, chips, note); peopleBox.append(row);
+        const tags = node('div', 'note-tags'); tags.setAttribute('role', 'group'); tags.setAttribute('aria-label', 'Tags for ' + p.name);
+        for (const [value, label, art] of window.TRAIN_ART?.noteTags || []) {
+          const on = (notes.tags[p.id] || []).includes(value);
+          const tag = button('', () => { const cur = readMarks().tags[p.id] || []; writeMarks({ tags: { ...readMarks().tags, [p.id]: cur.includes(value) ? cur.filter(x => x !== value) : [...cur, value] } }); renderPeople(); }, 'note-tag ' + value);
+          tag.setAttribute('aria-pressed', String(on)); const ic = node('span', 'note-tag-icon'); ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + art + '</svg>'; tag.append(ic, node('small', '', label)); tags.append(tag);
+        }
+        row.append(face, name, chips, tags, note); peopleBox.append(row);
       }
     }
     // Private night results (Inspector checks, Witness sightings, promotions), newest first.
