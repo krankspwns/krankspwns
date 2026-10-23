@@ -214,14 +214,20 @@ function roundFiveTests() {
     while (room.phase === 'night') r.advance(room);
     const by = room.nightLog.at(-1).footsteps[0].by; if (i % 2) assert.ok([a.id, b.id].includes(by)); else assert.equal(by, b.id);
   }
-  // Ghost guesses: open from going out until the end of the next night.
+  // Ghost guesses: open until the journey ends, naming only Saboteurs still aboard from travellers still aboard.
   {
     const room = shared(['passenger','passenger','passenger','inspector','medic','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), out = room.players.find(p => p.role === 'passenger');
     while (r.nightRole(room) !== 'moves') r.advance(room); r.nightChoice(room, bad, { attackId: out.id }); while (room.phase === 'night') r.advance(room);
-    assert.equal(out.alive, false); assert.equal(out.outRound, room.round); assert.equal(r.view(room, out).me.ghostOpen, true); assert.equal(r.view(room, out).me.ghostUntil, room.round + 1);
-    while (room.phase !== 'voting') r.advance(room); r.resolveVote(room); r.advance(room); assert.equal(room.phase, 'settling'); assert.equal(r.view(room, out).me.ghostOpen, true);
-    while (room.phase !== 'gathering') r.advance(room); assert.equal(r.view(room, out).me.ghostOpen, false);
-    assert.throws(() => r.ghostGuess(room, out, [bad.id]), /close/);
+    assert.equal(out.alive, false); assert.equal(r.view(room, out).me.ghostOpen, true); assert.equal(r.view(room, out).me.ghostNeed, 1);
+    for (let n = 0; n < 3; n++) { while (room.phase !== 'gathering') r.advance(room); r.advance(room); }
+    assert.equal(r.view(room, out).me.ghostOpen, true);
+    const gone = room.players.find(p => p.role === 'passenger' && p !== out); gone.alive = false;
+    assert.throws(() => r.ghostGuess(room, out, [gone.id]), /Choose 1/); r.ghostGuess(room, out, [bad.id]);
+    // Two Saboteurs with one already out: the guess names just one, never the one already out.
+    const two = shared(['passenger','passenger','inspector','medic','saboteur','saboteur']), ghost = person(two, 'passenger'), [b1, b2] = two.players.filter(p => r.group(p) === 'saboteur');
+    ghost.alive = false; b1.alive = false; assert.equal(r.view(two, ghost).me.ghostNeed, 1);
+    assert.throws(() => r.ghostGuess(two, ghost, [b1.id, b2.id]), /Choose 1/); assert.throws(() => r.ghostGuess(two, ghost, [b1.id]), /Choose 1/); r.ghostGuess(two, ghost, [b2.id]);
+    two.winner = 'good'; r.finish(two); assert.ok(r.view(two, ghost).me.wallet.earnings.some(e => e.reason === 'Ghost guess: all right'));
   }
   // Ghost Climb: only for players who are out, after the ghost guess; a finished climb reveals one chosen role.
   {

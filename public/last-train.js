@@ -1314,14 +1314,15 @@
     const me = state.me;
     if (me.observer || me.alive || me.group === 'saboteur' || !state.saboteurCount || ['lobby', 'finished'].includes(state.phase)) return null;
     if (me.ghostGuess) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', 'Your Ghost Guess Is Locked'), el('div', { class: 'ghost-faces' }, ...me.ghostGuess.ids.map(id => el('span', { class: 'ghost-face' }, avatar(id), txt('small', '', who(id))))), txt('small', '', 'Revealed at the end. +5 WP for each right guess.')));
-    if (!me.ghostOpen) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', 'Ghost Guesses Are Closed'), txt('small', '', 'The window closed at the end of the night after you went out.')));
-    return el('div', { class: 'ghost-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Make Your Ghost Guess'), txt('small', '', 'Who are the ' + state.saboteurCount + ' Saboteur' + (state.saboteurCount > 1 ? 's' : '') + '? Open until Night ' + me.ghostUntil + ' ends. +5 WP for each right guess.')), btn('Guess Now', ghostDialog, 'gold', false, 'ghost-guess'));
+    if (!me.ghostOpen || !me.ghostNeed) return null;
+    const n = me.ghostNeed, gone = state.saboteurCount - n;
+    return el('div', { class: 'ghost-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Make Your Ghost Guess'), txt('small', '', (n > 1 ? 'Who are the ' + n + ' Saboteurs' : 'Who is the Saboteur') + (gone ? ' still aboard' : '') + '? Open until the journey ends. +5 WP for each right guess. Lock it to unlock the Ghost Climb.')), btn('Guess Now', ghostDialog, 'gold', false, 'ghost-guess'));
   }
   function ghostDialog() {
-    const need = state.saboteurCount, picked = new Set();
-    const d = dialog('Your ghost guess', el('div', { class: 'target-hint' }, ghostIcon('tone-icon ghost-tone'), txt('p', '', 'Choose ' + need + ' player' + (need > 1 ? 's' : '') + ' you think ' + (need > 1 ? 'are Saboteurs' : 'is the Saboteur') + '. Your guess locks once you confirm.'))); d.classList.add('target-dialog', 'tone-pin', 'ghost-dialog');
+    const need = state.me.ghostNeed, picked = new Set();
+    const d = dialog('Your ghost guess', el('div', { class: 'target-hint' }, ghostIcon('tone-icon ghost-tone'), txt('p', '', 'Choose ' + need + ' traveller' + (need > 1 ? 's' : '') + ' still aboard you think ' + (need > 1 ? 'are Saboteurs' : 'is the Saboteur') + '. Your guess locks once you confirm.'))); d.classList.add('target-dialog', 'tone-pin', 'ghost-dialog');
     const confirm = btn('Choose ' + need, () => { d.close(); send('ghostGuess', { ids: [...picked] }); }, 'gold', true, 'confirm-ghost');
-    const grid = el('div', { class: 'manifest-targets' }, ...state.players.filter(p => p.id !== state.meId).map(p => { const b = targetCard(p, () => {
+    const grid = el('div', { class: 'manifest-targets' }, ...state.players.filter(p => p.id !== state.meId && p.alive !== false).map(p => { const b = targetCard(p, () => {
       if (picked.has(p.id)) picked.delete(p.id); else if (picked.size < need) picked.add(p.id);
       grid.querySelectorAll('.manifest-target').forEach(n => { n.classList.toggle('selected', picked.has(n.dataset.id)); n.setAttribute('aria-pressed', String(picked.has(n.dataset.id))); });
       confirm.disabled = picked.size !== need; confirm.textContent = picked.size === need ? 'Lock My Guess' : 'Choose ' + (need - picked.size) + ' More'; }); return b; }));

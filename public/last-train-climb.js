@@ -5,7 +5,7 @@
 (() => {
   'use strict';
   const THREE_URL = '/vendor/three-0.170.0.module.min.js';
-  const GRAVITY = 26, JUMP = 9.2, BOUNCE = 14, SPEED = 4.4, COYOTE = .1, BUFFER = .14, HALF = .3, HEIGHT = .95;
+  const GRAVITY = 26, JUMP = 9.2, BOUNCE = 14, SPEED = 4.4, COYOTE = .12, BUFFER = .16, HALF = .3, HEIGHT = .95, FUSE = 1500, BACK = 4000, EYE = 1.5;
   const THEMES = [
     { name: 'Meadow Isles', sky: 0x8fc8ff, fog: 0xbfe3ff, top: ['#5fae3f', '#4f9a34', '#6cc049'], side: ['#8a6038', '#7a5230', '#96693e'], stone: ['#8a8a8a', '#7a7a7a', '#999999'] },
     { name: 'Frozen Peaks', sky: 0x9fb8e8, fog: 0xd8e6ff, top: ['#f4f8ff', '#e2ecfb', '#ffffff'], side: ['#9fb3cc', '#8ea3bd', '#b0c3da'], stone: ['#7d8aa0', '#6e7a90', '#8c99ae'] },
@@ -29,7 +29,7 @@
         for (let i = 0; i < 2; i++) {
           turn(); const [dx, dz] = dirs[d];
           // A plank lift slides along the path; hop on when it is close, hop off when it reaches the far side.
-          const cx = x + dx * 3, cz = z + dz * 3; put(cx, y, cz, 'lift', { ax: dx, az: dz, amp: 1.4, period: 3.2 + r(), phase: r() * 6.28 });
+          const cx = x + dx * 3, cz = z + dz * 3; put(cx, y, cz, 'lift', { ax: dx, az: dz, amp: 1.4, period: 4.2 + r(), phase: r() * 6.28 });
           x = cx + dx * 3; z = cz + dz * 3; put(x, y, z, 'stone');
         }
       } else if (kind === 'slime') {
@@ -37,12 +37,14 @@
           turn(); const [dx, dz] = dirs[d];
           x += dx * 2; z += dz * 2; put(x, y, z, 'slime');
           x += dx * 2; z += dz * 2; y += 3; put(x, y, z, 'stone');
+          // A wider landing after the bounce.
+          if (!taken.has(key(x + Math.abs(dz), y, z + Math.abs(dx)))) put(x + Math.abs(dz), y, z + Math.abs(dx), 'stone', { wide: true });
         }
       } else {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 4; i++) {
           let placed = false;
           for (let tries = 0; tries < 12 && !placed; tries++) {
-            turn(); const [dx, dz] = dirs[d], up = r() < .55 ? 1 : 0, len = up ? 2 : 2 + Math.floor(r() * 2), side = len === 2 && !up ? Math.floor(r() * 3) - 1 : 0;
+            turn(); const [dx, dz] = dirs[d], up = r() < .5 ? 1 : 0, len = up || r() < .7 ? 2 : 3, side = 0;
             const nx = x + dx * len + (dz ? side : 0), nz = z + dz * len + (dx ? side : 0), ny = y + up;
             if (!free(nx, ny, nz)) continue;
             x = nx; y = ny; z = nz; put(x, y, z, kind === 'crumble' ? 'gravel' : 'stone'); placed = true;
@@ -75,7 +77,7 @@
     return false;
   }
   function playable(seed) {
-    const { blocks } = build(seed), path = blocks.map((b, i) => i).slice(9), pairs = [[4, path[0]]];
+    const { blocks } = build(seed), path = blocks.map((b, i) => i).slice(9).filter(i => !blocks[i].wide), pairs = [[4, path[0]]];
     for (let k = 0; k < path.length - 1; k++) { const a = blocks[path[k]], b = blocks[path[k + 1]]; if (['gold', 'peak'].includes(a.kind) && a.kind === b.kind && a.y === b.y) continue; pairs.push([path[k], path[k + 1]]); }
     return pairs.every(([ai, bi]) => { const lift = blocks[ai].kind === 'lift' || blocks[bi].kind === 'lift';
       for (const t0 of lift ? [0, .4, .8, 1.2, 1.6, 2, 2.4, 2.8, 3.2, 3.6] : [0]) for (const off of [0, .3, .45]) for (const j of [3, 2.7, 2.4, 2.1, 1.8, 1.5, 1.2, .9]) for (const wait of lift && blocks[ai].kind !== 'lift' ? [0, 1.8, 2.2] : [0])
@@ -93,13 +95,13 @@
     const lowest = Math.min(...blocks.map(b => b.y));
     for (const b of blocks) { b.cx ??= b.x; b.cz ??= b.z; }
     const liftPos = (b, now) => { const k = Math.sin(now / 1000 * 6.283 / b.period + b.phase) * b.amp; return [b.x + b.ax * k, b.z + b.az * k]; };
-    const solid = (b, now) => !(b.kind === 'gravel' && b.fallAt && now - b.fallAt > 1000 && now - b.fallAt < 3500);
+    const solid = (b, now) => !(b.kind === 'gravel' && b.fallAt && now - b.fallAt > FUSE && now - b.fallAt < BACK);
     const overlaps = b => Math.abs(me.x - b.cx) < .5 + HALF && Math.abs(me.z - b.cz) < .5 + HALF && me.y < b.y + .5 && me.y + HEIGHT > b.y - .5;
     const wall = b => Math.abs(me.x - b.cx) < .5 + HALF && Math.abs(me.z - b.cz) < .5 + HALF && me.y < b.y + .5 - .02 && me.y + HEIGHT > b.y - .5 + .02;
     function step(dt, now, mx, mz, wantJump) {
       // Lifts move first and carry whoever stands on them.
       for (const b of blocks) if (b.kind === 'lift') { const [nx, nz] = liftPos(b, now); if (me.ground === b) { me.x += nx - b.cx; me.z += nz - b.cz; } b.cx = nx; b.cz = nz; }
-      const grip = me.ground ? 16 : 5; me.vx += (mx * SPEED - me.vx) * Math.min(1, dt * grip); me.vz += (mz * SPEED - me.vz) * Math.min(1, dt * grip);
+      const grip = me.ground ? 16 : 9; me.vx += (mx * SPEED - me.vx) * Math.min(1, dt * grip); me.vz += (mz * SPEED - me.vz) * Math.min(1, dt * grip);
       if (Math.hypot(mx, mz) > .1) me.face = Math.atan2(me.vx, me.vz);
       me.coyote = me.ground ? COYOTE : me.coyote - dt; me.jumped = false;
       if (wantJump && me.coyote > 0) { me.vy = JUMP; me.ground = null; me.coyote = 0; me.jumped = true; on.jump?.(); }
@@ -117,7 +119,7 @@
       }
       me.x += me.vx * dt; for (const b of near) if (wall(b)) { me.x = me.vx > 0 ? b.cx - .5 - HALF - 1e-3 : b.cx + .5 + HALF + 1e-3; me.vx = 0; }
       me.z += me.vz * dt; for (const b of near) if (wall(b)) { me.z = me.vz > 0 ? b.cz - .5 - HALF - 1e-3 : b.cz + .5 + HALF + 1e-3; me.vz = 0; }
-      for (const b of blocks) if (b.kind === 'gravel' && b.fallAt && now - b.fallAt >= 3500) b.fallAt = 0;
+      for (const b of blocks) if (b.kind === 'gravel' && b.fallAt && now - b.fallAt >= BACK) b.fallAt = 0;
       // Falling into the void sends the ghost back to the last checkpoint.
       if (me.y < lowest - 8) on.fell?.();
     }
@@ -130,8 +132,8 @@
 
   window.createGhostClimb = ({ seed, sfx, onFinish, onClose }) => {
     const d = document.createElement('dialog'); d.className = 'lt-dialog climb-dialog climb-3d'; d.setAttribute('aria-label', 'Ghost Climb');
-    d.innerHTML = '<div class="climb-head"><div><small class="climb-theme">GHOST CLIMB</small><b>Reach The Peak</b></div><span class="climb-time">0.0s</span><button type="button" class="climb-close" aria-label="Leave the climb">×</button></div>'
-      + '<div class="climb-stage"><canvas></canvas><div class="climb-progress"><i></i></div><p class="climb-toast">Loading the course…</p>'
+    d.innerHTML = '<div class="climb-head"><div><small class="climb-theme">GHOST CLIMB</small><b>Reach The Peak</b></div><button type="button" class="climb-view" aria-pressed="false"></button><span class="climb-time">0.0s</span><button type="button" class="climb-close" aria-label="Leave the climb">×</button></div>'
+      + '<div class="climb-stage"><canvas></canvas><div class="climb-progress"><i></i></div><i class="climb-cross" aria-hidden="true"></i><p class="climb-toast">Loading the course…</p>'
       + '<div class="climb-stick" aria-label="Move"><i></i></div><button type="button" class="climb-jump" aria-label="Jump">JUMP</button>'
       + '<p class="climb-hint">Drag to look · Stick to move · Jump</p></div>';
     document.body.append(d); d.showModal();
@@ -143,7 +145,16 @@
     d.addEventListener('cancel', e => { e.preventDefault(); close(); onClose?.(); });
 
     // Input: a virtual stick, a jump button, drag-to-look, and the keyboard.
-    const input = { mx: 0, mz: 0, jump: 0, keys: new Set() }, look = { yaw: Math.PI * .25, pitch: .5 };
+    const input = { mx: 0, mz: 0, jump: 0, keys: new Set() }, look = { yaw: Math.PI * .25, pitch: .4 };
+    // First person (like Minecraft) by default: the view always faces where you walk. Third person follows behind.
+    const PITCH = { first: [-1, 1.4], third: [.08, 1.2] }, viewBtn = d.querySelector('.climb-view');
+    let view = 'first'; try { if (localStorage.getItem('lt-climb-view') === 'third') view = 'third'; } catch {}
+    function setView(next) {
+      view = next; stage.classList.toggle('first-person', view === 'first'); viewBtn.textContent = view === 'first' ? 'Third Person' : 'First Person';
+      viewBtn.setAttribute('aria-label', 'Switch to ' + viewBtn.textContent.toLowerCase()); look.pitch = view === 'first' ? .4 : .5;
+      try { localStorage.setItem('lt-climb-view', view); } catch {}
+    }
+    viewBtn.onclick = () => setView(view === 'first' ? 'third' : 'first');
     const stick = d.querySelector('.climb-stick'), knob = stick.firstChild;
     let stickId = null;
     const stickMove = e => { const rc = stick.getBoundingClientRect(), cx = rc.left + rc.width / 2, cy = rc.top + rc.height / 2, R = rc.width / 2;
@@ -157,19 +168,19 @@
     for (const t of ['pointerup', 'pointercancel', 'pointerleave']) jumpBtn.addEventListener(t, () => jumpBtn.classList.remove('down'));
     let lookId = null, lastX = 0, lastY = 0;
     canvas.addEventListener('pointerdown', e => { lookId = e.pointerId; lastX = e.clientX; lastY = e.clientY; canvas.setPointerCapture(e.pointerId); });
-    canvas.addEventListener('pointermove', e => { if (e.pointerId !== lookId) return; look.yaw -= (e.clientX - lastX) * .008; look.pitch = Math.max(.08, Math.min(1.2, look.pitch + (e.clientY - lastY) * .006)); lastX = e.clientX; lastY = e.clientY; });
+    canvas.addEventListener('pointermove', e => { if (e.pointerId !== lookId) return; look.yaw -= (e.clientX - lastX) * .008; look.pitch = Math.max(PITCH[view][0], Math.min(PITCH[view][1], look.pitch + (e.clientY - lastY) * .006)); lastX = e.clientX; lastY = e.clientY; });
     for (const t of ['pointerup', 'pointercancel']) canvas.addEventListener(t, e => { if (e.pointerId === lookId) lookId = null; });
     function onKey(e) {
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (![' ', 'w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'q', 'e'].includes(k)) return;
       e.preventDefault(); if (e.type === 'keydown') { input.keys.add(k); if (k === ' ') input.jump = BUFFER; } else input.keys.delete(k);
     }
-    addEventListener('keydown', onKey); addEventListener('keyup', onKey);
+    addEventListener('keydown', onKey); addEventListener('keyup', onKey); setView(view);
     function resize() { if (!renderer) return; const rc = stage.getBoundingClientRect(); renderer.setSize(rc.width, rc.height, false); camera.aspect = rc.width / Math.max(1, rc.height); camera.updateProjectionMatrix(); }
 
     // Building and checking the course takes a moment, so it happens after the screen opens.
     let theme, blocks, top;
-    new Promise(done => setTimeout(done, 30)).then(() => { ({ theme, blocks, top } = course(seed)); d.querySelector('.climb-theme').textContent = 'GHOST CLIMB · ' + theme.name.toUpperCase(); return loadThree(); }).then(THREE => {
+    new Promise(done => setTimeout(done, 30)).then(() => { ({ theme, blocks, top } = course(seed)); d.querySelector('.climb-theme').textContent = theme.name.toUpperCase(); return loadThree(); }).then(THREE => {
       if (closed) return;
       try { renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); } catch { say('This browser cannot show the 3D climb.', 0); return; }
       renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
@@ -207,20 +218,30 @@
       scene.add(ghost);
       const shadow = new THREE.Mesh(new THREE.CircleGeometry(.34, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .35, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; scene.add(shadow);
 
-      let checkpoint = { x: 0, y: .5, z: 0 }, t0 = performance.now(), last = t0, finished = false, falls = 0;
-      const camPos = new THREE.Vector3();
+      let safe = { x: 0, y: .5, z: 0 }, t0 = performance.now(), last = t0, finished = false, falls = 0, reached = -1, pads = 0;
+      const camPos = new THREE.Vector3(), path = blocks.slice(9).filter(b => !b.wide);
+      // The next block to jump to glows, and after a fall the view turns to face it.
+      const outline = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.04, 1.04, 1.04)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true }));
+      scene.add(outline);
+      const next = () => path[Math.min(path.length - 1, reached + 1)];
+      const faceNext = () => { const b = next(); look.yaw = Math.atan2(-(b.cx - me.x), -(b.cz - me.z)); };
       const sim = simulate(blocks, {
         jump: () => sfx?.play('tap'), bounce: () => sfx?.play('pop'),
         land: b => {
-          if ((b.kind === 'gold' || b.kind === 'peak') && b.y + .5 > checkpoint.y + .01) { checkpoint = { x: b.x, y: b.y + .5, z: b.z }; if (b.kind === 'gold') { say('Checkpoint!'); sfx?.play('chime'); } }
+          // Falling puts you back on the last solid block you stood on.
+          if (['grass', 'stone', 'gold', 'peak'].includes(b.kind)) safe = { x: b.x, y: b.y + .5, z: b.z };
+          const i = path.indexOf(b.wide ? path.find(q => q.y === b.y && Math.abs(q.x - b.x) + Math.abs(q.z - b.z) === 1) : b);
+          if (i > reached) { reached = i; if (b.kind === 'gold' && path[i - 1]?.kind !== 'gold') { pads++; say('Section ' + pads + ' cleared!'); sfx?.play('chime'); } }
           if (b.kind === 'peak' && !finished) { finished = true; win(); }
         },
-        fell: () => { falls++; sim.place(checkpoint); say('Whoops! Back to the checkpoint.'); sfx?.play('tick'); },
+        fell: () => { falls++; sim.place(safe); faceNext(); say('Whoops! Try that jump again.'); sfx?.play('tick'); },
       });
       const me = sim.me, solid = sim.solid;
       function step(dt, now) {
         const k = input.keys, fwd = (k.has('w') || k.has('ArrowUp') ? 1 : 0) - (k.has('s') || k.has('ArrowDown') ? 1 : 0) - input.mz, strafe = (k.has('d') || k.has('ArrowRight') ? 1 : 0) - (k.has('a') || k.has('ArrowLeft') ? 1 : 0) + input.mx;
         if (k.has('q')) look.yaw += dt * 2; if (k.has('e')) look.yaw -= dt * 2;
+        // In third person the camera swings in behind the ghost while it walks forward.
+        if (view === 'third' && lookId === null && fwd > .3 && me.ground) { const want = me.face + Math.PI, diff = (want - look.yaw + Math.PI * 3) % (Math.PI * 2) - Math.PI; look.yaw += diff * Math.min(1, dt * 2.2); }
         // Movement is relative to where the camera looks: forward walks away from the camera.
         const n = Math.max(1, Math.hypot(fwd, strafe)), fx = -Math.sin(look.yaw), fz = -Math.cos(look.yaw);
         sim.step(dt, now, (fx * fwd - fz * strafe) / n, (fz * fwd + fx * strafe) / n, input.jump > 0);
@@ -229,7 +250,7 @@
       function draw(now) {
         for (const b of blocks) {
           b.mesh.position.set(b.cx, b.y, b.cz);
-          if (b.kind === 'gravel') { const t = b.fallAt ? now - b.fallAt : 0; b.mesh.visible = !(t > 1400 && t < 3500); b.mesh.position.y = b.y - (t > 1000 && t < 1400 ? (t - 1000) / 400 * 1.2 : 0) + (t > 0 && t < 1000 ? Math.sin(t / 25) * .03 * (t / 1000 + .5) : 0); }
+          if (b.kind === 'gravel') { const t = b.fallAt ? now - b.fallAt : 0; b.mesh.visible = !(t > FUSE + 400 && t < BACK); b.mesh.position.y = b.y - (t > FUSE && t < FUSE + 400 ? (t - FUSE) / 400 * 1.2 : 0) + (t > 0 && t < FUSE ? Math.sin(t / 25) * .03 * (t / FUSE + .5) : 0); }
         }
         cloth.rotation.y = Math.sin(now / 300) * .25;
         ghost.position.set(me.x, me.y + .5 + (me.ground ? Math.sin(now / 300) * .03 : 0), me.z);
@@ -237,8 +258,16 @@
         // Shadow on the highest surface below the ghost.
         let floor = -Infinity; for (const b of blocks) if (solid(b, now) && Math.abs(b.cx - me.x) < .5 + HALF * .6 && Math.abs(b.cz - me.z) < .5 + HALF * .6 && b.y + .5 <= me.y + .01) floor = Math.max(floor, b.y + .5);
         shadow.visible = floor > -Infinity; if (shadow.visible) { shadow.position.set(me.x, floor + .01, me.z); const h = me.y - floor; shadow.scale.setScalar(Math.max(.4, 1 - h * .12)); shadow.material.opacity = Math.max(.1, .4 - h * .05); }
-        const dist = 6.6; camPos.set(me.x + Math.sin(look.yaw) * Math.cos(look.pitch) * dist, me.y + .8 + Math.sin(look.pitch) * dist, me.z + Math.cos(look.yaw) * Math.cos(look.pitch) * dist);
-        camera.position.lerp(camPos, .25); camera.lookAt(me.x, me.y + .6, me.z);
+        const nb = next(); outline.position.copy(nb.mesh.position); outline.visible = !finished; outline.material.opacity = .55 + Math.sin(now / 220) * .35;
+        ghost.visible = view === 'third';
+        if (view === 'first') {
+          // Eyes at Minecraft height, so block tops stay in view; pitch above zero looks down.
+          const cp = Math.cos(look.pitch); camera.position.set(me.x, me.y + EYE, me.z);
+          camera.lookAt(me.x - Math.sin(look.yaw) * cp, me.y + EYE - Math.sin(look.pitch), me.z - Math.cos(look.yaw) * cp);
+        } else {
+          const dist = 5.6; camPos.set(me.x + Math.sin(look.yaw) * Math.cos(look.pitch) * dist, me.y + .8 + Math.sin(look.pitch) * dist, me.z + Math.cos(look.yaw) * Math.cos(look.pitch) * dist);
+          camera.position.lerp(camPos, .25); camera.lookAt(me.x, me.y + .6, me.z);
+        }
         renderer.render(scene, camera);
         bar.style.width = (Math.max(0, Math.min(1, (me.y - .5) / Math.max(1, top))) * 100).toFixed(1) + '%';
       }
@@ -251,7 +280,7 @@
       // Read-only handle for automated tests.
       d.climb = { me, blocks, look, input, solid };
       resize(); addEventListener('resize', resize); toast.hidden = true; t0 = last = performance.now();
-      camera.position.set(me.x + 4, me.y + 3, me.z + 4); raf = requestAnimationFrame(frame);
+      faceNext(); camera.position.set(me.x + 4, me.y + 3, me.z + 4); raf = requestAnimationFrame(frame);
     }).catch(() => say('The climb could not load. Check your connection and try again.', 0));
     return { close };
   };
