@@ -359,7 +359,11 @@
   function introScene() {
     prepareBoardingVideo();
     const groups = [['good', 'GOOD TEAM', 'Passengers + Crew', 'Find every Saboteur. Keep both good groups alive.'], ['bad', 'BAD TEAM', 'Saboteurs', 'Get all Passengers OR all Crew out. Your team knows each other.']];
-    return el('section', { class: 'role-intro scene-panel' }, art('platform'), hud('BEFORE WE DEPART', 'Meet the two teams.', 'These are the roles aboard tonight. Who gets which role stays secret.'), el('div', { class: 'team-intros' }, ...groups.map(([g,tag,title,goal]) => el('section', { class: 'team-intro ' + g }, txt('span', 'team-label', tag), el('h2', {}, title), txt('p', 'team-intro-goal', goal), el('div', { class: 'introduced-roles' }, ...state.mix.filter(m => (role(m.role).group === 'saboteur') === (g === 'bad')).map(m => el('div', { class: 'introduced-role' }, rolePortrait(m.role, 'intro-portrait'), el('div', {}, el('b', {}, role(m.role).name, txt('small', '', ' ×' + m.count)), txt('p', '', rolePreview[m.role]), g === 'good' ? txt('small', 'intro-kind ' + role(m.role).group, role(m.role).group === 'crew' ? 'CREW' : 'PASSENGER') : null))))))),
+    return el('section', { class: 'role-intro scene-panel' }, art('platform'), hud('BEFORE WE DEPART', 'Meet the two teams.', 'These are the roles aboard tonight. Who gets which role stays secret.'), el('div', { class: 'team-intros' }, ...groups.map(([g,tag,title,goal]) => el('section', { class: 'team-intro ' + g }, txt('span', 'team-label', tag), el('h2', {}, title), txt('p', 'team-intro-goal', goal), ...(g === 'good' ? [['passenger', 'Passengers', 'Ordinary travellers. Some have a once-per-game power.'], ['crew', 'Crew', 'Train staff with a job every night. If every Crew member is out, the Saboteurs win.']] : [['saboteur', null, null]]).map(([kind, head, about]) => {
+        const mix = state.mix.filter(m => role(m.role).group === kind), count = mix.reduce((n, m) => n + m.count, 0);
+        return el('div', { class: 'intro-subgroup ' + kind }, head ? el('div', { class: 'intro-subhead' }, txt('b', '', head), txt('span', 'intro-count', String(count)), txt('small', '', about)) : null,
+          el('div', { class: 'introduced-roles' }, ...mix.map(m => el('div', { class: 'introduced-role' }, rolePortrait(m.role, 'intro-portrait'), el('div', {}, el('b', {}, role(m.role).name, txt('small', '', ' ×' + m.count)), txt('p', '', rolePreview[m.role]))))));
+      })))),
       el('div', { class: 'intro-footer' }, txt('p', 'muted small', 'Seats are shuffled separately from roles. Your seat number sets your speaking order.'), state.me.ready ? txt('p', 'choice-saved', '✓ Ready to board. Waiting for the others…') : btn('I’m Ready · Board The Train', () => send('ready'), 'gold')));
   }
   function prepareBoardingVideo() {
@@ -468,6 +472,7 @@
     const checked = new Map(extra.power === 'check' ? (state.me.reports || []).filter(r => r.type === 'check').map(r => [r.targetId, r]) : []);
     for (const p of state.players.filter(p => p.alive && (self || p.id !== state.meId) && (action !== 'vote' || !state.voteCandidates || state.voteCandidates.includes(p.id)))) {
       const c = checked.get(p.id), card = targetCard(p, () => select(p.id), c ? 'checked checked-' + c.alignment : '');
+      if (action === 'night' && state.nightRole === 'saboteur' && !extra.power && state.settings.footsteps !== false) { const k = walkNoise(plannedWalker(), p.id); card.append(txt('span', 'noise-tag' + (k ? ' loud' : ''), k ? '👣 Passes ' + k + (k === 1 ? ' door' : ' doors') : '🔇 Silent')); }
       if (c) { card.append(txt('span', 'checked-tag', c.alignment.toUpperCase() + ' · N' + c.round)); card.setAttribute('aria-label', p.name + ', already checked: ' + c.alignment.toUpperCase() + ' on Night ' + c.round); }
       list.append(card);
     }
@@ -475,6 +480,17 @@
     d.append(el('p', { class: 'manifest-time' }, txt('span', 'countdown', ''), 's left'), list);
     if (action === 'vote' && state.me.role === 'speaker' && !state.me.used.double) { doubleInput = el('input', { type: 'checkbox', onchange: e => double = e.target.checked }); d.append(el('label', { class: 'check-setting double-vote-toggle' }, doubleInput, el('span', {}, el('b', {}, 'Use My Double Vote'), txt('small', '', 'Counts twice · once per game')))); }
     d.append(el('div', { class: 'confirm-bar' }, confirm, btn('Cancel', () => d.close(), 'text-button')));
+  }
+  // How many awake travellers a walk to this cabin passes (the shorter way round; a tie counts the louder way).
+  function walkNoise(walkerId, targetId) {
+    const seated = state.players.filter(p => p.seat), n = seated.length, from = player(walkerId)?.seat, to = player(targetId)?.seat;
+    if (!from || !to || from === to) return 0;
+    const fwd = (to - from + n) % n, back = n - fwd, count = dir => { let k = 0; for (let c = ring(from + dir, n); c !== to; c = ring(c + dir, n)) if (seated.some(p => p.seat === c && p.alive && p.id !== walkerId)) k++; return k; };
+    return fwd < back ? count(1) : fwd > back ? count(-1) : Math.max(count(1), count(-1));
+  }
+  function plannedWalker() {
+    const picks = [...new Set((state.me.teamChoices || []).map(c => c.walkerId).filter(Boolean))];
+    return state.me.nightChoice?.walkerId || (picks.length === 1 ? picks[0] : state.meId);
   }
   function disguiseTarget() {
     const bound = fence(), mates = state.me.allies.filter(p => p.alive);
@@ -485,6 +501,15 @@
     const attackId = state.me.nightChoice?.attackId || null;
     chooseTarget('Whose night power will you block?', 'Once per game. This does not add another attack.', 'night', { power: 'block', attackId });
   }
+  // Saboteurs pick who walks the corridor to make the attack. One pick wins; different picks are drawn at random.
+  function walkerPicker() {
+    const team = (state.me.teamChoices || []).map(c => c.id); if (state.settings.footsteps === false || team.length < 2) return null;
+    const mine = state.me.nightChoice?.walkerId || null;
+    return el('div', { class: 'walker-picker' }, el('div', { class: 'walker-head' }, txt('b', '', 'Who Walks To The Target?'), txt('small', '', 'Their footsteps may be heard. No pick = random. Different picks = random between them.')),
+      el('div', { class: 'walker-options' }, ...team.map(id => { const by = state.me.teamChoices.filter(c => c.walkerId === id).map(c => c.id);
+        return el('button', { type: 'button', class: 'walker-option' + (mine === id ? ' mine' : '') + (by.length ? ' picked' : ''), 'aria-pressed': String(mine === id), disabled: busy || state.paused, 'data-focus': 'walker-' + id, onclick: () => send('night', { power: 'walk', walkerId: mine === id ? null : id }) },
+          avatar(id, 'walker-face'), txt('b', '', id === state.meId ? 'Me' : who(id)), txt('small', '', 'Cabin ' + String(player(id).seat).padStart(2, '0')), by.length ? el('span', { class: 'walker-votes' }, ...by.map(v => avatar(v, 'walker-vote'))) : null); })));
+  }
   function badConsole() {
     const me = state.me;
     return el('section', { class: 'action-console bad-console', 'aria-label': 'Saboteur team choices' }, el('h2', {}, me.allies.filter(p => p.alive).length > 1 ? 'Agree on one target.' : 'Choose your target.'),
@@ -493,6 +518,7 @@
         el('div', { class: 'proposal-target' }, p.attackId ? avatar(p.attackId, 'chosen-avatar') : txt('span', 'choice-symbol', p.selected ? '—' : '?'), avatar(p.id, 'chooser-avatar')),
         txt('b', 'proposal-name', p.attackId ? who(p.attackId) : p.selected ? 'Skip' : 'Choosing…'),
         txt('small', 'proposal-by', (p.id === state.meId ? 'You' : who(p.id)) + (p.selected ? ' chose' : ' · no vote yet'))))),
+      walkerPicker(),
       btn('Choose Target', () => chooseTarget('Who will your team attack?', 'Anyone is allowed, including yourself and teammates. You may choose Skip.', 'night', {}, { self: true, skip: true }), 'danger', false, 'choose-team-target'),
       me.role === 'forger' ? me.used.disguise ? txt('p', 'console-hint', 'Disguise used' + (me.nightChoice?.disguiseId ? ': ' + who(me.nightChoice.disguiseId) : '')) : btn('Use Forger Disguise', disguiseTarget, 'secondary', false, 'use-disguise') : null,
       me.role === 'blocker' ? me.used.block ? txt('p', 'console-hint', 'Block used' + (me.nightChoice?.targetId ? ': ' + who(me.nightChoice.targetId) : '')) : btn('Use Blocker Power', blockTarget, 'text-button') : null,
@@ -530,6 +556,79 @@
             placeholder: 'What did you claim to see or do tonight?', oninput: e => updateNightNotes({ stories: { ...nightNotes().stories, [state.round]: e.target.value } }) })),
       txt('p', 'console-hint', 'Saved on this device. You can also open Notes to write or draw.'));
   }
+  // Phase 1: good travellers flip a coin (up to twice). Heads means they listen at the door tonight.
+  let flipsSeen = 0, flipsKey = '', flipAt = 0, revealCap = null;
+  const COIN = side => '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><radialGradient id="coin-' + side + '" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff3c0"/><stop offset=".55" stop-color="#e9b84a"/><stop offset="1" stop-color="#a8721e"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#coin-' + side + ')" stroke="#7a4c14" stroke-width="2"/><circle cx="32" cy="32" r="24" fill="none" stroke="#fff6d0" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="2 3"/>'
+    + (side === 'heads' ? '<g fill="none" stroke="#6a3d10" stroke-width="1.7" stroke-linecap="round"><path d="M15.5 41.5q-4.5-9.5 1-19M48.5 41.5q4.5-9.5-1-19M14.2 36.8l3.2-.9M13.6 31.6l3.1.3M14.8 26.6l2.8 1.1M49.8 36.8l-3.2-.9M50.4 31.6l-3.1.3M49.2 26.6l-2.8 1.1"/></g><g transform="translate(0 1.9)" fill="#5e360c"><path d="M29 18.5v-3.2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3.2z"/><rect x="21.5" y="18.5" width="21" height="22" rx="5.5"/><rect x="25" y="22" width="14" height="7.5" rx="2" fill="#fff3c0"/><path d="M32 22v7.5" stroke="#5e360c" stroke-width="1.2"/><circle cx="26.6" cy="35" r="2.3" fill="#fff3c0"/><circle cx="37.4" cy="35" r="2.3" fill="#fff3c0"/><rect x="30" y="33.6" width="4" height="2.8" rx="1" fill="#c9963a"/><path d="M21.5 40.5h21l-3 5.5h-15z"/><path d="M26 43.3h12" stroke="#c9963a" stroke-width="1"/></g>'
+    : '<path d="M38 18a14 14 0 1 0 8 25 12 12 0 0 1-8-25z" fill="#6a3d10" opacity=".85"/><text x="40" y="30" font-family="Inter,sans-serif" font-weight="900" font-size="9" fill="#6a3d10">z</text><text x="45" y="23" font-family="Inter,sans-serif" font-weight="900" font-size="7" fill="#6a3d10">z</text>') + '</svg>';
+  function listenCard() {
+    const me = state.me; if (state.settings.footsteps === false || state.nightPhase !== 1 || !me.alive || me.group === 'saboteur' || me.observer) return null;
+    // While the big toss plays, the card keeps showing the flips from before it.
+    const real = me.listen || { flips: [], heads: false }, flips = real.flips.slice(0, revealCap ?? real.flips.length), l = { flips, heads: flips.at(-1) === 'heads' };
+    const left = 2 - l.flips.length, last = l.flips.at(-1), key = [state.code, state.match, state.round].join(':');
+    if (key !== flipsKey) { flipsKey = key; flipsSeen = l.flips.length; }
+    const fresh = l.flips.length > flipsSeen; flipsSeen = l.flips.length; if (fresh) flipAt = Date.now();
+    // Re-renders continue the same spin instead of restarting it.
+    const spinning = last && Date.now() - flipAt < 1100;
+    const coin = el('div', { class: 'coin' + (spinning ? ' spin-' + last : '') + (last ? ' show-' + last : ''), style: spinning ? 'animation-delay:-' + (Date.now() - flipAt) + 'ms' : '' }, el('span', { class: 'coin-face heads' }), el('span', { class: 'coin-face tails' }));
+    coin.children[0].innerHTML = COIN('heads'); coin.children[1].innerHTML = COIN('tails');
+    if (fresh && revealCap === null && !motionOK) sfx.play('coin');
+    return el('section', { class: 'listen-card' + (l.heads ? ' listening' : '') }, coin, el('div', { class: 'listen-copy' }, txt('span', 'eyebrow', 'LISTEN AT YOUR DOOR'),
+      el('h3', {}, l.heads ? 'Heads! You’re listening tonight.' : last === 'tails' && !left ? 'Tails again. You dozed off.' : last === 'tails' ? 'Tails. Try once more?' : 'Flip a coin to stay awake.'),
+      txt('p', '', l.heads ? 'If footsteps pass your door tonight, you might hear them.' : !left ? 'You won’t hear footsteps tonight.' : 'Heads: you listen for footsteps tonight. You get two tries.'),
+      !l.heads && left ? btn(l.flips.length ? 'Flip Again (1 Left)' : 'Flip The Coin', flipCoin, 'gold flip-button', busy || state.paused || revealCap !== null, 'flip-coin') : null));
+  }
+  async function flipCoin() {
+    const from = root.querySelector('.listen-card .coin')?.getBoundingClientRect(), before = state.me.listen?.flips.length || 0;
+    revealCap = before; await send('listen');
+    const after = state?.me.listen?.flips || [];
+    if (after.length > before && motionOK && from) await tossCoin(from, after.at(-1));
+    revealCap = null; flipsSeen = after.length; flipAt = 0; render();
+  }
+  // The big toss: the coin flies to the middle, grows, then is thrown up spinning end over end at a steady rate,
+  // shows its edge as it turns, lands with a bounce and wobbles to rest on the result.
+  function tossCoin(from, side) {
+    return new Promise(done => {
+      const layer = el('div', { class: 'toss-layer', 'aria-hidden': 'true' }), shadow = el('i', { class: 'toss-shadow' });
+      const spin = el('div', { class: 'toss-spin' }, el('span', { class: 'coin-face heads' }), el('span', { class: 'coin-face tails' }));
+      const tilt = el('div', { class: 'toss-tilt' }, spin), coin = el('div', { class: 'toss-coin' }, tilt);
+      spin.querySelector('.heads').innerHTML = COIN('heads'); spin.querySelector('.tails').innerHTML = COIN('tails');
+      const label = el('div', { class: 'toss-result ' + side }, txt('b', '', side === 'heads' ? 'HEADS' : 'TAILS'), txt('small', '', side === 'heads' ? 'You’re listening tonight' : (state.me.listen?.flips.length || 0) < 2 ? 'One more try' : 'You dozed off'));
+      layer.append(shadow, coin, label); document.body.append(layer);
+      const size = 72, cx = innerWidth / 2, cy = innerHeight * .58, sx = from.left + from.width / 2, sy = from.top + from.height / 2, big = Math.min(2.6, innerWidth * .46 / size), high = Math.min(innerHeight * .4, 340);
+      coin.style.left = cx - size / 2 + 'px'; coin.style.top = cy - size / 2 + 'px';
+      // Timeline (ms): fly to centre 0–650, rise 650–1650, fall 1650–2550, bounce 2550–2900, wobble to rest by 3500, label until 4400.
+      const T = 4400, k = ms => ms / T, at = (x, y, s) => `translate(${x - cx}px, ${y - cy}px) scale(${s})`;
+      layer.animate([{ opacity: 0 }, { opacity: 1, offset: .1 }, { opacity: 1, offset: .9 }, { opacity: 0 }], { duration: T, fill: 'both' });
+      coin.animate([
+        { transform: at(sx, sy, from.width / size), easing: 'cubic-bezier(.3,.7,.3,1)' },
+        { transform: at(cx, cy, big), offset: k(650) },
+        { transform: at(cx, cy, big), offset: k(700), easing: 'cubic-bezier(.15,.7,.35,1)' },
+        { transform: at(cx, cy - high, big * .92), offset: k(1650), easing: 'cubic-bezier(.65,0,.85,.35)' },
+        { transform: at(cx, cy, big), offset: k(2550), easing: 'cubic-bezier(.2,.7,.4,1)' },
+        { transform: at(cx, cy - 22, big), offset: k(2720), easing: 'cubic-bezier(.6,0,.8,.4)' },
+        { transform: at(cx, cy, big), offset: k(2900) },
+        { transform: at(cx, cy, big) }], { duration: T, fill: 'forwards' });
+      // A steady spin in the air (about 4½ turns), ending on the result, then a damped wobble as it settles.
+      const end = 4 * 360 + (side === 'tails' ? 180 : 0);
+      spin.animate([
+        { transform: 'rotateX(0deg)' }, { transform: 'rotateX(0deg)', offset: k(700) },
+        { transform: `rotateX(${end - 40}deg)`, offset: k(2550) },
+        { transform: `rotateX(${end + 24}deg)`, offset: k(2780), easing: 'ease-in-out' },
+        { transform: `rotateX(${end - 12}deg)`, offset: k(3020), easing: 'ease-in-out' },
+        { transform: `rotateX(${end + 5}deg)`, offset: k(3260), easing: 'ease-in-out' },
+        { transform: `rotateX(${end}deg)`, offset: k(3500) },
+        { transform: `rotateX(${end}deg)` }], { duration: T, fill: 'forwards' });
+      // A slight sideways lean in the air so the coin's edge catches the light.
+      tilt.animate([{ transform: 'rotateY(0deg) rotateZ(0deg)' }, { transform: 'rotateY(0deg) rotateZ(0deg)', offset: k(700) }, { transform: 'rotateY(16deg) rotateZ(-8deg)', offset: k(1650) }, { transform: 'rotateY(-10deg) rotateZ(6deg)', offset: k(2550) }, { transform: 'rotateY(0deg) rotateZ(0deg)', offset: k(3300) }, { transform: 'rotateY(0deg) rotateZ(0deg)' }], { duration: T, fill: 'forwards' });
+      shadow.style.top = cy + size * big / 2 + 8 + 'px';
+      shadow.animate([{ opacity: 0, transform: 'translate(-50%, 0) scale(.4)' }, { opacity: .55, transform: 'translate(-50%, 0) scale(1)', offset: k(650) }, { opacity: .55, transform: 'translate(-50%, 0) scale(1)', offset: k(700) }, { opacity: .12, transform: 'translate(-50%, 0) scale(.4)', offset: k(1650) }, { opacity: .6, transform: 'translate(-50%, 0) scale(1.05)', offset: k(2550) }, { opacity: .45, transform: 'translate(-50%, 0) scale(.85)', offset: k(2720) }, { opacity: .6, transform: 'translate(-50%, 0) scale(1)', offset: k(2900) }, { opacity: .6, transform: 'translate(-50%, 0) scale(1)' }], { duration: T, fill: 'forwards' });
+      label.style.top = cy + size * big / 2 + 32 + 'px';
+      label.animate([{ opacity: 0, transform: 'translate(-50%, 10px) scale(.8)' }, { opacity: 0, transform: 'translate(-50%, 10px) scale(.8)', offset: k(3250) }, { opacity: 1, transform: 'translate(-50%, 0) scale(1.08)', offset: k(3500) }, { opacity: 1, transform: 'translate(-50%, 0) scale(1)', offset: k(3650) }, { opacity: 1, transform: 'translate(-50%, 0) scale(1)' }], { duration: T, fill: 'forwards' });
+      setTimeout(() => sfx.play('coin'), 650); setTimeout(() => sfx.play('tick'), 2550); setTimeout(() => sfx.play(side === 'heads' ? 'chime' : 'tick'), 3450);
+      setTimeout(() => { layer.remove(); done(); }, T);
+    });
+  }
   function actionConsole() {
     const me = state.me, active = state.nightRole;
     if (state.paused) return el('section', { class: 'rest-note' }, txt('span','','Ⅱ'), el('h2', {}, 'Time stands still.'), txt('p', '', 'The host has paused the journey.'));
@@ -560,7 +659,7 @@
     if (me.used[power]) return el('section', { class: 'action-console' }, el('h2', {}, 'Your power is already used.'), txt('p', 'console-hint', 'Use your private night notebook to prepare for the lounge.'));
     return el('section', { class: 'action-console power-console' }, rolePortrait(me.role, 'console-role-icon'), el('h2', {}, { brave: 'Who needs protection?', careful: 'Lock your door tonight?', inspector: 'Who will you check?', witness: 'Watch tonight’s attack?' }[active]),
       el('div', { class: 'power-description' }, txt('p', 'power-limit', active === 'inspector' ? 'Every night.' : 'Once per game.'),
-        txt('p', 'console-hint', active === 'brave' ? 'Protection + Medic’s heal causes a deadly overdose.' : active === 'inspector' ? 'See GOOD or BAD as soon as you choose.' : active === 'careful' ? 'Stops an attack on you, but not poison or overdose.' : 'See the original attack target immediately.')),
+        txt('p', 'console-hint', active === 'brave' ? 'Protection + Medic’s heal causes a deadly overdose. You walk to their cabin, so someone may hear your footsteps.' : active === 'inspector' ? 'See GOOD or BAD as soon as you choose.' : active === 'careful' ? 'Stops an attack on you, but not poison or overdose.' : 'See the original attack target immediately.')),
       el('div', { class: 'power-buttons' },
         btn({ brave: 'Choose', careful: 'Lock Door', inspector: 'Choose', witness: 'Watch' }[active], () => ['brave','inspector'].includes(active) ? chooseTarget(active === 'brave' ? 'Who will you protect?' : 'Who will you check?', active === 'brave' ? 'If they are also healed, they die from overdose.' : 'You see GOOD or BAD immediately after choosing.', 'night', { power }) : send('night', { power }), 'gold'),
         btn('Skip', () => send('night', { power: 'pass' }), 'secondary skip-power')));
@@ -588,20 +687,40 @@
       hidden ? txt('span', 'chip-hidden', '🎟️') : rolePortrait(state.me.role, 'chip-portrait'), el('span', {}, txt('small', '', 'YOUR TICKET'), hidden ? 'Tap to show' : role(state.me.role).name));
     return chip;
   }
-  // The carriage map: cabin number = seat number. Footprints show a corridor walk between two cabins.
-  const FOOT = '<svg viewBox="0 0 10 16" aria-hidden="true"><ellipse cx="5" cy="5" rx="4" ry="5"/><ellipse cx="5" cy="13" rx="3" ry="2.5"/></svg>';
-  function carriageMap({ steps = null, walker = null, fade = false, victim = null } = {}) {
-    const people = [...state.players].filter(p => p.seat).sort((a, b) => a.seat - b.seat), per = people.length > 7 ? Math.ceil(people.length / 2) : people.length;
-    const cars = []; for (let i = 0; i < people.length; i += per) cars.push(people.slice(i, i + per));
-    return el('div', { class: 'carriage-map', 'aria-label': 'Carriage map: ' + people.map(p => 'cabin ' + p.seat + ' ' + p.name).join(', ') }, ...cars.map((car, ci) => {
-      const first = car[0].seat, last = car.at(-1).seat, lo = steps && Math.max(Math.min(steps[0], steps[1]), first - .5), hi = steps && Math.min(Math.max(steps[0], steps[1]), last + .5);
-      const trail = steps && hi > lo ? el('div', { class: 'map-steps' + (fade ? ' fade' : '') + (steps[1] < steps[0] ? ' back' : ''), style: '--a:' + (lo - first + .5) + ';--b:' + (hi - first + .5) }, ...Array.from({ length: Math.max(3, Math.round((hi - lo) * 2.2)) }, (_, i) => { const f = el('i', { class: i % 2 ? 'r' : 'l' }); f.innerHTML = FOOT; return f; })) : null;
-      const walk = walker && steps && steps[1] >= first && steps[1] <= last ? el('span', { class: 'map-walker', style: '--at:' + (steps[1] - first + .5) }, avatar(walker, 'map-walker-face')) : null;
-      return el('div', { class: 'map-car', style: '--cabins:' + car.length }, ci === cars.length - 1 ? txt('span', 'map-front', 'FRONT ▸') : null,
-        el('div', { class: 'map-cabins' }, ...car.map(p => el('div', { class: 'map-cabin' + (p.id === state.meId ? ' you' : '') + (!p.alive && state.phase !== 'lobby' ? ' out' : '') + (victim === p.id ? ' victim' : ''), title: 'Cabin ' + p.seat + ' · ' + p.name },
-          txt('span', 'map-no', String(p.seat).padStart(2, '0')), avatar(p, 'map-face'), p.id === state.meId ? txt('span', 'map-you', 'YOU') : null, el('i', { class: 'map-door' })))),
-        el('div', { class: 'map-corridor' }, trail, walk));
-    }));
+  // The carriage map: cabins (seat numbers) around a looped corridor, in a 340 × 230 drawing.
+  function loopLayout(count) {
+    const top = Math.ceil((count - 2) / 2), bottom = count - 2 - top, spots = {};
+    for (let i = 0; i < top; i++) { const x = 60 + 220 * (i + .5) / top; spots[i + 1] = { x, y: 34, cx: x, cy: 74 }; }
+    spots[top + 1] = { x: 314, y: 115, cx: 276, cy: 115 };
+    for (let i = 0; i < bottom; i++) { const x = 60 + 220 * (bottom - i - .5) / bottom; spots[top + 2 + i] = { x, y: 196, cx: x, cy: 156 }; }
+    spots[count] = { x: 26, y: 115, cx: 64, cy: 115 };
+    return spots;
+  }
+  function footprints(points, fade) {
+    const out = [], gap = 13; let step = 0, total = 0;
+    const segs = points.slice(1).map((b, i) => { const a = points[i], len = Math.hypot(b.x - a.x, b.y - a.y); total += len; return { a, b, len }; });
+    for (const { a, b, len } of segs) for (let d = gap / 2; d < len; d += gap, step++) {
+      const t = d / len, ang = Math.atan2(b.y - a.y, b.x - a.x), side = step % 2 ? 3.2 : -3.2, done = (out.length * gap) / Math.max(total, 1);
+      const x = a.x + (b.x - a.x) * t - Math.sin(ang) * side, y = a.y + (b.y - a.y) * t + Math.cos(ang) * side;
+      const o = fade ? Math.max(.15, 1 - Math.abs(done - .5) * 1.7) : .95;
+      out.push('<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (ang * 180 / Math.PI + 90).toFixed(0) + ')" opacity="' + o.toFixed(2) + '"><ellipse cx="0" cy="-2.5" rx="2.6" ry="3.4"/><ellipse cx="0" cy="3.2" rx="2" ry="1.7"/></g>');
+    }
+    return out.join('');
+  }
+  function carriageMap({ route = null, walker = null, fade = false, victim = null, walks = null } = {}) {
+    walks ||= route ? [{ route, by: walker, kind: 'saboteur' }] : [];
+    const people = state.players.filter(p => p.seat).sort((a, b) => a.seat - b.seat), spots = loopLayout(people.length);
+    const corridor = c => ({ x: spots[c].cx, y: spots[c].cy });
+
+    // Partial routes (a heard clue) only show the steps near the listener's door.
+    const svg = '<svg class="loop-art" viewBox="0 0 340 230" aria-hidden="true"><rect x="52" y="62" width="236" height="106" rx="53" class="loop-corridor"/><rect x="82" y="88" width="176" height="54" rx="27" class="loop-lounge"/><text x="170" y="119" class="loop-label">OBSERVATION LOUNGE</text>'
+      + walks.map(w => '<g class="loop-steps ' + w.kind + '">' + footprints(w.route.map(corridor), fade) + '</g>').join('') + '</svg>';
+    const map = el('div', { class: 'carriage-map loop-map', 'aria-label': 'Carriage map: ' + people.map(p => 'cabin ' + p.seat + ' ' + p.name).join(', ') });
+    map.innerHTML = svg;
+    for (const p of people) { const s = spots[p.seat]; map.append(el('div', { class: 'map-cabin' + (p.id === state.meId ? ' you' : '') + (!p.alive && state.phase !== 'lobby' ? ' out' : '') + (victim === p.id ? ' victim' : ''), style: 'left:' + (s.x / 3.4) + '%;top:' + (s.y / 2.3) + '%', title: 'Cabin ' + p.seat + ' · ' + p.name },
+      txt('span', 'map-no', String(p.seat).padStart(2, '0')), avatar(p, 'map-face'), p.id === state.meId ? txt('span', 'map-you', 'YOU') : null)); }
+    for (const w of walks) if (w.by && !fade) { const end = corridor(w.route.at(-1)); map.append(el('span', { class: 'map-walker ' + w.kind, style: 'left:' + (end.x / 3.4) + '%;top:' + (end.y / 2.3) + '%' }, avatar(w.by, 'map-walker-face'))); }
+    return map;
   }
   function cabinScene() {
     const me = state.me, settling = state.phase === 'settling';
@@ -630,7 +749,7 @@
         el('div', { class: 'cabin-travellers count-' + roommates.length }, ...roommates.map(p => el('div', { class: 'cabin-person', 'data-player': p.id }, seatedTraveller(p), txt('span', '', p.name)))),
         patient),
       settling || state.nightPhase ? steps : null,
-      settling ? el('div', { class: 'curtain-message' }, txt('span','','☾'), txt('p','','Settle into your cabin…')) : el('div', { class: 'night-panels' }, actionConsole(), state.nightPhase && me.alive ? nightNotebook() : null));
+      settling ? el('div', { class: 'curtain-message' }, txt('span','','☾'), txt('p','','Settle into your cabin…')) : el('div', { class: 'night-panels' }, listenCard(), actionConsole(), state.nightPhase && me.alive ? nightNotebook() : null));
   }
   const svgPin = () => { const n = el('span', { class: 'pin-svg', 'aria-hidden': 'true' }); n.innerHTML = '<svg viewBox="0 0 32 32">' + TONE_ICONS.pin + '</svg>'; return n; };
   function loungeSeats() {
@@ -740,15 +859,18 @@
       state.me.alive && !state.paused ? el('div', { class: 'think-pin' }, btn(mine ? 'Change My Pin' : 'Pin A Suspect', pinDialog, 'pin-cta', false, 'think-pin'), txt('small', '', mine ? 'You pinned ' + who(mine) + '. Only the count is shown.' : 'Optional. Everyone sees the count, never who pinned.')) : null);
   }
   // The map in the lounge; footprints appear for the one traveller who heard them last night.
-  const heardSteps = r => r.toward === 'front' ? [r.cabin - .9, r.cabin + .9] : [r.cabin + .9, r.cabin - .9];
+  // A heard clue draws the steps just before and after the listener's own door.
+  const ring = (c, n) => ((c - 1) % n + n) % n + 1;
+  const heardRoute = r => { const n = state.players.filter(p => p.seat).length; return [ring(r.cabin - r.dir, n), r.cabin, ring(r.cabin + r.dir, n)]; };
+  const cabinList = list => list.map(c => String(c).padStart(2, '0')).join(', ').replace(/, ([^,]*)$/, ' or $1');
   function carriagePanel() {
     if (state.settings.footsteps === false || !state.players.some(p => p.seat)) return null;
     const heard = (state.me.reports || []).find(r => r.type === 'footsteps' && r.round === state.round);
     return el('details', { class: 'panel carriage-panel' + (heard ? ' heard' : ''), 'data-details': 'carriage-' + state.round, open: !!heard }, el('summary', {}, txt('span', 'map-summary-icon', '🗺️'), el('span', {}, txt('b', '', 'Carriage Map'), txt('small', '', heard ? 'You heard footsteps last night' : 'Cabin number = seat number')), txt('span', 'accordion-chevron', '⌄')),
-      carriageMap({ steps: heard ? heardSteps(heard) : null, fade: true }), heard ? footstepsNote(heard) : txt('p', 'muted small map-hint', 'At night a Saboteur walks the corridor to attack. One traveller they pass may hear footsteps.'));
+      carriageMap({ route: heard ? heardRoute(heard) : null, fade: true }), heard ? footstepsNote(heard) : txt('p', 'muted small map-hint', 'The corridor loops around the lounge. At night a Saboteur walks the shorter way round to attack, and one traveller they pass may hear footsteps.'));
   }
   function footstepsNote(r) {
-    return el('div', { class: 'footsteps-note' }, el('span', { class: 'footsteps-icon', 'aria-hidden': 'true' }), el('div', {}, txt('b', '', 'Someone walked past your door at ' + r.time + '.'), txt('p', '', 'They came from cabins ' + String(r.range[0]).padStart(2, '0') + '–' + String(r.range[1]).padStart(2, '0') + ' and went toward the ' + r.toward + ' of the carriage.')));
+    return el('div', { class: 'footsteps-note' }, el('span', { class: 'footsteps-icon', 'aria-hidden': 'true' }), el('div', {}, txt('b', '', 'Someone walked past your door at ' + r.time + '.'), txt('p', '', (r.from.length ? 'They came from the direction of cabin ' + cabinList(r.from) + ', and kept walking past you.' : 'They kept walking past you.') + ' It could be a Saboteur, or a Brave Passenger going to protect someone.')));
   }
   function loungeScene() {
     const phase = state.phase, latest = state.history.at(-1), gathering = phase === 'gathering';
@@ -762,7 +884,7 @@
     if (r.type === 'watch-blocked') return 'Your watch was blocked. No target is known.';
     if (r.type === 'glimpse') return r.ids.length ? 'One of ' + r.ids.map(who).join(r.ids.length > 2 ? ', ' : ' and ').replace(/, ([^,]*)$/, ' and $1') + ' is a Saboteur.' : 'The corridor was empty.';
     if (r.type === 'glimpse-blocked') return 'Your glimpse was blocked. You saw no one.';
-    if (r.type === 'footsteps') return 'Footsteps at ' + r.time + ': someone from cabins ' + String(r.range[0]).padStart(2, '0') + '–' + String(r.range[1]).padStart(2, '0') + ' walked past your door toward the ' + r.toward + '.';
+    if (r.type === 'footsteps') return 'Footsteps at ' + r.time + ': someone came past your door from the direction of cabin ' + cabinList(r.from) + '.';
     if (r.type === 'clue') return 'Lost luggage: ' + who(r.targetId) + ' is not the ' + role(r.role).name + '.';
     if (r.type === 'check') return who(r.targetId) + ' is ' + r.alignment.toUpperCase() + '.';
     if (r.type === 'check-blocked') return 'Your check was blocked. No result is known.';
@@ -987,6 +1109,8 @@
         ...table.map(p => el('div', { class: 'session-row' + (p.id === state.meId ? ' me' : ''), role: 'row' }, el('span', { class: 'session-name' }, avatar(p, 'session-face'), txt('span', '', p.id === state.meId ? 'You' : p.name)), txt('b', '', sess[p.id].wins + '/' + sess[p.id].journeys), ...['eye', 'liar', 'guard'].map(k => txt('span', sess[p.id][k] ? 'has' : '', String(sess[p.id][k]))))))) : null);
   }
   // The finale replays every night: who was targeted, who was protected, who checked whom.
+  // Older journeys logged one walk as an object; newer ones log every walk in a list.
+  const walksOf = n => (Array.isArray(n.footsteps) ? n.footsteps : n.footsteps ? [{ kind: 'saboteur', ...n.footsteps }] : []).filter(w => w.route);
   function nightReplay() {
     const log = state.nightLog || []; if (!log.length) return null;
     const line = (icon, text, ...ids) => el('li', { class: 'replay-line' }, txt('span', 'replay-icon', icon), txt('span', 'replay-text', text), el('span', { class: 'replay-faces' }, ...ids.filter(Boolean).map(id => avatar(id, 'replay-face'))));
@@ -1003,9 +1127,9 @@
           n.poisonId ? line('☠️', 'Medic poisoned ' + name(n.poisonId) + '.', n.poisonId) : null,
           ...(n.checks || []).map(c => line('🔎', who(c.by) + ' checked ' + name(c.targetId) + '.', c.by, c.targetId)),
           ...(n.sights || []).map(x => line(x.type === 'glimpse' ? '👀' : '👁️', who(x.by) + (x.type === 'glimpse' ? ' glimpsed faces in the corridor.' : ' watched the attack.'), x.by)),
-          n.footsteps ? line('👣', who(n.footsteps.by) + ' walked from cabin ' + String(n.footsteps.from).padStart(2, '0') + ' to cabin ' + String(n.footsteps.to).padStart(2, '0') + (n.footsteps.heardBy ? '. ' + who(n.footsteps.heardBy) + ' heard the footsteps.' : '. Nobody heard them.'), n.footsteps.by) : null,
+          ...walksOf(n).map(w => line(w.kind === 'brave' ? '🛡️' : '👣', who(w.by) + (w.kind === 'brave' ? ' (Brave) walked from cabin ' : ' walked from cabin ') + String(w.from).padStart(2, '0') + ' to cabin ' + String(w.to).padStart(2, '0') + (w.heardBy ? '. ' + who(w.heardBy) + ' heard the footsteps.' : '. Nobody heard them.'), w.by)),
           n.outs.length ? line('🎟️', n.outs.map(o => who(o.id)).join(' and ') + (n.outs.length > 1 ? ' were' : ' was') + ' out by morning.', ...n.outs.map(o => o.id)) : line('☀️', 'Everyone woke up.'),
-        ].filter(Boolean)), n.footsteps ? carriageMap({ steps: [n.footsteps.from, n.footsteps.to], walker: n.footsteps.by, victim: n.attackId }) : null)));
+        ].filter(Boolean)), walksOf(n).length ? carriageMap({ walks: walksOf(n), victim: n.attackId }) : null)));
   }
   function ghostStrip() {
     const ghosts = Object.entries(state.ghosts || {}); if (!ghosts.length) return null;
@@ -1090,11 +1214,11 @@
     const clue = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && r.type === 'footsteps' && !seenResult(r)) || state?.me.reports.find(r => r.round === state.round && r.type === 'clue') : null;
     return clue || state?.me.reports.find(r => r.round === state.round && ['check','watch','glimpse','check-blocked','watch-blocked','glimpse-blocked'].includes(r.type));
   }
-  const resultKey = r => [state.code, state.meId, state.match, r.round, r.type].join(':');
+  const resultKey = r => [state.code, state.meId, state.match, r.round, r.type, r.time || ''].join(':');
   const seenResult = r => { try { return !!sessionStorage.getItem('lt-result:' + resultKey(r)); } catch { return false; } };
   function privateResultCard(result) {
     if (result.type === 'footsteps') return el('section', { class: 'private-night-result footsteps-result', 'aria-label': 'Your night result' }, txt('span', 'eyebrow', 'ONLY YOU HEARD THIS'),
-      el('h3', {}, 'Footsteps in the night.'), carriageMap({ steps: heardSteps(result), fade: true }), footstepsNote(result));
+      el('h3', {}, 'Footsteps in the night.'), carriageMap({ route: heardRoute(result), fade: true }), footstepsNote(result));
     const blocked = result.type.endsWith('-blocked'), check = result.type.startsWith('check');
     if (!blocked && ['glimpse', 'clue'].includes(result.type)) return el('section', { class: 'private-night-result ' + (result.type === 'glimpse' ? 'glimpse-result' : 'clue-result'), 'aria-label': 'Your night result' },
       txt('span', 'eyebrow', 'FOR YOUR EYES ONLY'),

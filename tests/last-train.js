@@ -162,27 +162,56 @@ function roundFiveTests() {
     assert.equal(r.view(room, room.players[5]).players.length, 6);
     r.restart(room, 'deal'); assert.equal(room.phase, 'briefing'); assert.ok(room.players.every(p => p.role));
   }
-  // Footsteps: a Saboteur walks from their cabin to the target; one traveller between them hears it.
-  for (let i = 0; i < 20; i++) {
+  // Footsteps on a looped corridor: the walker takes the shorter way; only listening travellers hear; the clue never names the destination.
+  const listenAll = room => { room.night.listen = Object.fromEntries(room.players.map(p => [p.id, { flips: ['heads'], heads: true }])); };
+  {
     const room = shared(['passenger','passenger','passenger','passenger','inspector','medic','saboteur']);
     const bad = room.players.find(p => r.group(p) === 'saboteur'), others = room.players.filter(p => p !== bad);
-    room.seatOrder = [bad.id, ...others.map(p => p.id)]; const target = others.at(-1);
-    while (room.phase === 'night' && r.nightRole(room) !== 'moves') r.advance(room);
-    r.nightChoice(room, bad, { attackId: target.id }); while (room.phase === 'night') r.advance(room);
-    const log = room.nightLog.at(-1).footsteps; assert.deepEqual([log.by, log.from, log.to], [bad.id, 1, 7]);
-    const hearer = room.players.find(p => p.id === log.heardBy), rep = hearer.reports.find(x => x.type === 'footsteps');
-    assert.ok(rep.cabin > 1 && rep.cabin < 7); assert.equal(rep.toward, 'front'); assert.deepEqual(rep.range, [1, rep.cabin - 1]); assert.match(rep.time, /^[1-3]:\d\d AM$/);
-    assert.equal(room.players.filter(p => p.reports.some(x => x.type === 'footsteps')).length, 1);
-    assert.ok(!r.view(room, others[0]).nightLog);
+    room.seatOrder = [bad.id, ...others.map(p => p.id)];
+    while (r.nightRole(room) !== 'moves') r.advance(room); listenAll(room);
+    r.nightChoice(room, bad, { attackId: others[1].id }); while (room.phase === 'night') r.advance(room);
+    const log = room.nightLog.at(-1).footsteps[0]; assert.deepEqual([log.kind, log.by, log.from, log.to, log.route, log.heardBy], ['saboteur', bad.id, 1, 3, [1, 2, 3], others[0].id]);
+    const rep = others[0].reports.find(x => x.type === 'footsteps'); assert.equal(rep.cabin, 2); assert.equal(rep.dir, 1); assert.deepEqual(rep.from, [1, 7, 6]); assert.match(rep.time, /^[1-3]:\d\d AM$/);
+    const loop = shared(['passenger','passenger','passenger','passenger','inspector','medic','saboteur']); const b2 = loop.players.find(p => r.group(p) === 'saboteur'), o2 = loop.players.filter(p => p !== b2);
+    loop.seatOrder = [b2.id, ...o2.map(p => p.id)]; while (r.nightRole(loop) !== 'moves') r.advance(loop); listenAll(loop); r.nightChoice(loop, b2, { attackId: o2[4].id }); while (loop.phase === 'night') r.advance(loop);
+    assert.deepEqual(loop.nightLog.at(-1).footsteps[0].route, [1, 7, 6]); assert.equal(loop.nightLog.at(-1).footsteps[0].heardBy, o2[5].id); assert.deepEqual(o2[5].reports.find(x => x.type === 'footsteps').from, [1, 2, 3]);
+    // Nobody listening: the walk happens but nobody hears it.
+    const deaf = shared(['passenger','passenger','passenger','passenger','inspector','medic','saboteur']); const b3 = deaf.players.find(p => r.group(p) === 'saboteur'), o3 = deaf.players.filter(p => p !== b3);
+    deaf.seatOrder = [b3.id, ...o3.map(p => p.id)]; while (r.nightRole(deaf) !== 'moves') r.advance(deaf); r.nightChoice(deaf, b3, { attackId: o3[2].id }); while (deaf.phase === 'night') r.advance(deaf);
+    assert.equal(deaf.nightLog.at(-1).footsteps[0].heardBy, null); assert.ok(deaf.players.every(p => !p.reports.some(x => x.type === 'footsteps')));
+  }
+  {
+    // Coin flips: phase 1 only, good travellers only, at most two flips, stop after heads.
+    const room = shared(['passenger','passenger','passenger','brave','inspector','medic','saboteur']); const good = room.players.find(p => p.role === 'passenger'), bad = room.players.find(p => r.group(p) === 'saboteur');
+    while (r.nightRole(room) !== 'moves') r.advance(room);
+    assert.throws(() => r.listen(room, bad), /Only good/);
+    r.listen(room, good); const first = room.night.listen[good.id];
+    if (first.heads) assert.throws(() => r.listen(room, good), /already listening/); else { r.listen(room, good); assert.equal(first.flips.length, 2); assert.throws(() => r.listen(room, good)); }
+    assert.deepEqual(r.view(room, good).me.listen, first);
+    r.advance(room); assert.throws(() => r.listen(room, room.players.find(p => p.role === 'inspector')), /phase 1/);
+    // Brave walks to whoever they protect, and can be heard like a Saboteur.
+    const b = shared(['passenger','passenger','passenger','brave','inspector','medic','saboteur']); const brave = b.players.find(p => p.role === 'brave'), rest = b.players.filter(p => p !== brave);
+    b.seatOrder = [brave.id, ...rest.map(p => p.id)]; while (r.nightRole(b) !== 'moves') r.advance(b); listenAll(b);
+    r.nightChoice(b, brave, { power: 'cover', targetId: rest[1].id }); while (b.phase === 'night') r.advance(b);
+    const bw = b.nightLog.at(-1).footsteps.find(w => w.kind === 'brave'); assert.deepEqual([bw.by, bw.route, bw.heardBy], [brave.id, [1, 2, 3], rest[0].id]);
   }
   {
     const room = shared(['passenger','passenger','passenger','inspector','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), next = room.players.find(p => p !== bad);
     room.seatOrder = [bad.id, next.id, ...room.players.filter(p => p !== bad && p !== next).map(p => p.id)];
-    while (r.nightRole(room) !== 'moves') r.advance(room); r.nightChoice(room, bad, { attackId: next.id }); while (room.phase === 'night') r.advance(room);
-    assert.equal(room.nightLog.at(-1).footsteps.heardBy, null); assert.ok(room.players.every(p => !p.reports.some(x => x.type === 'footsteps')));
+    while (r.nightRole(room) !== 'moves') r.advance(room); listenAll(room); r.nightChoice(room, bad, { attackId: next.id }); while (room.phase === 'night') r.advance(room);
+    assert.equal(room.nightLog.at(-1).footsteps[0].heardBy, null);
     const off = shared(['passenger','passenger','passenger','inspector','saboteur']); off.settings.footsteps = false; const b2 = off.players.find(p => r.group(p) === 'saboteur');
     while (r.nightRole(off) !== 'moves') r.advance(off); r.nightChoice(off, b2, { attackId: off.players.find(p => p !== b2).id }); while (off.phase === 'night') r.advance(off);
-    assert.equal(off.nightLog.at(-1).footsteps, null);
+    assert.deepEqual(off.nightLog.at(-1).footsteps, []); assert.throws(() => r.listen(off, off.players[0]));
+  }
+  for (let i = 0; i < 12; i++) {
+    const room = shared(['passenger','passenger','passenger','passenger','inspector','medic','saboteur','saboteur']); const [a, b] = room.players.filter(p => r.group(p) === 'saboteur'), target = room.players.find(p => r.group(p) !== 'saboteur');
+    while (r.nightRole(room) !== 'moves') r.advance(room);
+    r.nightChoice(room, a, { power: 'walk', walkerId: b.id }); assert.equal(r.view(room, b).me.teamChoices.find(c => c.id === a.id).selected, false); assert.equal(r.view(room, b).me.teamChoices.find(c => c.id === a.id).walkerId, b.id);
+    r.nightChoice(room, a, { attackId: target.id }); r.nightChoice(room, b, { attackId: target.id }); assert.equal(room.night.choices[a.id].walkerId, b.id);
+    if (i % 2) r.nightChoice(room, b, { power: 'walk', walkerId: a.id });
+    while (room.phase === 'night') r.advance(room);
+    const by = room.nightLog.at(-1).footsteps[0].by; if (i % 2) assert.ok([a.id, b.id].includes(by)); else assert.equal(by, b.id);
   }
   // Auto shuffle draws a valid new mix whenever a journey starts; mornings give everyone time to think.
   {

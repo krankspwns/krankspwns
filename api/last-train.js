@@ -12,7 +12,7 @@ function player(name) { const tok = secret(); return { p: { id: crypto.randomUUI
 function view(room, me) { const result = rules.view(room, me); result.me.recoveryCode = recovery(room, me); return result; }
 async function execute(req, body) {
   const action = req.method === 'GET' ? (body.voice ? 'voice' : 'state') : body.action;
-  need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'lastWords', 'ghostGuess', 'restart'].includes(action), 400, 'Unknown choice. Please reload.');
+  need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'lastWords', 'ghostGuess', 'restart'].includes(action), 400, 'Unknown choice. Please reload.');
   if (action === 'create') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     let code;
@@ -78,7 +78,7 @@ async function execute(req, body) {
   if (action === 'speakVoice') need(body.match === room.match && body.round === room.round, 409, 'This recording belongs to an earlier turn.');
   else if (['letter', 'dismissLetters'].includes(action)) need(body.match === (room.match || 0), 409, 'A new journey has started. Open your letters again.');
   // Reactions, the shop and pins are not tied to a turn, so a phase change never rejects them.
-  else if (!['leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
+  else if (!['leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart', 'listen'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
   const host = () => need(room.hostId === me.id, 403, 'Only the host can do that.');
   need(!room.paused || ['resume', 'leave', 'dismissLetters', 'speakVoice', 'emote', 'buy', 'wear', 'throw'].includes(action), 409, 'The game is paused.');
   if (action === 'settings') {
@@ -113,6 +113,7 @@ async function execute(req, body) {
   if (action === 'suspect') rules.suspect(room, me, body.targetId ? String(body.targetId) : null);
   if (action === 'lastWords') rules.lastWords(room, me, body.text);
   if (action === 'ghostGuess') rules.ghostGuess(room, me, body.ids);
+  if (action === 'listen') rules.listen(room, me);
   if (action === 'restart') { host(); need(room.phase !== 'lobby', 409, 'There is no journey to restart.'); need(['lobby', 'deal'].includes(body.to), 400, 'Choose how to restart.'); rules.restart(room, body.to); }
   if (action === 'advance') {
     host(); need(['morning', 'voteResult'].includes(room.phase), 409, 'Everyone gets their full turn. Wait for this step to finish.'); rules.advance(room);

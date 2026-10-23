@@ -1698,3 +1698,110 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
   .stop-dot, .stop-dot svg { width: 34px !important; height: 34px !important; }
   .track-stop { gap: 2px; } .track-stop small { display: none; } .track-stop b { font-size: 11.5px; }
 }
+/* Meet the teams: Passengers and Crew as their own sub-groups */
+.intro-subgroup + .intro-subgroup { margin-top: 16px; padding-top: 14px; border-top: 1px dashed #ffffff1f; }
+.intro-subhead { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 8px; row-gap: 2px; margin-bottom: 10px; }
+.intro-subhead b { font: 800 14px Inter, sans-serif; letter-spacing: 1.6px; text-transform: uppercase; }
+.intro-subhead small { grid-column: 1 / -1; font-size: 11.5px; color: #b6abc9; line-height: 1.4; }
+.intro-count { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; font: 800 11px Inter, sans-serif; }
+.intro-subgroup.passenger .intro-subhead b { color: #f2ce86; } .intro-subgroup.passenger .intro-count { background: #f2ce8626; color: #f2ce86; border: 1px solid #f2ce8666; }
+.intro-subgroup.crew .intro-subhead b { color: #8fe0c4; } .intro-subgroup.crew .intro-count { background: #8fe0c426; color: #8fe0c4; border: 1px solid #8fe0c466; }
+.intro-subgroup.passenger .introduced-role { border-left: 3px solid #f2ce8699 !important; }
+.intro-subgroup.crew .introduced-role { border-left: 3px solid #8fe0c499 !important; }
+.team-intro.good > .intro-subgroup:first-of-type { margin-top: 16px; }
+.intro-subgroup .introduced-role { padding-left: 10px !important; border-radius: 0 10px 10px 0; background: #ffffff05; }
+/* Team colours: green for the good team, red for the bad team; the goal sits right under the heading */
+.team-intro.good { background: linear-gradient(180deg, #123a2fe6, #0d2a24e6) !important; border-color: #5fd39a66 !important; box-shadow: inset 0 1px #9ef0cf22, 0 10px 26px #0006; }
+.team-intro.bad { background: linear-gradient(180deg, #3d1424e6, #2a0d1ae6) !important; border-color: #ff6f8666 !important; box-shadow: inset 0 1px #ffb3c022, 0 10px 26px #0006; }
+.team-intro.good .team-label { color: #7fe0b3 !important; } .team-intro.bad .team-label { color: #ff9db0 !important; }
+.team-intro h2 { margin: 6px 0 2px !important; }
+.team-intro .team-intro-goal { margin: 0 0 18px !important; font-size: 13px !important; color: #d6e8df !important; }
+.team-intro.bad .team-intro-goal { color: #f0d6dc !important; }
+.team-intro.good > .intro-subgroup:first-of-type { margin-top: 0; }
+.team-intro.good .intro-subgroup + .intro-subgroup { border-top-color: #9ef0cf33; }
+.team-intro.good .introduced-role, .team-intro.bad .introduced-role { background: #00000026 !important; }
+/* Loop carriage map */
+.loop-map { position: relative; display: block; width: 100%; max-width: 440px; aspect-ratio: 340 / 230; margin: 12px auto 4px; border-radius: 60px / 44px; background: radial-gradient(ellipse at 50% 30%, #6a2638, #3d1220 75%); border: 1.5px solid #d9b06a; box-shadow: inset 0 0 0 4px #2a0c16, 0 8px 18px #0007; }
+.loop-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.loop-corridor { fill: none; stroke: #3a1e18; stroke-width: 22; }
+.loop-lounge { fill: #22091399; stroke: #d9b06a44; stroke-width: 1; }
+.loop-label { font: 800 7.5px Inter, sans-serif; letter-spacing: 1.6px; fill: #c9a96a; text-anchor: middle; }
+.loop-steps { fill: #f2ce86; filter: drop-shadow(0 0 2px #f2ce8699); }
+.loop-map .map-cabin { position: absolute; width: 11.8%; height: 22.6%; transform: translate(-50%, -50%); padding-top: 2px; gap: 1px; }
+.loop-map .map-face.portrait { width: 62% !important; height: auto !important; aspect-ratio: 1; }
+.loop-map .map-you { bottom: 2px; }
+.loop-map .map-walker { position: absolute; transform: translate(-50%, -50%); z-index: 3; }
+.loop-map .map-walker-face.portrait { width: 24px !important; height: 24px !important; }
+@media (max-width: 400px) { .loop-map .map-no { font-size: 7px; } .loop-map .map-you { font-size: 6px; } }
+.carriage-map:not(.loop-map) { display: none; }
+/* Who walks */
+.walker-picker { margin: 12px 0 4px; padding: 11px 12px; border-radius: 14px; background: #00000030; border: 1px solid #ff6f8640; text-align: left; }
+.walker-head b { display: block; font-size: 13.5px; color: #ffe0e6; } .walker-head small { display: block; font-size: 11px; color: #d6b6c2; margin-top: 2px; line-height: 1.35; }
+.walker-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.walker-option { position: relative; display: grid !important; justify-items: center; gap: 2px; min-width: 76px; min-height: 0 !important; padding: 8px 8px 7px !important; border-radius: 13px !important; background: #2a0f1d !important; border: 1px solid #ff9db044 !important; color: #f6dfe5 !important; }
+.walker-option.mine { background: linear-gradient(180deg, #ff7f98, #c93a60) !important; border-color: #ffd0d9 !important; color: #fff !important; box-shadow: 0 0 14px #ff6f8666 !important; }
+.walker-face.portrait { width: 38px !important; height: 38px !important; border-radius: 50% !important; }
+.walker-option b { font-size: 12px; } .walker-option small { font-size: 9px; opacity: .8; }
+.walker-votes { position: absolute; top: -6px; right: -6px; display: flex; }
+.walker-vote.portrait { width: 18px !important; height: 18px !important; border-radius: 50% !important; box-shadow: 0 0 0 2px #2a0f1d; margin-left: -5px; }
+.noise-tag { margin-top: 3px; padding: 1px 6px; border-radius: 6px; font: 700 9px Inter, sans-serif; background: #5fd39a26; color: #8fe8bb; white-space: nowrap; }
+.noise-tag.loud { background: #f2ce8626; color: #f2ce86; }
+/* Team panels: layered shades with a fine art-deco texture */
+.team-intro.good { background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cpath d='M22 2l20 20-20 20L2 22z' fill='none' stroke='%239ef0cf' stroke-opacity='.07'/%3E%3Ccircle cx='22' cy='22' r='2' fill='%239ef0cf' fill-opacity='.06'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 90% 60% at 15% 0%, #2f8f72aa, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, #0f5a6a99, transparent 65%),
+    linear-gradient(160deg, #0f3d34 0%, #0b2c2a 45%, #0a2026 100%) !important;
+  border-color: #6fe3b066 !important; box-shadow: inset 0 1px #b8ffe226, inset 0 0 40px #00000055, 0 12px 28px #0007 !important; }
+.team-intro.bad { background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M0 28L28 0M-7 7l14-14M21 35l14-14' stroke='%23ffb3c0' stroke-opacity='.06' stroke-width='1'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 90% 60% at 85% 0%, #9a2b4caa, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 0% 100%, #4a1550aa, transparent 65%),
+    linear-gradient(160deg, #3d0f22 0%, #2b0b1e 50%, #1e0a1c 100%) !important;
+  border-color: #ff8fa466 !important; box-shadow: inset 0 1px #ffc6d226, inset 0 0 40px #00000055, 0 12px 28px #0007 !important; }
+.team-intro.good .team-label { color: #8ff0c6 !important; letter-spacing: 2.4px; } .team-intro.bad .team-label { color: #ffa8ba !important; letter-spacing: 2.4px; }
+.team-intro.good h2 { color: #eafff4 !important; } .team-intro.bad h2 { color: #fff0f3 !important; }
+.team-intro.good .introduced-role { background: #04241d66 !important; border-top-color: #9ef0cf1f !important; }
+.team-intro.bad .introduced-role { background: #2a061866 !important; border-top-color: #ffb3c01f !important; }
+.target-dialog .manifest-target .noise-tag { display: inline-block; margin-top: 3px; padding: 2px 7px !important; border-radius: 6px; font: 700 9px/1.2 Inter, sans-serif !important; white-space: nowrap; }
+.walker-options .walker-option { flex: 0 0 auto; width: auto !important; min-width: 84px; }
+/* Phase 1 coin flip: listen at your door */
+.listen-card { display: flex; align-items: center; gap: 14px; width: min(720px, calc(100% - 12px)); margin: 14px auto 0; padding: 14px 16px; border-radius: 18px; background: radial-gradient(ellipse 60% 120% at 0% 50%, #e9b84a26, transparent 60%), linear-gradient(135deg, #2a2148, #18142c); border: 1px solid #e9c46f55; box-shadow: inset 0 1px #ffffff12, 0 10px 24px #0006; text-align: left; }
+.listen-card.listening { border-color: #7fe0b3aa; background: radial-gradient(ellipse 60% 120% at 0% 50%, #7fe0b326, transparent 60%), linear-gradient(135deg, #1f2f3a, #15192c); }
+.listen-copy { min-width: 0; }
+.listen-copy .eyebrow { font-size: 9px; letter-spacing: 1.6px; color: #e9c46f; }
+.listen-copy h3 { margin: 3px 0 2px; font-size: 17px; color: #fbf1dc; }
+.listen-copy p { margin: 0 0 8px !important; font-size: 12px !important; color: #c9bfdc !important; line-height: 1.4; }
+.flip-button { min-height: 38px !important; padding: 0 16px !important; font-size: 13px !important; }
+.coin { position: relative; flex: none; width: 72px; height: 72px; transform-style: preserve-3d; perspective: 400px; }
+.coin-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 5px 8px #0009); }
+.coin-face svg { width: 100%; height: 100%; display: block; }
+.coin-face.tails { transform: rotateY(180deg); }
+.coin.show-tails { transform: rotateY(180deg); }
+.coin:not(.show-heads):not(.show-tails) { animation: coin-idle 2.4s ease-in-out infinite; }
+@keyframes coin-idle { 50% { transform: rotateY(25deg) translateY(-2px); } }
+.coin.spin-heads { animation: coin-heads 1.1s cubic-bezier(.3,.6,.4,1) both; }
+.coin.spin-tails { animation: coin-tails 1.1s cubic-bezier(.3,.6,.4,1) both; }
+@keyframes coin-heads { 0% { transform: translateY(0) rotateY(0); } 45% { transform: translateY(-34px) rotateY(900deg); } 100% { transform: translateY(0) rotateY(1800deg); } }
+@keyframes coin-tails { 0% { transform: translateY(0) rotateY(0); } 45% { transform: translateY(-34px) rotateY(990deg); } 100% { transform: translateY(0) rotateY(1980deg); } }
+.listen-card.listening .coin { filter: drop-shadow(0 0 12px #7fe0b366); }
+@media (max-width: 680px) { .listen-card { gap: 11px; padding: 12px; } .coin { width: 58px; height: 58px; } .listen-copy h3 { font-size: 15px; } }
+@media (prefers-reduced-motion: reduce) { .coin, .coin.spin-heads, .coin.spin-tails { animation: none !important; } }
+/* Brave walks in teal on the replay map */
+.loop-steps.brave { fill: #7fe0d0; filter: drop-shadow(0 0 2px #7fe0d099); }
+.loop-map .map-walker.brave .map-walker-face.portrait { box-shadow: 0 0 0 1.5px #7fe0d0, 0 0 10px #7fe0d0; }
+/* The big coin toss */
+.toss-layer { position: fixed; inset: 0; z-index: 700; pointer-events: none; background: radial-gradient(ellipse 70% 55% at 50% 56%, #2a214899, #05060fcc 75%); perspective: 900px; }
+.toss-coin { position: fixed; width: 72px; height: 72px; transform-style: preserve-3d; will-change: transform; }
+.toss-spin { position: absolute; inset: 0; transform-style: preserve-3d; }
+.toss-spin .coin-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 6px 10px #000a); }
+.toss-spin .coin-face svg { width: 100%; height: 100%; display: block; }
+.toss-spin .coin-face.tails { transform: rotateX(180deg) translateZ(2.5px); }
+.toss-spin .coin-face.heads { transform: translateZ(2.5px); }
+.toss-tilt { position: absolute; inset: 0; transform-style: preserve-3d; }
+.coin-edge { position: absolute; left: 3px; right: 3px; top: 50%; height: 5px; margin-top: -2.5px; border-radius: 2px; background: repeating-linear-gradient(90deg, #8a5a1a 0 2px, #d9a441 2px 4px); transform: rotateX(90deg); }
+.toss-shadow { position: fixed; left: 50%; width: 150px; height: 22px; border-radius: 50%; background: radial-gradient(ellipse, #000c, transparent 70%); }
+.toss-result { position: fixed; left: 50%; display: grid; justify-items: center; gap: 4px; text-align: center; white-space: nowrap; }
+.toss-result b { font: 900 34px/1 Inter, sans-serif; letter-spacing: 6px; color: #ffe39a; text-shadow: 0 3px 0 #6a3d10, 0 0 24px #f2c45a88; }
+.toss-result.tails b { color: #c9c0e8; text-shadow: 0 3px 0 #2a2148, 0 0 20px #8a7fd066; }
+.toss-result small { font: 700 14px Inter, sans-serif; color: #f6e4c6; }
