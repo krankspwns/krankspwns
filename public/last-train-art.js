@@ -46,3 +46,9 @@ window.TRAIN_ART.trust = {
   unsure: '<circle cx="12" cy="12" r="9.4" fill="#ffb938" stroke="#c97f0c" stroke-width="1.4"/><path d="M12 4.2a7.8 7.8 0 0 1 7.6 6.2C16 11 8.6 9.6 5.4 7.6A7.8 7.8 0 0 1 12 4.2z" fill="#fff" opacity=".22"/><path d="M9.3 9.4a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2 1-1.2 1.9v.4" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.35" fill="#fff"/>',
   suspect: '<path d="M12 3.2l9.4 16.3a1.4 1.4 0 0 1-1.2 2.1H3.8a1.4 1.4 0 0 1-1.2-2.1z" fill="#ff5470" stroke="#b81f3d" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 5.4l4.2 7.4H7.8z" fill="#fff" opacity=".2"/><path d="M12 9.3v5.4" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="18" r="1.4" fill="#fff"/>',
 };
+// Thin line icons keep the trust control calm; colour comes from the selected segment.
+window.TRAIN_ART.trustLines = {
+    trust: '<path d="M12 3l7 2.6v5.6c0 4.4-3 7.8-7 9-4-1.2-7-4.6-7-9V5.6z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8.8 12.2l2.2 2.2 4.3-4.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+    unsure: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.9"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1.1" fill="currentColor"/>',
+    suspect: '<circle cx="12" cy="12" r="7.2" stroke="currentColor" stroke-width="1.9"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/>',
+  };

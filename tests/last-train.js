@@ -162,6 +162,34 @@ function roundFiveTests() {
     assert.equal(r.view(room, room.players[5]).players.length, 6);
     r.restart(room, 'deal'); assert.equal(room.phase, 'briefing'); assert.ok(room.players.every(p => p.role));
   }
+  // Footsteps: a Saboteur walks from their cabin to the target; one traveller between them hears it.
+  for (let i = 0; i < 20; i++) {
+    const room = shared(['passenger','passenger','passenger','passenger','inspector','medic','saboteur']);
+    const bad = room.players.find(p => r.group(p) === 'saboteur'), others = room.players.filter(p => p !== bad);
+    room.seatOrder = [bad.id, ...others.map(p => p.id)]; const target = others.at(-1);
+    while (room.phase === 'night' && r.nightRole(room) !== 'moves') r.advance(room);
+    r.nightChoice(room, bad, { attackId: target.id }); while (room.phase === 'night') r.advance(room);
+    const log = room.nightLog.at(-1).footsteps; assert.deepEqual([log.by, log.from, log.to], [bad.id, 1, 7]);
+    const hearer = room.players.find(p => p.id === log.heardBy), rep = hearer.reports.find(x => x.type === 'footsteps');
+    assert.ok(rep.cabin > 1 && rep.cabin < 7); assert.equal(rep.toward, 'front'); assert.deepEqual(rep.range, [1, rep.cabin - 1]); assert.match(rep.time, /^[1-3]:\d\d AM$/);
+    assert.equal(room.players.filter(p => p.reports.some(x => x.type === 'footsteps')).length, 1);
+    assert.ok(!r.view(room, others[0]).nightLog);
+  }
+  {
+    const room = shared(['passenger','passenger','passenger','inspector','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), next = room.players.find(p => p !== bad);
+    room.seatOrder = [bad.id, next.id, ...room.players.filter(p => p !== bad && p !== next).map(p => p.id)];
+    while (r.nightRole(room) !== 'moves') r.advance(room); r.nightChoice(room, bad, { attackId: next.id }); while (room.phase === 'night') r.advance(room);
+    assert.equal(room.nightLog.at(-1).footsteps.heardBy, null); assert.ok(room.players.every(p => !p.reports.some(x => x.type === 'footsteps')));
+    const off = shared(['passenger','passenger','passenger','inspector','saboteur']); off.settings.footsteps = false; const b2 = off.players.find(p => r.group(p) === 'saboteur');
+    while (r.nightRole(off) !== 'moves') r.advance(off); r.nightChoice(off, b2, { attackId: off.players.find(p => p !== b2).id }); while (off.phase === 'night') r.advance(off);
+    assert.equal(off.nightLog.at(-1).footsteps, null);
+  }
+  // Auto shuffle draws a valid new mix whenever a journey starts; mornings give everyone time to think.
+  {
+    const room = shared(['witness','passenger','inspector','medic','saboteur']); room.settings.autoShuffle = true; room.settings.roles = null;
+    for (let i = 0; i < 6; i++) { r.restart(room, 'deal'); assert.ok(room.settings.roles); assert.deepEqual(r.validateLoadout(5, room.settings.roles), room.settings.roles); assert.equal(room.players.filter(p => r.group(p) === 'saboteur').length, 1); }
+    assert.equal(r.TIMERS.morning, 20);
+  }
 }
 function engineTests() {
   const counts = [[3,1,1],[2,2,2],[3,2,2],[4,2,2],[4,3,2],[4,3,3],[5,3,3],[6,3,3]];

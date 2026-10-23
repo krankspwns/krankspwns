@@ -52,6 +52,8 @@
       bell: () => { bell({ f: 1175, dur: 1.2, vol: .12 }); bell({ f: 1175, at: .55, dur: 1.4, vol: .1 }); },
       sting: () => { tone({ f: 110, f2: 98, dur: 1.2, vol: .14, type: 'sawtooth', lp: 500, attack: .03 }); tone({ f: 147, f2: 139, dur: 1.2, vol: .08, type: 'sawtooth', lp: 600 }); },
       punch: () => { tone({ f: 1800, f2: 900, dur: .04, vol: .1, type: 'square', lp: 3000 }); noise({ at: .02, dur: .06, vol: .2, type: 'highpass', f: 2500 }); },
+      steps: () => { for (let i = 0; i < 6; i++) { const at = i * .34; noise({ at, dur: .09, vol: .2 - i * .022, type: 'lowpass', f: 420 - i * 30, f2: 120 }); tone({ f: 70, f2: 45, at, dur: .1, vol: .1 - i * .012 }); } },
+      throw: () => { noise({ dur: .55, vol: .2, type: 'bandpass', f: 300, f2: 2200, q: .9, attack: .08 }); tone({ f: 520, f2: 160, dur: .5, vol: .05, type: 'triangle' }); noise({ at: .62, dur: .18, vol: .28, type: 'lowpass', f: 500, f2: 90 }); tone({ f: 80, f2: 40, at: .62, dur: .22, vol: .3 }); },
       stamp: () => { noise({ dur: .12, vol: .34, type: 'lowpass', f: 700, f2: 120 }); tone({ f: 90, f2: 45, dur: .25, vol: .34 }); },
       tie: () => { tone({ f: 1400, dur: .16, vol: .07, type: 'triangle' }); tone({ f: 1400, at: .26, dur: .32, vol: .07, type: 'triangle' }); },
       chime: () => [784, 1046, 1318].forEach((f, i) => tone({ f, at: i * .09, dur: .45, vol: .1, type: 'triangle' })),

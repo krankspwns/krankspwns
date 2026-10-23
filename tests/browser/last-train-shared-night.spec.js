@@ -82,7 +82,7 @@ test('mobile controls keep text at 16px including lobby, discussion, private let
     await page.getByRole('button',{name:'Type Message'}).click();await expect(page.getByLabel('Your findings',{exact:true})).toBeVisible();
     expect(await page.getByLabel('Your findings',{exact:true}).evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await page.getByRole('button',{name:/^Open private letters/}).click();
-    await page.getByRole('dialog',{name:'Private letters'}).locator('.letters-person').first().click();
+    await page.getByRole('dialog',{name:'Private Letters'}).locator('.letters-person').first().click();
     const letterFields=page.locator('.thread-compose textarea');await expect(letterFields).toHaveCount(1);
     for(const control of await letterFields.all())expect(await control.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(16);
     await page.keyboard.press('Escape');

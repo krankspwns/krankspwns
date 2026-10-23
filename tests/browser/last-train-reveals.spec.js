@@ -53,3 +53,17 @@ test('a single Saboteur role card says there are no teammates',async({browser})=
   const b=await fixture(browser,5);
   try{const bad=b.room.players.find(p=>p.role==='saboteur'),s=await b.open(bad);await s.page.getByRole('button',{name:'Show Role',exact:true}).click();await expect(s.page.locator('.ticket-allies')).toHaveText('YOUR TEAMMATESYou are the only Saboteur.');await expect(s.page.locator('.ticket-ally')).toHaveCount(0);}finally{await Promise.all(b.contexts.map(c=>c.close()));}
 });
+test('the Inspector sees earlier checks on the picker and can paste the latest report into a chat message',async({browser})=>{
+  const b=await fixture(browser);let room=b.room;const inspector=room.players.find(p=>p.role==='inspector'),bad=room.players.find(p=>p.role==='saboteur'),good=room.players.find(p=>p.role==='passenger');
+  try{
+    while(room.phase==='night')rules.advance(room);rules.beginNight(room);rules.advance(room);
+    const me=room.players.find(p=>p.id===inspector.id);me.reports.push({type:'check',round:1,targetId:bad.id,alignment:'bad'},{type:'check',round:1,targetId:good.id,alignment:'good'});
+    while(rules.nightRole(room)!=='inspector')rules.advance(room);room.deadline=Date.now()+120000;await store.save(room);
+    const a=await b.open(inspector);await a.page.getByRole('button',{name:'Choose',exact:true}).click();const picker=a.page.getByRole('dialog');
+    await expect(picker.locator('[data-id="'+bad.id+'"] .checked-tag')).toHaveText('BAD · N1');await expect(picker.locator('[data-id="'+good.id+'"]')).toHaveClass(/checked-good/);await expect(picker.locator('.checked-tag')).toHaveCount(2);
+    await picker.getByRole('button',{name:'Cancel',exact:true}).click();
+    room=await store.load(b.host.code);room.settings.discussion='chat';while(room.phase==='night')rules.advance(room);room.phase='morning';rules.beginDiscussion(room);room.speakerIndex=room.speakingOrder.indexOf(inspector.id);room.deadline=Date.now()+120000;await store.save(room);
+    await a.page.getByRole('button',{name:'Type Message',exact:true}).click();await a.page.getByRole('button',{name:/^Paste My Latest Report/}).click();
+    await expect(a.page.locator('#lt-speech')).toHaveValue('Night 1: '+bad.name+' is BAD. '+good.name+' is GOOD.');expect(a.errors).toEqual([]);
+  }finally{await Promise.all(b.contexts.map(c=>c.close()));}
+});

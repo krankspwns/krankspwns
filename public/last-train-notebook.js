@@ -30,7 +30,7 @@
         const chips = node('div', 'trust-chips'); chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Your view of ' + p.name);
         for (const [value, label] of MARKS) {
           const chip = button('', () => { writeMarks({ marks: { ...readMarks().marks, [p.id]: value } }); renderPeople(); }, 'trust-chip ' + value);
-          chip.setAttribute('aria-pressed', String(mark === value)); const ic = node('span', 'trust-icon'); ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (window.TRAIN_ART?.trust?.[value] || '') + '</svg>'; chip.append(ic, node('small', '', label)); chips.append(chip);
+          chip.setAttribute('aria-pressed', String(mark === value)); const ic = node('span', 'trust-icon'); ic.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' + (window.TRAIN_ART?.trustLines?.[value] || '') + '</svg>'; chip.append(ic, node('small', '', label)); chips.append(chip);
         }
         const note = node('input', 'people-note'); note.maxLength = 80; note.placeholder = 'Claims, clues…'; note.value = notes.people[p.id] || ''; note.setAttribute('aria-label', 'Note about ' + p.name);
         note.addEventListener('input', () => writeMarks({ people: { ...readMarks().people, [p.id]: note.value } }));
@@ -89,7 +89,7 @@
       if (book) return;
       book = node('dialog', 'notebook'); book.setAttribute('aria-labelledby', 'notebook-title');
       const top = node('header', 'notebook-header'), title = node('div');
-      title.append(node('small', 'eyebrow', 'FOR YOUR EYES ONLY'), Object.assign(node('h2', '', 'My notebook'), { id: 'notebook-title' }));
+      title.append(node('small', 'eyebrow', 'FOR YOUR EYES ONLY'), Object.assign(node('h2', '', 'My Notebook'), { id: 'notebook-title' }));
       const closeButton = button('×', close, 'notebook-close'); closeButton.setAttribute('aria-label', 'Close notebook'); top.append(title, closeButton);
       phaseLabel = node('p', 'notebook-phase'); phaseLabel.textContent = launcher.dataset.phase || 'Your private notes';
       const tabs = node('div', 'notebook-modes'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', 'Notebook mode');
@@ -161,7 +161,7 @@
       }
       if (!key) { launcher?.remove(); launcher = null; return; }
       if (!launcher) {
-        launcher = button('', open, 'notebook-launcher'); launcher.title = 'My notebook'; launcher.innerHTML = icon; launcher.append(node('span', '', 'Notes'));
+        launcher = button('', open, 'notebook-launcher'); launcher.title = 'My Notebook'; launcher.innerHTML = icon; launcher.append(node('span', '', 'Notes'));
         launcher.setAttribute('aria-label', 'Open private notebook'); launcher.setAttribute('aria-haspopup', 'dialog'); host.append(launcher);
       }
       launcher.dataset.phase = phase; if (phaseLabel) phaseLabel.textContent = phase;

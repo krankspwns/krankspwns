@@ -61,6 +61,6 @@ test('in-person rooms can also record their turn and replay it after moving to t
   const b=await fixture(browser,{mode:'in-person'}),a=await b.open(b.host);
   try{
     await a.page.getByRole('button',{name:'Record Voice',exact:true}).click();await expect(a.page.getByRole('button',{name:'Stop & Share',exact:true})).toBeVisible();await a.page.waitForTimeout(700);await a.page.getByRole('button',{name:'Stop & Share',exact:true}).click();await expect.poll(async()=>(await store.load(b.host.code)).speeches.length).toBe(1);
-    expect((await store.load(b.host.code)).speakerIndex).toBe(1);await expect(a.page.getByRole('button',{name:'I’m Done Speaking',exact:true})).toHaveCount(0);await expect(a.page.getByRole('heading',{name:'Conversations aboard',exact:true})).toBeVisible();await expect(a.page.getByRole('button',{name:/^Play voice message/})).toBeEnabled();expect(a.errors).toEqual([]);
+    expect((await store.load(b.host.code)).speakerIndex).toBe(1);await expect(a.page.getByRole('button',{name:'I’m Done Speaking',exact:true})).toHaveCount(0);await expect(a.page.getByRole('heading',{name:'Conversations Aboard',exact:true})).toBeVisible();await expect(a.page.getByRole('button',{name:/^Play voice message/})).toBeEnabled();expect(a.errors).toEqual([]);
   }finally{await Promise.all(b.contexts.map(c=>c.close()));}
 });

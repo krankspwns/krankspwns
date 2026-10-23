@@ -19,7 +19,7 @@ async function open(browser,seat,width=390,failDismiss=()=>false){
   });
   const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));await page.goto('/last-train.html');await page.locator('.room-code').waitFor();return{context,page,errors};
 }
-const letterbox=page=>page.getByRole('dialog',{name:'Private letters',exact:true});
+const letterbox=page=>page.getByRole('dialog',{name:'Private Letters',exact:true});
 async function openThread(page,name){
   if(!await letterbox(page).isVisible())await page.getByRole('button',{name:/^Open private letters/}).click();
   if(await letterbox(page).getByRole('button',{name:'Back to your letterbox'}).isVisible())await letterbox(page).getByRole('button',{name:'Back to your letterbox'}).click();

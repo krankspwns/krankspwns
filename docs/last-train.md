@@ -69,7 +69,7 @@ Resolve all victims together, then promote a surviving Trainee, check the winner
 
 ## Gathering, speaking and voting
 
-At night end a 4-second gathering transition brings everyone to the train lounge. An 8-second morning reveal shows who is out and whether they were GOOD or BAD, and the fatal cause: Attacked, Poisoned or Overdose. Multiple fatal causes are shown together. Exact roles remain secret. These causes also appear in the journey log; saved players are not announced as deaths. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
+At night end a 4-second gathering transition brings everyone to the train lounge. A 20-second morning reveal shows who is out and whether they were GOOD or BAD, and the fatal cause: Attacked, Poisoned or Overdose. Multiple fatal causes are shown together. Exact roles remain secret. These causes also appear in the journey log; saved players are not announced as deaths. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
 
 The host chooses **In person** or **Chat room** before starting:
 
@@ -156,3 +156,10 @@ Rules/API tests cover sealed introductions, independent fixed seating, stage ord
 - **Night replay**: the finale steps through every night: the attack, block, disguise, lock, protection, heal, poison, checks, sightings and who was out.
 - **Observers**: joining by link after a journey has started makes you an Observer (the host can turn this off). Observers see only public screens, with a dark train at night, can react, and take a free seat when the next journey or a restart deals.
 - **Restart**: the host can restart at any time: **Deal Again Now** (new roles, seats and supplies) or **Back To Platform** (the lobby, to change roles or settings).
+- **Shuffle Roles Every Journey** (host switch, off by default): each time a journey starts (Start, Another Journey or Deal Again Now) a new random role mix is drawn, as if the host pressed Shuffle Roles.
+- **Time to think**: the morning reveal lasts 20 seconds. It says who speaks first and invites everyone to pin a suspect before the discussion.
+- **Paste My Latest Report**: in chat rooms, the speaker can paste the newest night's private results into their message, then edit them before sharing.
+- **Inspector history**: the Inspector's picker tints players already checked GOOD or BAD, with the night of the check.
+- **Footsteps & Carriage Map** (host switch, on by default): cabin number = seat number, shown on a carriage map in the lounge. When the Saboteurs attack, one of them walks the corridor from their cabin to the target's cabin. One living traveller whose door they passed (if any) gets a private morning clue with the time and the side of the carriage the walker came from, and sees the footprints on their map. The finale's Night Replay draws the walker's real path.
+- **Night progress**: a rail line from Move (moon) to Respond (lantern) to Morning (sunrise); a small train travels along it with the night clock.
+- **Thrown off the train**: a voted-out traveller is tossed from the carriage door as the train speeds on, then their team is revealed. Vote counts appear as badges under each name after the ballots land.

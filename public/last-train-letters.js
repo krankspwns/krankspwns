@@ -41,12 +41,12 @@
     function renderList() {
       const wrap = node('div', 'letters-home');
       const writable = state.players.filter(canWrite);
-      const pick = node('section', 'letters-pick'); pick.append(node('h3', '', 'Write to'));
+      const pick = node('section', 'letters-pick'); pick.append(node('h3', '', 'Write To'));
       const row = node('div', 'letters-people');
       if (!writable.length) row.append(node('p', 'letter-empty', state.me.alive === false ? 'Only travellers who are also out can receive your letters.' : 'Nobody else is aboard yet.'));
       for (const p of writable) { const b = button('letters-person', '', () => openThread(p.id)); b.append(face(p), node('span', '', p.name)); b.setAttribute('aria-label', 'Write to ' + p.name); row.append(b); }
       pick.append(row);
-      const list = node('section', 'letters-threads'); list.append(node('h3', '', 'Your letterbox'));
+      const list = node('section', 'letters-threads'); list.append(node('h3', '', 'Your Letterbox'));
       const convos = conversations();
       if (!convos.length) list.append(node('p', 'letter-empty', 'No letters yet. A little mystery takes time.'));
       for (const c of convos) {
@@ -112,7 +112,7 @@
       if (!state || book) return;
       thread = null;
       book = node('dialog', 'letters-dialog'); book.setAttribute('aria-labelledby', 'letters-title');
-      const top = node('header', 'letters-header'), heading = node('div'), title = node('h2', '', 'Private letters'); title.id = 'letters-title';
+      const top = node('header', 'letters-header'), heading = node('div'), title = node('h2', '', 'Private Letters'); title.id = 'letters-title';
       heading.append(node('span', 'eyebrow', 'BETWEEN YOU & THEM'), title);
       const exit = button('letters-close', '×', close); exit.setAttribute('aria-label', 'Close private letters');
       top.append(heading, exit); body = node('div', 'letters-body');
@@ -128,7 +128,7 @@
       state = next; owner = seat;
       if (!key) { launcher?.remove(); launcher = null; return; }
       if (!launcher) {
-        launcher = node('button', 'letters-launcher'); launcher.type = 'button'; launcher.title = 'Private letters'; launcher.innerHTML = icon; launcher.append(node('span', '', 'Letters'));
+        launcher = node('button', 'letters-launcher'); launcher.type = 'button'; launcher.title = 'Private Letters'; launcher.innerHTML = icon; launcher.append(node('span', '', 'Letters'));
         badge = node('b', 'letters-badge'); launcher.append(badge); launcher.onclick = open; launcher.setAttribute('aria-haspopup', 'dialog'); host.append(launcher);
       }
       updateLauncher(); render(false);

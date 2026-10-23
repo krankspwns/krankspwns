@@ -60,7 +60,7 @@ async function execute(req, body) {
   }
   const me = room.players.find(p => p.id === body.pid) || (room.observers || []).find(p => p.id === body.pid);
   need(me && body.tok && equal(me.tokenHash, hash(body.tok)), 401, 'Use your private rejoin code to return to the game.');
-  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles, body.letterIds, body.ids, body.to, body.events, body.observers, body.e, body.kind, body.key, body.item, body.frame, body.voiceId, body.mimeType, body.durationMs, body.audioData ? hash(body.audioData) : null]));
+  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles, body.letterIds, body.ids, body.to, body.events, body.observers, body.autoShuffle, body.footsteps, body.e, body.kind, body.key, body.item, body.frame, body.voiceId, body.mimeType, body.durationMs, body.audioData ? hash(body.audioData) : null]));
   const receipt = (room.receipts || []).find(r => r.pid === me.id && r.id === body.requestId);
   if (action !== 'state' && receipt) { need(receipt.fingerprint === fingerprint, 409, 'That request was already used. Reload the game.'); return view(room, me); }
   need(!me.departed || ['state', 'voice', 'dismissLetters', 'wear', 'buy'].includes(action), 403, 'Use your rejoin code to come back.');
@@ -87,7 +87,7 @@ async function execute(req, body) {
     const speakSeconds = body.speakSeconds === undefined ? room.settings.speakSeconds || 20 : body.speakSeconds;
     need(rules.SPEAK_SECONDS.includes(speakSeconds), 400, 'Choose 15, 20, 30 or 45 seconds.');
     const roles = body.roles === undefined ? room.settings.roles || null : body.roles === null ? null : rules.validateLoadout(present(room).length, body.roles);
-    room.settings = { extra: body.extra, blocker: body.blocker, discussion: body.discussion, speakSeconds, roles, events: body.events === undefined ? room.settings.events !== false : !!body.events, observers: body.observers === undefined ? room.settings.observers !== false : !!body.observers };
+    room.settings = { extra: body.extra, blocker: body.blocker, discussion: body.discussion, speakSeconds, roles, events: body.events === undefined ? room.settings.events !== false : !!body.events, observers: body.observers === undefined ? room.settings.observers !== false : !!body.observers, autoShuffle: body.autoShuffle === undefined ? !!room.settings.autoShuffle : !!body.autoShuffle, footsteps: body.footsteps === undefined ? room.settings.footsteps !== false : !!body.footsteps };
   }
   if (action === 'shuffleRoles') { host(); need(['lobby','finished'].includes(room.phase), 409, 'Shuffle roles before the journey starts.'); room.settings.roles = rules.randomLoadout(present(room).length); }
   if (action === 'start') { host(); need(['lobby', 'finished'].includes(room.phase), 409, 'A game is already running.'); rules.start(room); }

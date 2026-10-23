@@ -281,7 +281,7 @@
       el('p', { class: 'gamecard-stats' }, txt('b', '', String(state.players.filter(p => !p.departed).length)), ' Travellers · ', txt('span', 'aboard', aboard + (state.phase === 'lobby' ? ' Ready' : ' Aboard')), ' · ' + phaseLabel(), (state.observers || []).length ? txt('span', 'watching', ' · 👀 ' + state.observers.length + ' watching') : null),
       el('div', { class: 'gamecard-buttons' }, btn('Players', playersDialog, 'card-button', false, 'players'), (() => { const b = btn('Invite ▾', e => inviteMenu(e.currentTarget), 'card-button', false, 'invite'); b.dataset.invite = ''; b.setAttribute('aria-haspopup', 'menu'); return b; })(),
         !['lobby', 'finished'].includes(state.phase) && host ? btn(state.paused ? 'Resume' : 'Pause', () => send(state.paused ? 'resume' : 'pause'), 'card-button slate', false, 'pause') : null,
-        state.phase !== 'lobby' && host ? btn('Restart', restartDialog, 'card-button restart-button', false, 'restart') : null),
+        state.phase !== 'lobby' && host ? (() => { const b = btn('Restart', restartDialog, 'card-button restart-button', false, 'restart'); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M20.5 3.5v5h-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Restart</span>'; b.setAttribute('aria-label', 'Restart'); return b; })() : null),
       el('div', { class: 'lt-roster', 'aria-label': 'Travellers in seat order' }, ...state.players.filter(p => !p.departed || state.phase !== 'lobby').map(rosterPerson)));
     return el('header', { class: 'lt-header in-room' }, top, title, card);
   }
@@ -301,7 +301,7 @@
     return el('div', { class: 'seated-traveller', 'data-avatar-index': index, 'data-atlas-row': row, 'aria-hidden': 'true', style: '--px:' + (col * 100 / 3) + '%;--py:' + (y / (1086 - height) * 100) + '%;--sprite-y-size:' + (1086 / height * 100) + '%;--back-y:' + (row * 50) + '%;--head-x:' + [57.5, 52.8, 51.4, 56][col] + '%' });
   }
   function roster() {
-    return el('section', { class: 'panel roster-panel' }, el('div', { class: 'panel-heading' }, el('h3', {}, 'Your fellow travellers'), txt('small', 'muted', state.players.filter(p => !p.departed).length + '/12 IN ROOM')), el('div', { class: 'roster' }, ...state.players.map(p => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (!p.alive ? ' out' : '') }, avatar(p, 'avatar'), el('div', { class: 'seat-label' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.role ? role(p.role).name + ' · ' + (p.alive ? groupName(p.group) : 'OUT') : p.departed ? 'AWAY' : p.id === state.hostId ? 'HOST' : 'READY TO BOARD'))))));
+    return el('section', { class: 'panel roster-panel' }, el('div', { class: 'panel-heading' }, el('h3', {}, 'Your Fellow Travellers'), txt('small', 'muted', state.players.filter(p => !p.departed).length + '/12 IN ROOM')), el('div', { class: 'roster' }, ...state.players.map(p => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (!p.alive ? ' out' : '') }, avatar(p, 'avatar'), el('div', { class: 'seat-label' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.role ? role(p.role).name + ' · ' + (p.alive ? groupName(p.group) : 'OUT') : p.departed ? 'AWAY' : p.id === state.hostId ? 'HOST' : 'READY TO BOARD'))))));
   }
   function setting(extra = {}) { return send('settings', { ...state.settings, ...extra }); }
   function startJourneyButton(disabled, replay = false) {
@@ -317,10 +317,10 @@
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Gather at least 5 players. Each person needs their own phone.'), txt('div', 'large-code', state.code),
       el('div', { class: 'room-setting' }, txt('b', '', 'How will you share your findings?'), el('div', { class: 'mode-switch', role: 'group', 'aria-label': 'Speaking mode' }, ...[['in-person','In Person'],['chat','Chat Room']].map(([mode,label]) => btn(label, () => setting({ discussion: mode }), state.settings.discussion === mode ? 'selected' : '', !host, 'mode-' + mode))), txt('p', 'muted small', state.settings.discussion === 'chat' ? 'Each player gets ' + state.speakSeconds + ' seconds to type or record one message. Voice recordings can be played after their turn.' : 'Sit together. Each player gets ' + state.speakSeconds + ' seconds to speak aloud, in seat order.')),
       el('div', { class: 'room-setting' }, txt('b', '', 'Speaking time per player'), el('div', { class: 'mode-switch speak-switch', role: 'group', 'aria-label': 'Speaking time per player' }, ...[15, 20, 30, 45].map(n => btn(n + 's', () => setting({ speakSeconds: n }), state.speakSeconds === n ? 'selected' : '', !host, 'speak-' + n)))),
-      el('div', { class: 'room-setting toggles' }, ...[['events', 'Carriage events', 'A random event on some nights, like a power cut or a long tunnel.'], ['observers', 'Allow observers', 'People who join mid-journey can watch and take a seat next journey.']].map(([key, label, hint]) =>
-        el('label', { class: 'switch-row' }, el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: state.settings[key] !== false, disabled: !host || busy, onchange: e => setting({ [key]: e.target.checked }) })))),
+      el('div', { class: 'room-setting toggles' }, ...[['events', 'Carriage Events', 'A random event on some nights, like a power cut or a long tunnel.'], ['observers', 'Allow Observers', 'People who join mid-journey can watch and take a seat next journey.'], ['footsteps', 'Footsteps & Carriage Map', 'A Saboteur walks the corridor to attack. One traveller they pass may hear them.'], ['autoShuffle', 'Shuffle Roles Every Journey', 'A new random role mix is drawn each time a journey starts.']].map(([key, label, hint]) =>
+        el('label', { class: 'switch-row' }, el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: key === 'autoShuffle' ? !!state.settings.autoShuffle : state.settings[key] !== false, disabled: !host || busy, onchange: e => setting({ [key]: e.target.checked }) })))),
       n >= 5 ? el('div', { class: 'role-mix' }, ...state.mix.map(m => el('span', {}, rolePortrait(m.role, 'mix-portrait'), txt('b', '', m.count + '×'), role(m.role).name))) : txt('p', 'muted', (5 - n) + ' more needed to start.'),
-      host ? el('div', { class: 'role-settings-actions' }, btn('Choose Roles', roleSettingsDialog, 'secondary', n < 5), btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', 'Roles are dealt to players at random.')) : null,
+      host ? el('div', { class: 'role-settings-actions' }, btn('Choose Roles', roleSettingsDialog, 'secondary', n < 5), btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', state.settings.autoShuffle ? 'Shuffle is on: a new role mix is drawn when the journey starts.' : 'Roles are dealt to players at random.')) : null,
       host ? startJourneyButton(n < 5) : txt('p', 'waiting', 'The host will start your journey.'), btn('See The Rules', rules, 'text-button')), roster());
   }
   function roleSettingsDialog() {
@@ -350,7 +350,8 @@
   const EVENT_ICONS = { 'long-tunnel': '🚇', express: '⚡', fog: '🌫️', snack: '🍰', 'power-cut': '🔌', sealed: '✉️', luggage: '🧳', 'full-moon': '🌕', quiet: '🤫' };
   function eventChip() {
     if (!state.event || ['lobby', 'briefing', 'boarding', 'finished'].includes(state.phase)) return null;
-    return el('div', { class: 'event-chip event-' + state.event.key, role: 'note' }, txt('span', 'event-icon', EVENT_ICONS[state.event.key] || '✦'), el('div', {}, txt('small', '', 'CARRIAGE EVENT · NIGHT ' + state.round), txt('b', '', state.event.name), txt('p', '', state.event.about)));
+    // A small pill so the scene stays visible; tap it for the rule.
+    return el('details', { class: 'event-chip event-' + state.event.key, 'data-details': 'event-' + state.match + '-' + state.round }, el('summary', { 'aria-label': 'Carriage event: ' + state.event.name + '. Tap for details' }, txt('span', 'event-icon', EVENT_ICONS[state.event.key] || '✦'), el('span', { class: 'event-name' }, txt('small', '', 'EVENT'), txt('b', '', state.event.name)), txt('span', 'event-more', 'i')), el('div', { class: 'event-about' }, txt('small', '', 'CARRIAGE EVENT · NIGHT ' + state.round), txt('p', '', state.event.about)));
   }
   function hud(kicker, title, subtitle) { return el('div', { class: 'scene-hud' }, el('div', {}, txt('span', 'eyebrow', kicker), el('h1', {}, title), subtitle ? txt('p', '', subtitle) : null, eventChip()), state.deadline || state.paused ? clock() : null); }
   const art = name => { const mobile = { cabin:'cabin', 'lounge-room':'lounge-room-mobile' }[name]; return el('picture', { class: 'world-picture' }, mobile ? el('source', { media: '(max-width: 680px)', srcset: '/last-train/' + mobile + '.webp' }) : null, el('img', { class: 'world-art', src: '/last-train/' + name + '.webp', alt: '', 'aria-hidden': 'true' })); };
@@ -388,7 +389,8 @@
     return el('section', { style: '--elapsed:' + Math.max(0,(state.duration || 6) - (state.remainingMs || 0)/1000) + 's', class: 'world platform-scene', 'aria-label': 'Everyone boards the train' },
       el('div', { class: 'boarding-cinema', 'aria-hidden': 'true' }, el('img', { class: 'boarding-poster', src: '/last-train/boarding-poster.webp', alt: '' }), motionOK ? boardingVideo : null),
       hud('ALL ABOARD', 'Next stop: the unknown.', 'The carriage is ready. Find your cabin.'),
-      el('div', { class: 'boarding-queue', 'aria-label': 'Passenger boarding checks' }, ...state.players.map((p,i) => el('div', { class: 'boarding-person', style: '--order:' + i + ';--total:' + state.players.length }, avatar(p, 'boarding-avatar'), el('div', {}, txt('b', '', p.name), txt('small', '', 'CABIN ' + String(p.seat).padStart(2, '0'))), txt('span', 'boarding-check', '✓')))));
+      el('div', { class: 'boarding-board' }, el('div', { class: 'boarding-board-head' }, txt('span', 'eyebrow', 'PASSENGER MANIFEST'), el('span', { class: 'boarding-count', style: '--total:' + state.players.length }, txt('b', '', String(state.players.length)), ' Boarding')), el('div', { class: 'boarding-progress', 'aria-hidden': 'true' }, el('i')),
+        el('div', { class: 'boarding-queue', 'aria-label': 'Passenger boarding checks' }, ...state.players.map((p,i) => el('div', { class: 'boarding-person' + (p.id === state.meId ? ' mine' : ''), style: '--order:' + i + ';--total:' + state.players.length }, avatar(p, 'boarding-avatar'), el('div', { class: 'bp-copy' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', 'LAST TRAIN · FIRST CLASS')), el('div', { class: 'bp-stub' }, txt('small', '', 'CABIN'), txt('b', '', String(p.seat).padStart(2, '0'))), txt('span', 'boarding-check', 'ABOARD'))))));
   }
   async function playBoardingVideo(video) {
     video.playPending = true;
@@ -462,7 +464,14 @@
     };
     let doubleInput;
     if (skip) list.append(skipCard(() => select('skip')));
-    for (const p of state.players.filter(p => p.alive && (self || p.id !== state.meId) && (action !== 'vote' || !state.voteCandidates || state.voteCandidates.includes(p.id)))) list.append(targetCard(p, () => select(p.id)));
+    // The Inspector sees whom they already checked, so a check is not wasted on the same person.
+    const checked = new Map(extra.power === 'check' ? (state.me.reports || []).filter(r => r.type === 'check').map(r => [r.targetId, r]) : []);
+    for (const p of state.players.filter(p => p.alive && (self || p.id !== state.meId) && (action !== 'vote' || !state.voteCandidates || state.voteCandidates.includes(p.id)))) {
+      const c = checked.get(p.id), card = targetCard(p, () => select(p.id), c ? 'checked checked-' + c.alignment : '');
+      if (c) { card.append(txt('span', 'checked-tag', c.alignment.toUpperCase() + ' · N' + c.round)); card.setAttribute('aria-label', p.name + ', already checked: ' + c.alignment.toUpperCase() + ' on Night ' + c.round); }
+      list.append(card);
+    }
+    if (checked.size) d.querySelector('.target-hint').after(el('p', { class: 'checked-legend' }, txt('span', 'good', 'GOOD'), txt('span', 'bad', 'BAD'), ' Already checked'));
     d.append(el('p', { class: 'manifest-time' }, txt('span', 'countdown', ''), 's left'), list);
     if (action === 'vote' && state.me.role === 'speaker' && !state.me.used.double) { doubleInput = el('input', { type: 'checkbox', onchange: e => double = e.target.checked }); d.append(el('label', { class: 'check-setting double-vote-toggle' }, doubleInput, el('span', {}, el('b', {}, 'Use My Double Vote'), txt('small', '', 'Counts twice · once per game')))); }
     d.append(el('div', { class: 'confirm-bar' }, confirm, btn('Cancel', () => d.close(), 'text-button')));
@@ -510,7 +519,7 @@
           el('div', { class: 'trust-chips', role: 'group', 'aria-label': 'Your view of ' + p.name }, ...[['trust', 'Trust'], ['unsure', 'Unsure'], ['suspect', 'Suspect']].map(([value, label]) => {
             const chip = el('button', { type: 'button', class: 'trust-chip ' + value, 'aria-pressed': String((notes.marks?.[p.id] || 'unsure') === value), disabled: state.paused, 'data-focus': 'trust-' + p.id + '-' + value,
               onclick: () => { updateNightNotes({ marks: { ...nightNotes().marks, [p.id]: value } }); render(); } }, txt('span', 'trust-icon', ''), txt('small', '', label));
-            chip.firstChild.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + window.TRAIN_ART.trust[value] + '</svg>'; return chip; })),
+            chip.firstChild.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' + window.TRAIN_ART.trustLines[value] + '</svg>'; return chip; })),
           // A clue or claim per traveller, shared with Notes · People on this device.
           el('input', { id: 'night-clue-' + p.id, class: 'night-clue', maxLength: 80, value: notes.people?.[p.id] || '', placeholder: 'Clues or claims…', autocomplete: 'off', 'aria-label': 'Clues or claims about ' + p.name, disabled: state.paused,
             oninput: e => updateNightNotes({ people: { ...(nightNotes().people || {}), [p.id]: e.target.value } }) })))) :
@@ -579,6 +588,21 @@
       hidden ? txt('span', 'chip-hidden', '🎟️') : rolePortrait(state.me.role, 'chip-portrait'), el('span', {}, txt('small', '', 'YOUR TICKET'), hidden ? 'Tap to show' : role(state.me.role).name));
     return chip;
   }
+  // The carriage map: cabin number = seat number. Footprints show a corridor walk between two cabins.
+  const FOOT = '<svg viewBox="0 0 10 16" aria-hidden="true"><ellipse cx="5" cy="5" rx="4" ry="5"/><ellipse cx="5" cy="13" rx="3" ry="2.5"/></svg>';
+  function carriageMap({ steps = null, walker = null, fade = false, victim = null } = {}) {
+    const people = [...state.players].filter(p => p.seat).sort((a, b) => a.seat - b.seat), per = people.length > 7 ? Math.ceil(people.length / 2) : people.length;
+    const cars = []; for (let i = 0; i < people.length; i += per) cars.push(people.slice(i, i + per));
+    return el('div', { class: 'carriage-map', 'aria-label': 'Carriage map: ' + people.map(p => 'cabin ' + p.seat + ' ' + p.name).join(', ') }, ...cars.map((car, ci) => {
+      const first = car[0].seat, last = car.at(-1).seat, lo = steps && Math.max(Math.min(steps[0], steps[1]), first - .5), hi = steps && Math.min(Math.max(steps[0], steps[1]), last + .5);
+      const trail = steps && hi > lo ? el('div', { class: 'map-steps' + (fade ? ' fade' : '') + (steps[1] < steps[0] ? ' back' : ''), style: '--a:' + (lo - first + .5) + ';--b:' + (hi - first + .5) }, ...Array.from({ length: Math.max(3, Math.round((hi - lo) * 2.2)) }, (_, i) => { const f = el('i', { class: i % 2 ? 'r' : 'l' }); f.innerHTML = FOOT; return f; })) : null;
+      const walk = walker && steps && steps[1] >= first && steps[1] <= last ? el('span', { class: 'map-walker', style: '--at:' + (steps[1] - first + .5) }, avatar(walker, 'map-walker-face')) : null;
+      return el('div', { class: 'map-car', style: '--cabins:' + car.length }, ci === cars.length - 1 ? txt('span', 'map-front', 'FRONT ▸') : null,
+        el('div', { class: 'map-cabins' }, ...car.map(p => el('div', { class: 'map-cabin' + (p.id === state.meId ? ' you' : '') + (!p.alive && state.phase !== 'lobby' ? ' out' : '') + (victim === p.id ? ' victim' : ''), title: 'Cabin ' + p.seat + ' · ' + p.name },
+          txt('span', 'map-no', String(p.seat).padStart(2, '0')), avatar(p, 'map-face'), p.id === state.meId ? txt('span', 'map-you', 'YOU') : null, el('i', { class: 'map-door' })))),
+        el('div', { class: 'map-corridor' }, trail, walk));
+    }));
+  }
   function cabinScene() {
     const me = state.me, settling = state.phase === 'settling';
     const badTogether = !settling && state.nightRole === 'saboteur' && me.alive && me.group === 'saboteur';
@@ -587,17 +611,30 @@
     const sceneHud = hud('NIGHT ' + state.round + ' · ' + (badTogether ? 'PRIVATE TEAM CABIN' : 'CABIN ' + String(player(state.meId).seat).padStart(2,'0')), settling ? 'Close your eyes.' : state.nightPhase ? 'Night phase ' + state.nightPhase + ' of 2.' : roleName(state.nightRole) + ', wake up.', settling ? 'Your secret role is on the ticket below.' : state.nightPhase ? '25 seconds for everyone. Make your choices and keep your notes private.' : badTogether ? 'Only your team can see these choices.' : 'Only the active role acts. Everyone else rests.');
     // Where the night is up to: the same two steps on every phone.
     const step = settling ? 0 : state.nightPhase || 1;
-    sceneHud.firstChild.append(el('ol', { class: 'night-steps', 'aria-label': 'Night progress' }, ...[['Move', 1], ['Respond', 2], ['Morning', 3]].map(([label, n]) => el('li', { class: n < step ? 'done' : n === step ? 'on' : '', 'aria-current': n === step ? 'step' : null }, txt('span', 'step-dot', n < step ? '✓' : n === 3 ? '☀' : String(n)), label))));
+    // Shown under the cabin picture so it never covers the travellers.
+    // A little rail line: the train travels from Move to Respond to Morning as the night clock runs.
+    const STOP_ICONS = {
+      1: '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><radialGradient id="st-moon" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff6c8"/><stop offset="1" stop-color="#f2c45a"/></radialGradient></defs><circle cx="16" cy="16" r="15" fill="#1a2156"/><circle cx="16" cy="16" r="15" fill="none" stroke="#3a4a9a" stroke-width="1"/><path d="M19.5 6.5a10 10 0 1 0 6 17.8A8.2 8.2 0 0 1 19.5 6.5z" fill="url(#st-moon)"/><circle cx="13" cy="14" r="1.4" fill="#d9a23a" opacity=".6"/><circle cx="16" cy="21" r="1" fill="#d9a23a" opacity=".5"/><path d="M24 7l.6 1.3 1.4.2-1 1 .2 1.4-1.2-.7-1.2.7.2-1.4-1-1 1.4-.2z" fill="#fff"/><circle cx="26.5" cy="14" r=".8" fill="#fff"/></svg>',
+      2: '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><radialGradient id="st-flame" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#fff7c0"/><stop offset=".5" stop-color="#ffb43a"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient></defs><circle cx="16" cy="16" r="15" fill="#3a1f12"/><circle cx="16" cy="18" r="11" fill="url(#st-flame)" opacity=".55"/><path d="M12 5.5h8M16 5.5v2.5" stroke="#c9963a" stroke-width="1.8" stroke-linecap="round"/><path d="M11 9h10l1.2 2.4v10.4a2.2 2.2 0 0 1-2.2 2.2h-8a2.2 2.2 0 0 1-2.2-2.2V11.4z" fill="#ffe3a066" stroke="#d9a441" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 13.5c2 1.8 2.6 3.3 2.6 4.6a2.6 2.6 0 0 1-5.2 0c0-1.3.6-2.8 2.6-4.6z" fill="#ff8a1e"/><path d="M16 16c1 .9 1.3 1.6 1.3 2.3a1.3 1.3 0 0 1-2.6 0c0-.7.3-1.4 1.3-2.3z" fill="#fff3b0"/><path d="M9.5 24h13" stroke="#c9963a" stroke-width="2" stroke-linecap="round"/></svg>',
+      3: '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="st-dawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b3d8f"/><stop offset=".55" stop-color="#ff8f6b"/><stop offset="1" stop-color="#ffd27a"/></linearGradient><clipPath id="st-clip"><circle cx="16" cy="16" r="15"/></clipPath></defs><g clip-path="url(#st-clip)"><rect width="32" height="32" fill="url(#st-dawn)"/><circle cx="16" cy="20" r="6.5" fill="#fff1a8"/><circle cx="16" cy="20" r="9" fill="#ffe27a" opacity=".35"/><path d="M16 9v2.5M8.5 12l1.6 1.6M23.5 12l-1.6 1.6" stroke="#fff6d0" stroke-width="1.6" stroke-linecap="round"/><path d="M-2 22q8-5 14-1t22-2v15H-2z" fill="#3c2a5a"/><path d="M-2 25q10-4 18 0t18-1v10H-2z" fill="#2a1c42"/></g><circle cx="16" cy="16" r="15" fill="none" stroke="#ffc48a" stroke-width="1"/></svg>',
+    };
+    const stops = [['Move', 1, 'Attacks & protection'], ['Respond', 2, 'Checks, sightings, medicine'], ['Morning', 3, 'Everyone wakes']];
+    const steps = el('div', { class: 'night-track', style: '--step:' + step, 'aria-label': 'Night progress' },
+      el('div', { class: 'track-rail', 'aria-hidden': 'true' }, el('i', { class: 'track-fill' })),
+      (() => { const t = el('span', { class: 'track-train', 'aria-hidden': 'true' }); t.innerHTML = '<svg viewBox="0 0 44 24"><path d="M4 6h17v12H4z" fill="#f6e4c6"/><path d="M21 9h11a6 6 0 0 1 6 6v3H21z" fill="#e9c46f"/><rect x="7" y="9" width="5" height="4" rx="1" fill="#3a2a55"/><rect x="14" y="9" width="5" height="4" rx="1" fill="#3a2a55"/><path d="M27 9V5h4v4" fill="#e9c46f"/><path d="M2 18h38" stroke="#c9a96a" stroke-width="1.4"/><circle cx="9" cy="20" r="2.6" fill="#2a2340" stroke="#f6e4c6" stroke-width="1.2"/><circle cx="18" cy="20" r="2.6" fill="#2a2340" stroke="#f6e4c6" stroke-width="1.2"/><circle cx="31" cy="20" r="2.6" fill="#2a2340" stroke="#f6e4c6" stroke-width="1.2"/><circle cx="38.5" cy="14.5" r="1.6" fill="#fff6d0"/></svg><i class="puff"></i><i class="puff"></i>'; return t; })(),
+      el('ol', { class: 'track-stops' }, ...stops.map(([label, n, sub]) => { const dot = el('span', { class: 'stop-dot' }); dot.innerHTML = STOP_ICONS[n];
+        return el('li', { class: 'track-stop ' + (n < step ? 'done' : n === step ? 'on' : 'next'), 'aria-current': n === step ? 'step' : null }, dot, txt('b', '', label), txt('small', '', sub)); })));
     return el('section', { class: 'world cabin-scene' + (badTogether ? ' conspiracy' : '') + (patient ? ' infirmary' : '') + (settling ? ' eyes-closing' : ''), 'aria-label': badTogether ? 'Your Saboteur team shares a private cabin' : 'Your private train cabin' },
-      el('div', { class: 'cabin-view' }, art(badTogether || patient ? 'cabin-floor' : 'cabin'), motionOK && !state.paused ? el('div', { class: 'passing-lights', 'aria-hidden': 'true' }) : null,
+      el('div', { class: 'cabin-view' }, art(badTogether || patient ? 'cabin-floor' : 'cabin'), motionOK && !state.paused ? el('div', { class: 'cabin-lights', 'aria-hidden': 'true' }) : null,
         sceneHud, me.role && !settling ? ticketChip() : null,
         el('div', { class: 'cabin-travellers count-' + roommates.length }, ...roommates.map(p => el('div', { class: 'cabin-person', 'data-player': p.id }, seatedTraveller(p), txt('span', '', p.name)))),
         patient),
+      settling || state.nightPhase ? steps : null,
       settling ? el('div', { class: 'curtain-message' }, txt('span','','☾'), txt('p','','Settle into your cabin…')) : el('div', { class: 'night-panels' }, actionConsole(), state.nightPhase && me.alive ? nightNotebook() : null));
   }
   const svgPin = () => { const n = el('span', { class: 'pin-svg', 'aria-hidden': 'true' }); n.innerHTML = '<svg viewBox="0 0 32 32">' + TONE_ICONS.pin + '</svg>'; return n; };
   function loungeSeats() {
-    const perRow = compactScene.matches ? 4 : 6;
+    const perRow = compactScene.matches ? 4 : 6, tallies = voteTallies(), topVotes = Math.max(0, ...tallies.values());
     const rows = Math.ceil(state.players.length / perRow);
     const seats = state.players.map((p, i) => {
       const row = Math.floor(i / perRow), col = i % perRow, count = Math.min(perRow, state.players.length - row * perRow);
@@ -611,7 +648,7 @@
       const x = slots[col];
       return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', 'data-seat-pair': Math.floor(col / 2), style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) + ';--depth:' + depth.toFixed(2) },
         el('span', { class: 'seat-number', 'aria-label': 'Seat ' + p.seat + (!p.alive ? ' · Out' : '') }, String(p.seat).padStart(2,'0')), !p.alive ? el('span', { class: 'out-stamp', 'aria-hidden': 'true' }, 'OUT') : null, el('div', { class: 'seat-figure' }, el('span', { class: 'seat-shadow', 'aria-hidden': 'true' }), seatedTraveller(p)),
-        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), p.pins ? el('span', { class: 'seat-pins', 'aria-label': p.pins + (p.pins === 1 ? ' suspect pin' : ' suspect pins') }, svgPin(), txt('b', '', String(p.pins)), txt('small', '', p.pins === 1 ? 'pin' : 'pins')) : null));
+        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), p.pins ? el('span', { class: 'seat-pins', 'aria-label': p.pins + (p.pins === 1 ? ' suspect pin' : ' suspect pins') }, svgPin(), txt('b', '', String(p.pins)), txt('small', '', p.pins === 1 ? 'pin' : 'pins')) : null, tallies.has(p.id) ? tallyBadge(tallies.get(p.id), tallies.get(p.id) === topVotes) : null));
     });
     const banks = [];
     for (let i = 0; i < seats.length; i += perRow) banks.push(el('div', { class: 'sofa-row' }, ...seats.slice(i, i + perRow)));
@@ -649,6 +686,11 @@
     b.querySelector('b').textContent = title; b.querySelector('small').textContent = sub; return b;
   }
   let typing = false, typingKey = '';
+  // The newest night's private results as one short line, ready to share (or bend) in discussion.
+  function latestReport() {
+    const reports = state.me.reports || [], round = Math.max(0, ...reports.map(r => r.round)); if (!round) return '';
+    return 'Night ' + round + ': ' + reports.filter(r => r.round === round).map(reportMessage).join(' ');
+  }
   function speechConsole() {
     const me = state.me, own = state.speakerId === state.meId, mode = state.settings.discussion;
     const said = state.speeches.find(m => m.round === state.round && m.id === state.meId);
@@ -658,6 +700,7 @@
     if (own && me.alive) {
       if (said) options = txt('p', 'choice-saved', said.audio ? 'Voice shared. The next player has the floor.' : 'You’ve had your say. Let’s hear the next traveller.');
       else if (mode === 'chat' && typing) options = el('form', { class: 'speech-form', onsubmit: async e => { e.preventDefault(); if (!speechDraft.trim()) return; const text = speechDraft; await send('speak', { text }); } },
+        latestReport() ? el('button', { type: 'button', class: 'paste-report', 'data-focus': 'paste-report', disabled: busy || state.paused, onclick: () => { const add = latestReport(); speechDraft = (speechDraft.trim() ? speechDraft.trim() + ' ' : '') + add; speechDraft = speechDraft.slice(0, 280); render(); requestAnimationFrame(() => { const t = document.getElementById('lt-speech'); t?.focus(); t?.setSelectionRange(t.value.length, t.value.length); }); } }, el('span', { class: 'paste-icon', 'aria-hidden': 'true' }, '📋'), el('span', {}, txt('b', '', 'Paste My Latest Report'), txt('small', '', latestReport()))) : null,
         el('textarea', { id: 'lt-speech', rows: 3, maxLength: 280, value: speechDraft, placeholder: 'What did you find? Who do you trust?', 'aria-label': 'Your findings', disabled: busy || state.paused, oninput: e => speechDraft = e.target.value }),
         el('div', { class: 'speech-form-actions' }, btn('Use Voice Instead', () => { typing = false; render(); }, 'text-button', false, 'use-voice'), el('button', { type: 'submit', class: 'gold', disabled: busy || state.paused, 'data-focus': 'share-findings' }, 'Share Message')));
       else options = el('div', { class: 'speak-choices' + (busyVoice ? ' recording' : '') }, voice.controls(),
@@ -672,7 +715,7 @@
   }
   // Suspect pins: a public count, not a vote. Each living player can pin one person and change it any time.
   function pinBar() {
-    if (!state.pinsOpen || !state.me.alive || state.paused) return null;
+    if (!state.pinsOpen || !state.me.alive || state.paused || state.phase === 'morning') return null;
     const pinned = state.me.suspect;
     return el('div', { class: 'pin-bar' }, btn(pinned ? '📌 Change' : '📌 Pin A Suspect', pinDialog, 'pin-button', false, 'pin-suspect'), el('p', {}, pinned ? el('span', {}, 'You suspect ', el('b', {}, who(pinned)), '.') : 'Everyone sees the count, not who pinned.'));
   }
@@ -689,18 +732,37 @@
     return el('form', { class: 'last-words-form', onsubmit: e => { e.preventDefault(); if (lastWordsDraft.trim()) send('lastWords', { text: lastWordsDraft }); } },
       el('label', { htmlFor: 'lt-last-words' }, 'Your last words'), el('input', { id: 'lt-last-words', maxLength: 120, value: lastWordsDraft, placeholder: 'One line for the group…', autocomplete: 'off', oninput: e => lastWordsDraft = e.target.value }), el('button', { type: 'submit', class: 'gold', disabled: busy, 'data-focus': 'send-last-words' }, 'Say It'));
   }
+  // Before anyone speaks: a quiet moment to think, with a nudge to pin a suspect.
+  function thinkCard() {
+    const first = state.players.filter(p => p.alive).sort((x, y) => x.seat - y.seat)[0]?.id, mine = state.me.suspect;
+    return el('div', { class: 'think-card' }, el('div', { class: 'think-head' }, el('span', { class: 'think-icon', 'aria-hidden': 'true' }, txt('span', 'countdown', '')), el('div', {}, txt('small', '', 'BEFORE THE DISCUSSION'), el('h3', {}, 'Take a moment to think.'))),
+      txt('p', 'console-hint', 'Look at who is out and check your reports. ' + (first ? (first === state.meId ? 'You speak first.' : who(first) + ' speaks first.') : '')),
+      state.me.alive && !state.paused ? el('div', { class: 'think-pin' }, btn(mine ? 'Change My Pin' : 'Pin A Suspect', pinDialog, 'pin-cta', false, 'think-pin'), txt('small', '', mine ? 'You pinned ' + who(mine) + '. Only the count is shown.' : 'Optional. Everyone sees the count, never who pinned.')) : null);
+  }
+  // The map in the lounge; footprints appear for the one traveller who heard them last night.
+  const heardSteps = r => r.toward === 'front' ? [r.cabin - .9, r.cabin + .9] : [r.cabin + .9, r.cabin - .9];
+  function carriagePanel() {
+    if (state.settings.footsteps === false || !state.players.some(p => p.seat)) return null;
+    const heard = (state.me.reports || []).find(r => r.type === 'footsteps' && r.round === state.round);
+    return el('details', { class: 'panel carriage-panel' + (heard ? ' heard' : ''), 'data-details': 'carriage-' + state.round, open: !!heard }, el('summary', {}, txt('span', 'map-summary-icon', '🗺️'), el('span', {}, txt('b', '', 'Carriage Map'), txt('small', '', heard ? 'You heard footsteps last night' : 'Cabin number = seat number')), txt('span', 'accordion-chevron', '⌄')),
+      carriageMap({ steps: heard ? heardSteps(heard) : null, fade: true }), heard ? footstepsNote(heard) : txt('p', 'muted small map-hint', 'At night a Saboteur walks the corridor to attack. One traveller they pass may hear footsteps.'));
+  }
+  function footstepsNote(r) {
+    return el('div', { class: 'footsteps-note' }, el('span', { class: 'footsteps-icon', 'aria-hidden': 'true' }), el('div', {}, txt('b', '', 'Someone walked past your door at ' + r.time + '.'), txt('p', '', 'They came from cabins ' + String(r.range[0]).padStart(2, '0') + '–' + String(r.range[1]).padStart(2, '0') + ' and went toward the ' + r.toward + ' of the carriage.')));
+  }
   function loungeScene() {
     const phase = state.phase, latest = state.history.at(-1), gathering = phase === 'gathering';
     const titles = { revoteInfo: 'The vote is tied.', gathering: 'Everyone to the lounge.', morning: 'A new morning. A few secrets.', discussion: 'One seat. One story.', voting: state.voteAttempt === 2 ? 'A tie. Vote once more.' : 'Who leaves the train?', voteResult: latest?.outs.length ? 'One player leaves the train.' : 'No one leaves this time.' };
     const subtitles = { revoteInfo: 'Take a moment to review the tied players. Everyone will vote again.', gathering: 'Cabin doors open. Meet your fellow travellers.', morning: 'See who is out. Check your ticket for any new private report.', discussion: 'Speak in seat order. You have up to ' + state.speakSeconds + ' seconds; sharing moves to the next player.', voting: state.voteAttempt === 2 ? 'Choose between the tied players. Another tie means a random elimination.' : 'The player with most votes leaves. Skip does not cancel votes for a player.', voteResult: 'Their team is revealed. Their role stays secret until the end.' };
-    return el('section', { class: 'world lounge-scene phase-' + phase, 'aria-label': 'The train gathering lounge' }, hud('ROUND ' + state.round + ' · THE GATHERING LOUNGE', titles[phase], subtitles[phase]), el('div', { class: 'lounge-room', 'aria-label': 'Everyone seated together in the observation lounge' }, art('lounge-room'), loungeSeats(), el('div', { class: 'lounge-light', 'aria-hidden': 'true' })), pinBar(), ghostBlock(),
-      gathering ? txt('p', 'gathering-caption', 'Take your seat…') : phase === 'morning' ? el('section', { class: 'lounge-console morning-reveal' }, outs(latest), txt('p', 'console-hint', 'The next part begins when the timer ends.')) : phase === 'revoteInfo' ? el('section', { class: 'lounge-console' }, revoteInfoCard(), el('details', {}, el('summary', {}, 'See The First Vote'), ledger(latest))) : phase === 'discussion' ? speechConsole() : phase === 'voting' ? el('section', { class: 'lounge-console voting-console' }, el('h2', {}, state.me.vote ? 'Your vote is sealed.' : state.me.alive ? 'Your vote. Your decision.' : 'Watch the vote quietly.'), state.me.vote ? txt('p', 'choice-saved', '✓ ' + (state.me.vote.targetId ? who(state.me.vote.targetId) : 'Skip') + (state.me.vote.weight === 2 ? ' · counts twice' : '')) : state.me.alive && !state.paused ? btn('Choose A Player Or Skip', () => chooseTarget('Who should leave the train?', state.voteAttempt === 2 ? 'Only tied players can be chosen. Another tie is decided at random.' : 'Your vote is final. Skip is an abstention. A tie starts one re-vote.', 'vote', {}, { self: true, skip: true }), 'gold') : null, txt('p', 'console-hint', state.players.filter(p => p.voteLocked).length + ' / ' + state.players.filter(p => p.alive).length + ' votes sealed'), state.voteAttempt === 2 && latest?.reason === 'revote' ? el('details', { class: 'previous-vote', 'data-details': 'first-vote-' + state.round }, el('summary', {}, 'See The First Vote'), ledger(latest)) : null) : el('section', { class: 'lounge-console ejection-reveal' }, outs(latest), lastWordsBlock(latest), latest?.reason === 'random' ? txt('p', 'console-hint', 'The re-vote tied. One tied player was chosen at random.') : latest?.reason === 'skip' ? txt('p', 'console-hint', 'No player received a vote. Everyone stays aboard.') : null, latest?.votes ? el('div', { class: 'inline-votes' }, ledger(latest)) : latest?.sealed ? txt('p', 'console-hint sealed-note', '✉️ Sealed ballots: who voted for whom is revealed at the end.') : null, txt('p', 'console-hint', 'The next part begins when the timer ends.')));
+    return el('section', { class: 'world lounge-scene phase-' + phase, 'aria-label': 'The train gathering lounge' }, hud('ROUND ' + state.round + ' · THE GATHERING LOUNGE', titles[phase], subtitles[phase]), el('div', { class: 'lounge-room', 'aria-label': 'Everyone seated together in the observation lounge' }, art('lounge-room'), loungeSeats(), el('div', { class: 'lounge-light', 'aria-hidden': 'true' })), pinBar(), ghostBlock(), carriagePanel(),
+      gathering ? txt('p', 'gathering-caption', 'Take your seat…') : phase === 'morning' ? el('section', { class: 'lounge-console morning-reveal' }, outs(latest), thinkCard()) : phase === 'revoteInfo' ? el('section', { class: 'lounge-console' }, revoteInfoCard(), el('details', {}, el('summary', {}, 'See The First Vote'), ledger(latest))) : phase === 'discussion' ? speechConsole() : phase === 'voting' ? el('section', { class: 'lounge-console voting-console' }, el('h2', {}, state.me.vote ? 'Your vote is sealed.' : state.me.alive ? 'Your vote. Your decision.' : 'Watch the vote quietly.'), state.me.vote ? txt('p', 'choice-saved', '✓ ' + (state.me.vote.targetId ? who(state.me.vote.targetId) : 'Skip') + (state.me.vote.weight === 2 ? ' · counts twice' : '')) : state.me.alive && !state.paused ? btn('Choose A Player Or Skip', () => chooseTarget('Who should leave the train?', state.voteAttempt === 2 ? 'Only tied players can be chosen. Another tie is decided at random.' : 'Your vote is final. Skip is an abstention. A tie starts one re-vote.', 'vote', {}, { self: true, skip: true }), 'gold') : null, txt('p', 'console-hint', state.players.filter(p => p.voteLocked).length + ' / ' + state.players.filter(p => p.alive).length + ' votes sealed'), state.voteAttempt === 2 && latest?.reason === 'revote' ? el('details', { class: 'previous-vote', 'data-details': 'first-vote-' + state.round }, el('summary', {}, 'See The First Vote'), ledger(latest)) : null) : el('section', { class: 'lounge-console ejection-reveal' }, outs(latest), lastWordsBlock(latest), latest?.reason === 'random' ? txt('p', 'console-hint', 'The re-vote tied. One tied player was chosen at random.') : latest?.reason === 'skip' ? txt('p', 'console-hint', 'No player received a vote. Everyone stays aboard.') : null, latest?.votes ? el('div', { class: 'inline-votes' }, ledger(latest)) : latest?.sealed ? txt('p', 'console-hint sealed-note', '✉️ Sealed ballots: who voted for whom is revealed at the end.') : null, txt('p', 'console-hint', 'The next part begins when the timer ends.')));
   }
   function reportMessage(r) {
     if (r.type === 'watch') return r.targetId ? 'The Saboteurs tried to attack ' + who(r.targetId) + '. The target may be good or bad.' : 'The Saboteurs did not choose an attack.';
     if (r.type === 'watch-blocked') return 'Your watch was blocked. No target is known.';
     if (r.type === 'glimpse') return r.ids.length ? 'One of ' + r.ids.map(who).join(r.ids.length > 2 ? ', ' : ' and ').replace(/, ([^,]*)$/, ' and $1') + ' is a Saboteur.' : 'The corridor was empty.';
     if (r.type === 'glimpse-blocked') return 'Your glimpse was blocked. You saw no one.';
+    if (r.type === 'footsteps') return 'Footsteps at ' + r.time + ': someone from cabins ' + String(r.range[0]).padStart(2, '0') + '–' + String(r.range[1]).padStart(2, '0') + ' walked past your door toward the ' + r.toward + '.';
     if (r.type === 'clue') return 'Lost luggage: ' + who(r.targetId) + ' is not the ' + role(r.role).name + '.';
     if (r.type === 'check') return who(r.targetId) + ' is ' + r.alignment.toUpperCase() + '.';
     if (r.type === 'check-blocked') return 'Your check was blocked. No result is known.';
@@ -713,12 +775,13 @@
     blocked: '<circle cx="16" cy="16" r="11" fill="none" stroke="#b9aed0" stroke-width="3.6"/><path d="M8.5 8.5l15 15" stroke="#b9aed0" stroke-width="3.6" stroke-linecap="round"/>',
     glimpse: '<path d="M4 8h24v16H4z" fill="#1b2a44" stroke="#8fd6ff" stroke-width="2"/><path d="M4 8l9 8-9 8M28 8l-9 8 9 8" fill="#2d4a72"/><circle cx="16" cy="15" r="3.6" fill="#e8fdff"/><path d="M10 26q6-6 12 0z" fill="#e8fdff"/>',
     clue: '<rect x="5" y="9" width="22" height="17" rx="3" fill="#c9893f" stroke="#7a4e14" stroke-width="1.4"/><path d="M12 9V6.5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 20 6.5V9" fill="none" stroke="#7a4e14" stroke-width="2"/><rect x="13" y="14" width="10" height="7" rx="1" fill="#fff6dc"/><path d="M15 17h6" stroke="#7a4e14" stroke-width="1.3"/>',
+    footsteps: '<g fill="#f2ce86"><ellipse cx="10" cy="9" rx="4" ry="5.2"/><ellipse cx="10" cy="18" rx="3" ry="2.6"/><ellipse cx="21" cy="14" rx="4" ry="5.2"/><ellipse cx="21" cy="23" rx="3" ry="2.6"/></g>',
     promotion: '<path d="M16 3l3.8 7.8 8.6 1.2-6.2 6 1.5 8.6L16 22.5l-7.7 4.1 1.5-8.6-6.2-6 8.6-1.2z" fill="#ffd56b" stroke="#c98f12" stroke-width="1.2" stroke-linejoin="round"/>',
   };
   function reportCard(r) {
     const kind = r.type.endsWith('-blocked') ? 'blocked' : r.type === 'promotion' ? 'promotion' : r.type;
     const icon = el('span', { class: 'report-icon', 'aria-hidden': 'true' }); icon.innerHTML = '<svg viewBox="0 0 32 32">' + REPORT_ICONS[kind] + '</svg>';
-    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', blocked: 'Power blocked', promotion: 'Promotion' }[kind];
+    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', blocked: 'Power blocked', promotion: 'Promotion' }[kind];
     const verdict = kind === 'check' ? txt('span', 'report-verdict ' + r.alignment, r.alignment.toUpperCase()) : kind === 'watch' && r.targetId ? txt('span', 'report-verdict watch', 'TARGET') : null;
     return el('article', { class: 'report-item ' + kind + (r.alignment ? ' ' + r.alignment : '') },
       icon, el('div', { class: 'report-body' }, txt('small', '', title), txt('p', '', reportMessage(r))),
@@ -801,6 +864,15 @@
     }
     setRoleCard(showCard);
   }
+  const carriage = door => '<svg viewBox="0 0 260 92" aria-hidden="true"><defs><linearGradient id="lt-car" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a2a3c"/><stop offset=".55" stop-color="#4a1726"/><stop offset="1" stop-color="#2a0c16"/></linearGradient><linearGradient id="lt-win" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7a8"/><stop offset="1" stop-color="#f0a948"/></linearGradient></defs>'
+    + '<rect x="0" y="40" width="10" height="5" fill="#1a0d14"/><rect x="250" y="40" width="10" height="5" fill="#1a0d14"/>'
+    + '<path d="M14 18q0-10 12-11h208q12 1 12 11v52H14z" fill="url(#lt-car)" stroke="#d9b06a" stroke-width="1.2"/><path d="M18 14q2-5 10-5h204q8 0 10 5" fill="none" stroke="#f3d08a" stroke-width="1" opacity=".6"/>'
+    + '<path d="M14 58h232" stroke="#e8c27a" stroke-width="1.6"/><path d="M14 62h232" stroke="#e8c27a" stroke-width=".7" opacity=".7"/>'
+    + (door ? [20, 48, 160, 192, 222] : [22, 54, 86, 118, 150, 182, 214]).map(x => '<rect x="' + x + '" y="22" width="' + (x === 222 ? 16 : 24) + '" height="20" rx="3" fill="url(#lt-win)" stroke="#d9b06a" stroke-width="1"/><path d="M' + (x + 2) + ' 25h' + (x === 222 ? 12 : 20) + '" stroke="#fff6d8" stroke-width="1.4" opacity=".7"/>').join('')
+    + (door ? '<rect class="door-gap" x="104" y="20" width="32" height="44" rx="2" fill="#ffd27a"/><rect class="door-gap-glow" x="98" y="16" width="44" height="52" rx="6" fill="#ffcf75" opacity=".25"/><rect class="door-panel" x="104" y="20" width="32" height="44" rx="2" fill="#5a1d2e" stroke="#e8c27a" stroke-width="1.2"/><rect class="door-panel" x="110" y="25" width="20" height="14" rx="2" fill="url(#lt-win)" opacity=".85"/>' : '')
+    + '<rect x="20" y="70" width="70" height="7" rx="3" fill="#160910"/><rect x="170" y="70" width="70" height="7" rx="3" fill="#160910"/>'
+    + [34, 74, 186, 226].map(x => '<g transform="translate(' + x + ' 80)"><g class="wheel"><circle r="9" fill="#120a10" stroke="#8a6a3a" stroke-width="1.6"/><path d="M-6 0h12M0 -6v12" stroke="#c9a15a" stroke-width="1.4"/><circle r="2.4" fill="#e8c27a"/></g></g>').join('')
+    + '</svg>';
   function syncElimination() {
     const entry = state?.history.at(-1);
     if (state?.phase !== 'voteResult' || entry?.type !== 'vote' || !entry.outs.length) {
@@ -816,37 +888,55 @@
     if (read('lt-ejection-seen') === key || elapsed >= 4.8) return;
     save('lt-ejection-seen', key);
     const out = entry.outs[0], bad = out.alignment === 'bad' || out.group === 'saboteur';
-    const d = dialog('The journey ends here.',
-      el('div', { class: 'cinema-window', 'aria-hidden': 'true' }, el('div', { class: 'station-streaks' })),
-      el('div', { class: 'cancelled-ticket' }, txt('span','eyebrow','LAST TRAIN · PASSENGER TICKET'), avatar(out.id, 'cinema-avatar'), el('h3',{},who(out.id)), txt('small','cinema-seat','SEAT ' + String(player(out.id).seat).padStart(2,'0')), txt('span','cancel-stamp','TICKET CANCELLED')),
+    // The carriage door slides open and the voted-out traveller is tossed onto the tracks as the train speeds on.
+    const stage = el('div', { class: 'throw-stage', 'aria-hidden': 'true' },
+      el('div', { class: 'throw-sky' }, el('i', { class: 'throw-moon' })), el('div', { class: 'throw-hills' }), el('div', { class: 'throw-poles' }), el('div', { class: 'throw-ground' }),
+      el('div', { class: 'throw-train' }), el('div', { class: 'throw-fall' }, el('div', { class: 'throw-arc' }, avatar(out.id, 'throw-avatar'))), el('i', { class: 'throw-dust' }), el('div', { class: 'throw-bits' }, ...Array.from({ length: 7 }, (_, i) => el('i', { style: '--i:' + i }))), el('div', { class: 'throw-dizzy' }, ...Array.from({ length: 3 }, (_, i) => el('i', { style: '--i:' + i }, '★'))), txt('span', 'throw-thud', 'THUD!'), el('i', { class: 'throw-speed' }), txt('span', 'throw-stamp', 'OFF THE TRAIN'));
+    stage.querySelector('.throw-train').innerHTML = carriage(false) + carriage(true) + carriage(false);
+    const d = dialog('Thrown off the train!', stage,
+      el('div', { class: 'throw-name' }, el('h3', {}, who(out.id)), txt('small', 'cinema-seat', 'SEAT ' + String(player(out.id).seat).padStart(2,'0'))),
       txt('p','cinema-alignment ' + (bad ? 'bad' : 'good'),bad ? 'BAD' : 'GOOD'),
-      txt('p','cinema-caption',who(out.id) + ' leaves at the next station.'));
+      txt('p','cinema-caption',who(out.id) + ' is off the train for good.'));
     d.classList.add('elimination-cinema');
     d.style.setProperty('--cinema-offset', '-' + Math.max(0, elapsed) + 's');
     d.dataset.paused = String(!!state.paused);
     d.append(btn('View Votes', () => d.close(), 'gold', false, 'view-votes'));
     d.addEventListener('close', () => { if (cinemaNode === d) { cinemaNode = null; requestAnimationFrame(flyVotes); } });
-    if (!state.paused) setTimeout(() => { if (cinemaNode === d) sfx.play('stamp'); }, Math.max(0, 1950 - elapsed * 1000));
+    if (!state.paused) { setTimeout(() => { if (cinemaNode === d) sfx.play('throw'); }, Math.max(0, 1000 - elapsed * 1000)); setTimeout(() => { if (cinemaNode === d) sfx.play('stamp'); }, Math.max(0, 2500 - elapsed * 1000)); }
     cinemaNode = d;
     cinemaEnd = 4.8;
   }
   // After the result, each ballot flies as a ticket stub from the voter's seat to the person they chose.
-  let votesFlownKey = '';
+  let votesFlownKey = '', tallyKey = '';
+  const voteKey = () => [state.code, state.match, state.round, state.history.length].join(':');
+  const BALLOT = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="9" width="14" height="8.5" rx="1.6" fill="currentColor" opacity=".35"/><path d="M6.5 3.5h7v8h-7z" fill="#fffaf0" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8.2 7.4l1.4 1.4 2.4-2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 12.5h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  function tallyBadge(n, lead) { const b = el('span', { class: 'vote-tally' + (lead ? ' lead' : ''), 'aria-label': n + (n === 1 ? ' vote' : ' votes') }); b.innerHTML = BALLOT; b.append(txt('b', '', String(n)), txt('small', '', n === 1 ? 'vote' : 'votes')); return b; }
+  function voteTallies() {
+    const entry = state.history.at(-1), t = new Map();
+    if (state.phase !== 'voteResult' || entry?.type !== 'vote' || !entry.votes || tallyKey !== voteKey()) return t;
+    for (const v of entry.votes) if (v.targetId) t.set(v.targetId, (t.get(v.targetId) || 0) + v.weight);
+    return t;
+  }
   function flyVotes() {
     const entry = state?.history.at(-1);
-    if (!motionOK || state.phase !== 'voteResult' || entry?.type !== 'vote' || cinemaNode || state.paused) return;
-    const key = [state.code, state.match, state.round, state.history.length].join(':'); if (votesFlownKey === key) return; votesFlownKey = key;
+    if (state?.phase !== 'voteResult' || entry?.type !== 'vote' || !entry.votes || cinemaNode || state.paused) return;
+    const key = voteKey(); if (votesFlownKey === key) return; votesFlownKey = key;
+    if (!motionOK) { tallyKey = key; render(); return; }
     const seatOf = id => { const n = root.querySelector(`.lounge-seat[data-player="${id}"] .seated-traveller`); if (!n) return null; const r = n.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight ? [r.left + r.width / 2, r.top + r.height * .35, n.closest('.lounge-seat')] : null; };
-    const tally = new Map();
+    const tally = new Map(), top = Math.max(0, ...[...entry.votes.reduce((m, v) => v.targetId ? m.set(v.targetId, (m.get(v.targetId) || 0) + v.weight) : m, new Map()).values()]);
+    let flying = 0;
+    const landed = () => { if (--flying === 0 && votesFlownKey === key) { tallyKey = key; if (state.phase === 'voteResult' && !root.querySelector('.vote-tally')) render(); } };
     (entry.votes || []).filter(v => v.targetId).forEach((v, i) => {
-      const from = seatOf(v.id), to = seatOf(v.targetId); if (!from || !to) return;
+      const from = seatOf(v.id), to = seatOf(v.targetId); if (!from || !to) return; flying++;
       const stub = el('div', { class: 'vote-stub', 'aria-hidden': 'true' }, avatar(v.id, 'stub-face'), v.weight === 2 ? txt('b', '', '×2') : null);
       document.body.append(stub);
       const dx = to[0] - from[0], dy = to[1] - from[1], lift = -Math.min(90, Math.hypot(dx, dy) * .4);
       const a = stub.animate([{ transform: `translate(${from[0]}px,${from[1]}px) scale(.4) rotate(-12deg)`, opacity: 0 }, { transform: `translate(${from[0] + dx * .5}px,${from[1] + dy * .5 + lift}px) scale(1) rotate(6deg)`, opacity: 1, offset: .5 }, { transform: `translate(${to[0]}px,${to[1]}px) scale(.7) rotate(0)`, opacity: 1 }], { duration: 760, delay: 400 + i * 160, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'both' });
-      a.onfinish = () => { stub.remove(); const seat = to[2]; if (!seat.isConnected) return; tally.set(v.targetId, (tally.get(v.targetId) || 0) + v.weight);
-        let chip = seat.querySelector('.vote-tally'); if (!chip) { chip = el('span', { class: 'vote-tally' }); seat.append(chip); } chip.textContent = tally.get(v.targetId); chip.animate([{ transform: 'translateX(-50%) scale(1.5)' }, { transform: 'translateX(-50%) scale(1)' }], { duration: 260 }); sfx.play('tick'); };
+      a.onfinish = () => { stub.remove(); landed(); const seat = to[2]; if (!seat.isConnected) return; tally.set(v.targetId, (tally.get(v.targetId) || 0) + v.weight);
+        const n = tally.get(v.targetId), chip = tallyBadge(n, n === top); seat.querySelector('.vote-tally')?.remove(); seat.querySelector('.seat-caption')?.append(chip); chip.animate([{ scale: '1.6' }, { scale: '1' }], { duration: 300, easing: 'cubic-bezier(.3,1.6,.5,1)' }); sfx.play('tick'); };
+      a.oncancel = landed;
     });
+    if (!flying) { tallyKey = key; render(); }
   }
   function updateOverlayViewport() {
     const viewport = window.visualViewport;
@@ -858,18 +948,18 @@
     // At night, earlier conversations stay readable (and playable) from the cabin.
     if ((state.settings.discussion !== 'chat' && !state.speeches.length) || (night && !state.speeches.length) || !['settling','night','gathering','morning','discussion','voting','revoteInfo','voteResult','finished'].includes(state.phase)) return null;
     const rounds = [...new Set(state.speeches.map(m => m.round))];
-    return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'Conversations aboard'), txt('small','muted','ONE VOICE AT A TIME')),
+    return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'Conversations Aboard'), txt('small','muted','ONE VOICE AT A TIME')),
       rounds.length ? el('div', { class: 'night-accordions' }, ...rounds.map(round => {
         const messages = state.speeches.filter(m => m.round === round);
-        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'The morning conversation'), txt('small', '', messages.length + ' voices'), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{},who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : txt('p','',m.text))))));
+        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'The Morning Conversation'), txt('small', '', messages.length + ' voices'), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{},who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : txt('p','',m.text))))));
       })) : txt('p','muted small','Messages will appear here when the conversation begins.'));
   }
   function history() {
     const rounds = [...new Set(state.history.map(e => e.round))];
-    return rounds.length ? el('section', { class: 'history journey-log' }, el('div', { class: 'log-heading' }, txt('span','eyebrow','THE JOURNEY LOG'), el('h2', {}, 'Along the way')),
+    return rounds.length ? el('section', { class: 'history journey-log' }, el('div', { class: 'log-heading' }, txt('span','eyebrow','THE JOURNEY LOG'), el('h2', {}, 'Along The Way')),
       el('div', { class: 'night-accordions' }, ...rounds.map(round => {
         const entries = state.history.filter(e => e.round === round), outsCount = entries.reduce((n, e) => n + e.outs.length, 0);
-        return el('details', { class: 'night-accordion', 'data-details': 'log-night-' + round, open: round === state.round }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'From nightfall to the vote'), txt('small', '', outsCount ? outsCount + ' out' : 'All aboard'), txt('span', 'accordion-chevron', '⌄')), el('div', { class: 'night-log-body' }, ...entries.map(entry => el('section', { class: 'night-log-event' }, el('h3', {}, entry.type === 'night' ? 'At daybreak' : entry.reason === 'revote' ? 'First vote · tied' : entry.attempt === 2 ? 'Re-vote' : 'The group’s vote'), outs(entry), entry.votes ? ledger(entry) : null))));
+        return el('details', { class: 'night-accordion', 'data-details': 'log-night-' + round, open: round === state.round }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'From Nightfall To The Vote'), txt('small', '', outsCount ? outsCount + ' Out' : 'All Aboard'), txt('span', 'accordion-chevron', '⌄')), el('div', { class: 'night-log-body' }, ...entries.map(entry => el('section', { class: 'night-log-event' }, el('h3', {}, entry.type === 'night' ? 'At Daybreak' : entry.reason === 'revote' ? 'First vote · tied' : entry.attempt === 2 ? 'Re-vote' : 'The group’s vote'), outs(entry), entry.votes ? ledger(entry) : null))));
       }))) : null;
   }
   function standingTraveller(p) {
@@ -888,7 +978,7 @@
   function awardsPanel() {
     const awards = state.awards || { eye: [], liar: [], guard: [] }, sess = state.session || {}, earned = state.me.wallet?.earnings || [];
     const table = state.players.filter(p => sess[p.id]?.journeys).sort((a, b) => sess[b.id].wins - sess[a.id].wins || sess[b.id].eye + sess[b.id].liar + sess[b.id].guard - (sess[a.id].eye + sess[a.id].liar + sess[a.id].guard));
-    return el('section', { class: 'panel journey-awards' }, txt('span', 'eyebrow', 'JOURNEY AWARDS'), el('h2', {}, 'Tonight’s honours'),
+    return el('section', { class: 'panel journey-awards' }, txt('span', 'eyebrow', 'JOURNEY AWARDS'), el('h2', {}, 'Tonight’s Honours'),
       el('div', { class: 'award-cards' }, ...AWARDS.map(([key, name, about, art]) => el('article', { class: 'award-card award-' + key }, medal(art), txt('b', '', name), txt('small', '', about),
         el('div', { class: 'award-winners' }, ...(awards[key].length ? awards[key].map(id => el('span', { class: 'award-winner' }, avatar(id, 'award-face'), txt('span', '', id === state.meId ? 'You' : who(id)))) : [txt('span', 'award-none', 'Nobody this time')]))))),
       earned.length ? el('div', { class: 'wp-earned' }, el('div', { class: 'wp-earned-head' }, txt('b', '', 'Your WP this journey'), txt('span', 'wp-badge', '+' + earned.reduce((a, e) => a + e.n, 0) + ' WP')), ...earned.map(e => el('p', {}, txt('span', '', e.reason), txt('b', '', '+' + e.n)))) : null,
@@ -901,7 +991,7 @@
     const log = state.nightLog || []; if (!log.length) return null;
     const line = (icon, text, ...ids) => el('li', { class: 'replay-line' }, txt('span', 'replay-icon', icon), txt('span', 'replay-text', text), el('span', { class: 'replay-faces' }, ...ids.filter(Boolean).map(id => avatar(id, 'replay-face'))));
     const name = id => who(id) + ' (' + role(player(id)?.role).name + ')';
-    return el('section', { class: 'panel night-replay' }, txt('span', 'eyebrow', 'WHAT REALLY HAPPENED'), el('h2', {}, 'Night replay'),
+    return el('section', { class: 'panel night-replay' }, txt('span', 'eyebrow', 'WHAT REALLY HAPPENED'), el('h2', {}, 'Night Replay'),
       ...log.map(n => el('article', { class: 'replay-night' }, el('h3', {}, txt('span', 'night-tag', 'NIGHT ' + String(n.round).padStart(2, '0')), n.event ? txt('span', 'replay-event', (EVENT_ICONS[n.event] || '✦') + ' ' + ({ 'long-tunnel': 'Long Tunnel', express: 'Express Stop', fog: 'Fogged Windows', snack: 'Midnight Snack', 'power-cut': 'Power Cut', sealed: 'Sealed Ballots', luggage: 'Lost Luggage', 'full-moon': 'Full Moon', quiet: 'Quiet Carriage' }[n.event] || n.event)) : null),
         el('ol', {}, ...[
           n.attackId ? line('🗡️', 'The Saboteurs attacked ' + name(n.attackId) + '.', n.attackId) : line('🗡️', 'The Saboteurs chose no attack.'),
@@ -913,13 +1003,14 @@
           n.poisonId ? line('☠️', 'Medic poisoned ' + name(n.poisonId) + '.', n.poisonId) : null,
           ...(n.checks || []).map(c => line('🔎', who(c.by) + ' checked ' + name(c.targetId) + '.', c.by, c.targetId)),
           ...(n.sights || []).map(x => line(x.type === 'glimpse' ? '👀' : '👁️', who(x.by) + (x.type === 'glimpse' ? ' glimpsed faces in the corridor.' : ' watched the attack.'), x.by)),
+          n.footsteps ? line('👣', who(n.footsteps.by) + ' walked from cabin ' + String(n.footsteps.from).padStart(2, '0') + ' to cabin ' + String(n.footsteps.to).padStart(2, '0') + (n.footsteps.heardBy ? '. ' + who(n.footsteps.heardBy) + ' heard the footsteps.' : '. Nobody heard them.'), n.footsteps.by) : null,
           n.outs.length ? line('🎟️', n.outs.map(o => who(o.id)).join(' and ') + (n.outs.length > 1 ? ' were' : ' was') + ' out by morning.', ...n.outs.map(o => o.id)) : line('☀️', 'Everyone woke up.'),
-        ].filter(Boolean)))));
+        ].filter(Boolean)), n.footsteps ? carriageMap({ steps: [n.footsteps.from, n.footsteps.to], walker: n.footsteps.by, victim: n.attackId }) : null)));
   }
   function ghostStrip() {
     const ghosts = Object.entries(state.ghosts || {}); if (!ghosts.length) return null;
     const bad = new Set(state.players.filter(p => p.group === 'saboteur').map(p => p.id));
-    return el('section', { class: 'panel ghost-strip' }, txt('span', 'eyebrow', 'FROM BEYOND THE TRAIN'), el('h2', {}, 'Ghost guesses'),
+    return el('section', { class: 'panel ghost-strip' }, el('div', { class: 'ghost-strip-head' }, ghostIcon(), el('div', {}, txt('span', 'eyebrow', 'FROM BEYOND THE TRAIN'), el('h2', {}, 'Ghost Guesses'))),
       ...ghosts.map(([id, g]) => el('div', { class: 'ghost-row' }, el('span', { class: 'ghost-who' }, avatar(id, 'replay-face'), txt('b', '', id === state.meId ? 'You' : who(id))), el('span', { class: 'ghost-picks' }, ...g.ids.map(x => el('span', { class: 'ghost-pick ' + (bad.has(x) ? 'right' : 'wrong') }, avatar(x, 'replay-face'), txt('small', '', bad.has(x) ? '✓' : '✗')))))));
   }
   function finale() {
@@ -929,18 +1020,20 @@
       el('div', {class:'winner-stage'}, art('lounge-room'), el('div', {class:'winner-heading'}, txt('span','eyebrow','THE LAST WORD'), trainMark('victory-mark'), el('h1',{},bad ? 'The Saboteurs win!' : 'The good team wins!'), txt('p','',bad ? 'They played their part. They kept their secrets.' : 'The truth made it through the night.'), txt('small','winner-reason',state.winReason)),
         txt('div','winner-team-label','THE WINNING TEAM'), el('div', {class:'winner-cast',style:'--winners:'+winners.length+';--winner-columns:'+Math.min(3,winners.length)}, ...winners.map(p => el('article',{class:'winner-person'},standingTraveller(p),el('div',{class:'winner-nameplate'},el('b',{},p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name))))),
         el('div',{class:'victory-actions'},state.hostId === state.meId ? startJourneyButton(state.players.filter(p => !p.departed).length < 5, true) : txt('p','waiting','The host can start another journey.'), state.hostId === state.meId ? el('div', { class: 'victory-role-actions' }, btn('Choose Roles', roleSettingsDialog, 'text-button', state.players.filter(p => !p.departed).length < 5), btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', state.players.filter(p => !p.departed).length < 5)) : null, latest?.votes ? btn('See The Final Vote',()=>ledgerDialog(latest),'text-button',false,'final-vote') : null)),
-      el('section',{class:'panel final-manifest'},txt('span','eyebrow','BEHIND EVERY FACE'),el('h2',{},'The full cast'),el('div',{class:'final-roles'},...state.players.map(p=>el('div',{class:'final-role '+p.group},avatar(p,'role-icon'),el('div',{},txt('b','',p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name + ' · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD')))))))),awardsPanel(),nightReplay(),ghostStrip(),chatLog(),history());
+      el('section',{class:'panel final-manifest'},txt('span','eyebrow','BEHIND EVERY FACE'),el('h2',{},'The Full Cast'),el('div',{class:'final-roles'},...state.players.map(p=>el('div',{class:'final-role '+p.group},avatar(p,'role-icon'),el('div',{},txt('b','',p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name + ' · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD')))))))),awardsPanel(),nightReplay(),ghostStrip(),chatLog(),history());
   }
   // Ghost guess: right after going out, good players lock in who they think the Saboteurs are.
+  const GHOST_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lt-ghost-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#e3dcff"/><stop offset="1" stop-color="#a996f2"/></linearGradient><radialGradient id="lt-ghost-glow"><stop offset="0" stop-color="#b8a6ff" stop-opacity=".55"/><stop offset="1" stop-color="#b8a6ff" stop-opacity="0"/></radialGradient></defs><circle cx="23" cy="24" r="22" fill="url(#lt-ghost-glow)"/><path d="M22 5.5c-8.6 0-14 6.6-14 15.2v17.6c0 1.5 1.7 2.3 2.9 1.3l2.5-2.1 2.9 2.5a2.3 2.3 0 0 0 3 0l2.7-2.4 2.7 2.4a2.3 2.3 0 0 0 3 0l2.9-2.5 2.5 2.1c1.2 1 2.9.2 2.9-1.3V20.7c0-8.6-5.4-15.2-14-15.2z" fill="url(#lt-ghost-body)" stroke="#6d5bd0" stroke-width="1.3" stroke-linejoin="round"/><path d="M13 13.5c1.6-3.3 4.7-5.3 8.4-5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/><ellipse cx="17.3" cy="20" rx="2.3" ry="3.1" fill="#2a1d55"/><ellipse cx="26.7" cy="20" rx="2.3" ry="3.1" fill="#2a1d55"/><circle cx="18" cy="18.9" r=".9" fill="#fff"/><circle cx="27.4" cy="18.9" r=".9" fill="#fff"/><ellipse cx="22" cy="26.6" rx="1.7" ry="2.1" fill="#2a1d55"/><circle cx="13.6" cy="24.6" r="1.9" fill="#ff9ec2" opacity=".55"/><circle cx="30.4" cy="24.6" r="1.9" fill="#ff9ec2" opacity=".55"/><path d="M33.5 27.5c2 .2 3.3 1 4 2.3" fill="none" stroke="#c9bdf7" stroke-width="3" stroke-linecap="round"/><circle cx="38.5" cy="33" r="5.2" fill="#bdf6ff55" stroke="#f2c86b" stroke-width="2.4"/><path d="M36.6 31.2a2.6 2.6 0 0 1 2.6-.9" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><path d="M42.2 36.7l3.3 3.3" stroke="#d99a2b" stroke-width="3.2" stroke-linecap="round"/></svg>';
+  const ghostIcon = cls => { const n = el('span', { class: 'ghost-icon ' + (cls || ''), 'aria-hidden': 'true' }); n.innerHTML = GHOST_ICON; return n; };
   function ghostBlock() {
     const me = state.me;
     if (me.observer || me.alive || me.group === 'saboteur' || !state.saboteurCount || ['lobby', 'finished'].includes(state.phase)) return null;
-    if (me.ghostGuess) return el('div', { class: 'ghost-block locked' }, txt('span', 'ghost-icon', '👻'), el('div', {}, txt('b', '', 'Your ghost guess is locked'), el('div', { class: 'ghost-faces' }, ...me.ghostGuess.ids.map(id => el('span', { class: 'ghost-face' }, avatar(id), txt('small', '', who(id))))), txt('small', '', 'Revealed at the end. +5 WP for each right guess.')));
-    return el('div', { class: 'ghost-block' }, txt('span', 'ghost-icon', '👻'), el('div', {}, txt('b', '', 'Make your ghost guess'), txt('small', '', 'Who are the ' + state.saboteurCount + ' Saboteur' + (state.saboteurCount > 1 ? 's' : '') + '? Guess now, before you learn more. +5 WP for each right guess.')), btn('Guess Now', ghostDialog, 'gold', false, 'ghost-guess'));
+    if (me.ghostGuess) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', 'Your Ghost Guess Is Locked'), el('div', { class: 'ghost-faces' }, ...me.ghostGuess.ids.map(id => el('span', { class: 'ghost-face' }, avatar(id), txt('small', '', who(id))))), txt('small', '', 'Revealed at the end. +5 WP for each right guess.')));
+    return el('div', { class: 'ghost-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Make Your Ghost Guess'), txt('small', '', 'Who are the ' + state.saboteurCount + ' Saboteur' + (state.saboteurCount > 1 ? 's' : '') + '? Guess now, before you learn more. +5 WP for each right guess.')), btn('Guess Now', ghostDialog, 'gold', false, 'ghost-guess'));
   }
   function ghostDialog() {
     const need = state.saboteurCount, picked = new Set();
-    const d = dialog('Your ghost guess', el('div', { class: 'target-hint' }, txt('span', 'tone-icon ghost-tone', '👻'), txt('p', '', 'Choose ' + need + ' player' + (need > 1 ? 's' : '') + ' you think ' + (need > 1 ? 'are Saboteurs' : 'is the Saboteur') + '. Your guess locks once you confirm.'))); d.classList.add('target-dialog', 'tone-pin', 'ghost-dialog');
+    const d = dialog('Your ghost guess', el('div', { class: 'target-hint' }, ghostIcon('tone-icon ghost-tone'), txt('p', '', 'Choose ' + need + ' player' + (need > 1 ? 's' : '') + ' you think ' + (need > 1 ? 'are Saboteurs' : 'is the Saboteur') + '. Your guess locks once you confirm.'))); d.classList.add('target-dialog', 'tone-pin', 'ghost-dialog');
     const confirm = btn('Choose ' + need, () => { d.close(); send('ghostGuess', { ids: [...picked] }); }, 'gold', true, 'confirm-ghost');
     const grid = el('div', { class: 'manifest-targets' }, ...state.players.filter(p => p.id !== state.meId).map(p => { const b = targetCard(p, () => {
       if (picked.has(p.id)) picked.delete(p.id); else if (picked.size < need) picked.add(p.id);
@@ -994,10 +1087,14 @@
   }
   function currentPrivateResult() {
     // The morning's lost-luggage clue comes first after the night; the night result was already shown in the cabin.
-    const clue = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && r.type === 'clue') : null;
+    const clue = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && r.type === 'footsteps' && !seenResult(r)) || state?.me.reports.find(r => r.round === state.round && r.type === 'clue') : null;
     return clue || state?.me.reports.find(r => r.round === state.round && ['check','watch','glimpse','check-blocked','watch-blocked','glimpse-blocked'].includes(r.type));
   }
+  const resultKey = r => [state.code, state.meId, state.match, r.round, r.type].join(':');
+  const seenResult = r => { try { return !!sessionStorage.getItem('lt-result:' + resultKey(r)); } catch { return false; } };
   function privateResultCard(result) {
+    if (result.type === 'footsteps') return el('section', { class: 'private-night-result footsteps-result', 'aria-label': 'Your night result' }, txt('span', 'eyebrow', 'ONLY YOU HEARD THIS'),
+      el('h3', {}, 'Footsteps in the night.'), carriageMap({ steps: heardSteps(result), fade: true }), footstepsNote(result));
     const blocked = result.type.endsWith('-blocked'), check = result.type.startsWith('check');
     if (!blocked && ['glimpse', 'clue'].includes(result.type)) return el('section', { class: 'private-night-result ' + (result.type === 'glimpse' ? 'glimpse-result' : 'clue-result'), 'aria-label': 'Your night result' },
       txt('span', 'eyebrow', 'FOR YOUR EYES ONLY'),
@@ -1014,12 +1111,14 @@
   function syncPrivateResult() {
     if (!state || state.paused || !['night','gathering','morning'].includes(state.phase)) return;
     const result = currentPrivateResult(); if (!result) return;
-    const key = [state.code,state.meId,state.match,result.round,result.type].join(':');
+    const key = resultKey(result);
     if (key === privateResultKey) return;
     privateResultKey = key;
     try { if (sessionStorage.getItem('lt-result:' + key)) return; sessionStorage.setItem('lt-result:' + key, '1'); } catch {}
     const d = dialog('Your private result', privateResultCard(result)); d.classList.add('night-result-dialog'); d.dataset.turn = fence();
     d.append(el('button', { type: 'button', class: 'gold', onclick: () => d.close() }, 'Got It'));
+    if (result.type === 'footsteps') sfx.play('steps');
+    d.addEventListener('close', () => requestAnimationFrame(syncPrivateResult));
   }
   function render() {
     const active = document.activeElement, focusId = active?.id, focusKey = active?.dataset.focus, cursor = active?.selectionStart;
@@ -1090,6 +1189,7 @@
     // The last five seconds turn red, wherever a countdown is shown.
     const urgent = !!state.deadline && !state.paused && seconds <= 5;
     document.querySelectorAll('#lt-app .countdown,.lt-dialog .countdown').forEach(n => {n.textContent=state.paused?'Ⅱ':String(seconds).padStart(2,'0');n.classList.toggle('urgent',urgent);n.setAttribute('aria-label',state.paused?'Paused':seconds+' seconds remaining');});
+    root.querySelectorAll('.night-track').forEach(n=>n.style.setProperty('--phase',state.phase==='night'&&state.duration?Math.min(1,Math.max(0,1-seconds/state.duration)).toFixed(3):0));
     root.querySelectorAll('.journey-clock').forEach(n=>{n.style.setProperty('--remaining',state.paused?1:Math.min(1,seconds/(state.duration||20)));n.classList.toggle('urgent',urgent);});
   }
   window.visualViewport?.addEventListener('resize', updateOverlayViewport);
