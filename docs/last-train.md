@@ -35,7 +35,7 @@ The host can choose roles before the first journey and before replay: one to thr
 | Inspector | Good · Crew | Each night, check another living player. Immediately and privately learn GOOD or BAD, not their exact role. |
 | Medic | Good · Crew | See the original attack target, then heal them, poison another living player, or Skip. One heal and one poison for the whole game. Only one medicine each night. Can heal themselves if attacked. |
 | Trainee | Good · Crew | Starts with no night power. When Inspector or Medic is removed, privately take that job from the next night. Still Crew. Inherit only remaining medicine. If both jobs are lost together, Inspector takes priority. |
-| Saboteur | Bad · Saboteur | Know the bad team. Agree on one shared attack, or Skip, within 25 seconds. Anyone still alive is allowed, including themselves and teammates. |
+| Saboteur | Bad · Saboteur | Know the bad team. Agree on one shared attack, or Skip, within 45 seconds. Anyone still alive is allowed, including themselves and teammates. |
 | Blocker | Bad · Saboteur | Also proposes the shared attack. Once per game, block one other living player's night power during the Saboteur turn. Does not stop the team's base attack. |
 
 Living identities stay private. Eliminations reveal only GOOD or BAD; exact roles and Crew/Passenger membership remain hidden until the end. Public history is sanitized as well as the player list. Group counts stay at the starting totals during play so count changes cannot reveal a removed player’s good subgroup; finished games expose actual remaining counts and every role. A bottom-of-screen role ticket can be shown or hidden. It shows the role, good/bad group, remaining medicine or one-use power status, and access to private reports. Saboteurs also see their teammates’ public avatars, names, roles and alive/out status in the ticket. It first appears in the cabin, where it reveals the role to the owner.
@@ -50,7 +50,7 @@ Boarding preserves the entire visible page with the final video frame, fades thr
 
 ## Two shared night phases
 
-Every phone gets two fixed **25-second** phases. Confirming, skipping, spending a power or losing a role never shortens either window. A night already running on the old sequential rules finishes safely; the next night uses the shared phases.
+Every phone gets two fixed **45-second** phases. Confirming, skipping, spending a power or losing a role never shortens either window. A night already running on the old sequential rules finishes safely; the next night uses the shared phases.
 
 1. **Make your move.** Saboteurs propose their shared attack and whisper privately. Blocker also chooses a one-use block. Brave Passenger chooses protection and Careful Passenger chooses their door lock. At the deadline, player-target proposals settle into one attack: ties choose randomly, Skip and missing proposals are abstentions, and no selected targets means no attack. Blocks apply to the whole night, including protection and locks chosen earlier in the same phase.
 2. **Respond.** Medic sees the final attack target and chooses heal, poison or Skip. Inspector checks a player and Witness can watch the attack. Inspector and Witness get immediate private result cards; blocked powers reveal no result, and a blocked Medic sees no patient or medicine expenditure.
@@ -69,7 +69,7 @@ Resolve all victims together, then promote a surviving Trainee, check the winner
 
 ## Gathering, speaking and voting
 
-At night end a 4-second gathering transition brings everyone to the train lounge. A 20-second morning reveal shows who is out and whether they were GOOD or BAD, and the fatal cause: Attacked, Poisoned or Overdose. Multiple fatal causes are shown together. Exact roles remain secret. These causes also appear in the journey log; saved players are not announced as deaths. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
+At night end a 4-second gathering transition brings everyone to the train lounge. A 30-second morning reveal shows who is out and whether they were GOOD or BAD, and the fatal cause: Attacked, Poisoned or Overdose. Multiple fatal causes are shown together. Exact roles remain secret. These causes also appear in the journey log; saved players are not announced as deaths. Private reports are accessible from the owner's role ticket. If the game is over, this proceeds to the winner; otherwise speaking begins automatically.
 
 The host chooses **In person** or **Chat room** before starting:
 
@@ -157,9 +157,15 @@ Rules/API tests cover sealed introductions, independent fixed seating, stage ord
 - **Observers**: joining by link after a journey has started makes you an Observer (the host can turn this off). Observers see only public screens, with a dark train at night, can react, and take a free seat when the next journey or a restart deals.
 - **Restart**: the host can restart at any time: **Deal Again Now** (new roles, seats and supplies) or **Back To Platform** (the lobby, to change roles or settings).
 - **Shuffle Roles Every Journey** (host switch, off by default): each time a journey starts (Start, Another Journey or Deal Again Now) a new random role mix is drawn, as if the host pressed Shuffle Roles.
-- **Time to think**: the morning reveal lasts 20 seconds. It says who speaks first and invites everyone to pin a suspect before the discussion.
+- **Time to think**: the morning reveal lasts 30 seconds. It says who speaks first and invites everyone to pin a suspect before the discussion.
 - **Paste My Latest Report**: in chat rooms, the speaker can paste the newest night's private results into their message, then edit them before sharing.
 - **Inspector history**: the Inspector's picker tints players already checked GOOD or BAD, with the night of the check.
 - **Footsteps & Carriage Map** (host switch, on by default): cabins (cabin number = seat number) sit around a looped corridor that circles the Observation Lounge, so there are no end cabins. Two kinds of walk make footsteps, always the shorter way round (a tie picks a way at random): a Saboteur walking to the attack target, and a Brave Passenger walking to whoever they protect. Saboteurs nominate who walks: one nominee walks; different nominees are drawn at random; no nomination means a random teammate. Their target picker shows how many doors each walk passes (Silent when next door). In night phase 1 every good traveller may flip a coin up to twice; heads means they listen at the door tonight. For each walk, one listening traveller whose door it passed gets a private morning clue: the time, and every occupied cabin up to half way round the steps could have come from (never the destination). The finale's Night Replay draws every walk (gold for Saboteurs, teal for Brave).
 - **Night progress**: a rail line from Move (moon) to Respond (lantern) to Morning (sunrise); a small train travels along it with the night clock.
 - **Thrown off the train**: a voted-out traveller is tossed from the carriage door as the train speeds on, then their team is revealed. Vote counts appear as badges under each name after the ballots land.
+
+## Settings
+
+The gear in the header opens Settings. **Room Rules** (sharing mode, speaking time, events, footsteps, observers, shuffle) are visible to everyone and editable by the host on the platform or after a journey. **Display** and **Sound & Feel** are per phone: colour scheme (Orient Navy default, Midnight Plum, Emerald Sleeper, Oxblood, Smoke & Brass), text size, calm mode, sound and vibration.
+
+Saboteurs see their teammates' faces and names in red everywhere, including a team carriage map at night, and can tap a teammate's proposed target to agree with it.

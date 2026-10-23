@@ -13,7 +13,7 @@ function turn(room, role) { while (room.phase === 'night' && r.nightRole(room) !
 function morning(room) { while(room.phase === 'night')r.advance(room); assert.equal(room.phase,'gathering'); r.advance(room); assert.equal(room.phase,'morning'); }
 function attack(room, target) { for(const p of r.alive(room).filter(p=>r.group(p)==='saboteur'))r.nightChoice(room,p,{attackId:target}); }
 function sharedNightTests() {
-  const shared = () => { const room = fixture(['careful','brave','witness','passenger','inspector','medic','trainee','saboteur','blocker']); room.nightMode = 'shared'; r.phase(room, 'night', 25); return room; };
+  const shared = () => { const room = fixture(['careful','brave','witness','passenger','inspector','medic','trainee','saboteur','blocker']); room.nightMode = 'shared'; r.phase(room, 'night', 45); return room; };
   for (const blockedRole of [null, 'careful', 'brave', 'medic', 'inspector', 'witness']) {
     const room = shared(), c = person(room,'careful'), b = person(room,'brave'), m = person(room,'medic'), i = person(room,'inspector'), w = person(room,'witness'), bad = person(room,'blocker');
     const patient = person(room,'passenger');
@@ -25,11 +25,11 @@ function sharedNightTests() {
     if (blockedRole) r.nightChoice(room,bad,{power:'block',targetId:person(room,blockedRole).id,attackId:patient.id});
     r.nightChoice(room,bad,{attackId:patient.id}); // Editing attack must not cancel its block.
     for (const p of room.players) {
-      const v = r.view(room,p); assert.equal(v.nightPhase,1); assert.equal(v.duration,25); assert.equal('patientId' in v.me,false);
+      const v = r.view(room,p); assert.equal(v.nightPhase,1); assert.equal(v.duration,45); assert.equal('patientId' in v.me,false);
       if (r.group(p)!=='saboteur') assert.equal('teamChoices' in v.me,false);
       assert.ok(v.players.every(q=>!q.role));
     }
-    assert.equal(room.phase,'night'); r.advance(room); assert.equal(r.nightRole(room),'responses'); assert.equal(room.duration,25);
+    assert.equal(room.phase,'night'); r.advance(room); assert.equal(r.nightRole(room),'responses'); assert.equal(room.duration,45);
     rejected(()=>r.nightChoice(room,bad,{attackId:i.id}),403);
     rejected(()=>r.nightChoice(room,b,{power:'pass'}),403);
     if (blockedRole==='medic') { rejected(()=>r.medicineChoice(room,m,{power:'heal'}),409); assert.equal(room.medicine.heal,1); assert.equal(r.view(room,m).me.patientId,null); }
@@ -58,8 +58,8 @@ function sharedNightTests() {
   }
   // Spent or removed powers do not shorten the two windows; old nights upgrade at a boundary.
   const room=shared();room.players.forEach(p=>p.used={lock:true,cover:true,watch:true,block:true});
-  r.advance(room);assert.equal(room.duration,25);r.advance(room);assert.equal(room.phase,'gathering');
-  const old=fixture();delete old.nightMode;assert.equal(r.nightRole(old),'saboteur');r.beginNight(old);r.advance(old);assert.equal(r.nightRole(old),'moves');assert.equal(old.duration,25);
+  r.advance(room);assert.equal(room.duration,45);r.advance(room);assert.equal(room.phase,'gathering');
+  const old=fixture();delete old.nightMode;assert.equal(r.nightRole(old),'saboteur');r.beginNight(old);r.advance(old);assert.equal(r.nightRole(old),'moves');assert.equal(old.duration,45);
 }
 function socialTests() {
   // Reactions, shop, throws and pins: separate Last Train wallet, never at night, never on the step fence.
@@ -105,7 +105,7 @@ function socialTests() {
   room.settings.speakSeconds=45;r.beginDiscussion(room);assert.equal(room.duration,45);
 }
 function roundFiveTests() {
-  const shared = (roles, event) => { const room = fixture(roles); room.nightMode = 'shared'; room.settings.events = false; if (event) room.event = { key: event, round: room.round }; r.phase(room, 'night', 25); return room; };
+  const shared = (roles, event) => { const room = fixture(roles); room.nightMode = 'shared'; room.settings.events = false; if (event) room.event = { key: event, round: room.round }; r.phase(room, 'night', 45); return room; };
   // Witness: two sightings, Watch or Glimpse; a glimpse shows two faces, one a Saboteur (three with a single Saboteur).
   {
     const room = shared(['witness','passenger','passenger','inspector','medic','saboteur','saboteur']), w = person(room,'witness');
@@ -134,7 +134,7 @@ function roundFiveTests() {
     rejected(() => r.nightChoice(cut, person(cut,'inspector'), { power: 'check', targetId: person(cut,'saboteur').id }), 409); rejected(() => r.nightChoice(cut, person(cut,'witness'), { power: 'glimpse' }), 409); assert.equal(r.sightsLeft(person(cut,'witness')), 2);
     const quiet = shared(['witness','passenger','inspector','medic','saboteur'], 'quiet'); rejected(() => r.sendLetter(quiet, quiet.players[0], quiet.players[1].id, 'Psst'), 409);
     const moon = shared(['witness','passenger','inspector','medic','saboteur'], 'full-moon'); moon.deadline = Date.now() + 5000; rejected(() => r.nightChoice(moon, person(moon,'saboteur'), { attackId: moon.players[0].id }), 409);
-    moon.deadline = Date.now() + 24000; r.nightChoice(moon, person(moon,'saboteur'), { attackId: moon.players[0].id });
+    moon.deadline = Date.now() + 44000; r.nightChoice(moon, person(moon,'saboteur'), { attackId: moon.players[0].id });
     const day = shared(['witness','passenger','inspector','medic','saboteur'], 'express'); day.settings.speakSeconds = 30; r.beginDiscussion(day); assert.equal(day.duration, 15); r.beginVote(day); assert.equal(day.duration, 30);
     day.event = { key: 'long-tunnel', round: day.round }; r.beginDiscussion(day); assert.equal(day.duration, 60);
     day.event = { key: 'fog', round: day.round }; day.phase = 'discussion'; rejected(() => r.emote(day, day.players[0], 'laugh', 1), 409); assert.equal(r.view(day, day.players[0]).socialOpen, false);
@@ -226,7 +226,7 @@ function roundFiveTests() {
   {
     const room = shared(['witness','passenger','inspector','medic','saboteur']); room.settings.autoShuffle = true; room.settings.roles = null;
     for (let i = 0; i < 6; i++) { r.restart(room, 'deal'); assert.ok(room.settings.roles); assert.deepEqual(r.validateLoadout(5, room.settings.roles), room.settings.roles); assert.equal(room.players.filter(p => r.group(p) === 'saboteur').length, 1); }
-    assert.equal(r.TIMERS.morning, 20);
+    assert.equal(r.TIMERS.morning, 30);
   }
 }
 function engineTests() {
@@ -322,7 +322,7 @@ function engineTests() {
     for(const p of room.players){const v=r.view(room,p);assert.equal(v.me.role,null);assert.ok(!('allies' in v.me));assert.ok(v.players.every(q=>!q.role));}
     const seats=[...room.seatOrder];r.advance(room);assert.equal(room.phase,'boarding');assert.equal(r.view(room,room.players[0]).me.role,null);
     r.advance(room);assert.equal(room.phase,'settling');assert.ok(r.view(room,room.players[0]).me.role);r.advance(room);
-    for(const role of r.SHARED_NIGHT){assert.equal(r.nightRole(room),role);assert.equal(room.duration,25);r.advance(room);}
+    for(const role of r.SHARED_NIGHT){assert.equal(r.nightRole(room),role);assert.equal(room.duration,45);r.advance(room);}
     assert.equal(room.phase,'gathering');r.advance(room);r.advance(room);assert.equal(room.phase,'discussion');assert.deepEqual(room.speakingOrder,seats);
     for(const id of seats){assert.equal(r.speakerId(room),id);assert.equal(room.duration,20);r.advance(room);}
     assert.equal(room.phase,'voting');r.resolveVote(room);assert.equal(room.phase,'voteResult');r.advance(room);assert.equal(room.phase,'settling');assert.deepEqual(room.seatOrder,seats);
@@ -483,7 +483,7 @@ function engineTests() {
     assert.ok((await get(host)).j.observers.some(o=>o.name==='Late'));assert.ok(!(await get(host)).j.players.some(p=>p.name==='Late'));
     assert.equal((await post(lateSeat,'leave')).s,200);assert.ok(!(await get(host)).j.observers.some(o=>o.name==='Late'));
     const ready=await Promise.all(seats.map(s=>post(s,'ready')));assert.ok(ready.every(v=>v.s===200));assert.equal((await get(host)).j.phase,'boarding');await expire();assert.equal((await get(host)).j.phase,'settling');await expire();
-    assert.equal((await get(host)).j.nightPhase,1);assert.equal((await get(host)).j.duration,25);
+    assert.equal((await get(host)).j.nightPhase,1);assert.equal((await get(host)).j.duration,45);
     const views=(await Promise.all(seats.map(get))).map(v=>v.j);assert.equal(new Set(views[0].players.map(p=>p.avatarIndex)).size,12,'neutral human portraits are unique and independent of roles');const bad=views.filter(v=>v.me.group==='saboteur'),w=views.find(v=>v.me.role==='witness'),m=views.find(v=>v.me.role==='medic'),ins=views.find(v=>v.me.role==='inspector');
     const seatFor=v=>seats.find(s=>s.meId===v.meId);
     for(const v of views){assert.ok(v.players.every(p=>!('role' in p)&&!('group' in p)&&!('tokenHash' in p)));assert.equal('allies' in v.me,v.me.group==='saboteur');assert.ok(!('night' in v)&&!('receipts' in v));}
@@ -516,6 +516,6 @@ function engineTests() {
     // Old local seats survive the journey upgrade, but obsolete simultaneous-night matches reset safely.
     const old=await raw();delete old.rulesVersion;old.phase='quiet';await save(old);const upgrade=(await get(returned.j)).j;assert.equal(upgrade.phase,'lobby');assert.equal(upgrade.me.role,null);assert.ok(upgrade.notice);
     if(redis){assert.ok(await redis.client.ttl('last-train:room:'+host.code)>0);redis.fault.unavailable=true;assert.equal((await get(returned.j)).s,503);redis.fault.unavailable=false;}
-    console.log('Last Train '+(redis?'Redis':'memory')+': cinematic phases, sealed introduction, fixed seats, two shared 25-second phases, legacy night compatibility and public death causes, editable self/team attacks, target abstentions, runoff votes, random second ties, overdose, medicine limits, private chat, reports, promotion, ordered speaking, voting, 12-player concurrency, recovery and migration passed');
+    console.log('Last Train '+(redis?'Redis':'memory')+': cinematic phases, sealed introduction, fixed seats, two shared 45-second phases, legacy night compatibility and public death causes, editable self/team attacks, target abstentions, runoff votes, random second ties, overdose, medicine limits, private chat, reports, promotion, ordered speaking, voting, 12-player concurrency, recovery and migration passed');
   }finally{if(redis)await redis.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

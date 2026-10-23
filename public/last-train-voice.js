@@ -17,6 +17,34 @@
     liveHead.innerHTML = '<span class="rec-dot" aria-hidden="true"></span><b>Recording</b>'; liveHead.append(meter);
     const bars = document.createElement('div'); bars.className = 'voice-live-bars'; bars.setAttribute('aria-hidden', 'true');
     for (let i = 0; i < 24; i++) { const bar = document.createElement('i'); bar.style.setProperty('--d', (i * 53 % 17) / 17 + 's'); bars.append(bar); }
+    // The bars follow the real microphone level, scrolling like a voice memo (newest on the right).
+    let meterCtx = null, meterFrame = 0;
+    function startMeter(media) {
+      stopMeter();
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
+        const ctx = new Ctx(), source = ctx.createMediaStreamSource(media), analyser = ctx.createAnalyser();
+        analyser.fftSize = 512; analyser.smoothingTimeConstant = .4; source.connect(analyser);
+        const data = new Uint8Array(analyser.fftSize), levels = Array(bars.children.length).fill(0); let last = 0;
+        meterCtx = ctx; bars.classList.add('live');
+        const tick = now => {
+          if (meterCtx !== ctx) return;
+          meterFrame = requestAnimationFrame(tick);
+          if (now - last < 70) return; last = now;
+          analyser.getByteTimeDomainData(data);
+          let sum = 0; for (const v of data) { const x = (v - 128) / 128; sum += x * x; }
+          const rms = Math.sqrt(sum / data.length), level = Math.min(1, Math.pow(rms * 4.2, .7));
+          levels.shift(); levels.push(recording ? level : 0);
+          levels.forEach((l, i) => { bars.children[i].style.height = Math.max(8, Math.round(l * 100)) + '%'; });
+        };
+        meterFrame = requestAnimationFrame(tick);
+      } catch { stopMeter(); }
+    }
+    function stopMeter() {
+      cancelAnimationFrame(meterFrame); bars.classList.remove('live');
+      for (const bar of bars.children) bar.style.height = '';
+      const ctx = meterCtx; meterCtx = null; try { ctx?.close(); } catch {}
+    }
     const progress = document.createElement('div'); progress.className = 'voice-progress'; progress.innerHTML = '<i></i>';
     const stop = document.createElement('button'); stop.type = 'button'; stop.className = 'gold'; stop.textContent = 'Stop & Share';
     const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'text-button'; cancel.textContent = 'Discard';
@@ -30,7 +58,7 @@
     const hasShared = () => state?.speeches.some(m => m.round === state.round && m.id === state.meId);
     const elapsed = () => recorded + (running ? performance.now() - started : 0);
     const published = clip => !!state?.speeches.some(m => m.audio?.id === clip.id);
-    const release = () => { stream?.getTracks().forEach(track => track.stop()); stream = null; };
+    const release = () => { stopMeter(); stream?.getTracks().forEach(track => track.stop()); stream = null; };
     const duck = () => api.onAudio(recording || pending || playback.size > 0);
     function update() {
       const active = recording || pending;
@@ -90,7 +118,7 @@
     function stopRecording(share) {
       if (!recorder || recorder.state === 'inactive') return;
       const rec = recorder;
-      recorded = elapsed(); running = false; sharing = share; finalizing = share; recording = false;
+      recorded = elapsed(); running = false; sharing = share; finalizing = share; recording = false; stopMeter();
       // Keep the microphone open until the recorder flushes its final chunk; Safari can drop it otherwise.
       try { rec.stop(); } catch { finish(rec); }
       if (!share) release();
@@ -147,7 +175,7 @@
           if (recording && recorder === rec) { recorded = elapsed(); running = false; recording = false; sharing = true; finalizing = true; status = 'The microphone stopped early. Sharing what was recorded…'; }
           finish(rec);
         };
-        started = rec.startedAt; running = true; recording = true; status = 'Recording. It will share automatically when your time ends.';
+        started = rec.startedAt; running = true; recording = true; status = 'Recording. It will share automatically when your time ends.'; startMeter(media);
         api.onState(result, seat);
       } catch (e) {
         if (recorder && !recording && !recorder.finished) recorder = null;
@@ -160,7 +188,7 @@
     retry.onclick = () => { if (retryClip) upload(retryClip); };
     // A custom player: round play button, a waveform that fills as it plays, and the time.
     const ICONS = {
-      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.2v11.6a1.1 1.1 0 0 0 1.7.93l9.1-5.8a1.1 1.1 0 0 0 0-1.86l-9.1-5.8A1.1 1.1 0 0 0 9 6.2z" fill="currentColor"/></svg>',
+      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.6 6.2v11.6a1.1 1.1 0 0 0 1.7.93l9.1-5.8a1.1 1.1 0 0 0 0-1.86l-9.1-5.8A1.1 1.1 0 0 0 7.6 6.2z" fill="currentColor"/></svg>',
       pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="6" width="3.6" height="12" rx="1.4" fill="currentColor"/><rect x="13.4" y="6" width="3.6" height="12" rx="1.4" fill="currentColor"/></svg>',
       lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 10.5V8.3a3.5 3.5 0 0 1 7 0v2.2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><rect x="6" y="10.5" width="12" height="9" rx="2.4" fill="currentColor"/></svg>',
       load: '<svg viewBox="0 0 24 24" aria-hidden="true" class="spin"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="2.4"/><path d="M12 4.5a7.5 7.5 0 0 1 7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',

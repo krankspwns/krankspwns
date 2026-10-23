@@ -34,7 +34,7 @@ test('shared nights give everyone private activities, preserve notes and keep po
     await blocker.page.getByRole('button',{name:'Choose Target',exact:true}).click();let d=blocker.page.getByRole('dialog');await d.locator('[data-id="'+passenger.person.id+'"]').click();await d.getByRole('button',{name:/^Confirm:/}).click();
     await blocker.page.getByRole('button',{name:'Use Blocker Power',exact:true}).click();d=blocker.page.getByRole('dialog');await d.locator('[data-id="'+inspector.person.id+'"]').click();await d.getByRole('button',{name:/^Confirm:/}).click();
     await expect(blocker.page.locator('.bad-console')).toContainText('Block used: '+inspector.person.name);
-    let room=await store.load(b.host.code);expect(room.phase).toBe('night');expect(room.duration).toBe(25);expect(room.night.choices[blocker.person.id].attackId).toBe(passenger.person.id);
+    let room=await store.load(b.host.code);expect(room.phase).toBe('night');expect(room.duration).toBe(45);expect(room.night.choices[blocker.person.id].attackId).toBe(passenger.person.id);
     rules.advance(room);await b.save(room);
     await expect(passenger.page.locator('.scene-hud h1')).toHaveText('Night phase 2 of 2.');
     await expect(chip('Suspect')).toHaveAttribute('aria-pressed','true');await chip('Trust').click();await passenger.page.reload();await expect(chip('Trust')).toHaveAttribute('aria-pressed','true');await expect(chip('Suspect')).toHaveAttribute('aria-pressed','false');
