@@ -1,3 +1,4 @@
+process.env.LAST_TRAIN_AUTO_SHUFFLE = 'off';
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const r = require('../lib/last-train-rules');

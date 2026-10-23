@@ -5,7 +5,7 @@
   window.createTrainSoundtrack = (onGesture, musicAllowed = () => true) => {
     let context, master, musicGain, source, buffer, loading, current, enabled = false, video, voiceActive = false;
     const routed = new WeakMap();
-    const live = () => musicAllowed() && enabled && current && current.phase !== 'lobby' && !current.paused && !document.hidden;
+    const live = () => musicAllowed() && enabled && current && !current.paused && !document.hidden;
     function routeVideo() {
       if (!context || !video || routed.has(video)) return;
       try { const node = context.createMediaElementSource(video); node.connect(master); routed.set(video, node); } catch {}
@@ -18,7 +18,7 @@
     function level() {
       if (!context) return;
       const phase = current?.phase;
-      const target = !live() || voiceActive || phase === 'boarding' ? 0 : phase === 'discussion' ? .07 : phase === 'finished' ? .22 : .16;
+      const target = !live() || voiceActive || phase === 'boarding' ? 0 : phase === 'discussion' ? .07 : phase === 'lobby' ? .1 : phase === 'finished' ? .22 : .16;
       musicGain.gain.cancelScheduledValues(context.currentTime);
       musicGain.gain.setTargetAtTime(target, context.currentTime, .45);
       if (live()) { context.resume().then(startMusic).catch(() => {}); }
@@ -41,7 +41,7 @@
     return { refresh: level, setVoiceActive(active) { if (voiceActive !== active) { voiceActive = active; if (active && musicGain) { musicGain.gain.cancelScheduledValues(context.currentTime); musicGain.gain.setValueAtTime(0, context.currentTime); } level(); } }, sync(state, hasSeat, nextVideo) {
       if (video && video !== nextVideo) routed.get(video)?.disconnect();
       current = state; enabled = hasSeat; video = nextVideo; routeVideo();
-      if (enabled && state && state.phase !== 'lobby' && !loading) {
+      if (enabled && state && !loading) {
         // Decode after a user gesture creates the audio context; failures never block play.
         if (context) loading = fetch('/last-train/night-carriage.mp3').then(r => { if (!r.ok) throw Error('Music unavailable'); return r.arrayBuffer(); }).then(data => context.decodeAudioData(data)).then(decoded => { buffer = decoded; startMusic(); }).catch(() => {});
       }

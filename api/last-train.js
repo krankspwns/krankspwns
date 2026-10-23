@@ -23,7 +23,7 @@ async function execute(req, body) {
     }
     need(code, 503, 'Please try creating the room again.');
     const { p, tok } = player(name); p.avatarIndex = crypto.randomInt(12);
-    const room = { code, version: 0, hostId: p.id, phase: 'lobby', rulesVersion: 2, settings: { extra: 'brave', blocker: true, discussion: 'in-person' }, players: [p], history: [], step: 0 };
+    const room = { code, version: 0, hostId: p.id, phase: 'lobby', rulesVersion: 2, settings: { extra: 'brave', blocker: true, discussion: 'in-person', speakSeconds: 45, autoShuffle: process.env.LAST_TRAIN_AUTO_SHUFFLE !== 'off' }, players: [p], history: [], step: 0 };
     await store.save(room); return { ...view(room, p), tok };
   }
   const code = String(body.code || '').toUpperCase(); need(/^[A-Z]{4}$/.test(code), 400, 'Enter a four-letter room code.');
@@ -84,7 +84,7 @@ async function execute(req, body) {
   if (action === 'settings') {
     host(); need(['lobby','finished'].includes(room.phase), 409, 'Change roles before the game starts.');
     need(['brave', 'speaker'].includes(body.extra) && typeof body.blocker === 'boolean' && ['in-person', 'chat'].includes(body.discussion), 400, 'Choose the role mix on screen.');
-    const speakSeconds = body.speakSeconds === undefined ? room.settings.speakSeconds || 20 : body.speakSeconds;
+    const speakSeconds = body.speakSeconds === undefined ? room.settings.speakSeconds || 45 : body.speakSeconds;
     need(rules.SPEAK_SECONDS.includes(speakSeconds), 400, 'Choose 15, 20, 30 or 45 seconds.');
     const roles = body.roles === undefined ? room.settings.roles || null : body.roles === null ? null : rules.validateLoadout(present(room).length, body.roles);
     room.settings = { extra: body.extra, blocker: body.blocker, discussion: body.discussion, speakSeconds, roles, events: body.events === undefined ? room.settings.events !== false : !!body.events, observers: body.observers === undefined ? room.settings.observers !== false : !!body.observers, autoShuffle: body.autoShuffle === undefined ? !!room.settings.autoShuffle : !!body.autoShuffle, footsteps: body.footsteps === undefined ? room.settings.footsteps !== false : !!body.footsteps };

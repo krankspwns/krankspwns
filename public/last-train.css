@@ -1957,3 +1957,20 @@ button.team-proposal.mine .proposal-tap { color: #ff9db0; }
   .track-train { top: 9px !important; }
   .track-rail { top: 55px !important; }
 }
+/* Night replay map centred */
+.night-replay .carriage-map, .night-replay .loop-map { margin: 10px auto 4px !important; }
+/* Pin a suspect: a glass pill floating at the top of the lounge picture */
+.lounge-room > .pin-bar { position: absolute; z-index: 30; top: 12px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); margin: 0; padding: 6px 14px 6px 6px; gap: 10px; border-radius: 999px; background: #120d1fcc; border: 1px solid #ff9db066; box-shadow: 0 8px 22px #000a, 0 0 18px #ff729333; backdrop-filter: blur(8px); animation: pin-float-in .5s cubic-bezier(.2,.9,.3,1.2); }
+.lounge-room > .pin-bar p { padding-right: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lounge-room > .pin-bar .pin-button { min-height: 36px !important; padding: 0 14px !important; border-radius: 999px !important; background: linear-gradient(180deg, #ff7f98, #d8436a) !important; border: 1px solid #ffc2cd !important; color: #fff !important; font: 800 13px Inter, sans-serif !important; box-shadow: 0 4px 12px #0006, inset 0 1px #fff6 !important; animation: pin-nudge 3.2s ease-in-out 1.2s infinite; }
+@keyframes pin-float-in { from { opacity: 0; transform: translate(-50%, -8px); } }
+@keyframes pin-nudge { 0%, 88%, 100% { transform: none; } 92% { transform: rotate(-4deg) scale(1.04); } 96% { transform: rotate(3deg) scale(1.04); } }
+@media (max-width: 680px) { .lounge-room > .pin-bar { top: 8px; padding: 5px; } .lounge-room > .pin-bar p { display: none; } }
+@media (prefers-reduced-motion: reduce) { .lounge-room > .pin-bar, .lounge-room > .pin-bar .pin-button { animation: none; } }
+.lounge-seat .seat-name-row { max-width: 100%; min-width: 0; }
+.lounge-seat .lounge-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The chooser's face stays pinned to the corner of the proposal, even with a shop frame */
+.team-proposals .chooser-avatar, .team-proposals .chooser-avatar.has-frame { position: absolute !important; bottom: -4px !important; right: -6px !important; left: auto !important; top: auto !important; z-index: 2; }
+.team-proposals .proposal-target { position: relative; margin-bottom: 4px; }
+.paste-cover { border-color: #ff9db077 !important; background: #ff9db012 !important; }
+.paste-cover .paste-icon { background: #ff9db022; }

@@ -10,7 +10,7 @@
     const MIC = '<svg fill="none" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="8" height="12.5" rx="4" fill="#ff5c7a" stroke="#c42f50" stroke-width="1"/><rect x="9.6" y="4" width="2" height="5" rx="1" fill="#fff" opacity=".45"/><path d="M5 10.5v1.5a7 7 0 0 0 14 0v-1.5" fill="none" stroke="#ffd66b" stroke-width="1.9" stroke-linecap="round"/><path d="M12 19v2.5M8.5 21.5h7" stroke="#ffd66b" stroke-width="1.9" stroke-linecap="round"/></svg>';
     // Idle: one big card. Recording: a live panel with a timer, moving bars, Stop & Share and Discard.
     const record = document.createElement('button'); record.type = 'button'; record.className = 'speak-choice record-choice';
-    record.setAttribute('aria-label', 'Record Voice'); record.innerHTML = '<span class="choice-icon">' + MIC + '</span><span class="choice-copy"><b>Record Voice</b><small>Up to 20 sec</small></span>';
+    record.setAttribute('aria-label', 'Record Voice'); record.innerHTML = '<span class="choice-icon">' + MIC + '</span><span class="choice-copy"><b>Record Voice</b><small>Up to 45 sec</small></span>';
     const live = document.createElement('div'); live.className = 'voice-live';
     const liveHead = document.createElement('div'); liveHead.className = 'voice-live-head';
     const meter = document.createElement('span'); meter.className = 'voice-time';
@@ -53,6 +53,8 @@
     const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'secondary'; retry.textContent = 'Retry Sharing';
     const feedback = document.createElement('p'); feedback.className = 'voice-feedback'; feedback.setAttribute('role', 'status');
     pane.append(record, live, retry, feedback);
+    // A clip can last as long as the speaking turn, up to 45 seconds.
+    const maxSeconds = () => Math.min(45, state?.speakSeconds || 45);
     const supported = () => !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
     const ownTurn = () => state?.phase === 'discussion' && state.speakerId === state.meId && state.me.alive;
     const hasShared = () => state?.speeches.some(m => m.round === state.round && m.id === state.meId);
@@ -64,13 +66,13 @@
       const active = recording || pending;
       record.hidden = active || uploading || finalizing || !!retryClip;
       record.disabled = !supported() || !ownTurn() || state.paused || hasShared();
-      record.querySelector('small').textContent = 'Up to ' + (state?.speakSeconds || 20) + ' sec';
+      record.querySelector('small').textContent = 'Up to ' + maxSeconds() + ' sec';
       live.hidden = !active; stop.hidden = !recording; stop.disabled = state?.paused;
       cancel.hidden = !active; retry.hidden = !retryClip || uploading;
       retry.disabled = state?.paused;
-      const secs = Math.min(20, Math.floor(elapsed() / 1000));
-      meter.textContent = state?.paused ? 'Paused' : '0:' + String(secs).padStart(2, '0') + ' / 0:20';
-      progress.firstChild.style.width = Math.min(100, elapsed() / 200) + '%';
+      const cap = maxSeconds(), secs = Math.min(cap, Math.floor(elapsed() / 1000));
+      meter.textContent = state?.paused ? 'Paused' : '0:' + String(secs).padStart(2, '0') + ' / 0:' + String(cap).padStart(2, '0');
+      progress.firstChild.style.width = Math.min(100, elapsed() / (cap * 10)) + '%';
       liveHead.querySelector('b').textContent = recording ? 'Recording' : 'Starting the microphone…';
       pane.classList.toggle('is-recording', recording); pane.classList.toggle('is-busy', active || uploading || finalizing || !!retryClip);
       feedback.textContent = !supported() ? 'Voice recording is not supported here. You can still type or speak aloud.' : status;
@@ -100,7 +102,7 @@
     function finish(rec) {
       if (rec.finished) return;
       rec.finished = true; clearTimeout(stopTimer);
-      const send = sharing, capture = session, durationMs = Math.min(20000, Math.round(recorded));
+      const send = sharing, capture = session, durationMs = Math.min(maxSeconds() * 1000, Math.round(recorded));
       // Some browsers report an empty recorder type; fall back to the requested container.
       const blob = new Blob(chunks, { type: rec.mimeType || rec.requestedType });
       release(); recording = false; running = false; sharing = false; if (recorder === rec) recorder = null; chunks = []; duck();

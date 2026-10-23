@@ -1,3 +1,4 @@
+process.env.LAST_TRAIN_AUTO_SHUFFLE = 'off';
 process.env.LAST_TRAIN_EVENTS = 'off';
 const assert = require('node:assert/strict'), crypto = require('node:crypto');
 const { call, startRedis } = require('./helpers');
@@ -17,7 +18,7 @@ const { call, startRedis } = require('./helpers');
     const audioData=Buffer.concat([Buffer.from('1a45dfa3','hex'),Buffer.alloc(80,1)]).toString('base64');
     const payload={voiceId:draft.id,mimeType:'audio/webm;codecs=opus',durationMs:1500,audioData};
     assert.equal((await post(other,'speakVoice',payload)).s,409);
-    assert.equal((await post(first,'speakVoice',{...payload,durationMs:20001})).s,400);
+    assert.equal((await post(first,'speakVoice',{...payload,durationMs:45501})).s,400);
     assert.equal((await post(first,'speakVoice',{...payload,mimeType:'text/html'})).s,400);
     assert.equal((await post(first,'speakVoice',{...payload,audioData:Buffer.alloc(600000,1).toString('base64')})).s,413);
     assert.equal((await post(first,'speakVoice',{...payload,audioData:Buffer.alloc(80,1).toString('base64')})).s,400);
@@ -34,7 +35,7 @@ const { call, startRedis } = require('./helpers');
     room=await store.load(host.code);const second=seats.find(s=>s.meId===rules.speakerId(room));const began=(await post(second,'beginVoice')).j;
     assert.equal((await post(host,'pause')).s,200);
     assert.equal((await post(second,'speakVoice',{...payload,voiceId:began.me.voiceDraft.id})).s,200);
-    assert.equal((await get(first,{voice:began.me.voiceDraft.id})).s,200);assert.notEqual((await get(first)).j.speakerId,second.meId);const paused=(await get(first)).j;assert.equal(paused.paused,true);assert.equal(paused.remainingMs,20000);assert.equal(paused.deadline,null);await post(host,'resume');assert.equal((await get(second,{voice:began.me.voiceDraft.id})).s,200);
+    assert.equal((await get(first,{voice:began.me.voiceDraft.id})).s,200);assert.notEqual((await get(first)).j.speakerId,second.meId);const paused=(await get(first)).j;assert.equal(paused.paused,true);assert.equal(paused.remainingMs,45000);assert.equal(paused.deadline,null);await post(host,'resume');assert.equal((await get(second,{voice:began.me.voiceDraft.id})).s,200);
     assert.equal((await post(second,'speak',{text:'A second submission'})).s,409);
     assert.equal((await get(first,{voice:began.me.voiceDraft.id})).s,200);
     // A late upload expires, and a previous match can never attach audio to the new game.

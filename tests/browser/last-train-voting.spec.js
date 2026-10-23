@@ -46,7 +46,7 @@ test('tied ballots open one restricted re-vote, retain grouped voters on reload 
     for(let i=1;i<6;i++)await post(seats[i],'vote',{targetId:targets[i%2]});
     await expect(page.locator('#lt-app')).toHaveAttribute('data-phase','voteResult');
     room=await store.load(b.host.code);expect(room.history).toHaveLength(2);expect(room.history[1].reason).toBe('random');expect(targets).toContain(room.history[1].outs[0].id);
-    if(await page.getByRole('dialog').count())await page.getByRole('button',{name:'View Votes',exact:true}).click();
+    await expect(page.locator('.elimination-cinema')).toHaveCount(0,{timeout:9000});
     await expect(page.locator('.inline-votes .vote-group')).toHaveCount(2);await expect(page.locator('.inline-votes .vote-row')).toHaveCount(6);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.screenshot({path:info.outputPath('grouped-revote-mobile.png'),fullPage:true});
@@ -59,7 +59,7 @@ test('five Skip ballots do not cancel the sole player vote',async({browser})=>{
     for(let i=0;i<6;i++)await b.post(b.seats[i],'vote',{targetId:i===0?b.seats[1].meId:null});
     const room=await store.load(b.host.code);expect(room.history[0].outs[0].id).toBe(b.seats[1].meId);
     await expect(b.page.locator('#lt-app')).toHaveAttribute('data-phase','voteResult');
-    if(await b.page.getByRole('dialog').count())await b.page.getByRole('button',{name:'View Votes',exact:true}).click();
+    await expect(b.page.locator('.elimination-cinema')).toHaveCount(0,{timeout:9000});
     const votes=b.page.locator('.inline-votes');await expect(votes.locator('.vote-group')).toHaveCount(2);await expect(votes.locator('.vote-group[data-target="'+b.seats[1].meId+'"] .vote-row')).toHaveCount(1);await expect(votes.locator('.abstained .vote-row')).toHaveCount(5);
   }finally{await b.context.close();}
 });

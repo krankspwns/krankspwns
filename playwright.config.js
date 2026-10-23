@@ -1,6 +1,7 @@
 const { defineConfig } = require('@playwright/test');
 // Random Last Train carriage events would make scripted journeys unpredictable.
 process.env.LAST_TRAIN_EVENTS = 'off';
+process.env.LAST_TRAIN_AUTO_SHUFFLE = 'off';
 module.exports = defineConfig({
   testDir: './tests/browser',
   timeout: 120000,
