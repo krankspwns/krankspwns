@@ -5,7 +5,7 @@
 (() => {
   'use strict';
   const THREE_URL = '/vendor/three-0.170.0.module.min.js';
-  const GRAVITY = 26, JUMP = 9.2, BOUNCE = 14, SPEED = 4.4, COYOTE = .12, BUFFER = .16, HALF = .3, HEIGHT = .95, FUSE = 1500, BACK = 4000, EYE = 1.5;
+  const GRAVITY = 26, JUMP = 9.2, BOUNCE = 14, SPEED = 4.4, COYOTE = .12, BUFFER = .16, HALF = .3, HEIGHT = .95, EYE = 1.5;
   const THEMES = [
     { name: 'Meadow Isles', sky: 0x8fc8ff, fog: 0xbfe3ff, top: ['#5fae3f', '#4f9a34', '#6cc049'], side: ['#8a6038', '#7a5230', '#96693e'], stone: ['#8a8a8a', '#7a7a7a', '#999999'] },
     { name: 'Frozen Peaks', sky: 0x9fb8e8, fog: 0xd8e6ff, top: ['#f4f8ff', '#e2ecfb', '#ffffff'], side: ['#9fb3cc', '#8ea3bd', '#b0c3da'], stone: ['#7d8aa0', '#6e7a90', '#8c99ae'] },
@@ -23,7 +23,7 @@
     const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
     let d = 0, x = 0, y = 0, z = 0;
     const turn = () => { if (r() < .35) d = (d + (r() < .5 ? 1 : 3)) % 4; };
-    const sections = ['hops', 'lift', 'slime', 'crumble'].sort(() => r() - .5);
+    const sections = ['hops', 'lift', 'slime'].sort(() => r() - .5);
     for (const kind of sections) {
       if (kind === 'lift') {
         for (let i = 0; i < 2; i++) {
@@ -47,7 +47,9 @@
             turn(); const [dx, dz] = dirs[d], up = r() < .5 ? 1 : 0, len = up || r() < .7 ? 2 : 3, side = 0;
             const nx = x + dx * len + (dz ? side : 0), nz = z + dz * len + (dx ? side : 0), ny = y + up;
             if (!free(nx, ny, nz)) continue;
-            x = nx; y = ny; z = nz; put(x, y, z, kind === 'crumble' ? 'gravel' : 'stone'); placed = true;
+            x = nx; y = ny; z = nz; put(x, y, z, 'stone'); placed = true;
+            // Two blocks wide, so every landing is a generous target.
+            if (!taken.has(key(x + Math.abs(dz), y, z + Math.abs(dx)))) put(x + Math.abs(dz), y, z + Math.abs(dx), 'stone', { wide: true });
           }
         }
       }
@@ -72,7 +74,7 @@
       now += 1000 / 60; const dx = B.cx - sim.me.x, dz = B.cz - sim.me.z, dist = Math.hypot(dx, dz), go = dist > .05 && (!o.wait || !sim.me.ground || dist < o.wait);
       sim.step(1 / 60, now, go ? dx / dist : 0, go ? dz / dist : 0, !!sim.me.ground && go && dist < o.j);
       if (landed || (B.kind === 'slime' && bounced)) return true;
-      if (sim.me.y < Math.min(A.y, B.y) - 3) return false;
+      if (sim.me.y < Math.min(A.y, B.y) - 3 || sim.me.y <= sim.floor) return false;
     }
     return false;
   }
@@ -92,10 +94,9 @@
   // The physics, separate from drawing so tests can run it without a screen. Movement (mx, mz) is a world direction, length ≤ 1.
   function simulate(blocks, on = {}) {
     const me = { x: 0, y: .5, z: 0, vx: 0, vy: 0, vz: 0, ground: null, coyote: 0, face: 0, jumped: false };
-    const lowest = Math.min(...blocks.map(b => b.y));
+    const floor = Math.min(...blocks.map(b => b.y)) - .5;
     for (const b of blocks) { b.cx ??= b.x; b.cz ??= b.z; }
     const liftPos = (b, now) => { const k = Math.sin(now / 1000 * 6.283 / b.period + b.phase) * b.amp; return [b.x + b.ax * k, b.z + b.az * k]; };
-    const solid = (b, now) => !(b.kind === 'gravel' && b.fallAt && now - b.fallAt > FUSE && now - b.fallAt < BACK);
     const overlaps = b => Math.abs(me.x - b.cx) < .5 + HALF && Math.abs(me.z - b.cz) < .5 + HALF && me.y < b.y + .5 && me.y + HEIGHT > b.y - .5;
     const wall = b => Math.abs(me.x - b.cx) < .5 + HALF && Math.abs(me.z - b.cz) < .5 + HALF && me.y < b.y + .5 - .02 && me.y + HEIGHT > b.y - .5 + .02;
     function step(dt, now, mx, mz, wantJump) {
@@ -106,25 +107,24 @@
       me.coyote = me.ground ? COYOTE : me.coyote - dt; me.jumped = false;
       if (wantJump && me.coyote > 0) { me.vy = JUMP; me.ground = null; me.coyote = 0; me.jumped = true; on.jump?.(); }
       me.vy = Math.max(-30, me.vy - GRAVITY * dt);
-      const near = blocks.filter(b => solid(b, now) && Math.abs(b.cx - me.x) < 3 && Math.abs(b.cz - me.z) < 3 && Math.abs(b.y - me.y) < 4);
+      const near = blocks.filter(b => Math.abs(b.cx - me.x) < 3 && Math.abs(b.cz - me.z) < 3 && Math.abs(b.y - me.y) < 4);
       // Vertical first (land or bump), then sideways, so standing on a block never reads as hitting a wall.
       me.ground = null; me.y += me.vy * dt;
       for (const b of near) if (overlaps(b)) {
         if (me.vy <= 0) {
           me.y = b.y + .5; me.vy = 0; me.ground = b;
           if (b.kind === 'slime') { me.vy = BOUNCE; me.ground = null; on.bounce?.(); }
-          if (b.kind === 'gravel' && !b.fallAt) b.fallAt = now;
           on.land?.(b);
         } else { me.y = b.y - .5 - HEIGHT - 1e-3; me.vy = 0; }
       }
       me.x += me.vx * dt; for (const b of near) if (wall(b)) { me.x = me.vx > 0 ? b.cx - .5 - HALF - 1e-3 : b.cx + .5 + HALF + 1e-3; me.vx = 0; }
       me.z += me.vz * dt; for (const b of near) if (wall(b)) { me.z = me.vz > 0 ? b.cz - .5 - HALF - 1e-3 : b.cz + .5 + HALF + 1e-3; me.vz = 0; }
-      for (const b of blocks) if (b.kind === 'gravel' && b.fallAt && now - b.fallAt >= BACK) b.fallAt = 0;
       // Falling into the void sends the ghost back to the last checkpoint.
-      if (me.y < lowest - 8) on.fell?.();
+      // Missing a jump lands on the grass floor, which sends the ghost back to its last block.
+      if (me.y < floor) { me.y = floor; me.vy = 0; on.fell?.(); }
     }
     const place = p => Object.assign(me, { x: p.x, y: p.y + .05, z: p.z, vx: 0, vy: 0, vz: 0, ground: null });
-    return { me, step, solid, place };
+    return { me, step, place, floor };
   }
 
   let threePromise = null;
@@ -196,7 +196,6 @@
       const M = {
         grass: [grassSide, grassSide, mat(noise(theme.top)), mat(noise(theme.side)), grassSide, grassSide],
         stone: mat(noise(theme.stone)),
-        gravel: mat(noise(['#9a8f85', '#7f756c', '#b3a89e', '#6e655d'])),
         gold: mat(g => { noise(['#f6d55c', '#e8c040', '#fbe38a'])(g); g.fillStyle = '#c8962a'; g.fillRect(0, 0, 16, 1); g.fillRect(0, 15, 16, 1); g.fillRect(0, 0, 1, 16); g.fillRect(15, 0, 1, 16); }),
         peak: mat(g => { noise(['#8ff0ff', '#5fd8f0', '#c8fbff'])(g); g.fillStyle = '#2aa8c8'; g.fillRect(0, 0, 16, 1); g.fillRect(0, 15, 16, 1); }),
         lift: mat(g => { noise(['#b07a40', '#9a6a36', '#c48a4a'])(g); g.fillStyle = '#6a4420'; for (const yy of [0, 5, 10, 15]) g.fillRect(0, yy, 16, 1); }),
@@ -204,6 +203,11 @@
       };
       const box = new THREE.BoxGeometry(1, 1, 1);
       for (const b of blocks) { b.mesh = new THREE.Mesh(box, M[b.kind] || M.stone); b.mesh.position.set(b.x, b.y, b.z); scene.add(b.mesh); b.cx = b.x; b.cz = b.z; }
+      // A grass floor under the whole course: something to judge jumps against, and a soft landing after a miss.
+      const xs = blocks.map(b => b.x), zs = blocks.map(b => b.z), span = Math.max(...xs) - Math.min(...xs) + 40, depth = Math.max(...zs) - Math.min(...zs) + 40;
+      const grassTex = texture(noise(theme.top)); grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping; grassTex.repeat.set(span, depth);
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(span, depth), new THREE.MeshLambertMaterial({ map: grassTex }));
+      ground.rotation.x = -Math.PI / 2; ground.position.set((Math.max(...xs) + Math.min(...xs)) / 2, Math.min(...blocks.map(b => b.y)) - .5, (Math.max(...zs) + Math.min(...zs)) / 2); scene.add(ground);
       // The flag on the peak, and a few blocky clouds.
       const peak = blocks.find(b => b.kind === 'peak');
       const pole = new THREE.Mesh(new THREE.BoxGeometry(.08, 2.2, .08), new THREE.MeshLambertMaterial({ color: 0xf3eadb })); pole.position.set(peak.x, peak.y + 1.6, peak.z); scene.add(pole);
@@ -236,7 +240,7 @@
         },
         fell: () => { falls++; sim.place(safe); faceNext(); say('Whoops! Try that jump again.'); sfx?.play('tick'); },
       });
-      const me = sim.me, solid = sim.solid;
+      const me = sim.me;
       function step(dt, now) {
         const k = input.keys, fwd = (k.has('w') || k.has('ArrowUp') ? 1 : 0) - (k.has('s') || k.has('ArrowDown') ? 1 : 0) - input.mz, strafe = (k.has('d') || k.has('ArrowRight') ? 1 : 0) - (k.has('a') || k.has('ArrowLeft') ? 1 : 0) + input.mx;
         if (k.has('q')) look.yaw += dt * 2; if (k.has('e')) look.yaw -= dt * 2;
@@ -250,14 +254,13 @@
       function draw(now) {
         for (const b of blocks) {
           b.mesh.position.set(b.cx, b.y, b.cz);
-          if (b.kind === 'gravel') { const t = b.fallAt ? now - b.fallAt : 0; b.mesh.visible = !(t > FUSE + 400 && t < BACK); b.mesh.position.y = b.y - (t > FUSE && t < FUSE + 400 ? (t - FUSE) / 400 * 1.2 : 0) + (t > 0 && t < FUSE ? Math.sin(t / 25) * .03 * (t / FUSE + .5) : 0); }
         }
         cloth.rotation.y = Math.sin(now / 300) * .25;
         ghost.position.set(me.x, me.y + .5 + (me.ground ? Math.sin(now / 300) * .03 : 0), me.z);
         ghost.rotation.y += ((me.face - ghost.rotation.y + Math.PI * 3) % (Math.PI * 2) - Math.PI) * .2;
         // Shadow on the highest surface below the ghost.
-        let floor = -Infinity; for (const b of blocks) if (solid(b, now) && Math.abs(b.cx - me.x) < .5 + HALF * .6 && Math.abs(b.cz - me.z) < .5 + HALF * .6 && b.y + .5 <= me.y + .01) floor = Math.max(floor, b.y + .5);
-        shadow.visible = floor > -Infinity; if (shadow.visible) { shadow.position.set(me.x, floor + .01, me.z); const h = me.y - floor; shadow.scale.setScalar(Math.max(.4, 1 - h * .12)); shadow.material.opacity = Math.max(.1, .4 - h * .05); }
+        let floor = sim.floor; for (const b of blocks) if (Math.abs(b.cx - me.x) < .5 + HALF * .6 && Math.abs(b.cz - me.z) < .5 + HALF * .6 && b.y + .5 <= me.y + .01) floor = Math.max(floor, b.y + .5);
+        { shadow.position.set(me.x, floor + .01, me.z); const h = me.y - floor; shadow.scale.setScalar(Math.max(.4, 1 - h * .12)); shadow.material.opacity = Math.max(.1, .4 - h * .05); }
         const nb = next(); outline.position.copy(nb.mesh.position); outline.visible = !finished; outline.material.opacity = .55 + Math.sin(now / 220) * .35;
         ghost.visible = view === 'third';
         if (view === 'first') {
@@ -278,7 +281,7 @@
       }
       function win() { sfx?.play('good'); say('You reached the peak!', 0); setTimeout(() => { close(); onFinish({ seconds: (performance.now() - t0) / 1000, falls }); }, 1000); }
       // Read-only handle for automated tests.
-      d.climb = { me, blocks, look, input, solid };
+      d.climb = { me, blocks, look, input };
       resize(); addEventListener('resize', resize); toast.hidden = true; t0 = last = performance.now();
       faceNext(); camera.position.set(me.x + 4, me.y + 3, me.z + 4); raf = requestAnimationFrame(frame);
     }).catch(() => say('The climb could not load. Check your connection and try again.', 0));
