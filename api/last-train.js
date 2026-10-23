@@ -8,7 +8,7 @@ const secret = () => crypto.randomBytes(24).toString('base64url');
 const equal = (a, b) => crypto.timingSafeEqual(Buffer.from(hash(a)), Buffer.from(hash(b)));
 // Names stay short so they fit under a seat in the lounge and on the carriage map.
 const NAME_MAX = 10;
-const cleanName = value => Array.from(String(value || '').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, '').replace(/\s+/g, ' ').trim()).slice(0, NAME_MAX).join('');
+const cleanName = value => Array.from(String(value || '').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, '').replace(/\s+/g, ' ').trim()).slice(0, NAME_MAX).join('').trim();
 const recovery = (room, p) => crypto.createHmac('sha256', p.tokenHash).update('last-train:' + room.code + ':' + p.id).digest('base64url').slice(0, 24);
 function player(name) { const tok = secret(); return { p: { id: crypto.randomUUID(), name, tokenHash: hash(tok) }, tok }; }
 function view(room, me) { const result = rules.view(room, me); result.me.recoveryCode = recovery(room, me); return result; }

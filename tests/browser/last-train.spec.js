@@ -84,7 +84,7 @@ test('seated public identities stay private and the role drawer supports drag, k
   const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
   const make=(action,data)=>call(handler,{action,requestId:crypto.randomUUID(),...data});
   const host=(await make('create',{name:'Sofa host'})).j,seats=[host];
-  for(let i=1;i<12;i++)seats.push((await make('join',{code:host.code,name:'Traveller '+i})).j);
+  for(let i=1;i<12;i++)seats.push((await make('join',{code:host.code,name:'Rider '+i})).j);
   let room=await store.load(host.code);rules.start(room);room.nightMode='legacy';rules.board(room);rules.beginNight(room);rules.advance(room);while(rules.nightRole(room)!=='saboteur')rules.advance(room);await store.save(room);
   const bad=room.players.filter(p=>rules.group(p)==='saboteur'),owner=seats.find(s=>s.meId===bad[0].id);
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
@@ -362,10 +362,10 @@ test('bot discussion reports an actual check, remembered heal and door lock whil
     await p.reload();await expect(p.locator('#lt-app')).toHaveAttribute('data-phase','gathering');
     room=await store.load(host.code);rules.beginDiscussion(room);room.speakingOrder=[inspector.id,medic.id,careful.id,bad.id,ally.id,human.id];await store.save(room);
     const speech=async id=>(await store.load(host.code)).speeches.find(s=>s.id===id)?.text;
-    await expect.poll(()=>speech(inspector.id)).toBe("I'm Inspector. I checked "+bad.name+' last night: BAD.');
-    await expect.poll(()=>speech(medic.id)).toBe("I'm Medic. I used my heal on Benny last night.");
-    await expect.poll(()=>speech(careful.id)).toBe("I'm Careful Passenger. I used my door lock last night.");
-    await expect.poll(()=>speech(bad.id)).toMatch(/^I'm (?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|a Passenger)/);
+    await expect.poll(()=>speech(inspector.id)).toMatch(new RegExp('Inspector\\. I checked '+bad.name+' last night: BAD\\.'));
+    await expect.poll(()=>speech(medic.id)).toMatch(/Medic\. I used my heal on Benny last night\./);
+    await expect.poll(()=>speech(careful.id)).toMatch(/Careful Passenger\. I used my door lock last night\./);
+    await expect.poll(()=>speech(bad.id)).toMatch(/(?:Inspector|Medic|Witness|Careful Passenger|Brave Passenger|Speaker|Passenger)\./);expect(await speech(bad.id)).not.toMatch(/Saboteur\.|Blocker|Forger/);
     expect(await speech(bad.id)).not.toContain(ally.name);room=await store.load(host.code);expect(room.speeches.length).toBeGreaterThanOrEqual(4);expect(new Set(room.speeches.map(s=>s.id)).size).toBe(room.speeches.length);
   }finally{await c.close();}
 });

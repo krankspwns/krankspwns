@@ -41,7 +41,25 @@
     if (cover === 'speaker') return "I'm Speaker. My double vote is still available. I don't trust " + who + '.';
     return "I'm a Passenger. I have no night power, but I don't trust " + who + '.';
   }
-  function statement(bot, view) {
+  // Bots sound different every turn: varied wording of the claim, an opener and an opinion about someone.
+  // The randomness is seeded by bot, journey and round, so asking the same bot twice gives the same line.
+  function seeded(seed) { let a = Math.imul(hash(seed) ^ 0x9e3779b9, 0x85ebca6b) >>> 0; const next = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; next(); next(); return next; }
+  const OPENERS = ['', '', '', 'Okay. ', 'Morning, everyone. ', 'Right, quick one. ', 'Listen. ', 'Alright. ', 'Honestly? ', 'So. '];
+  const CLAIMS = [r => 'I’m ' + r + '.', r => 'My role is ' + r + '.', r => 'I’ll be open: I’m ' + r + '.', r => 'Cards on the table, I’m ' + r + '.', r => 'For the record, I’m ' + r + '.'];
+  const PASSENGER_CLAIMS = ['I’m a Passenger.', 'Just a Passenger here.', 'I’m only a Passenger.', 'Cards on the table, I’m a Passenger.'];
+  const GOOD_TAKES = [n => 'I’m keeping an eye on ' + n + '.', n => n + ' has been very quiet.', n => 'I trust ' + n + ' for now.', n => 'Something about ' + n + '’s story feels off.', n => 'I want to hear from ' + n + ' next.', n => 'Can ' + n + ' explain last night?', () => 'Let’s not rush the vote.', () => 'Let’s compare every claim before voting.', () => ''];
+  const BAD_TAKES = [n => n + ' seems nervous to me.', n => 'I don’t buy ' + n + '’s story.', n => 'We should look hard at ' + n + '.', n => n + ' is dodging questions.', n => 'Did anyone else notice ' + n + ' changing their story?', () => ''];
+  function dress(bot, view, core) {
+    const r = seeded([bot.pid || view.meId, view.match, view.round].join(':')), pick = list => list[Math.floor(r() * list.length)];
+    const said = core.replace(/I'm (a |the )?(Passenger|Inspector|Medic|Witness|Brave Passenger|Careful Passenger|Speaker|Trainee)\./, (m, art, role) => role === 'Passenger' ? pick(PASSENGER_CLAIMS) : pick(CLAIMS)(role));
+    const bad = view.me.group === 'saboteur', allies = new Set((view.me.allies || []).map(p => p.id));
+    const others = view.players.filter(p => p.alive !== false && p.id !== view.meId && !(bad && allies.has(p.id)) && !core.includes(p.name));
+    const take = others.length ? pick(bad ? BAD_TAKES : GOOD_TAKES)(name(view, pick(others).id)) : '';
+    const line = pick(OPENERS) + said + (take ? ' ' + take : '');
+    return line.length <= 280 ? line : said;
+  }
+  function statement(bot, view) { return dress(bot, view, claim(bot, view)); }
+  function claim(bot, view) {
     const me = view.me, memory = bot.memory?.match === view.match && bot.memory.round === view.round ? bot.memory : {};
     if (me.group === 'saboteur') return lie(bot, view);
     const reports = (me.reports || []).filter(r => r.round === view.round), choice = me.nightChoice || memory.choice;
@@ -71,7 +89,7 @@
     if (me.role === 'careful') return choice?.power === 'lock' ? "I'm Careful Passenger. I used my door lock last night." : "I'm Careful Passenger. I did not lock my door last night. My lock is " + (me.used?.lock ? 'already used.' : 'still available.');
     if (me.role === 'speaker') return "I'm Speaker. My double vote is " + (me.used?.double ? 'already used.' : 'still available.');
     if (me.role === 'trainee') return "I'm Trainee. I have not been promoted, so I have no night action yet.";
-    return "I'm a Passenger. I have no night power. I'll compare everyone's claims before voting.";
+    return "I'm a Passenger. I have no night power.";
   }
   return { remember, statement };
 });

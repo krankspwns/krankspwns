@@ -4,7 +4,7 @@ const handler=require('../../api/last-train'),rules=require('../../lib/last-trai
 test.use({launchOptions:{executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream']}});
 async function fixture(browser,{mode='chat',denied=false}={}){
   const enter=async(action,extra)=>{const r=await call(handler,{action,requestId:crypto.randomUUID(),...extra});expect(r.s).toBe(200);return r.j;};
-  const host=await enter('create',{name:'Host'}),seats=[host];for(let i=1;i<6;i++)seats.push(await enter('join',{code:host.code,name:'Traveller '+i}));
+  const host=await enter('create',{name:'Host'}),seats=[host];for(let i=1;i<6;i++)seats.push(await enter('join',{code:host.code,name:'Rider '+i}));
   let room=await store.load(host.code);room.settings.discussion=mode;rules.start(room);room.round=1;rules.beginDiscussion(room);room.speakingOrder=[host.meId,...seats.slice(1).map(s=>s.meId)];room.deadline=Date.now()+120000;await store.save(room);
   const contexts=[];
   const open=async seat=>{

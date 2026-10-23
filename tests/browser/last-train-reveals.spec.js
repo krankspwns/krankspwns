@@ -3,7 +3,7 @@ const {call}=require('../helpers');
 const handler=require('../../api/last-train'),rules=require('../../lib/last-train-rules'),store=require('../../lib/last-train-store');
 async function fixture(browser,count=12){
   const make=async(action,extra)=>{const r=await call(handler,{action,requestId:crypto.randomUUID(),...extra},{},{'x-forwarded-for':test.info().testId});expect(r.s).toBe(200);return r.j;};
-  const host=await make('create',{name:'Host'}),seats=[host];for(let i=1;i<count;i++)seats.push(await make('join',{code:host.code,name:'Traveller '+i}));
+  const host=await make('create',{name:'Host'}),seats=[host];for(let i=1;i<count;i++)seats.push(await make('join',{code:host.code,name:'Rider '+i}));
   const room=await store.load(host.code);rules.start(room);room.nightMode='legacy';rules.beginNight(room);rules.advance(room);await store.save(room);
   const contexts=[];
   const open=async person=>{

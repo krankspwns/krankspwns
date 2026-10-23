@@ -12,7 +12,7 @@ async function boarding(browser, { reducedMotion = 'no-preference', blockedDownl
     expect(result.s).toBe(200); return result.j;
   };
   const host = await make({ action: 'create', name: 'Boarding host' });
-  for (let i = 1; i < 12; i++) await make({ action: 'join', code: host.code, name: 'Traveller ' + i });
+  for (let i = 1; i < 12; i++) await make({ action: 'join', code: host.code, name: 'Rider ' + i });
   const room = await store.load(host.code);
   rules.start(room); if (phase === 'boarding') rules.board(room);
   Object.assign(room, paused ? { paused: true, pauseRemaining: 3000, deadline: null } : { paused: false, deadline: Date.now() + 6000 });

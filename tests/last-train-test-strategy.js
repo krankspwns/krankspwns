@@ -7,7 +7,7 @@ function view(role,extra={}) {
 }
 for(const alignment of ['good','bad']) {
   const v=view('inspector',{reports:[{round:1,type:'check',targetId:'benny',alignment}]}),bot={pid:'bot'};remember(bot,v);
-  assert.equal(statement(bot,v),"I'm Inspector. I checked Benny last night: "+alignment.toUpperCase()+'.');
+  assert.match(statement(bot,v),new RegExp('Inspector\\. I checked Benny last night: '+alignment.toUpperCase()+'\\.'));
 }
 assert.match(statement({},view('inspector',{reports:[{round:1,type:'check-blocked'}]})),/blocked.*no GOOD or BAD result/);
 assert.match(statement({},view('inspector',{reports:[{round:0,type:'check',targetId:'benny',alignment:'bad'}]})),/no check result/);
@@ -42,5 +42,10 @@ for(const role of ['saboteur','blocker']) {
     if(cover==='witness')assert.match(text,/targeted Luna/);
     v.round=2;const second=statement(bot,v);if(['witness','brave','careful','medic'].includes(cover))assert.match(second,/already used/);v.round=1;
   }
+}
+// Bots vary their wording from turn to turn, but a bot asked twice in one turn says the same thing.
+{
+  const lines=new Set();for(let round=1;round<=8;round++){const v=view('passenger');v.round=round;lines.add(statement({pid:'bot'},v));assert.equal(statement({pid:'bot'},v),statement({pid:'bot'},v));}
+  assert.ok(lines.size>=4);
 }
 console.log('Last Train test strategy: real checks, medicine memory, blocked powers, limited powers, promotion and plausible Saboteur lies passed');

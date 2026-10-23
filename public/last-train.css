@@ -2225,3 +2225,19 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .departure-arrow svg { display: block; width: 20px; height: 20px; }
 /* Map cabins: a little air between the face and the name under it. */
 .map-cabin .map-name { margin-top: 3px; }
+/* Create A Room: deep amber so white text reads clearly; the arrow sits in a circle like Join's. */
+.cta-create { background: linear-gradient(135deg, #f0b048, #d48a24 45%, #a85e14) !important; border: 1px solid #ffd790 !important; color: #fff !important;
+  box-shadow: 0 10px 26px #d48a2455, inset 0 1px #ffffff66, inset 0 -3px 8px #7a3e0a55 !important; text-shadow: 0 1px 2px #6a340a88; }
+.cta-create .cta-icon { background: #ffffff26; box-shadow: inset 0 0 0 1px #ffffff40; color: #fff; }
+.cta-create .cta-text small { opacity: .9; color: #fff3df; }
+.cta-create .cta-arrow { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #ffffff2e; font-size: 0; }
+.cta-create .cta-arrow::before { content: ''; width: 16px; height: 16px; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h13M13 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h13M13 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat; }
+.cta-create .cta-arrow { line-height: 0; }
+.cta-create .cta-arrow::before { display: block; }
+/* Round arrows: an SVG centred with flexbox (no text baseline to push it off centre). */
+.cta-arrow, .join-arrow { display: flex !important; align-items: center; justify-content: center; line-height: 0; flex: none; }
+.cta-arrow svg { width: 16px; height: 16px; display: block; }
+.join-arrow svg { width: 13px; height: 13px; display: block; }
+.cta-create .cta-arrow::before { content: none; display: none; }

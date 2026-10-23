@@ -5,7 +5,7 @@ const call = (body, query = {}, headers = {}) => rawCall(api, body, query, { ...
 async function setup(browser) {
   const make = async (action, extra) => { const r = await call({ action, requestId: crypto.randomUUID(), ...extra }); expect(r.s).toBe(200); return r.j; };
   const host = await make('create', { name: 'Host' }), seats = [host];
-  for(let i=1;i<9;i++)seats.push(await make('join',{code:host.code,name:'Traveller '+i}));
+  for(let i=1;i<9;i++)seats.push(await make('join',{code:host.code,name:'Rider '+i}));
   const room = await store.load(host.code); rules.start(room);
   ['passenger','careful','brave','witness','inspector','medic','trainee','saboteur','blocker'].forEach((role,i)=>Object.assign(room.players[i],{role,originalRole:role}));
   rules.beginNight(room); rules.advance(room); room.deadline=Date.now()+120000; await store.save(room);
