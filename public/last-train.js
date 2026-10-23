@@ -373,7 +373,9 @@
     n.setAttribute('aria-label', replay ? 'PLAY AGAIN' : 'START JOURNEY');
     const icon = el('span', { class: 'departure-icon', 'aria-hidden': 'true' });
     icon.append(trainMark('ticket-train'));
-    n.replaceChildren(icon, el('span', { class: 'departure-copy' }, txt('small', '', replay ? 'A NEW DEAL. A NEW SECRET.' : 'ALL ABOARD'), txt('b', '', replay ? 'Another Journey' : 'Start Journey')), txt('span', 'departure-arrow', '→'));
+    n.replaceChildren(icon, el('span', { class: 'departure-copy' }, txt('small', '', replay ? 'A NEW DEAL. A NEW SECRET.' : 'ALL ABOARD'), txt('b', '', replay ? 'Another Journey' : 'Start Journey')), el('span', { class: 'departure-arrow', 'aria-hidden': 'true' }));
+    // An SVG arrow sits in the exact centre of its circle, unlike a text arrow on the font's baseline.
+    n.lastChild.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
     return n;
   }
   function waitingRoom() {

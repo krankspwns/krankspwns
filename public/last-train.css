@@ -2222,3 +2222,6 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .think-pin .pin-round { width: 52px; height: 52px; }
 .phrase-chip.on.on { background: linear-gradient(180deg, #ffe7b0, #e2b45a) !important; border-color: #fff0c8 !important; color: #231b2d !important; box-shadow: 0 0 0 3px #f2ce8633; }
 .think-pin small b { display: block; color: #ffd0da; font-size: 13px; }
+.departure-arrow svg { display: block; width: 20px; height: 20px; }
+/* Map cabins: a little air between the face and the name under it. */
+.map-cabin .map-name { margin-top: 3px; }
