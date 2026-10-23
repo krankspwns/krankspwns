@@ -1805,3 +1805,68 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
 .toss-result b { font: 900 34px/1 Inter, sans-serif; letter-spacing: 6px; color: #ffe39a; text-shadow: 0 3px 0 #6a3d10, 0 0 24px #f2c45a88; }
 .toss-result.tails b { color: #c9c0e8; text-shadow: 0 3px 0 #2a2148, 0 0 20px #8a7fd066; }
 .toss-result small { font: 700 14px Inter, sans-serif; color: #f6e4c6; }
+/* Medicine: glass-vial cards */
+.medic-console > .medicine-card { grid-column: auto !important; position: relative; display: grid !important; grid-template-rows: auto auto; justify-items: center; align-content: start; gap: 6px; min-height: 0 !important; padding: 14px 10px 12px !important; border-radius: 20px !important; overflow: hidden; text-align: center; transition: transform .15s ease, filter .2s !important; }
+.medicine-card.med-heal { background: radial-gradient(circle at 50% 32%, #b8fff0 0%, #4fd8b3 32%, transparent 62%), linear-gradient(180deg, #1f8f78, #0f4f48) !important; border: 1.5px solid #b8fff099 !important; color: #eafff8 !important; box-shadow: inset 0 1px #ffffff55, inset 0 -10px 24px #00000033, 0 10px 22px #0007, 0 0 24px #4fd8b333 !important; }
+.medicine-card.med-poison { background: radial-gradient(circle at 50% 32%, #f2c7ff 0%, #b04fd8 32%, transparent 62%), linear-gradient(180deg, #7a2a8f, #3a0f4f) !important; border: 1.5px solid #e6b8ff99 !important; color: #fbeaff !important; box-shadow: inset 0 1px #ffffff55, inset 0 -10px 24px #00000033, 0 10px 22px #0007, 0 0 24px #b04fd833 !important; }
+.medicine-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, #ffffff30 42%, transparent 54%); transform: translateX(-60%); transition: transform .6s ease; pointer-events: none; }
+.medicine-card:hover:not(:disabled)::after { transform: translateX(60%); }
+.medicine-card:hover:not(:disabled) { transform: translateY(-2px); }
+.med-art { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: radial-gradient(circle, #ffffff40, transparent 68%); }
+.med-art .medicine-icon { width: 60px !important; height: 60px !important; filter: drop-shadow(0 6px 8px #0008); animation: vial-bob 2.6s ease-in-out infinite; }
+.med-poison .med-art .medicine-icon { animation-delay: -1.3s; }
+@keyframes vial-bob { 50% { transform: translateY(-3px) rotate(-4deg); } }
+.med-copy b { display: block; font: 850 17px Inter, sans-serif; letter-spacing: .3px; text-shadow: 0 1px 2px #0006; }
+.med-copy small { display: block; font: 600 11px Inter, sans-serif; opacity: .85; margin-top: 1px; }
+.med-left { position: absolute; top: 9px; right: 9px; padding: 2px 7px; border-radius: 999px; background: #00000040; font: 800 9.5px Inter, sans-serif; letter-spacing: .4px; }
+.medicine-card:disabled { filter: saturate(.25) brightness(.7) !important; }
+.medicine-card:disabled .medicine-icon { animation: none; }
+@media (prefers-reduced-motion: reduce) { .med-art .medicine-icon { animation: none; } }
+/* Think card: the number sits dead centre in a ring that drains with the clock */
+.think-icon .countdown { position: absolute !important; inset: 0 !important; display: grid !important; place-items: center; margin: 0 !important; padding: 0 !important; width: auto !important; height: auto !important; min-width: 0 !important; transform: none !important; font: 800 16px/1 Inter, sans-serif !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+.think-icon { transition: background .9s linear; }
+/* Carriage map centred inside its panel */
+.carriage-panel > .loop-map { width: calc(100% - 28px); max-width: 460px; margin: 12px auto 6px; }
+.footsteps-result .loop-map { width: 100%; }
+/* Desktop: use the width with two columns */
+@media (min-width: 1100px) {
+  .journey-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .journey-columns > * { margin-top: 0 !important; }
+  .lounge-scene { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 18px; grid-auto-flow: row dense; align-items: start; }
+  .lounge-scene > * { grid-column: 1 / -1; }
+  .lounge-scene > .carriage-panel { grid-column: 2; margin-top: 14px; }
+  .lounge-scene > .lounge-console, .lounge-scene > .speech-console, .lounge-scene > .voting-console, .lounge-scene > .morning-reveal { grid-column: 1; width: auto !important; max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; }
+  .finale { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; grid-auto-flow: row dense; }
+  .finale > .world.finale-scene { grid-column: 1 / -1; }
+  .finale > .journey-awards, .finale > .train-chat { grid-column: 1; }
+  .finale > .night-replay, .finale > .ghost-strip, .finale > .journey-log { grid-column: 2; }
+}
+/* ===== Action cards: one family for Heal / Poison and Record / Type / Done ===== */
+.speak-choice, .medic-console > .medicine-card { position: relative; overflow: hidden; isolation: isolate; font-feature-settings: 'ss01', 'cv11'; -webkit-font-smoothing: antialiased; }
+.speak-choice::before, .medic-console > .medicine-card::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
+  background: radial-gradient(circle at 50% 30%, #ffffff38, transparent 55%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='11' cy='11' r='1' fill='%23fff' fill-opacity='.12'/%3E%3C/svg%3E"); }
+.speak-choice::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, #ffffff2e 42%, transparent 54%); transform: translateX(-60%); transition: transform .6s ease; pointer-events: none; }
+.speak-choice:hover:not(:disabled)::after { transform: translateX(60%); }
+/* Title, subtitle and corner badge: the same scale everywhere */
+.choice-copy { gap: 5px !important; justify-items: center; }
+.choice-copy b, .med-copy b { font: 800 18px/1.1 Inter, system-ui, sans-serif !important; letter-spacing: -.35px !important; text-shadow: 0 1px 0 #0003, 0 2px 10px #0003; }
+.choice-copy small, .med-copy small { display: inline-block !important; padding: 3px 9px; border-radius: 999px; background: #00000030; box-shadow: inset 0 0 0 1px #ffffff1f; font: 700 9.5px/1.2 Inter, system-ui, sans-serif !important; letter-spacing: 1px; text-transform: uppercase; opacity: 1 !important; }
+.med-copy { display: grid; gap: 5px; justify-items: center; }
+.med-copy small { margin-top: 0 !important; }
+.med-left { font: 800 9px/1 Inter, system-ui, sans-serif !important; letter-spacing: 1.2px; text-transform: uppercase; padding: 4px 8px !important; background: #0000004d !important; box-shadow: inset 0 0 0 1px #ffffff26; font-variant-numeric: tabular-nums; }
+.done-choice .choice-copy small { background: #2a160618; box-shadow: inset 0 0 0 1px #2a160622; }
+.done-choice .choice-copy b { text-shadow: 0 1px 0 #fff6; }
+/* Record / Type / Done cards */
+.speak-choices { gap: 12px !important; }
+.speak-choice { min-height: 142px !important; gap: 10px !important; border-radius: 22px !important; padding: 18px 10px 16px !important; }
+.choice-icon { width: 60px !important; height: 60px !important; background: radial-gradient(circle at 35% 30%, #ffffff66, #ffffff1a 70%) !important; box-shadow: inset 0 1px #ffffffaa, inset 0 -3px 6px #0000001f, 0 6px 14px #0004, 0 0 0 5px #ffffff14 !important; }
+.choice-icon svg { width: 30px !important; height: 30px !important; filter: drop-shadow(0 2px 3px #0004); }
+.record-choice { background: radial-gradient(ellipse 90% 70% at 50% 0%, #ffb3a8 0%, transparent 60%), linear-gradient(180deg, #ff7a86 0%, #e3405f 52%, #9c2445 100%) !important; border: 1.5px solid #ffc6cd !important; box-shadow: inset 0 1px #ffffff66, inset 0 -10px 24px #00000033, 0 10px 24px #0007, 0 0 26px #ff5a7a33 !important; }
+.type-choice { background: radial-gradient(ellipse 90% 70% at 50% 0%, #c9bdff 0%, transparent 60%), linear-gradient(180deg, #8f7bff 0%, #5a46d8 52%, #34288f 100%) !important; border: 1.5px solid #d4cbff !important; box-shadow: inset 0 1px #ffffff66, inset 0 -10px 24px #00000033, 0 10px 24px #0007, 0 0 26px #7a63ff33 !important; }
+.done-choice { background: radial-gradient(ellipse 90% 70% at 50% 0%, #fffbe6 0%, transparent 60%), linear-gradient(180deg, #ffe7a0 0%, #efc062 48%, #c8892f 100%) !important; border: 1.5px solid #fff3c8 !important; }
+/* Medicine cards share the scale */
+.medic-console > .medicine-card { gap: 8px !important; padding: 16px 10px 14px !important; border-radius: 22px !important; }
+@media (max-width: 380px) { .choice-copy b, .med-copy b { font-size: 16px !important; } .choice-copy small, .med-copy small { font-size: 8.5px !important; letter-spacing: .7px; } }
+.choice-copy, .med-copy { max-width: 100%; padding: 0 4px; }
+.choice-copy b, .med-copy b { font-size: clamp(15px, 4.4vw, 18px) !important; text-wrap: balance; overflow-wrap: anywhere; }
+.choice-copy small, .med-copy small { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }

@@ -527,7 +527,12 @@
   function medicineButton(kind, label, click, disabled) {
     const n = btn(label, click, kind === 'heal' ? 'heal' : 'danger', disabled);
     n.setAttribute('aria-label', label);
-    n.replaceChildren(el('img', { class: 'medicine-icon', src: '/last-train/medicine-' + kind + '.svg', alt: '', 'aria-hidden': 'true', width: 54, height: 54 }), txt('span', '', kind === 'heal' ? 'Heal' : 'Poison'));
+    // A glass-vial card: the bottle floats over a glow, with what it does and how many are left.
+    const left = state.me.medicine?.[kind] ?? 0, patient = state.me.patientId;
+    n.classList.add('medicine-card', 'med-' + kind);
+    n.replaceChildren(el('span', { class: 'med-art', 'aria-hidden': 'true' }, el('img', { class: 'medicine-icon', src: '/last-train/medicine-' + kind + '.svg', alt: '', width: 64, height: 64 })),
+      el('span', { class: 'med-copy' }, txt('b', '', kind === 'heal' ? 'Heal' : 'Poison'), txt('small', '', kind === 'heal' ? (patient ? 'Save ' + who(patient) : 'Nobody to save') : 'Choose anyone')),
+      txt('span', 'med-left', left + ' left'));
     return n;
   }
   const nightNotesKey = () => 'lt-night-notes:' + [state.code, state.meId, state.match].join(':');
@@ -759,12 +764,13 @@
       const row = Math.floor(i / perRow), col = i % perRow, count = Math.min(perRow, state.players.length - row * perRow);
       const near = rows > 1 && row === rows - 1;
       const depth = rows === 1 ? 1 : row / (rows - 1);
-      const y = rows === 1 ? 89 : compactScene.matches ? (rows === 2 ? [56,93][row] : [40,66,93][row]) : [58,94][row];
+      const y = rows === 1 ? 89 : compactScene.matches ? (rows === 2 ? [58,93][row] : [43,68,93][row]) : [60,94][row];
       const width = compactScene.matches ? 20 + depth * 3 : 13 + depth * 2.5;
       // Every row sits in close pairs, like the near row: two armchairs side by side, then an aisle.
       const groups = compactScene.matches ? { 4: [[23.5,2],[76.5,2]], 3: [[29,2],[78,1]], 2: [[50,2]], 1: [[50,1]] } : { 6: [[16,2],[50,2],[84,2]], 5: [[19,2],[50,1],[81,2]], 4: [[27,2],[73,2]], 3: [[33,2],[75,1]], 2: [[50,2]], 1: [[50,1]] };
       const slots = groups[count].flatMap(([center, n]) => n === 2 ? [center - width * .41, center + width * .41] : [center]);
-      const x = slots[col];
+      // Rows further back sit closer together, so outer chairs never touch the angled side walls.
+      const x = 50 + (slots[col] - 50) * (.74 + .26 * depth);
       return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', 'data-seat-pair': Math.floor(col / 2), style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) + ';--depth:' + depth.toFixed(2) },
         el('span', { class: 'seat-number', 'aria-label': 'Seat ' + p.seat + (!p.alive ? ' · Out' : '') }, String(p.seat).padStart(2,'0')), !p.alive ? el('span', { class: 'out-stamp', 'aria-hidden': 'true' }, 'OUT') : null, el('div', { class: 'seat-figure' }, el('span', { class: 'seat-shadow', 'aria-hidden': 'true' }), seatedTraveller(p)),
         el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, near ? avatar(p, 'seat-identity') : null, txt('b', 'lounge-name', p.name + (p.id === state.meId ? ' · You' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), p.pins ? el('span', { class: 'seat-pins', 'aria-label': p.pins + (p.pins === 1 ? ' suspect pin' : ' suspect pins') }, svgPin(), txt('b', '', String(p.pins)), txt('small', '', p.pins === 1 ? 'pin' : 'pins')) : null, tallies.has(p.id) ? tallyBadge(tallies.get(p.id), tallies.get(p.id) === topVotes) : null));
@@ -823,8 +829,8 @@
         el('textarea', { id: 'lt-speech', rows: 3, maxLength: 280, value: speechDraft, placeholder: 'What did you find? Who do you trust?', 'aria-label': 'Your findings', disabled: busy || state.paused, oninput: e => speechDraft = e.target.value }),
         el('div', { class: 'speech-form-actions' }, btn('Use Voice Instead', () => { typing = false; render(); }, 'text-button', false, 'use-voice'), el('button', { type: 'submit', class: 'gold', disabled: busy || state.paused, 'data-focus': 'share-findings' }, 'Share Message')));
       else options = el('div', { class: 'speak-choices' + (busyVoice ? ' recording' : '') }, voice.controls(),
-        busyVoice ? null : mode === 'chat' ? choiceCard('type-choice', KEYS_ICON, 'Type Message', 'One short message', () => { typing = true; render(); requestAnimationFrame(() => document.getElementById('lt-speech')?.focus()); }, state.paused, 'type-message')
-          : choiceCard('done-choice', DONE_ICON, 'I’m Done Speaking', 'Pass to the next seat', () => send('finishSpeech'), state.paused, 'done-speaking'));
+        busyVoice ? null : mode === 'chat' ? choiceCard('type-choice', KEYS_ICON, 'Type Message', 'One message', () => { typing = true; render(); requestAnimationFrame(() => document.getElementById('lt-speech')?.focus()); }, state.paused, 'type-message')
+          : choiceCard('done-choice', DONE_ICON, 'I’m Done Speaking', 'Next seat', () => send('finishSpeech'), state.paused, 'done-speaking'));
     }
     return el('section', { class: 'speech-console' }, el('div', { class: 'speaking-person' }, avatar(state.speakerId), el('div', {}, txt('small', '', 'SEAT ' + player(state.speakerId).seat + ' · ' + (state.speakerIndex + 1) + '/' + state.speakingOrder.length), el('h2', {}, own ? 'It’s your turn.' : who(state.speakerId) + ' has the floor.')), txt('span','countdown speaker-seconds','')),
       txt('p', 'console-hint', own ? mode === 'chat' ? 'What happened last night? Record your voice or type one short message.' : 'Tell the group what you know, out loud. You can also record it. Up to ' + state.speakSeconds + ' seconds.' : mode === 'chat' ? 'Read their message, or play their recording after this turn. Your turn follows the seat numbers.' : 'Listen to their story. Your turn follows the seat numbers.'),
@@ -1153,7 +1159,8 @@
     const me = state.me;
     if (me.observer || me.alive || me.group === 'saboteur' || !state.saboteurCount || ['lobby', 'finished'].includes(state.phase)) return null;
     if (me.ghostGuess) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', 'Your Ghost Guess Is Locked'), el('div', { class: 'ghost-faces' }, ...me.ghostGuess.ids.map(id => el('span', { class: 'ghost-face' }, avatar(id), txt('small', '', who(id))))), txt('small', '', 'Revealed at the end. +5 WP for each right guess.')));
-    return el('div', { class: 'ghost-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Make Your Ghost Guess'), txt('small', '', 'Who are the ' + state.saboteurCount + ' Saboteur' + (state.saboteurCount > 1 ? 's' : '') + '? Guess now, before you learn more. +5 WP for each right guess.')), btn('Guess Now', ghostDialog, 'gold', false, 'ghost-guess'));
+    if (!me.ghostOpen) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', 'Ghost Guesses Are Closed'), txt('small', '', 'The window closed at the end of the night after you went out.')));
+    return el('div', { class: 'ghost-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Make Your Ghost Guess'), txt('small', '', 'Who are the ' + state.saboteurCount + ' Saboteur' + (state.saboteurCount > 1 ? 's' : '') + '? Open until Night ' + me.ghostUntil + ' ends. +5 WP for each right guess.')), btn('Guess Now', ghostDialog, 'gold', false, 'ghost-guess'));
   }
   function ghostDialog() {
     const need = state.saboteurCount, picked = new Set();
@@ -1171,7 +1178,7 @@
   }
   function match() {
     const scene = state.phase === 'briefing' ? introScene() : state.phase === 'boarding' ? boardingScene() : ['settling','night'].includes(state.phase) ? (state.me.observer ? observerNight() : cabinScene()) : loungeScene();
-    return el('div', {class:'journey'}, scene, chatLog(), history());
+    return el('div', {class:'journey'}, scene, el('div', { class: 'journey-columns' }, chatLog(), history()));
   }
   function bridgeBoarding() {
     if (root.dataset.phase !== 'boarding' || state?.phase !== 'settling' || !motionOK) return;
@@ -1313,6 +1320,7 @@
     // The last five seconds turn red, wherever a countdown is shown.
     const urgent = !!state.deadline && !state.paused && seconds <= 5;
     document.querySelectorAll('#lt-app .countdown,.lt-dialog .countdown').forEach(n => {n.textContent=state.paused?'Ⅱ':String(seconds).padStart(2,'0');n.classList.toggle('urgent',urgent);n.setAttribute('aria-label',state.paused?'Paused':seconds+' seconds remaining');});
+    root.querySelectorAll('.think-icon').forEach(n => n.style.setProperty('--p', (state.duration ? Math.min(100, seconds / state.duration * 100) : 100).toFixed(1) + '%'));
     root.querySelectorAll('.night-track').forEach(n=>n.style.setProperty('--phase',state.phase==='night'&&state.duration?Math.min(1,Math.max(0,1-seconds/state.duration)).toFixed(3):0));
     root.querySelectorAll('.journey-clock').forEach(n=>{n.style.setProperty('--remaining',state.paused?1:Math.min(1,seconds/(state.duration||20)));n.classList.toggle('urgent',urgent);});
   }

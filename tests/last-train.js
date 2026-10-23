@@ -213,6 +213,15 @@ function roundFiveTests() {
     while (room.phase === 'night') r.advance(room);
     const by = room.nightLog.at(-1).footsteps[0].by; if (i % 2) assert.ok([a.id, b.id].includes(by)); else assert.equal(by, b.id);
   }
+  // Ghost guesses: open from going out until the end of the next night.
+  {
+    const room = shared(['passenger','passenger','passenger','inspector','medic','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), out = room.players.find(p => p.role === 'passenger');
+    while (r.nightRole(room) !== 'moves') r.advance(room); r.nightChoice(room, bad, { attackId: out.id }); while (room.phase === 'night') r.advance(room);
+    assert.equal(out.alive, false); assert.equal(out.outRound, room.round); assert.equal(r.view(room, out).me.ghostOpen, true); assert.equal(r.view(room, out).me.ghostUntil, room.round + 1);
+    while (room.phase !== 'voting') r.advance(room); r.resolveVote(room); r.advance(room); assert.equal(room.phase, 'settling'); assert.equal(r.view(room, out).me.ghostOpen, true);
+    while (room.phase !== 'gathering') r.advance(room); assert.equal(r.view(room, out).me.ghostOpen, false);
+    assert.throws(() => r.ghostGuess(room, out, [bad.id]), /close/);
+  }
   // Auto shuffle draws a valid new mix whenever a journey starts; mornings give everyone time to think.
   {
     const room = shared(['witness','passenger','inspector','medic','saboteur']); room.settings.autoShuffle = true; room.settings.roles = null;
