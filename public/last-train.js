@@ -1249,9 +1249,9 @@
   }
   function ghostStrip() {
     const ghosts = Object.entries(state.ghosts || {}); if (!ghosts.length) return null;
-    const bad = new Set(state.players.filter(p => p.group === 'saboteur').map(p => p.id));
+    const bad = new Set(state.players.filter(p => p.group === 'saboteur').map(p => p.id)), roleOf = id => state.players.find(p => p.id === id) || {};
     return el('section', { class: 'panel ghost-strip' }, el('div', { class: 'ghost-strip-head' }, ghostIcon(), el('div', {}, txt('span', 'eyebrow', 'FROM BEYOND THE TRAIN'), el('h2', {}, 'Ghost Guesses'))),
-      ...ghosts.map(([id, g]) => el('div', { class: 'ghost-row' }, el('span', { class: 'ghost-who' }, avatar(id, 'replay-face'), txt('b', '', id === state.meId ? 'You' : who(id))), el('span', { class: 'ghost-picks' }, ...g.ids.map(x => el('span', { class: 'ghost-pick ' + (bad.has(x) ? 'right' : 'wrong') }, avatar(x, 'replay-face'), txt('small', '', bad.has(x) ? '✓' : '✗')))))));
+      ...ghosts.map(([id, g]) => el('div', { class: 'ghost-row' }, el('span', { class: 'ghost-who' }, avatar(id, 'replay-face'), txt('b', '', id === state.meId ? 'You' : who(id)), g.kind === 'powers' ? txt('small', 'ghost-kind', 'Powers') : null), el('span', { class: 'ghost-picks' }, ...g.ids.map((x, i) => { const ok = g.kind === 'powers' ? [roleOf(x).role, roleOf(x).originalRole].includes(g.roles?.[i]) : bad.has(x); return el('span', { class: 'ghost-pick ' + (ok ? 'right' : 'wrong') }, avatar(x, 'replay-face'), txt('small', '', (g.roles ? role(g.roles[i]).name + ' ' : '') + (ok ? '✓' : '✗'))); })))));
   }
   const CHIP_ICONS = {
     roles: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="10" height="14" rx="2" transform="rotate(-10 8.5 12)" fill="#f2ce86" stroke="#7a4c14" stroke-width="1.2"/><rect x="10" y="4.5" width="10" height="14" rx="2" transform="rotate(8 15 11.5)" fill="#fff3d6" stroke="#7a4c14" stroke-width="1.2"/><circle cx="15" cy="10" r="2" fill="#c94b68"/><path d="M12.4 15.2c.6-1.6 1.6-2.3 2.6-2.3s2 .7 2.6 2.3" stroke="#c94b68" stroke-width="1.6" stroke-linecap="round"/></svg>',
@@ -1284,7 +1284,7 @@
     const me = state.me; if (!me.climbOpen || !window.createGhostClimb) return null;
     const seen = (me.reports || []).filter(r => r.type === 'ghostReveal');
     return el('section', { class: 'climb-card' }, el('div', { class: 'climb-card-art', 'aria-hidden': 'true' }), el('div', { class: 'climb-card-copy' },
-      txt('span', 'eyebrow', 'GHOST CLIMB'), el('h3', {}, 'Climb To The Peak'), txt('p', '', 'Move, jump and reach the flag to see one traveller’s role. Ghosts stay silent: no hints to the living.'),
+      txt('span', 'eyebrow', 'GHOST CLIMB'), el('h3', {}, 'Escape Up The Luggage'), txt('p', '', 'Climb to the green signal to see one traveller’s role. Ghosts stay silent: no hints to the living.'),
       seen.length ? el('div', { class: 'climb-seen' }, ...seen.map(r => el('span', { class: 'climb-seen-item' }, avatar(r.targetId, 'climb-seen-face'), el('span', {}, txt('b', '', who(r.targetId)), txt('small', '', role(r.role).name))))) : null,
       // A finished climb whose reveal was not picked yet keeps its reward.
       me.ghostClimb && !me.ghostClimb.done && climbedSeeds.has(me.ghostClimb.seed) ? btn('Choose Whose Role To See', pickReveal, 'gold climb-start', busy || state.paused, 'pick-reveal')
@@ -1293,7 +1293,7 @@
   const climbedSeeds = new Set();
   async function startClimb() {
     await send('ghostClimb'); const run = state?.me.ghostClimb; if (!run || run.done) return;
-    window.createGhostClimb({ seed: run.seed, sfx, onFinish: () => { climbedSeeds.add(run.seed); render(); pickReveal(); }, onClose: () => {} });
+    window.createGhostClimb({ seed: run.seed, sfx, onAudio: on => soundtrack.hold('climb', on), onFinish: () => { climbedSeeds.add(run.seed); render(); pickReveal(); }, onClose: () => {} });
   }
   function pickReveal() {
     const seen = new Set((state.me.reports || []).filter(r => r.type === 'ghostReveal').map(r => r.targetId));
@@ -1312,11 +1312,32 @@
   }
   function ghostGuessBlock() {
     const me = state.me;
-    if (me.observer || me.alive || me.group === 'saboteur' || !state.saboteurCount || ['lobby', 'finished'].includes(state.phase)) return null;
-    if (me.ghostGuess) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', 'Your Ghost Guess Is Locked'), el('div', { class: 'ghost-faces' }, ...me.ghostGuess.ids.map(id => el('span', { class: 'ghost-face' }, avatar(id), txt('small', '', who(id))))), txt('small', '', 'Revealed at the end. +5 WP for each right guess.')));
+    if (me.observer || me.alive || !state.saboteurCount || ['lobby', 'finished'].includes(state.phase)) return null;
+    if (me.ghostGuess) return el('div', { class: 'ghost-block locked' }, ghostIcon(), el('div', {}, txt('b', '', me.ghostGuess.kind === 'powers' ? 'Your Powers Guess Is Locked' : 'Your Ghost Guess Is Locked'), el('div', { class: 'ghost-faces' }, ...me.ghostGuess.ids.map((id, i) => el('span', { class: 'ghost-face' }, avatar(id), txt('small', '', who(id) + (me.ghostGuess.roles ? ' · ' + role(me.ghostGuess.roles[i]).name : ''))))), txt('small', '', 'Revealed at the end. +5 WP for each right guess.')));
     if (!me.ghostOpen || !me.ghostNeed) return null;
-    const n = me.ghostNeed, gone = state.saboteurCount - n;
-    return el('div', { class: 'ghost-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Make Your Ghost Guess'), txt('small', '', (n > 1 ? 'Who are the ' + n + ' Saboteurs' : 'Who is the Saboteur') + (gone ? ' still aboard' : '') + '? Open until the journey ends. +5 WP for each right guess. Lock it to unlock the Ghost Climb.')), btn('Guess Now', ghostDialog, 'gold', false, 'ghost-guess'));
+    const n = me.ghostNeed, powers = me.ghostKind === 'powers', gone = state.saboteurCount - n;
+    const ask = powers ? 'Who holds each power still aboard? ' + me.ghostRoles.map(r => role(r).name).join(', ') + '.'
+      : (n > 1 ? 'Who are the ' + n + ' Saboteurs' : 'Who is the Saboteur') + (gone ? ' still aboard' : '') + '?';
+    return el('div', { class: 'ghost-block' }, ghostIcon(), el('div', {}, txt('b', '', powers ? 'Make Your Powers Guess' : 'Make Your Ghost Guess'), txt('small', '', ask + ' Open until the journey ends. +5 WP for each right guess. Climb to the peak first to learn a role.')), btn('Guess Now', powers ? powersDialog : ghostDialog, 'gold', false, 'ghost-guess'));
+  }
+  // Saboteur ghosts match each power still aboard to the traveller they think holds it.
+  function powersDialog() {
+    const roles = state.me.ghostRoles, picks = roles.map(() => null); let active = 0;
+    const d = dialog('Your powers guess', el('div', { class: 'target-hint' }, ghostIcon('tone-icon ghost-tone'), txt('p', '', 'Pick a power, then the traveller you think holds it. +5 WP for each right match. Your guess locks once you confirm.'))); d.classList.add('target-dialog', 'tone-pin', 'ghost-dialog', 'powers-dialog');
+    const slots = el('div', { class: 'power-slots' }), confirm = btn('Match Every Power', () => { d.close(); send('ghostGuess', { ids: picks }); }, 'gold', true, 'confirm-ghost');
+    const people = state.players.filter(p => p.id !== state.meId && p.alive !== false && !isAlly(p.id));
+    const grid = el('div', { class: 'manifest-targets' }, ...people.map(p => targetCard(p, () => {
+      const was = picks.indexOf(p.id); if (was >= 0) picks[was] = null; picks[active] = p.id;
+      const empty = picks.findIndex(x => !x); active = empty >= 0 ? empty : active; paint();
+    })));
+    function paint() {
+      slots.replaceChildren(...roles.map((r, i) => { const b = el('button', { type: 'button', class: 'power-slot' + (i === active ? ' active' : '') + (picks[i] ? ' set' : ''), 'aria-pressed': String(i === active) },
+        el('span', { class: 'power-slot-pic' }, rolePortrait(r, 'power-slot-art'), picks[i] ? avatar(picks[i], 'power-slot-face') : null), el('span', { class: 'power-slot-text' }, txt('b', '', role(r).name), txt('small', '', picks[i] ? who(picks[i]) : 'Choose who')));
+        b.onclick = () => { active = i; paint(); }; return b; }));
+      grid.querySelectorAll('.manifest-target').forEach(n => { const i = picks.indexOf(n.dataset.id); n.classList.toggle('selected', i >= 0); n.setAttribute('aria-pressed', String(i >= 0)); });
+      const left = picks.filter(x => !x).length; confirm.disabled = left > 0; confirm.textContent = left ? left + ' Left To Match' : 'Lock My Guess';
+    }
+    paint(); d.append(slots, grid, el('div', { class: 'confirm-bar' }, confirm, btn('Cancel', () => d.close(), 'text-button')));
   }
   function ghostDialog() {
     const need = state.me.ghostNeed, picked = new Set();

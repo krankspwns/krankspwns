@@ -152,9 +152,15 @@ function roundFiveTests() {
     const room = shared(['witness','passenger','inspector','medic','saboteur','saboteur']), out = person(room,'passenger'), bad = room.players.filter(p => r.group(p) === 'saboteur');
     rejected(() => r.ghostGuess(room, out, bad.map(p => p.id)), 409);
     out.alive = false; rejected(() => r.ghostGuess(room, out, [bad[0].id]), 400); r.ghostGuess(room, out, bad.map(p => p.id)); rejected(() => r.ghostGuess(room, out, bad.map(p => p.id)), 409);
-    bad[0].alive = false; rejected(() => r.ghostGuess(room, bad[0], [out.id, room.players[0].id]), 403);
+    // A Saboteur ghost guesses who still holds a power, never a teammate.
+    // A Saboteur ghost matches each power still aboard to a traveller, never a teammate.
+    bad[0].alive = false; const sv = r.view(room, bad[0]).me; assert.equal(sv.ghostKind, 'powers'); assert.deepEqual(sv.ghostRoles, ['witness', 'inspector', 'medic']);
+    const holder = k => room.players.find(p => p.role === k).id;
+    rejected(() => r.ghostGuess(room, bad[0], [bad[1].id, holder('inspector'), holder('medic')]), 400);
+    r.ghostGuess(room, bad[0], [holder('witness'), holder('medic'), holder('inspector')]);
     room.winner = 'good'; r.finish(room); const v = r.view(room, out);
-    assert.ok(v.me.wallet.earnings.some(e => e.reason === 'Ghost guess: 2 right' && e.n === 10)); assert.ok(v.me.wallet.earnings.some(e => e.reason === 'Ghost guess: all right')); assert.ok(v.ghosts[out.id]); assert.ok(Array.isArray(v.nightLog));
+    assert.ok(v.me.wallet.earnings.some(e => e.reason === 'Ghost guess: 2 right' && e.n === 10)); assert.ok(v.me.wallet.earnings.some(e => e.reason === 'Ghost guess: all right')); assert.ok(v.ghosts[out.id]);
+    assert.ok(r.view(room, bad[0]).me.wallet.earnings.some(e => e.reason === 'Ghost guess: 1 right' && e.n === 5)); assert.deepEqual(v.ghosts[bad[0].id].roles, ['witness', 'inspector', 'medic']); assert.ok(Array.isArray(v.nightLog));
   }
   // Restart: deal again or back to the platform, seating observers.
   {
@@ -229,13 +235,12 @@ function roundFiveTests() {
     assert.throws(() => r.ghostGuess(two, ghost, [b1.id, b2.id]), /Choose 1/); assert.throws(() => r.ghostGuess(two, ghost, [b1.id]), /Choose 1/); r.ghostGuess(two, ghost, [b2.id]);
     two.winner = 'good'; r.finish(two); assert.ok(r.view(two, ghost).me.wallet.earnings.some(e => e.reason === 'Ghost guess: all right'));
   }
-  // Ghost Climb: only for players who are out, after the ghost guess; a finished climb reveals one chosen role.
+  // Ghost Climb: open to every player who is out, before or after their guess; a finished climb reveals one chosen role.
   {
     const room = shared(['passenger','passenger','passenger','inspector','medic','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), out = room.players.find(p => p.role === 'passenger'), alive = room.players.find(p => p.role === 'inspector');
     assert.throws(() => r.ghostClimb(room, alive), /opens once/);
     while (r.nightRole(room) !== 'moves') r.advance(room); r.nightChoice(room, bad, { attackId: out.id }); while (room.phase === 'night') r.advance(room);
-    assert.throws(() => r.ghostClimb(room, out), /opens once/); assert.equal(r.view(room, out).me.climbOpen, false);
-    r.ghostGuess(room, out, [bad.id]); assert.equal(r.view(room, out).me.climbOpen, true);
+    assert.equal(r.view(room, out).me.climbOpen, true);
     r.ghostClimb(room, out); assert.ok(r.view(room, out).me.ghostClimb.seed >= 0);
     assert.throws(() => r.ghostReveal(room, out, alive.id), /peak/);
     room.climbs[out.id].startedAt -= r.CLIMB_MIN_MS + 1; r.ghostReveal(room, out, alive.id);

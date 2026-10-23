@@ -3,7 +3,9 @@
 (() => {
   'use strict';
   window.createTrainSoundtrack = (onGesture, musicAllowed = () => true) => {
-    let context, master, musicGain, source, buffer, loading, current, enabled = false, video, voiceActive = false;
+    let context, master, musicGain, source, buffer, loading, current, enabled = false, video;
+    // Reasons to keep the score silent for a while: a voice clip playing, or the Ghost Climb's own music.
+    const holds = new Set();
     const routed = new WeakMap();
     const live = () => musicAllowed() && enabled && current && !current.paused && !document.hidden;
     function routeVideo() {
@@ -18,7 +20,7 @@
     function level() {
       if (!context) return;
       const phase = current?.phase;
-      const target = !live() || voiceActive || phase === 'boarding' ? 0 : phase === 'discussion' ? .07 : phase === 'lobby' ? .1 : phase === 'finished' ? .22 : .16;
+      const target = !live() || holds.size || phase === 'boarding' ? 0 : phase === 'discussion' ? .07 : phase === 'lobby' ? .1 : phase === 'finished' ? .22 : .16;
       musicGain.gain.cancelScheduledValues(context.currentTime);
       musicGain.gain.setTargetAtTime(target, context.currentTime, .45);
       if (live()) { context.resume().then(startMusic).catch(() => {}); }
@@ -38,7 +40,13 @@
     for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, unlock, { passive: true });
     document.addEventListener('visibilitychange', level);
     window.addEventListener('pagehide', () => { source?.stop(); source = null; context?.suspend().catch(() => {}); });
-    return { refresh: level, setVoiceActive(active) { if (voiceActive !== active) { voiceActive = active; if (active && musicGain) { musicGain.gain.cancelScheduledValues(context.currentTime); musicGain.gain.setValueAtTime(0, context.currentTime); } level(); } }, sync(state, hasSeat, nextVideo) {
+    function hold(reason, active) {
+      if (holds.has(reason) === active) return;
+      if (active) holds.add(reason); else holds.delete(reason);
+      if (active && musicGain) { musicGain.gain.cancelScheduledValues(context.currentTime); musicGain.gain.setValueAtTime(0, context.currentTime); }
+      level();
+    }
+    return { refresh: level, hold, setVoiceActive: active => hold('voice', active), sync(state, hasSeat, nextVideo) {
       if (video && video !== nextVideo) routed.get(video)?.disconnect();
       current = state; enabled = hasSeat; video = nextVideo; routeVideo();
       if (enabled && state && !loading) {
