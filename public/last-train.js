@@ -273,7 +273,7 @@
           row('Footsteps & Carriage Map', 'Walks can be heard; good travellers flip to listen', sw(st.footsteps !== false, v => change({ footsteps: v }), !editable, 'Footsteps & Carriage Map')),
           row('Allow Observers', 'Late joiners watch until the next journey', sw(st.observers !== false, v => change({ observers: v }), !editable, 'Allow Observers')),
           row('Shuffle Roles Every Journey', 'A new random role mix each start', sw(!!st.autoShuffle, v => change({ autoShuffle: v }), !editable, 'Shuffle Roles Every Journey')),
-          editable ? el('div', { class: 'set-actions' }, btn('Choose Roles', () => { d.close(); roleSettingsDialog(); }, 'secondary'), btn('Shuffle Roles', async () => { await send('shuffleRoles'); draw(); }, 'text-button')) : null) : null,
+          editable ? el('div', { class: 'set-actions' }, btn('Choose Roles', () => { d.close(); roleSettingsDialog(); }, 'secondary'), st.autoShuffle ? null : btn('Shuffle Roles', async () => { await send('shuffleRoles'); draw(); }, 'text-button')) : null) : null,
         card('🎨', 'Display', 'THIS PHONE',
           row('Colour Scheme', (THEMES.find(t => t[0] === ui.theme) || THEMES[0])[1], el('div', { class: 'set-swatches', role: 'radiogroup', 'aria-label': 'Colour scheme' }, ...THEMES.map(([key, name, bg, accent]) => el('button', { type: 'button', role: 'radio', class: 'set-swatch' + (ui.theme === key ? ' on' : ''), 'aria-checked': String(ui.theme === key), 'aria-label': name, title: name, style: '--sw-bg:' + bg + ';--sw-accent:' + accent, onclick: () => { setUi('theme', key); draw(); } }))), true),
           row('Text Size', '', seg([[0, 'A'], [1, 'A+'], [2, 'A++']], ui.text, v => { setUi('text', v); draw(); }), true),
@@ -372,7 +372,7 @@
       el('div', { class: 'room-setting toggles' }, ...[['events', 'Carriage Events', 'A random event on some nights, like a power cut or a long tunnel.'], ['observers', 'Allow Observers', 'People who join mid-journey can watch and take a seat next journey.'], ['footsteps', 'Footsteps & Carriage Map', 'A Saboteur walks the corridor to attack. One traveller they pass may hear them.'], ['autoShuffle', 'Shuffle Roles Every Journey', 'A new random role mix is drawn each time a journey starts.']].map(([key, label, hint]) =>
         el('label', { class: 'switch-row' }, el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: key === 'autoShuffle' ? !!state.settings.autoShuffle : state.settings[key] !== false, disabled: !host || busy, onchange: e => setting({ [key]: e.target.checked }) })))),
       n >= 5 ? el('div', { class: 'role-mix' }, ...state.mix.map(m => el('span', {}, rolePortrait(m.role, 'mix-portrait'), txt('b', '', m.count + '×'), role(m.role).name))) : txt('p', 'muted', (5 - n) + ' more needed to start.'),
-      host ? el('div', { class: 'role-settings-actions' }, btn('Choose Roles', roleSettingsDialog, 'secondary', n < 5), btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', state.settings.autoShuffle ? 'Shuffle is on: a new role mix is drawn when the journey starts.' : 'Roles are dealt to players at random.')) : null,
+      host ? el('div', { class: 'role-settings-actions' }, btn('Choose Roles', roleSettingsDialog, 'secondary', n < 5), state.settings.autoShuffle ? null : btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', state.settings.autoShuffle ? 'Shuffle is on: a new role mix is drawn when the journey starts.' : 'Roles are dealt to players at random.')) : null,
       host ? startJourneyButton(n < 5) : txt('p', 'waiting', 'The host will start your journey.'), btn('See The Rules', rules, 'text-button')), roster());
   }
   function roleSettingsDialog() {
@@ -758,13 +758,35 @@
     spots[count] = { x: 26, y: 115, cx: 64, cy: 115 };
     return spots;
   }
+  // The corridor's centre line: a stadium (two straights and two half circles), measured clockwise from the top left.
+  const LOOP = { x1: 105, x2: 235, y1: 62, y2: 168, r: 53 }, LOOP_ARC = Math.PI * LOOP.r, LOOP_LEN = 2 * (LOOP.x2 - LOOP.x1) + 2 * LOOP_ARC;
+  function loopPoint(t) {
+    const S = LOOP.x2 - LOOP.x1; t = ((t % LOOP_LEN) + LOOP_LEN) % LOOP_LEN;
+    if (t < S) return { x: LOOP.x1 + t, y: LOOP.y1 };
+    if ((t -= S) < LOOP_ARC) { const a = -Math.PI / 2 + t / LOOP.r; return { x: LOOP.x2 + LOOP.r * Math.cos(a), y: 115 + LOOP.r * Math.sin(a) }; }
+    if ((t -= LOOP_ARC) < S) return { x: LOOP.x2 - t, y: LOOP.y2 };
+    t -= S; const a = Math.PI / 2 + t / LOOP.r; return { x: LOOP.x1 + LOOP.r * Math.cos(a), y: 115 + LOOP.r * Math.sin(a) };
+  }
+  function loopPosition(pt) { let best = 0, dist = Infinity; for (let t = 0; t < LOOP_LEN; t += 1) { const q = loopPoint(t), d = Math.hypot(q.x - pt.x, q.y - pt.y); if (d < dist) { dist = d; best = t; } } return best; }
+  // A walk follows the corridor from door to door, the short way round between each pair of cabins.
+  function corridorPath(cabins, spots) {
+    const pts = []; const ts = cabins.map(c => loopPosition({ x: spots[c].cx, y: spots[c].cy }));
+    for (let i = 1; i < ts.length; i++) {
+      const fwd = ((ts[i] - ts[i - 1]) % LOOP_LEN + LOOP_LEN) % LOOP_LEN, dir = fwd <= LOOP_LEN / 2 ? 1 : -1, len = dir > 0 ? fwd : LOOP_LEN - fwd;
+      for (let d = 0; d <= len; d += 4) pts.push(loopPoint(ts[i - 1] + dir * d));
+    }
+    return pts;
+  }
   function footprints(points, fade) {
-    const out = [], gap = 13; let step = 0, total = 0;
-    const segs = points.slice(1).map((b, i) => { const a = points[i], len = Math.hypot(b.x - a.x, b.y - a.y); total += len; return { a, b, len }; });
-    for (const { a, b, len } of segs) for (let d = gap / 2; d < len; d += gap, step++) {
-      const t = d / len, ang = Math.atan2(b.y - a.y, b.x - a.x), side = step % 2 ? 3.2 : -3.2, done = (out.length * gap) / Math.max(total, 1);
+    // Steps every 13 units along the whole path, alternating left and right of the centre line.
+    const segs = points.slice(1).map((b, i) => ({ a: points[i], b, len: Math.hypot(b.x - points[i].x, b.y - points[i].y) })).filter(g => g.len > 0);
+    const total = segs.reduce((n, g) => n + g.len, 0), gap = 13, out = [];
+    let seg = 0, start = 0;
+    for (let d = gap / 2, step = 0; d < total; d += gap, step++) {
+      while (seg < segs.length - 1 && start + segs[seg].len < d) start += segs[seg++].len;
+      const { a, b, len } = segs[seg], t = (d - start) / len, ang = Math.atan2(b.y - a.y, b.x - a.x), side = step % 2 ? 3.2 : -3.2;
       const x = a.x + (b.x - a.x) * t - Math.sin(ang) * side, y = a.y + (b.y - a.y) * t + Math.cos(ang) * side;
-      const o = fade ? Math.max(.15, 1 - Math.abs(done - .5) * 1.7) : .95;
+      const o = fade ? Math.max(.15, 1 - Math.abs(d / total - .5) * 1.7) : .95;
       out.push('<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (ang * 180 / Math.PI + 90).toFixed(0) + ')" opacity="' + o.toFixed(2) + '"><ellipse cx="0" cy="-2.5" rx="2.6" ry="3.4"/><ellipse cx="0" cy="3.2" rx="2" ry="1.7"/></g>');
     }
     return out.join('');
@@ -776,12 +798,12 @@
 
     // Partial routes (a heard clue) only show the steps near the listener's door.
     const svg = '<svg class="loop-art" viewBox="0 0 340 230" aria-hidden="true"><rect x="52" y="62" width="236" height="106" rx="53" class="loop-corridor"/><rect x="82" y="88" width="176" height="54" rx="27" class="loop-lounge"/><text x="170" y="119" class="loop-label">OBSERVATION LOUNGE</text>'
-      + walks.map(w => '<g class="loop-steps ' + w.kind + '">' + footprints(w.route.map(corridor), fade) + '</g>').join('') + '</svg>';
+      + walks.map(w => '<g class="loop-steps ' + w.kind + '">' + footprints(corridorPath(w.route, spots), fade) + '</g>').join('') + '</svg>';
     const map = el('div', { class: 'carriage-map loop-map', 'aria-label': 'Carriage map: ' + people.map(p => 'cabin ' + p.seat + ' ' + p.name).join(', ') });
     map.innerHTML = svg;
     for (const p of people) { const s = spots[p.seat]; map.append(el('div', { class: 'map-cabin' + (p.id === state.meId ? ' you' : '') + (isAlly(p.id) ? ' ally' : '') + (!p.alive && state.phase !== 'lobby' ? ' out' : '') + (victim === p.id ? ' victim' : ''), style: 'left:' + (s.x / 3.4) + '%;top:' + (s.y / 2.3) + '%', title: 'Cabin ' + p.seat + ' · ' + p.name },
-      txt('span', 'map-no', String(p.seat).padStart(2, '0')), avatar(p, 'map-face'), p.id === state.meId ? txt('span', 'map-you', 'YOU') : null)); }
-    for (const w of walks) if (w.by && !fade) { const end = corridor(w.route.at(-1)); map.append(el('span', { class: 'map-walker ' + w.kind, style: 'left:' + (end.x / 3.4) + '%;top:' + (end.y / 2.3) + '%' }, avatar(w.by, 'map-walker-face'))); }
+      txt('span', 'map-no', String(p.seat).padStart(2, '0')), avatar(p, 'map-face'), txt('span', 'map-name' + (p.id === state.meId ? ' me' : ''), p.id === state.meId ? 'YOU' : p.name))); }
+    for (const w of walks) if (w.by && !fade) { const end = loopPoint(loopPosition(corridor(w.route.at(-1)))); map.append(el('span', { class: 'map-walker ' + w.kind, style: 'left:' + (end.x / 3.4) + '%;top:' + (end.y / 2.3) + '%' }, avatar(w.by, 'map-walker-face'))); }
     return map;
   }
   function cabinScene() {
@@ -801,7 +823,7 @@
     };
     const stops = [['Move', 1, 'Attacks & protection'], ['Respond', 2, 'Checks, sightings, medicine'], ['Morning', 3, 'Everyone wakes']];
     const phaseDone = state.phase === 'night' && state.duration ? Math.min(1, Math.max(0, 1 - (state.remainingMs || 0) / 1000 / state.duration)) : 0;
-    const steps = el('div', { class: 'night-track', style: '--step:' + step + ';--phase:' + phaseDone.toFixed(3), 'aria-label': 'Night progress' },
+    const steps = el('div', { class: 'night-track' + (step === 2 && phaseDone > .955 ? ' arrived' : ''), 'data-step': step, style: '--step:' + step + ';--phase:' + phaseDone.toFixed(3), 'aria-label': 'Night progress' },
       el('div', { class: 'track-rail', 'aria-hidden': 'true' }, el('i', { class: 'track-fill' })),
       (() => { const t = el('span', { class: 'track-train', 'aria-hidden': 'true' }); t.innerHTML = '<svg viewBox="0 0 44 24"><path d="M4 6h17v12H4z" fill="#f6e4c6"/><path d="M21 9h11a6 6 0 0 1 6 6v3H21z" fill="#e9c46f"/><rect x="7" y="9" width="5" height="4" rx="1" fill="#3a2a55"/><rect x="14" y="9" width="5" height="4" rx="1" fill="#3a2a55"/><path d="M27 9V5h4v4" fill="#e9c46f"/><path d="M2 18h38" stroke="#c9a96a" stroke-width="1.4"/><circle cx="9" cy="20" r="2.6" fill="#2a2340" stroke="#f6e4c6" stroke-width="1.2"/><circle cx="18" cy="20" r="2.6" fill="#2a2340" stroke="#f6e4c6" stroke-width="1.2"/><circle cx="31" cy="20" r="2.6" fill="#2a2340" stroke="#f6e4c6" stroke-width="1.2"/><circle cx="38.5" cy="14.5" r="1.6" fill="#fff6d0"/></svg><i class="puff"></i><i class="puff"></i>'; return t; })(),
       el('ol', { class: 'track-stops' }, ...stops.map(([label, n, sub]) => { const dot = el('span', { class: 'stop-dot' }); dot.innerHTML = STOP_ICONS[n];
@@ -868,7 +890,7 @@
     b.innerHTML = '<span class="choice-icon">' + icon + '</span><span class="choice-copy"><b></b><small></small></span>';
     b.querySelector('b').textContent = title; b.querySelector('small').textContent = sub; return b;
   }
-  let typing = false, typingKey = '';
+  let typing = false, typingKey = '', arrivedKey = null;
   // The newest night's private results as one short line, ready to share (or bend) in discussion.
   function latestReport() {
     const reports = state.me.reports || [], round = Math.max(0, ...reports.map(r => r.round)); if (!round) return '';
@@ -1201,13 +1223,27 @@
     return el('section', { class: 'panel ghost-strip' }, el('div', { class: 'ghost-strip-head' }, ghostIcon(), el('div', {}, txt('span', 'eyebrow', 'FROM BEYOND THE TRAIN'), el('h2', {}, 'Ghost Guesses'))),
       ...ghosts.map(([id, g]) => el('div', { class: 'ghost-row' }, el('span', { class: 'ghost-who' }, avatar(id, 'replay-face'), txt('b', '', id === state.meId ? 'You' : who(id))), el('span', { class: 'ghost-picks' }, ...g.ids.map(x => el('span', { class: 'ghost-pick ' + (bad.has(x) ? 'right' : 'wrong') }, avatar(x, 'replay-face'), txt('small', '', bad.has(x) ? '✓' : '✗')))))));
   }
+  const CHIP_ICONS = {
+    roles: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="10" height="14" rx="2" transform="rotate(-10 8.5 12)" fill="#f2ce86" stroke="#7a4c14" stroke-width="1.2"/><rect x="10" y="4.5" width="10" height="14" rx="2" transform="rotate(8 15 11.5)" fill="#fff3d6" stroke="#7a4c14" stroke-width="1.2"/><circle cx="15" cy="10" r="2" fill="#c94b68"/><path d="M12.4 15.2c.6-1.6 1.6-2.3 2.6-2.3s2 .7 2.6 2.3" stroke="#c94b68" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    shuffle: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7h3.5c2.2 0 3.4 1 4.6 3l1.8 3.2c1.1 2 2.4 3 4.6 3H20M3 17h3.5c2.2 0 3.4-1 4.6-3M14.5 9.8c1-1.8 2.3-2.8 4-2.8H20" stroke="#8fd6ff" stroke-width="2" stroke-linecap="round"/><path d="M17.5 4.5 20.5 7l-3 2.5M17.5 13.5l3 2.5-3 2.5" stroke="#8fd6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    votes: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="11" width="16" height="9" rx="2" fill="#c9893f" stroke="#7a4e14" stroke-width="1.2"/><path d="M8 4.5h8v9H8z" fill="#fffaf0" stroke="#7a4e14" stroke-width="1.2"/><path d="M10 9l1.5 1.5 3-3.2" stroke="#2fae6c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 14.5h17" stroke="#7a4e14" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  };
+  function actionChip(icon, title, sub, click, disabled, key) {
+    const b = btn('', click, 'action-chip chip-' + icon, disabled, key); b.setAttribute('aria-label', title);
+    b.innerHTML = '<span class="chip-icon">' + CHIP_ICONS[icon] + '</span><span class="chip-copy"><b></b><small></small></span>';
+    b.querySelector('b').textContent = title; b.querySelector('small').textContent = sub; return b;
+  }
   function finale() {
     const latest = state.history.at(-1), bad = state.winner === 'bad';
     const winners = state.players.filter(p => (p.group === 'saboteur') === bad);
     return el('div', {class:'finale'}, el('section', {class:'world finale-scene ' + (bad ? 'bad-victory' : 'good-victory')},
       el('div', {class:'winner-stage'}, art('lounge-room'), el('div', {class:'winner-heading'}, txt('span','eyebrow','THE LAST WORD'), trainMark('victory-mark'), el('h1',{},bad ? 'The Saboteurs win!' : 'The good team wins!'), txt('p','',bad ? 'They played their part. They kept their secrets.' : 'The truth made it through the night.'), txt('small','winner-reason',state.winReason)),
         txt('div','winner-team-label','THE WINNING TEAM'), el('div', {class:'winner-cast',style:'--winners:'+winners.length+';--winner-columns:'+Math.min(3,winners.length)}, ...winners.map(p => el('article',{class:'winner-person'},standingTraveller(p),el('div',{class:'winner-nameplate'},el('b',{},p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name))))),
-        el('div',{class:'victory-actions'},state.hostId === state.meId ? startJourneyButton(state.players.filter(p => !p.departed).length < 5, true) : txt('p','waiting','The host can start another journey.'), state.hostId === state.meId ? el('div', { class: 'victory-role-actions' }, btn('Choose Roles', roleSettingsDialog, 'text-button', state.players.filter(p => !p.departed).length < 5), btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', state.players.filter(p => !p.departed).length < 5)) : null, latest?.votes ? btn('See The Final Vote',()=>ledgerDialog(latest),'text-button',false,'final-vote') : null)),
+        el('div',{class:'victory-actions'},state.hostId === state.meId ? startJourneyButton(state.players.filter(p => !p.departed).length < 5, true) : txt('p','waiting','The host can start another journey.'), el('div', { class: 'victory-role-actions' }, ...[
+          state.hostId === state.meId ? actionChip('roles', 'Choose Roles', state.settings.autoShuffle ? 'Pick by hand' : 'Set the mix', roleSettingsDialog, state.players.filter(p => !p.departed).length < 5) : null,
+          // With auto shuffle on, every new journey already draws a fresh mix.
+          state.hostId === state.meId && !state.settings.autoShuffle ? actionChip('shuffle', 'Shuffle Roles', 'Random mix', () => send('shuffleRoles'), state.players.filter(p => !p.departed).length < 5) : null,
+          latest?.votes ? actionChip('votes', 'Final Vote', 'Who voted whom', () => ledgerDialog(latest), false, 'final-vote') : null].filter(Boolean)))),
       el('section',{class:'panel final-manifest'},txt('span','eyebrow','BEHIND EVERY FACE'),el('h2',{},'The Full Cast'),el('div',{class:'final-roles'},...state.players.map(p=>el('div',{class:'final-role '+p.group},avatar(p,'role-icon'),el('div',{},txt('b','',p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name + ' · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD')))))))),awardsPanel(),nightReplay(),ghostStrip(),chatLog(),history());
   }
   // Ghost guess: right after going out, good players lock in who they think the Saboteurs are.
@@ -1379,6 +1415,9 @@
     const urgent = !!state.deadline && !state.paused && seconds <= 5;
     document.querySelectorAll('#lt-app .countdown,.lt-dialog .countdown').forEach(n => {n.textContent=state.paused?'Ⅱ':String(seconds).padStart(2,'0');n.classList.toggle('urgent',urgent);n.setAttribute('aria-label',state.paused?'Paused':seconds+' seconds remaining');});
     root.querySelectorAll('.think-icon').forEach(n => n.style.setProperty('--p', (state.duration ? Math.min(100, seconds / state.duration * 100) : 100).toFixed(1) + '%'));
+    // The train pulls into Morning and lights it just before the lounge opens.
+    root.querySelectorAll('.night-track').forEach(n => { const done = state.phase === 'night' && state.duration ? 1 - seconds / state.duration : 0, arrived = n.dataset.step === '2' && done > .955 && !state.paused;
+      if (arrived && !n.classList.contains('arrived') && arrivedKey !== state.step) { arrivedKey = state.step; sfx.play('chime'); } n.classList.toggle('arrived', arrived); });
     root.querySelectorAll('.night-track').forEach(n=>n.style.setProperty('--phase',state.phase==='night'&&state.duration?Math.min(1,Math.max(0,1-seconds/state.duration)).toFixed(3):0));
     root.querySelectorAll('.journey-clock').forEach(n=>{n.style.setProperty('--remaining',state.paused?1:Math.min(1,seconds/(state.duration||20)));n.classList.toggle('urgent',urgent);});
   }

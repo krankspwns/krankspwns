@@ -1974,3 +1974,43 @@ button.team-proposal.mine .proposal-tap { color: #ff9db0; }
 .team-proposals .proposal-target { position: relative; margin-bottom: 4px; }
 .paste-cover { border-color: #ff9db077 !important; background: #ff9db012 !important; }
 .paste-cover .paste-icon { background: #ff9db022; }
+/* Carriage map cabins carry the name, so seat numbers match the lounge at a glance */
+.loop-map .map-cabin { height: 27% !important; width: 13% !important; padding: 3px 2px 2px !important; gap: 1px !important; }
+.loop-map .map-face.portrait { width: 52% !important; }
+.loop-map .map-no { font: 900 8.5px/1 Inter, sans-serif !important; color: #ffe39a !important; background: #00000055; padding: 1px 4px; border-radius: 4px; }
+.map-name { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 7.5px/1.1 Inter, sans-serif; color: #f3eadb; }
+.map-name.me { color: #ffe39a; letter-spacing: .8px; font-weight: 900; }
+.loop-map .map-you { display: none; }
+@media (min-width: 681px) { .map-name { font-size: 9px; } .loop-map .map-no { font-size: 9.5px !important; } }
+/* Lounge seat numbers use the same gold tag as the map */
+.lounge-seat .seat-number { color: #ffe39a !important; font-weight: 900 !important; }
+/* Finale action chips under Another Journey */
+.victory-role-actions { display: flex !important; flex-wrap: wrap; justify-content: center; gap: 10px !important; margin-top: 14px !important; }
+.action-chip { display: inline-flex !important; align-items: center; gap: 10px; min-height: 0 !important; padding: 8px 16px 8px 8px !important; border-radius: 16px !important; text-align: left; background: linear-gradient(180deg, var(--lt-2a2148,#2a2148), var(--lt-18142c,#18142c)) !important; border: 1px solid #e9c46f55 !important; color: #fbf1dc !important; box-shadow: inset 0 1px #ffffff1a, 0 6px 16px #0006 !important; transition: transform .15s, border-color .2s !important; }
+.action-chip:hover:not(:disabled) { transform: translateY(-2px); border-color: #e9c46faa !important; }
+.action-chip:disabled { opacity: .5; }
+.chip-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: radial-gradient(circle at 35% 30%, #ffffff2e, #ffffff0a 70%); box-shadow: inset 0 1px #ffffff2a; }
+.chip-icon svg { width: 22px; height: 22px; }
+.chip-copy b { display: block; font: 800 13.5px/1.15 Inter, sans-serif; letter-spacing: -.1px; }
+.chip-copy small { display: block; margin-top: 2px; font: 700 8.5px Inter, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #e9c46f; }
+/* Chat: space between a name and its message or recording */
+.message-byline { margin-bottom: 8px !important; }
+/* Saboteur teammates stay marked even with a shop frame: an outline outside the frame plus a dagger badge */
+.portrait.is-ally { box-shadow: none !important; outline: 2px solid #ff5470; outline-offset: 2px; }
+.portrait.is-ally.has-frame { outline-offset: 6px; }
+.portrait.is-ally::before { content: '🗡'; position: absolute; z-index: 3; right: -5px; bottom: -5px; display: grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: #c8243f; color: #fff; font-size: 9px; line-height: 1; box-shadow: 0 0 0 1.5px #1a0d14; }
+.portrait.is-ally:not(.has-frame) { position: relative; }
+.portrait.is-ally:is(.seat-identity, .map-face, .replay-face, .walker-vote, .stub-face, .chooser-avatar, .award-face, .session-face)::before { display: none; }
+.portrait.is-ally.seat-identity { outline-width: 1.5px; outline-offset: 1px; }
+/* Arrival: Respond ticks off, Morning lights up with a sunrise glow */
+.night-track.arrived .track-stop:nth-child(2) .stop-dot { opacity: .85; animation: none; box-shadow: none !important; }
+.night-track.arrived .track-stop:nth-child(2) .stop-dot::after { content: '✓'; position: absolute; right: -4px; bottom: -3px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #4cc98b; color: #062014; font: 900 10px Inter, sans-serif; box-shadow: 0 0 0 2px #15112a; }
+.night-track.arrived .track-stop:nth-child(2) b { color: #e6def5; }
+.night-track.arrived .track-stop:nth-child(3) { color: #fff; }
+.night-track.arrived .track-stop:nth-child(3) b { color: #fff; }
+.night-track.arrived .track-stop:nth-child(3) .stop-dot { opacity: 1 !important; filter: none !important; border-radius: 50%; box-shadow: 0 0 0 3px #fff, 0 0 0 7px #ffb08a66, 0 0 30px #ffb08a !important; animation: sunrise-pop .6s cubic-bezier(.3,1.6,.5,1); }
+.night-track.arrived::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(ellipse 45% 120% at 100% 50%, #ffcf8a55, transparent 70%); animation: sunrise-glow .8s ease-out both; }
+@keyframes sunrise-pop { from { transform: scale(.7); } }
+@keyframes sunrise-glow { from { opacity: 0; } }
+.loop-map .map-walker { margin-top: 10px; }
+.loop-map .map-walker-face.portrait { width: 20px !important; height: 20px !important; }

@@ -46,7 +46,7 @@ test('twelve phones board, meet their cabins, take sequential night turns, speak
     for(const id of order){const p=pages[states.findIndex(s=>s.meId===id)];await expect(p.locator('.inline-votes')).toHaveCount(0);await choose(p,'Choose A Player Or Skip','Player '+bad[2].i);}
     await expect(host.locator('#lt-app')).toHaveAttribute('data-phase','voteResult');await expect(host.locator('.ejection-reveal .alignment-stamp')).toHaveText('BAD');await expect(host.locator('.inline-votes .vote-row')).toHaveCount(10);await host.screenshot({path:info.outputPath('journey-vote-reveal.png'),fullPage:true});
     await expect(host.getByRole('heading',{name:'The good team wins!'})).toBeVisible({timeout:28000});await expect(host.locator('.final-role')).toHaveCount(12);
-    await host.getByRole('button',{name:'See The Final Vote',exact:true}).click();await expect(host.getByRole('dialog').locator('.vote-row')).toHaveCount(10);await host.keyboard.press('Escape');
+    await host.getByRole('button',{name:'Final Vote',exact:true}).click();await expect(host.getByRole('dialog').locator('.vote-row')).toHaveCount(10);await host.keyboard.press('Escape');
     await host.getByRole('button',{name:'PLAY AGAIN',exact:true}).click();await expect(host.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();expect((await read(host)).me.role).toBeNull();expect(errors).toEqual([]);
   }finally{await Promise.all(contexts.map(c=>c.close()));}
 });
