@@ -60,6 +60,7 @@
       tie: () => { tone({ f: 1400, dur: .16, vol: .07, type: 'triangle' }); tone({ f: 1400, at: .26, dur: .32, vol: .07, type: 'triangle' }); },
       chime: () => [784, 1046, 1318].forEach((f, i) => tone({ f, at: i * .09, dur: .45, vol: .1, type: 'triangle' })),
       tick: () => tone({ f: 1250, dur: .05, vol: .07, type: 'square', lp: 2500 }),
+      shuffle: () => { for (let i = 0; i < 14; i++) noise({ at: i * .028 + rnd(0, .01), dur: .03, vol: .09 - i * .004, type: 'bandpass', f: rnd(2500, 4200), q: 1.4 }); },
       good: () => { [392, 523, 659, 784].forEach((f, i) => tone({ f, at: i * .12, dur: i === 3 ? 1.1 : .3, vol: .1, type: 'sawtooth', lp: 2000, attack: .02 })); tone({ f: 196, at: .36, dur: 1.2, vol: .1, type: 'triangle' }); },
       bad: () => { [220, 208, 196, 147].forEach((f, i) => tone({ f, at: i * .3, dur: i === 3 ? 1.4 : .34, vol: .13, type: 'sawtooth', lp: 650, attack: .05 })); },
       letter: () => { noise({ dur: .18, vol: .08, type: 'bandpass', f: 3000, f2: 1500, q: 1 }); bell({ f: 1568, at: .12, dur: .5, vol: .06 }); },

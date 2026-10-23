@@ -1367,7 +1367,6 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
 .report-faces { display: flex; gap: 4px; }
 .report-faces .report-face { width: 34px !important; height: 34px !important; }
 .report-item.glimpse { border-color: #8fd6ff55; } .report-item.clue { border-color: #e0aa4566; }
-.forger-art { filter: hue-rotate(200deg) saturate(1.2); }
 .ghost-block { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; padding: 12px; border-radius: 16px; background: linear-gradient(160deg, #b9c6ff1a, #ffffff05); border: 1px dashed #b9c6ff66; text-align: left; }
 .ghost-block > div { flex: 1; min-width: 0; display: grid; gap: 3px; }
 .ghost-block b { font-size: 14px; color: #eef1ff; } .ghost-block small { font-size: 11.5px; color: #b9c0dc; }
@@ -1497,12 +1496,6 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
 .trust-chip[aria-pressed=true] .trust-icon { animation: none !important; }
 @media (max-width: 400px) { .trust-chip { padding: 6px 7px !important; } .trust-chip small { font-size: 10px !important; } }
 
-/* Discussion: paste the newest private report into the message */
-.paste-report { display: flex !important; align-items: center; gap: 10px; width: 100%; margin-bottom: 8px; padding: 9px 11px !important; min-height: 0 !important; text-align: left; border-radius: 13px !important; border: 1px dashed #8fd6ff77 !important; background: #8fd6ff10 !important; color: #e8f6ff !important; }
-.paste-report:hover:not(:disabled) { background: #8fd6ff1e !important; }
-.paste-icon { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 9px; background: #8fd6ff22; font-size: 15px; }
-.paste-report b { display: block; font: 700 12.5px Inter, sans-serif; }
-.paste-report small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font: 500 11px/1.35 Inter, sans-serif; color: #a9c6d8; margin-top: 1px; }
 
 /* Morning: time to think before the first speaker, with a pin prompt */
 .think-card { margin-top: 12px; padding: 13px 14px; border-radius: 16px; background: linear-gradient(135deg, var(--lt-2b2356,#2b2356), var(--lt-1a1634,#1a1634)); border: 1px solid var(--lt-a993ff44,#a993ff44); box-shadow: inset 0 1px #ffffff12; text-align: left; }
@@ -1972,8 +1965,6 @@ button.team-proposal.mine .proposal-tap { color: #ff9db0; }
 /* The chooser's face stays pinned to the corner of the proposal, even with a shop frame */
 .team-proposals .chooser-avatar, .team-proposals .chooser-avatar.has-frame { position: absolute !important; bottom: -4px !important; right: -6px !important; left: auto !important; top: auto !important; z-index: 2; }
 .team-proposals .proposal-target { position: relative; margin-bottom: 4px; }
-.paste-cover { border-color: #ff9db077 !important; background: #ff9db012 !important; }
-.paste-cover .paste-icon { background: #ff9db022; }
 /* Carriage map cabins carry the name, so seat numbers match the lounge at a glance */
 .loop-map .map-cabin { height: 27% !important; width: 13% !important; padding: 3px 2px 2px !important; gap: 1px !important; }
 .loop-map .map-face.portrait { width: 52% !important; }
@@ -2111,3 +2102,123 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .power-slot b { font-size: 12.5px; line-height: 1.2; }
 .power-slot small { font-size: 11px; line-height: 1.2; color: #b9b1cf; }
 .power-slot.set small { color: #8de6ad; font-weight: 700; }
+/* Create A Room: a full-width gold card with an icon, a line of help and an arrow. */
+.cta { display: flex !important; align-items: center; gap: 14px; width: 100%; min-height: 64px !important; margin: 6px 0; padding: 10px 16px 10px 10px !important; border-radius: 18px !important; text-align: left; position: relative; overflow: hidden; transition: transform .18s, box-shadow .18s, filter .18s !important; }
+.cta::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, #ffffff30 45%, transparent 60%); transform: translateX(-100%); transition: transform .6s; pointer-events: none; }
+.cta:hover:not(:disabled)::after { transform: translateX(100%); }
+.cta:hover:not(:disabled) { transform: translateY(-2px); }
+.cta:active:not(:disabled) { transform: translateY(1px); }
+.cta-icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; }
+.cta-icon svg { width: 24px; height: 24px; }
+.cta-text { display: grid; flex: 1; min-width: 0; line-height: 1.2; }
+.cta-text b { font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
+.cta-text small { font-size: 12px; font-weight: 600; opacity: .78; }
+.cta-arrow { font-size: 20px; font-weight: 800; transition: transform .18s; }
+.cta:hover:not(:disabled) .cta-arrow { transform: translateX(3px); }
+.cta-create { background: linear-gradient(120deg, #fff0c8, #f0c46e 55%, #d49a3e) !important; border: 1px solid #fff3cf !important; color: #2a1a06 !important; box-shadow: 0 10px 28px #d9ac6040, inset 0 1px #ffffffa0 !important; }
+.cta-create .cta-icon { background: #2a1a0614; box-shadow: inset 0 0 0 1px #2a1a0622; }
+/* Join: the code and a compact green button share one row. */
+.join-row { display: flex; gap: 8px; align-items: stretch; margin: 6px 0; }
+.join-row .code-input { flex: 1; min-width: 0; margin: 0; }
+.join-go { flex: none; display: inline-flex !important; align-items: center; gap: 8px; min-height: 48px !important; padding: 0 18px 0 20px !important; border-radius: 12px !important; font: 800 15px Inter, sans-serif !important; color: #fff !important;
+  background: linear-gradient(180deg, #22c47f, #149a63) !important; border: 1px solid #5ee0a8 !important; box-shadow: 0 6px 18px #149a6345, inset 0 1px #ffffff55 !important; transition: transform .15s, filter .15s, box-shadow .15s !important; }
+.join-go:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 10px 22px #149a6355, inset 0 1px #ffffff55 !important; }
+.join-arrow { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #ffffff2e; font-size: 14px; transition: transform .15s; }
+.join-go:hover:not(:disabled) .join-arrow { transform: translateX(2px); }
+.cta:disabled { filter: saturate(.4); }
+/* Lounge names: two seats share a sofa, so each label keeps to its own seat's share and long names end in "…". */
+.lounge-seat .seat-name-row { max-width: 64%; margin: 0 auto; min-width: 0; }
+.lounge-seat .lounge-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; min-width: 0; }
+@media (max-width: 680px) { .lounge-seat .seat-identity { display: none; } .lounge-seat .seat-name-row { max-width: 62%; } }
+/* Your own cabin shows your name, with a small "You" tag on top. */
+.map-name.me { letter-spacing: 0; }
+.map-cabin.you::before { content: 'YOU'; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 5px; border-radius: 6px; background: #ffd36a; color: #2a1a06; font: 900 7px/1.3 Inter, sans-serif; letter-spacing: .6px; z-index: 2; }
+
+/* Discussion: quick phrases. Night results are blue, a role claim gold, a cover story rose, everyday lines plain. */
+.phrase-bar { display: grid; gap: 8px; margin-bottom: 10px; }
+.phrase-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.phrase-chip { min-height: 32px !important; padding: 5px 12px !important; border-radius: 999px !important; font: 700 12px Inter, sans-serif !important; background: #ffffff0d !important; border: 1px solid #ffffff26 !important; color: #ece4d4 !important; transition: transform .12s, background .15s !important; }
+.phrase-chip:hover:not(:disabled) { background: #ffffff1a !important; transform: translateY(-1px); }
+.phrase-chip.report { background: #8fd6ff1a !important; border-color: #8fd6ff66 !important; color: #cfefff !important; }
+.phrase-chip.claim { background: #f2ce861a !important; border-color: #f2ce8677 !important; color: #ffe7b0 !important; }
+.phrase-chip.cover { background: #ff9db01a !important; border-color: #ff9db077 !important; color: #ffd0da !important; }
+.phrase-chip.on { background: #f2ce86 !important; border-color: #f2ce86 !important; color: #231b2d !important; }
+.phrase-people { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: thin; }
+.phrase-person { flex: none; display: grid; justify-items: center; gap: 3px; width: 64px; min-height: 0 !important; padding: 6px 4px !important; border-radius: 12px !important; background: #ffffff0a !important; border: 1px solid #ffffff1f !important; }
+.phrase-person .portrait { width: 36px; height: 36px; border-radius: 50%; }
+.phrase-person small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 650 10.5px Inter, sans-serif; color: #e8e0cf; }.speech-form .phrase-chips button.phrase-chip { width: auto; flex: none; }
+.speech-form .phrase-people button.phrase-person { width: 64px; }
+.phrase-chips, .phrase-people { min-width: 0; }
+/* Pin A Suspect: a round rose button floating over the lounge, with a short caption beside it. */
+.lounge-room > .pin-bar { padding: 5px 16px 5px 5px; gap: 10px; }
+.lounge-room > .pin-bar .pin-round, .pin-round { position: relative; flex: none; width: 52px; height: 52px; min-height: 0 !important; padding: 0 !important; border-radius: 50% !important; display: grid !important; place-items: center;
+  background: radial-gradient(circle at 35% 30%, #ffb3c2, #ff6f8e 45%, #c93560) !important; border: 2px solid #ffd3dc !important; color: #fff !important;
+  box-shadow: 0 6px 18px #e8456a66, inset 0 2px 0 #ffffff70, inset 0 -4px 8px #8a1f3f66 !important; transition: transform .15s; }
+.pin-round:hover:not(:disabled) { transform: scale(1.06); }
+.pin-round:not(.pinned)::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid #ff8fa6aa; animation: pin-ring 2.4s ease-out infinite; pointer-events: none; }
+@keyframes pin-ring { 0% { transform: scale(.9); opacity: .9; } 70%, 100% { transform: scale(1.25); opacity: 0; } }
+.pin-round .pin-svg { width: 28px; height: 28px; display: block; }
+.pin-round .pin-svg svg { width: 100%; height: 100%; }
+.pin-round .pin-face { width: 44px; height: 44px; border-radius: 50%; }
+.pin-badge { position: absolute; right: -4px; top: -4px; width: 22px; height: 22px; border-radius: 50%; background: #fff; display: grid; place-items: center; box-shadow: 0 2px 6px #0006; }
+.pin-badge .pin-svg { width: 16px; height: 16px; }
+.lounge-room > .pin-bar p b { color: #ffd0da; }
+@media (max-width: 680px) { .lounge-room > .pin-bar { padding: 4px; } .lounge-room > .pin-bar .pin-round { width: 48px; height: 48px; } }
+@media (prefers-reduced-motion: reduce) { .pin-round::after { animation: none; display: none; } }
+/* Good news reads green: nobody was lost. */
+.nobody-out { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; margin: 14px 0 !important; color: #d8ffe9 !important;
+  background: linear-gradient(135deg, #1f8a5a33, #12583a26) !important; border: 1px solid #4ee3a477 !important; box-shadow: inset 0 1px #ffffff14, 0 0 22px #2ecf8a1f; }
+.nobody-icon { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(180deg, #4ee3a4, #1fa56c); color: #04301c; font: 900 20px Inter, sans-serif; box-shadow: 0 0 0 4px #4ee3a422; }
+.nobody-out b { display: block; font: 800 15px Inter, sans-serif; color: #c8ffe2; }
+.nobody-out small { display: block; font-size: 12px; color: #9fd9bb; }
+/* Night badges: a moon and a big number, each night a slightly different sky so they stand apart. */
+.night-badge { display: inline-flex !important; align-items: center; gap: 6px; padding: 4px 12px 4px 6px !important; border-radius: 999px !important; font: 800 10px Inter, sans-serif !important; letter-spacing: 1.4px !important; color: #fff3d6 !important;
+  background: linear-gradient(135deg, #2b3a8a, #1a2156) !important; border: 1px solid #f2ce8688 !important; box-shadow: 0 3px 10px #0005, inset 0 1px #ffffff1c; white-space: nowrap; }
+.night-badge[data-night="2"] { background: linear-gradient(135deg, #5a2f8a, #2a1856) !important; }
+.night-badge[data-night="3"] { background: linear-gradient(135deg, #1f6a7a, #10344a) !important; }
+.night-badge[data-night="0"] { background: linear-gradient(135deg, #8a3a4a, #4a1a2a) !important; }
+.night-moon { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #ffe7a8; color: #2a2150; font-size: 13px; line-height: 1; }
+.night-badge small { font: inherit; opacity: .85; }
+.night-badge b { font: 900 15px/1 Inter, sans-serif; letter-spacing: 0; color: #ffd36a; }
+.replay-night, .report-night { position: relative; padding: 12px 12px 12px 14px; border-radius: 16px; background: #ffffff07; border: 1px solid #ffffff14; border-left: 4px solid #f2ce86aa; }
+.replay-night + .replay-night, .report-night + .report-night { margin-top: 12px; }
+.night-accordion { border-left: 4px solid #f2ce8688 !important; }
+/* The coin flip invites a tap: a soft golden pulse until it is pressed. */
+.flip-button:not(:disabled) { animation: flip-pulse 1.6s ease-in-out infinite; }
+@keyframes flip-pulse { 0%, 100% { box-shadow: 0 0 0 0 #f2ce8680, 0 6px 18px #d9ac6040; transform: scale(1); } 50% { box-shadow: 0 0 0 10px #f2ce8600, 0 8px 24px #d9ac6066; transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .flip-button:not(:disabled) { animation: none; } }
+/* Carriage map panel: a tighter gap under the heading, more room under the map. */
+.carriage-panel > .loop-map { margin: 0 auto 16px; }
+.carriage-panel > .map-hint { margin-top: 0; margin-bottom: 16px; line-height: 1.55; }
+.carriage-panel > summary { padding-bottom: 8px; }
+/* Note tags read as real buttons: blue for a possible walk path, violet for a clashing role claim. */
+.note-tag { border-style: solid !important; }
+.note-tag.steps { background: #8fd6ff14 !important; border-color: #8fd6ff55 !important; color: #cfefff !important; }
+.note-tag.clash { background: #b89bff14 !important; border-color: #b89bff55 !important; color: #e2d6ff !important; }
+.note-tag.steps[aria-pressed="true"] { background: #8fd6ff !important; color: #08263a !important; border-color: #8fd6ff !important; }
+.note-tag.clash[aria-pressed="true"] { background: #b89bff !important; color: #1f1040 !important; border-color: #b89bff !important; }
+.phrase-role-art { width: 36px !important; height: 36px !important; border-radius: 10px !important; }
+.phrase-roles .phrase-person { width: 76px; }
+.speech-form .phrase-roles button.phrase-person { width: 76px; }
+/* New journey: the role shuffle overlay. */
+.shuffle-overlay { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .35s;
+  background: radial-gradient(ellipse at 50% 45%, #2a2160ee, #0b0d1ef8 70%); }
+.shuffle-overlay.on { opacity: 1; }
+.shuffle-overlay.out { opacity: 0; transition: opacity .5s; }
+.shuffle-title { position: absolute; top: 16%; left: 0; right: 0; text-align: center; transform: translateY(-10px); transition: transform .5s; }
+.shuffle-overlay.on .shuffle-title { transform: none; }
+.shuffle-title small { display: block; font: 800 11px Inter, sans-serif; letter-spacing: 3px; color: #f2ce86; }
+.shuffle-title b { display: block; margin-top: 6px; font: 800 clamp(26px, 6vw, 40px) Inter, sans-serif; letter-spacing: -.8px; color: #fff5df; text-shadow: 0 4px 24px #000a; }
+.shuffle-deck { position: relative; width: 0; height: 0; }
+.shuffle-card { position: absolute; left: -38px; top: -54px; width: 76px; height: 108px; perspective: 600px; transition: transform .45s cubic-bezier(.3, 1.2, .5, 1); }
+.shuffle-face { position: absolute; inset: 0; border-radius: 12px; backface-visibility: hidden; transition: transform .4s; box-shadow: 0 10px 24px #0009; }
+.shuffle-back { display: grid; place-items: center; font-size: 30px; background: repeating-linear-gradient(45deg, #2b3a8a 0 8px, #24307a 8px 16px); border: 2px solid #f2ce86; }
+.shuffle-front { transform: rotateY(180deg); display: grid; justify-items: center; align-content: center; gap: 4px; padding: 6px 4px; background: linear-gradient(180deg, #23365e, #121c34); border: 2px solid #8fd6ff; }
+.shuffle-card.bad .shuffle-front { border-color: #ff7a8a; background: linear-gradient(180deg, #4a1a2a, #22101a); }
+.shuffle-card.up .shuffle-back { transform: rotateY(180deg); }
+.shuffle-card.up .shuffle-front { transform: rotateY(0deg); }
+.shuffle-art { width: 56px !important; height: 56px !important; border-radius: 10px !important; }
+.shuffle-front b { font: 800 9.5px/1.15 Inter, sans-serif; color: #fff5df; text-align: center; }
+.think-pin .pin-round { width: 52px; height: 52px; }
+.phrase-chip.on.on { background: linear-gradient(180deg, #ffe7b0, #e2b45a) !important; border-color: #fff0c8 !important; color: #231b2d !important; box-shadow: 0 0 0 3px #f2ce8633; }
+.think-pin small b { display: block; color: #ffd0da; font-size: 13px; }

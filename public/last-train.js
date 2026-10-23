@@ -53,7 +53,7 @@
   const groupName = group => ({ passenger: 'Good · Passenger', crew: 'Good · Crew', saboteur: 'Bad · Saboteur' }[group] || 'Secret team');
   const role = key => state?.catalog?.[key] || { name: 'Secret role', icon: '🔒', description: '' };
   const who = id => state?.players.find(p => p.id === id)?.name || 'Nobody';
-  const ROLE_ART = { passenger:0, careful:1, brave:2, witness:3, speaker:4, inspector:5, medic:6, trainee:7, saboteur:8, blocker:9, forger:8 };
+  const ROLE_ART = { passenger:0, careful:1, brave:2, witness:3, speaker:4, inspector:5, medic:6, trainee:7, saboteur:8, blocker:9, forger:11 };
   let crestSerial = 0;
   function portrait(index, set, cls = '', label = '') {
     return el('span', { class: 'portrait portrait-' + set + ' ' + cls, style: '--px:' + ((index % 4) * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%', 'aria-hidden': 'true', 'data-portrait-set': set, ...(label ? { 'data-role-art': label } : {}) });
@@ -81,6 +81,14 @@
     return n;
   }
   const txt = (tag, cls, value) => el(tag, { class: cls }, value);
+  // The big Create button: an icon tile, a label with a short line under it, and an arrow.
+  const CTA_ICONS = {
+    create: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M12 9.5v5M9.5 12h5"/></svg>',
+  };
+  function ctaButton(label, sub, click, cls, icon) {
+    const b = el('button', { type: 'button', class: 'cta ' + cls, disabled: busy, 'data-focus': label, 'aria-label': label, onclick: click }, el('span', { class: 'cta-icon', 'aria-hidden': 'true' }), el('span', { class: 'cta-text' }, txt('b', '', label), txt('small', '', sub)), txt('span', 'cta-arrow', '→'));
+    b.querySelector('.cta-icon').innerHTML = icon; return b;
+  }
   const btn = (label, click, cls = '', disabled = false, key = label) => el('button', { type: 'button', class: cls, disabled: busy || disabled, 'data-focus': key, onclick: click }, label);
   const panel = (...children) => el('section', { class: 'panel' }, ...children);
   const train = cls => el('div', { class: 'train-art ' + (cls || ''), 'aria-hidden': 'true' }, el('img', { src: '/last-train/train-icon.webp', alt: '', width: 1254, height: 1254 }));
@@ -343,7 +351,7 @@
   }
   function landing() {
     return el('div', { class: 'landing' }, el('section', { class: 'intro' }, txt('span', 'eyebrow', 'EVERY CABIN HIDES A SECRET.'), train(), el('h1', {}, 'All aboard.', el('br'), el('em', {}, 'Trust no easy story.')), txt('p', 'muted', 'A secret role. A private cabin. A train full of suspects. Use your power at night, then meet to talk and vote.'), el('div', { class: 'chips' }, txt('span', '', '5–12 friends'), txt('span', '', 'Secret teams'), txt('span', '', 'Night powers'))),
-      el('section', { class: 'panel entrance' }, txt('span', 'eyebrow', 'YOUR TICKET TO PLAY'), el('h2', {}, 'Catch the last train.'), el('label', { htmlFor: 'lt-name' }, 'Your name'), el('input', { id: 'lt-name', value: name, maxLength: 12, autocomplete: 'nickname', placeholder: 'Your name', oninput: e => name = e.target.value }), btn('Create A Room', () => enter('create'), 'gold'), txt('div', 'or', 'or join your friends'), el('label', { htmlFor: 'lt-code' }, 'Room code'), el('input', { id: 'lt-code', class: 'code-input', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', oninput: e => code = e.target.value }), btn('Join Room', () => enter('join'), 'secondary'), el('details', {}, el('summary', {}, 'Rejoin On Another Phone'), txt('p', 'muted small', 'Use the same name and your saved private code.'), el('label', { htmlFor: 'lt-recovery' }, 'Rejoin code'), el('input', { id: 'lt-recovery', value: recovery, oninput: e => recovery = e.target.value })), txt('p', 'muted small', 'Good players and bad players can both lie. Your private role tells you which side you are on.')));
+      el('section', { class: 'panel entrance' }, txt('span', 'eyebrow', 'YOUR TICKET TO PLAY'), el('h2', {}, 'Catch the last train.'), el('label', { htmlFor: 'lt-name' }, 'Your name'), el('input', { id: 'lt-name', value: name, maxLength: 10, autocomplete: 'nickname', placeholder: 'Your name', oninput: e => name = e.target.value }), ctaButton('Create A Room', 'Start a carriage for your friends', () => enter('create'), 'cta-create', CTA_ICONS.create), txt('div', 'or', 'or join your friends'), el('label', { htmlFor: 'lt-code' }, 'Room code'), el('form', { class: 'join-row', onsubmit: e => { e.preventDefault(); enter('join'); } }, el('input', { id: 'lt-code', class: 'code-input', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', enterkeyhint: 'go', oninput: e => code = e.target.value }), el('button', { type: 'submit', class: 'join-go', disabled: busy, 'data-focus': 'Join Room', 'aria-label': 'Join Room' }, txt('span', '', 'Join'), el('span', { class: 'join-arrow', 'aria-hidden': 'true' }, '→'))), el('details', {}, el('summary', {}, 'Rejoin On Another Phone'), txt('p', 'muted small', 'Use the same name and your saved private code.'), el('label', { htmlFor: 'lt-recovery' }, 'Rejoin code'), el('input', { id: 'lt-recovery', value: recovery, oninput: e => recovery = e.target.value })), txt('p', 'muted small', 'Good players and bad players can both lie. Your private role tells you which side you are on.')));
   }
   function traveller(p, cls = '') {
     return el('div', { class: 'traveller ' + cls, 'aria-hidden': 'true' }, avatar(p));
@@ -398,7 +406,7 @@
         el('section', { class: 'picker-group' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Crew'), txt('small', '', slots.maxCrew === 1 ? 'CHOOSE 1' : 'CHOOSE 1–' + slots.maxCrew)), txt('p', 'muted small', 'Include Inspector or Medic. Trainee needs one of them to inherit a job.'), el('div', { class: 'picker-grid' }, ...['inspector', 'medic', 'trainee'].map(k => option(k, 'crew', slots.maxCrew === 1 ? k === 'trainee' : !draft.crew.includes(k) && (draft.crew.length >= slots.maxCrew || draft.passengers.length > passengerSeats - 1))))),
         el('section', { class: 'picker-group' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Passengers'), btn('All Normal', () => { draft.passengers = []; refresh(); }, 'text-button')), txt('p', 'muted small', (passengerSeats - draft.passengers.length) + ' normal Passengers. Add powers below, or leave every Passenger normal.'), el('div', { class: 'picker-grid' }, ...['careful', 'brave', 'witness', 'speaker'].map(k => option(k, 'passengers', !draft.passengers.includes(k) && draft.passengers.length >= passengerSeats)))),
         el('section', { class: 'picker-group bad-picker' }, el('h3', {}, 'Bad team'), el('div', { class: 'picker-grid' }, ...['normal', ...(slots.saboteur > 1 ? ['blocker'] : []), 'forger'].map(value => { const special = { blocker: 'Blocker', forger: 'Forger' }[value]; const rest = slots.saboteur - 1;
-          return el('label', { class: 'role-option' + (draft.saboteur === value ? ' selected' : '') }, el('input', { type: 'radio', name: 'bad-role-mix', checked: draft.saboteur === value, onchange: () => { draft.saboteur = value; refresh(); } }), rolePortrait(value === 'normal' ? 'saboteur' : value, 'picker-portrait' + (value === 'forger' ? ' forger-art' : '')), el('div', {}, txt('b', '', value === 'normal' ? slots.saboteur + ' × Saboteur' : '1 × ' + special), txt('small', '', value === 'normal' ? 'Normal Saboteurs only.' : (rest ? rest + ' normal Saboteur' + (rest > 1 ? 's' : '') + ' + one ' : 'A single ') + special + '. ' + rolePreview[value]))); }))));
+          return el('label', { class: 'role-option' + (draft.saboteur === value ? ' selected' : '') }, el('input', { type: 'radio', name: 'bad-role-mix', checked: draft.saboteur === value, onchange: () => { draft.saboteur = value; refresh(); } }), rolePortrait(value === 'normal' ? 'saboteur' : value, 'picker-portrait'), el('div', {}, txt('b', '', value === 'normal' ? slots.saboteur + ' × Saboteur' : '1 × ' + special), txt('small', '', value === 'normal' ? 'Normal Saboteurs only.' : (rest ? rest + ' normal Saboteur' + (rest > 1 ? 's' : '') + ' + one ' : 'A single ') + special + '. ' + rolePreview[value]))); }))));
     };
     d.append(content, commit, btn('Recommended Roles', () => { d.close(); setting({ roles: null, autoShuffle: false }); }, 'text-button'), btn('Cancel', () => d.close(), 'text-button')); refresh();
   }
@@ -778,7 +786,8 @@
     return spots;
   }
   // The corridor's centre line: a stadium (two straights and two half circles), measured clockwise from the top left.
-  const LOOP = { x1: 105, x2: 235, y1: 62, y2: 168, r: 53 }, LOOP_ARC = Math.PI * LOOP.r, LOOP_LEN = 2 * (LOOP.x2 - LOOP.x1) + 2 * LOOP_ARC;
+  // The corridor band runs between the outer track (y 62–168) and the lounge (y 88–142), so steps walk its middle, clear of the cabins.
+  const LOOP = { x1: 107, x2: 233, y1: 75, y2: 155, r: 40 }, LOOP_ARC = Math.PI * LOOP.r, LOOP_LEN = 2 * (LOOP.x2 - LOOP.x1) + 2 * LOOP_ARC;
   function loopPoint(t) {
     const S = LOOP.x2 - LOOP.x1; t = ((t % LOOP_LEN) + LOOP_LEN) % LOOP_LEN;
     if (t < S) return { x: LOOP.x1 + t, y: LOOP.y1 };
@@ -821,7 +830,7 @@
     const map = el('div', { class: 'carriage-map loop-map', 'aria-label': 'Carriage map: ' + people.map(p => 'cabin ' + p.seat + ' ' + p.name).join(', ') });
     map.innerHTML = svg;
     for (const p of people) { const s = spots[p.seat]; map.append(el('div', { class: 'map-cabin' + (p.id === state.meId ? ' you' : '') + (isAlly(p.id) ? ' ally' : '') + (!p.alive && state.phase !== 'lobby' ? ' out' : '') + (victim === p.id ? ' victim' : ''), style: 'left:' + (s.x / 3.4) + '%;top:' + (s.y / 2.3) + '%', title: 'Cabin ' + p.seat + ' · ' + p.name },
-      txt('span', 'map-no', String(p.seat).padStart(2, '0')), avatar(p, 'map-face'), txt('span', 'map-name' + (p.id === state.meId ? ' me' : ''), p.id === state.meId ? 'YOU' : p.name))); }
+      txt('span', 'map-no', String(p.seat).padStart(2, '0')), avatar(p, 'map-face'), txt('span', 'map-name' + (p.id === state.meId ? ' me' : ''), p.name))); }
     for (const w of walks) if (w.by && !fade) { const end = loopPoint(loopPosition(corridor(w.route.at(-1)))); map.append(el('span', { class: 'map-walker ' + w.kind, style: 'left:' + (end.x / 3.4) + '%;top:' + (end.y / 2.3) + '%' }, avatar(w.by, 'map-walker-face'))); }
     return map;
   }
@@ -872,14 +881,14 @@
       const x = 50 + (slots[col] - 50) * (.74 + .26 * depth);
       return el('div', { class: 'lounge-seat' + (!p.alive ? ' empty alignment-' + (p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) : '') + (state.speakerId === p.id ? ' speaking' : '') + (p.id === state.meId ? ' yours' : ''), 'data-player': p.id, 'data-facing': near ? 'away' : 'toward', 'data-seat-pair': Math.floor(col / 2), style: '--seat-x:' + x + '%;--seat-y:' + y + '%;--seat-width:' + width + '%;--seat-layer:' + (row * 2 + 2) + ';--depth:' + depth.toFixed(2) },
         el('span', { class: 'seat-number', 'aria-label': 'Seat ' + p.seat + (!p.alive ? ' · Out' : '') }, String(p.seat).padStart(2,'0')), !p.alive ? el('span', { class: 'out-stamp', 'aria-hidden': 'true' }, 'OUT') : null, el('div', { class: 'seat-figure' }, el('span', { class: 'seat-shadow', 'aria-hidden': 'true' }), seatedTraveller(p)),
-        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, avatar(p, 'seat-identity'), txt('b', 'lounge-name' + allyCls(p.id), p.name + (p.id === state.meId ? ' · You' : '') + (isAlly(p.id) ? ' 🗡️' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), p.pins ? el('span', { class: 'seat-pins', 'aria-label': p.pins + (p.pins === 1 ? ' suspect pin' : ' suspect pins') }, svgPin(), txt('b', '', String(p.pins)), txt('small', '', p.pins === 1 ? 'pin' : 'pins')) : null, tallies.has(p.id) ? tallyBadge(tallies.get(p.id), tallies.get(p.id) === topVotes) : null));
+        el('div', { class: 'seat-caption' }, el('div', { class: 'seat-name-row' }, avatar(p, 'seat-identity'), el('b', { class: 'lounge-name' + allyCls(p.id), title: p.name + (p.id === state.meId ? ' (you)' : '') }, p.name + (isAlly(p.id) ? ' 🗡️' : ''))), txt('small', 'seat-status', !p.alive ? 'OUT · ' + ((p.alignment || (p.group === 'saboteur' ? 'bad' : 'good')) === 'bad' ? 'BAD' : 'GOOD') : state.speakerId === p.id ? 'SPEAKING' : p.voteLocked ? 'VOTED' : 'ON BOARD'), p.pins ? el('span', { class: 'seat-pins', 'aria-label': p.pins + (p.pins === 1 ? ' suspect pin' : ' suspect pins') }, svgPin(), txt('b', '', String(p.pins)), txt('small', '', p.pins === 1 ? 'pin' : 'pins')) : null, tallies.has(p.id) ? tallyBadge(tallies.get(p.id), tallies.get(p.id) === topVotes) : null));
     });
     const banks = [];
     for (let i = 0; i < seats.length; i += perRow) banks.push(el('div', { class: 'sofa-row' }, ...seats.slice(i, i + perRow)));
     return el('div', { class: 'lounge-seats', 'aria-label': 'Speaking order, left to right, then the next row' }, ...banks);
   }
   function outs(entry) {
-    if (!entry || !entry.outs.length) return txt('p', 'nobody-out', 'Everyone is still aboard.');
+    if (!entry || !entry.outs.length) return el('div', { class: 'nobody-out', role: 'status' }, el('span', { class: 'nobody-icon', 'aria-hidden': 'true' }, '✓'), el('div', {}, txt('b', '', 'Everyone is still aboard.'), txt('small', '', entry?.type === 'vote' ? 'Nobody left the train this time.' : 'Nobody was lost in the night.')));
     return el('div', { class: 'revealed-outs' }, ...entry.outs.map(p => {
       const alignment = p.alignment || (p.group === 'saboteur' ? 'bad' : 'good');
       return el('div', { class: 'revealed-out ' + alignment }, avatar(p.id, 'reveal-avatar'), el('div', {}, el('b', {}, who(p.id) + ' is out'), txt('span', 'alignment-stamp', alignment.toUpperCase()), entry.type === 'night' && p.causes?.length ? txt('span', 'death-cause', p.causes.map(c => ({ attack: 'Attacked', poison: 'Poisoned', overdose: 'Overdose' }[c])).filter(Boolean).join(' + ')) : null, state.phase === 'finished' && p.role ? txt('small', '', role(p.role).name) : txt('small', '', 'Their role stays secret until the journey ends.')));
@@ -910,10 +919,43 @@
     b.querySelector('b').textContent = title; b.querySelector('small').textContent = sub; return b;
   }
   let typing = false, typingKey = '', arrivedKey = null;
-  // The newest night's private results as one short line, ready to share (or bend) in discussion.
-  function latestReport() {
-    const reports = state.me.reports || [], round = Math.max(0, ...reports.map(r => r.round)); if (!round) return '';
-    return 'Night ' + round + ': ' + reports.filter(r => r.round === round).map(reportMessage).join(' ');
+  // Quick phrases for a typed message: tap a chip to add a short line, or pick a face for "I suspect…" and friends.
+  // Results from last night come first, then a role claim (or a Saboteur's cover story), then everyday lines.
+  let phrasePick = null;
+  const REPORT_CHIP = {
+    check: r => who(r.targetId) + ' is ' + r.alignment.toUpperCase(),
+    watch: r => r.targetId ? 'Attack on ' + who(r.targetId) : 'No attack seen',
+    glimpse: r => r.ids.length ? r.ids.map(who).join(' or ') + ' is bad' : 'Empty corridor',
+    footsteps: r => 'Footsteps from cabin ' + cabinList(r.from),
+    clue: r => who(r.targetId) + ' isn’t ' + role(r.role).name,
+  };
+  const GOOD_ROLES = ['passenger', 'careful', 'brave', 'witness', 'speaker', 'inspector', 'medic', 'trainee'];
+  function phraseChips() {
+    const me = state.me, reports = me.reports || [], round = Math.max(0, ...reports.map(r => r.round)), chips = [];
+    for (const r of reports.filter(x => x.round === round && REPORT_CHIP[x.type])) chips.push({ cls: 'report', label: REPORT_CHIP[r.type](r), text: reportMessage(r) });
+    // Saboteurs get believable fake lines: claim any good role, invent a check or a sound in the corridor.
+    if (me.group === 'saboteur') chips.push(...(coverStory() ? [{ cls: 'cover', label: '🎭 Cover story', text: coverStory() }] : []),
+      { cls: 'cover', label: 'Claim a role…', roles: k => k === 'passenger' ? 'I’m just a Passenger, no night power.' : 'I’m the ' + role(k).name + '.' },
+      { cls: 'cover', label: 'Say … is GOOD', pick: n => 'I checked ' + n + ': GOOD.' }, { cls: 'cover', label: 'Say … is BAD', pick: n => 'I checked ' + n + ': BAD.' },
+      { cls: 'cover', label: 'Heard steps…', pick: n => 'I heard footsteps from ' + n + '’s side of the corridor.' });
+    else chips.push({ cls: 'claim', label: role(me.role).name, text: me.role === 'passenger' ? 'I’m a Passenger, no night power.' : 'I’m the ' + role(me.role).name + '.' });
+    chips.push({ label: 'I suspect…', pick: n => 'I suspect ' + n + '.' }, { label: 'I trust…', pick: n => 'I trust ' + n + '.' }, { label: 'Vote out…', pick: n => 'Let’s vote out ' + n + '.' },
+      { label: 'No info', text: 'I have nothing from last night.' }, { label: 'Let’s skip', text: 'If we’re unsure, let’s skip this vote.' });
+    return chips;
+  }
+  function addPhrase(text) {
+    speechDraft = ((speechDraft.trim() ? speechDraft.trim() + ' ' : '') + text).slice(0, 280); phrasePick = null; render();
+    requestAnimationFrame(() => { const t = document.getElementById('lt-speech'); t?.focus(); t?.setSelectionRange(t.value.length, t.value.length); });
+  }
+  function phraseBar() {
+    const off = busy || state.paused, chips = phraseChips(), picking = chips.find(c => c.label === phrasePick);
+    return el('div', { class: 'phrase-bar', 'aria-label': 'Quick phrases' },
+      el('div', { class: 'phrase-chips' }, ...chips.map(c => el('button', { type: 'button', class: 'phrase-chip' + (c.cls ? ' ' + c.cls : '') + (phrasePick === c.label ? ' on' : ''), disabled: off, 'data-focus': 'phrase-' + c.label,
+        onclick: () => { if (c.pick || c.roles) { phrasePick = phrasePick === c.label ? null : c.label; render(); } else addPhrase(c.text); } }, c.label))),
+      picking?.pick ? el('div', { class: 'phrase-people' }, ...state.players.filter(p => p.alive && p.id !== state.meId).map(p => el('button', { type: 'button', class: 'phrase-person', disabled: off, 'aria-label': p.name,
+        onclick: () => addPhrase(picking.pick(p.name)) }, avatar(p), txt('small', allyCls(p.id), p.name)))) : null,
+      picking?.roles ? el('div', { class: 'phrase-people phrase-roles' }, ...GOOD_ROLES.map(k => el('button', { type: 'button', class: 'phrase-person', disabled: off, 'aria-label': role(k).name,
+        onclick: () => addPhrase(picking.roles(k)) }, rolePortrait(k, 'phrase-role-art'), txt('small', '', role(k).name)))) : null);
   }
   function speechConsole() {
     const me = state.me, own = state.speakerId === state.meId, mode = state.settings.discussion;
@@ -924,8 +966,7 @@
     if (own && me.alive) {
       if (said) options = txt('p', 'choice-saved', said.audio ? 'Voice shared. The next player has the floor.' : 'You’ve had your say. Let’s hear the next traveller.');
       else if (mode === 'chat' && typing) options = el('form', { class: 'speech-form', onsubmit: async e => { e.preventDefault(); if (!speechDraft.trim()) return; const text = speechDraft; await send('speak', { text }); } },
-        me.group === 'saboteur' && coverStory() ? el('button', { type: 'button', class: 'paste-report paste-cover', 'data-focus': 'paste-cover', disabled: busy || state.paused, onclick: () => { speechDraft = ((speechDraft.trim() ? speechDraft.trim() + ' ' : '') + coverStory()).slice(0, 280); render(); requestAnimationFrame(() => { const t = document.getElementById('lt-speech'); t?.focus(); t?.setSelectionRange(t.value.length, t.value.length); }); } }, el('span', { class: 'paste-icon', 'aria-hidden': 'true' }, '🎭'), el('span', {}, txt('b', '', 'Paste My Cover Story'), txt('small', '', coverStory()))) : null,
-        latestReport() ? el('button', { type: 'button', class: 'paste-report', 'data-focus': 'paste-report', disabled: busy || state.paused, onclick: () => { const add = latestReport(); speechDraft = (speechDraft.trim() ? speechDraft.trim() + ' ' : '') + add; speechDraft = speechDraft.slice(0, 280); render(); requestAnimationFrame(() => { const t = document.getElementById('lt-speech'); t?.focus(); t?.setSelectionRange(t.value.length, t.value.length); }); } }, el('span', { class: 'paste-icon', 'aria-hidden': 'true' }, '📋'), el('span', {}, txt('b', '', 'Paste My Latest Report'), txt('small', '', latestReport()))) : null,
+        phraseBar(),
         el('textarea', { id: 'lt-speech', rows: 3, maxLength: 280, value: speechDraft, placeholder: 'What did you find? Who do you trust?', 'aria-label': 'Your findings', disabled: busy || state.paused, oninput: e => speechDraft = e.target.value }),
         el('div', { class: 'speech-form-actions' }, btn('Use Voice Instead', () => { typing = false; render(); }, 'text-button', false, 'use-voice'), el('button', { type: 'submit', class: 'gold', disabled: busy || state.paused, 'data-focus': 'share-findings' }, 'Share Message')));
       else options = el('div', { class: 'speak-choices' + (busyVoice ? ' recording' : '') }, voice.controls(),
@@ -942,7 +983,10 @@
   function pinBar() {
     if (!state.pinsOpen || !state.me.alive || state.paused || state.phase === 'morning') return null;
     const pinned = state.me.suspect;
-    return el('div', { class: 'pin-bar' }, btn(pinned ? '📌 Change' : '📌 Pin A Suspect', pinDialog, 'pin-button', false, 'pin-suspect'), el('p', {}, pinned ? el('span', {}, 'You suspect ', el('b', {}, who(pinned)), '.') : 'Everyone sees the count, not who pinned.'));
+    // A round pin button: the pin itself, or the face you pinned with a small pin badge.
+    const b = el('button', { type: 'button', class: 'pin-button pin-round' + (pinned ? ' pinned' : ''), disabled: busy, 'data-focus': 'pin-suspect', 'aria-label': pinned ? 'Change my pin (now ' + who(pinned) + ')' : 'Pin A Suspect', onclick: pinDialog },
+      pinned ? avatar(pinned, 'pin-face') : svgPin(), pinned ? el('span', { class: 'pin-badge', 'aria-hidden': 'true' }, svgPin()) : null);
+    return el('div', { class: 'pin-bar' }, b, el('p', {}, pinned ? el('span', {}, 'You suspect ', el('b', {}, who(pinned)), '. Tap to change.') : el('span', {}, el('b', {}, 'Pin A Suspect'), ' · only the count is shown')));
   }
   function pinDialog() {
     const d = dialog('Who do you suspect?', el('div', { class: 'target-hint' }, toneIcon('pin'), txt('p', '', 'Only the number of pins is shown, never who pinned. Pins reset each night and are not votes.'))); d.classList.add('target-dialog', 'tone-pin');
@@ -962,7 +1006,7 @@
     const first = state.players.filter(p => p.alive).sort((x, y) => x.seat - y.seat)[0]?.id, mine = state.me.suspect;
     return el('div', { class: 'think-card' }, el('div', { class: 'think-head' }, el('span', { class: 'think-icon', 'aria-hidden': 'true' }, txt('span', 'countdown', '')), el('div', {}, txt('small', '', 'BEFORE THE DISCUSSION'), el('h3', {}, 'Take a moment to think.'))),
       txt('p', 'console-hint', 'Look at who is out and check your reports. ' + (first ? (first === state.meId ? 'You speak first.' : who(first) + ' speaks first.') : '')),
-      state.me.alive && !state.paused ? el('div', { class: 'think-pin' }, btn(mine ? 'Change My Pin' : 'Pin A Suspect', pinDialog, 'pin-cta', false, 'think-pin'), txt('small', '', mine ? 'You pinned ' + who(mine) + '. Only the count is shown.' : 'Optional. Everyone sees the count, never who pinned.')) : null);
+      state.me.alive && !state.paused ? el('div', { class: 'think-pin' }, el('button', { type: 'button', class: 'pin-button pin-round' + (mine ? ' pinned' : ''), disabled: busy, 'data-focus': 'think-pin', 'aria-label': mine ? 'Change My Pin' : 'Pin A Suspect', onclick: pinDialog }, mine ? avatar(mine, 'pin-face') : svgPin(), mine ? el('span', { class: 'pin-badge', 'aria-hidden': 'true' }, svgPin()) : null), el('small', {}, el('b', {}, mine ? 'You pinned ' + who(mine) + '.' : 'Pin A Suspect'), mine ? ' Tap to change. Only the count is shown.' : ' Optional. Everyone sees the count, never who pinned.')) : null);
   }
   // The map in the lounge; footprints appear for the one traveller who heard them last night.
   // A heard clue draws the steps just before and after the listener's own door.
@@ -1029,7 +1073,7 @@
   function reportList() {
     const rounds = [...new Set(state.me.reports.map(r => r.round))].sort((a, b) => a - b);
     if (!rounds.length) return txt('p', 'reports-empty', 'Private results from your night power will appear here, such as a check or a sighting.');
-    return el('div', { class: 'report-list' }, ...rounds.map(round => el('section', { class: 'report-night' }, el('h3', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0'))), ...state.me.reports.filter(r => r.round === round).map(reportCard))));
+    return el('div', { class: 'report-list' }, ...rounds.map(round => el('section', { class: 'report-night' }, el('h3', {}, nightBadge(round)), ...state.me.reports.filter(r => r.round === round).map(reportCard))));
   }
   function reportsDialog() { const d = dialog('Your private reports', txt('p', 'muted small', 'Only you can see these. Night 1 is at the top.'), reportList()); d.classList.add('reports-dialog'); d.append(btn('Close', () => d.close(), 'gold')); }
   function setRoleCard(open) {
@@ -1189,15 +1233,17 @@
     return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'Conversations Aboard'), txt('small','muted','ONE VOICE AT A TIME')),
       rounds.length ? el('div', { class: 'night-accordions' }, ...rounds.map(round => {
         const messages = state.speeches.filter(m => m.round === round);
-        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'The Morning Conversation'), txt('small', '', messages.length + ' voices'), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{ class: allyCls(m.id).trim() },who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : txt('p','',m.text))))));
+        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, nightBadge(round), txt('b', '', 'The Morning Conversation'), txt('small', '', messages.length + ' voices'), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{ class: allyCls(m.id).trim() },who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : txt('p','',m.text))))));
       })) : txt('p','muted small','Messages will appear here when the conversation begins.'));
   }
+  // One badge for a night everywhere it appears: a moon and a big night number, so nights stand apart at a glance.
+  const nightBadge = round => el('span', { class: 'night-tag night-badge', 'data-night': String(round % 4) }, txt('span', 'night-moon', '☾'), txt('small', '', 'NIGHT'), txt('b', '', String(round)));
   function history() {
     const rounds = [...new Set(state.history.map(e => e.round))];
     return rounds.length ? el('section', { class: 'history journey-log' }, el('div', { class: 'log-heading' }, txt('span','eyebrow','THE JOURNEY LOG'), el('h2', {}, 'Along The Way')),
       el('div', { class: 'night-accordions' }, ...rounds.map(round => {
         const entries = state.history.filter(e => e.round === round), outsCount = entries.reduce((n, e) => n + e.outs.length, 0);
-        return el('details', { class: 'night-accordion', 'data-details': 'log-night-' + round, open: round === state.round }, el('summary', {}, txt('span', 'night-tag', 'NIGHT ' + String(round).padStart(2, '0')), txt('b', '', 'From Nightfall To The Vote'), txt('small', '', outsCount ? outsCount + ' Out' : 'All Aboard'), txt('span', 'accordion-chevron', '⌄')), el('div', { class: 'night-log-body' }, ...entries.map(entry => el('section', { class: 'night-log-event' }, el('h3', {}, entry.type === 'night' ? 'At Daybreak' : entry.reason === 'revote' ? 'First vote · tied' : entry.attempt === 2 ? 'Re-vote' : 'The group’s vote'), outs(entry), entry.votes ? ledger(entry) : null))));
+        return el('details', { class: 'night-accordion', 'data-details': 'log-night-' + round, open: round === state.round }, el('summary', {}, nightBadge(round), txt('b', '', 'From Nightfall To The Vote'), txt('small', '', outsCount ? outsCount + ' Out' : 'All Aboard'), txt('span', 'accordion-chevron', '⌄')), el('div', { class: 'night-log-body' }, ...entries.map(entry => el('section', { class: 'night-log-event' }, el('h3', {}, entry.type === 'night' ? 'At Daybreak' : entry.reason === 'revote' ? 'First vote · tied' : entry.attempt === 2 ? 'Re-vote' : 'The group’s vote'), outs(entry), entry.votes ? ledger(entry) : null))));
       }))) : null;
   }
   function standingTraveller(p) {
@@ -1232,7 +1278,7 @@
     const line = (icon, text, ...ids) => el('li', { class: 'replay-line' }, txt('span', 'replay-icon', icon), txt('span', 'replay-text', text), el('span', { class: 'replay-faces' }, ...ids.filter(Boolean).map(id => avatar(id, 'replay-face'))));
     const name = id => who(id) + ' (' + role(player(id)?.role).name + ')';
     return el('section', { class: 'panel night-replay' }, txt('span', 'eyebrow', 'WHAT REALLY HAPPENED'), el('h2', {}, 'Night Replay'),
-      ...log.map(n => el('article', { class: 'replay-night' }, el('h3', {}, txt('span', 'night-tag', 'NIGHT ' + String(n.round).padStart(2, '0')), n.event ? txt('span', 'replay-event', (EVENT_ICONS[n.event] || '✦') + ' ' + ({ 'long-tunnel': 'Long Tunnel', express: 'Express Stop', fog: 'Fogged Windows', snack: 'Midnight Snack', 'power-cut': 'Power Cut', sealed: 'Sealed Ballots', luggage: 'Lost Luggage', 'full-moon': 'Full Moon', quiet: 'Quiet Carriage' }[n.event] || n.event)) : null),
+      ...log.map(n => el('article', { class: 'replay-night' }, el('h3', {}, nightBadge(n.round), n.event ? txt('span', 'replay-event', (EVENT_ICONS[n.event] || '✦') + ' ' + ({ 'long-tunnel': 'Long Tunnel', express: 'Express Stop', fog: 'Fogged Windows', snack: 'Midnight Snack', 'power-cut': 'Power Cut', sealed: 'Sealed Ballots', luggage: 'Lost Luggage', 'full-moon': 'Full Moon', quiet: 'Quiet Carriage' }[n.event] || n.event)) : null),
         el('ol', {}, ...[
           n.attackId ? line('🗡️', 'The Saboteurs attacked ' + name(n.attackId) + '.', n.attackId) : line('🗡️', 'The Saboteurs chose no attack.'),
           n.blockedId ? line('🚫', 'The Blocker blocked ' + name(n.blockedId) + '.', n.blockedId) : null,
@@ -1416,6 +1462,33 @@
       !blocked && check ? txt('strong', 'result-verdict', result.alignment.toUpperCase()) : !blocked && result.targetId ? txt('strong', 'result-verdict', 'ATTACK TARGET') : null,
       txt('p', '', blocked ? 'No result was revealed tonight.' : check ? 'Their exact role stays secret.' : 'This shows the attack target. It does not reveal healing or poison.'));
   }
+  // A new journey opens with the roles being shuffled: face-down cards fan out, flip, swap places twice,
+  // flip back and gather, then the curtain lifts onto the team page. It never takes clicks.
+  let shuffledKey = '';
+  function syncShuffle() {
+    if (state?.phase !== 'briefing' || !state.mix?.length || !motionOK) return;
+    const key = state.code + ':' + state.match; if (shuffledKey === key) return; shuffledKey = key;
+    try { if (sessionStorage.getItem('lt-shuffled') === key) return; sessionStorage.setItem('lt-shuffled', key); } catch {}
+    const roles = state.mix.flatMap(m => Array(m.count).fill(m.role)).slice(0, 12);
+    const deck = el('div', { class: 'shuffle-deck' }), cards = roles.map(r => el('div', { class: 'shuffle-card' + (role(r).group === 'saboteur' ? ' bad' : '') },
+      el('div', { class: 'shuffle-face shuffle-back' }, txt('span', '', '🎟️')), el('div', { class: 'shuffle-face shuffle-front' }, rolePortrait(r, 'shuffle-art'), txt('b', '', role(r).name))));
+    deck.append(...cards);
+    const overlay = el('div', { class: 'shuffle-overlay', 'aria-hidden': 'true' }, el('div', { class: 'shuffle-title' }, txt('small', '', state.match > 1 ? 'A NEW DEAL. A NEW SECRET.' : 'TONIGHT’S ROLES'), txt('b', '', 'Shuffling The Roles')), deck);
+    document.body.append(overlay);
+    const W = Math.min(innerWidth, 900), H = Math.min(innerHeight, 700), place = (c, x, y, r) => { c.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + r + 'deg)'; };
+    const scatter = () => cards.forEach(c => place(c, (Math.random() - .5) * W * .62, (Math.random() - .5) * H * .4 + 30, (Math.random() - .5) * 40));
+    cards.forEach((c, i) => place(c, i * .6, -i * .6, 0));
+    const at = (ms, fn) => setTimeout(() => { if (overlay.isConnected) fn(); }, ms);
+    at(60, () => overlay.classList.add('on'));
+    at(380, () => { sfx.play('shuffle'); const n = cards.length; cards.forEach((c, i) => { const a = (i - (n - 1) / 2) * Math.min(14, 120 / n); place(c, Math.sin(a * Math.PI / 180) * Math.min(W * .42, 260), 40 - Math.cos(a * Math.PI / 180) * 30 + 30, a); }); });
+    at(950, () => cards.forEach((c, i) => setTimeout(() => c.classList.add('up'), i * 45)));
+    at(1650, () => { sfx.play('shuffle'); scatter(); });
+    at(2150, scatter);
+    at(2650, () => { cards.forEach(c => c.classList.remove('up')); });
+    at(2950, () => cards.forEach((c, i) => place(c, i * .6, -i * .6, 0)));
+    at(3300, () => overlay.classList.add('out'));
+    at(3800, () => overlay.remove());
+  }
   function syncPrivateResult() {
     if (!state || state.paused || !['night','gathering','morning'].includes(state.phase)) return;
     const result = currentPrivateResult(); if (!result) return;
@@ -1459,6 +1532,7 @@
     mapFab.hidden = !(seat && state && !['lobby', 'briefing', 'boarding'].includes(state.phase) && state.players.some(p => p.seat));
     social.sync(state, seat);
     syncPrivateResult();
+    syncShuffle();
     syncRevoteNotice();
     const restored = focusId ? document.getElementById(focusId) : [...root.querySelectorAll('[data-focus]')].find(n => n.dataset.focus === focusKey);
     if (restored) { restored.focus({preventScroll:true}); if(typeof cursor === 'number' && restored.setSelectionRange) try{restored.setSelectionRange(cursor,cursor);}catch{} }
@@ -1467,16 +1541,19 @@
     if (sceneChanged) {
       root.querySelector('.world,.scene-panel,.lobby-grid,.landing')?.classList.add(motionOK && !state?.paused ? 'scene-enter' : 'scene-static'); enteredKey = key;
     }
-    if (sceneChanged) {
-      const ownTurn = state?.phase === 'discussion' && state.speakerId === state.meId;
-      if (ownTurn) requestAnimationFrame(() => {
-        const panel = root.querySelector(ownTurn ? '.speech-console' : '.action-console'), ticket = dockNode;
-        if (!panel || !ticket) return;
-        const gap = panel.getBoundingClientRect().bottom - ticket.getBoundingClientRect().top + 18;
-        // Only reveal controls when the pinned ticket would cover them. Keep visible scenes still.
-        if (gap > 0) window.scrollBy({ top: gap, behavior: motionOK ? 'smooth' : 'instant' });
-      });
-    }
+    // Important moments bring their controls into view: your speaking turn, your vote, your night choice, and the
+    // results of a night or a vote. Nothing moves when the panel is already on screen or you are typing elsewhere.
+    if (sceneChanged && state && !state.paused && !state.me?.observer) requestAnimationFrame(() => {
+      const me = state.me, ownTurn = state.phase === 'discussion' && state.speakerId === state.meId;
+      const target = ownTurn ? '.speech-console' : state.phase === 'voting' && me.alive && !me.vote ? '.voting-console'
+        : state.phase === 'night' ? '.action-console' : ['morning', 'revoteInfo', 'voteResult'].includes(state.phase) ? '.lounge-console' : null;
+      const panel = target && root.querySelector(target), typing = document.activeElement?.matches?.('input, textarea');
+      if (!panel || (typing && !ownTurn)) return;
+      const top = 64, bottom = (dockNode?.isConnected ? dockNode.getBoundingClientRect().top : innerHeight) - 16, r = panel.getBoundingClientRect();
+      if (r.top >= top && r.bottom <= bottom) return;
+      // Fit the whole panel above the pinned ticket when it fits; otherwise bring its top into view.
+      window.scrollBy({ top: r.height <= bottom - top ? r.bottom - bottom : r.top - top, behavior: motionOK ? 'smooth' : 'instant' });
+    });
     tick();
   }
   function tick() {

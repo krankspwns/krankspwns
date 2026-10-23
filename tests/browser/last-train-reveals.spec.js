@@ -63,7 +63,9 @@ test('the Inspector sees earlier checks on the picker and can paste the latest r
     await expect(picker.locator('[data-id="'+bad.id+'"] .checked-tag')).toHaveText('BAD · N1');await expect(picker.locator('[data-id="'+good.id+'"]')).toHaveClass(/checked-good/);await expect(picker.locator('.checked-tag')).toHaveCount(2);
     await picker.getByRole('button',{name:'Cancel',exact:true}).click();
     room=await store.load(b.host.code);room.settings.discussion='chat';while(room.phase==='night')rules.advance(room);room.phase='morning';rules.beginDiscussion(room);room.speakerIndex=room.speakingOrder.indexOf(inspector.id);room.deadline=Date.now()+120000;await store.save(room);
-    await a.page.getByRole('button',{name:'Type Message',exact:true}).click();await a.page.getByRole('button',{name:/^Paste My Latest Report/}).click();
-    await expect(a.page.locator('#lt-speech')).toHaveValue('Night 1: '+bad.name+' is BAD. '+good.name+' is GOOD.');expect(a.errors).toEqual([]);
+    await a.page.getByRole('button',{name:'Type Message',exact:true}).click();const chips=a.page.getByLabel('Quick phrases');
+    await chips.getByRole('button',{name:bad.name+' is BAD',exact:true}).click();await chips.getByRole('button',{name:good.name+' is GOOD',exact:true}).click();
+    await chips.getByRole('button',{name:'I suspect…',exact:true}).click();await chips.getByRole('button',{name:bad.name,exact:true}).click();
+    await expect(a.page.locator('#lt-speech')).toHaveValue(bad.name+' is BAD. '+good.name+' is GOOD. I suspect '+bad.name+'.');expect(a.errors).toEqual([]);
   }finally{await Promise.all(b.contexts.map(c=>c.close()));}
 });

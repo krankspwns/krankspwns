@@ -108,7 +108,7 @@
           bots.pop(); save();
         }
         while (bots.length < targetCount && version === epoch) {
-          const name = 'Bot ' + names[bots.length] + ' ' + crypto.randomUUID().slice(0, 3);
+          const name = 'Bot ' + names[bots.length] + ' ' + crypto.randomUUID().slice(0, 1); // fits the 10-character name limit
           const result = await request({ code }, 'join', null, { name });
           if (version !== epoch) { await request({ code, pid: result.meId, tok: result.tok }, 'leave'); return; }
           bots.push({ code, pid: result.meId, tok: result.tok, name }); save();
