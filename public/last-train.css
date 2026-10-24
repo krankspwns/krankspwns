@@ -2471,3 +2471,8 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .players-row .players-remove { margin-left: auto; min-height: 32px !important; padding: 0 10px !important; color: #ff9aa8 !important; font-size: 12.5px !important; }
 .kick-who { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; }
 .kick-who b { font: 800 16px Inter, sans-serif; color: #fff5df; }
+/* Translated lounge messages: a quiet note and a toggle back to the original words. */
+.message-text p { margin: 0; }
+.translate-note { display: block; margin-top: 4px; color: #a99ebc; font-size: 11.5px; }
+.translate-toggle { all: unset; display: inline-block; margin-top: 6px; color: #8fd6ff; font: 700 11.5px Inter, sans-serif; cursor: pointer; }
+.translate-toggle:focus-visible { outline: 2px solid #f2ce86; outline-offset: 2px; border-radius: 4px; }

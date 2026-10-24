@@ -479,6 +479,8 @@
     'Their phone is signed out and cannot come back. Their character stays aboard for this journey, doing nothing, so no team is revealed.': '对方的手机会退出，且无法再回来。本程他的角色仍留在车上但不会行动，所以不会暴露阵营。',
     'The host removed you from this room.': '房主已将你移出这个房间。', 'Choose another traveller to remove.': '请选择另一位要移除的乘客。' });
 
+  add({ '🌐 Translating…': '🌐 翻译中…', '🌐 Show Translation': '🌐 显示翻译', '🌐 Translated · Show Original': '🌐 已翻译 · 显示原文', });
+
   // Status words and short labels that are joined with other text
   add({
     'out': '出局', 'speaking': '发言中', 'voted': '已投票', 'away': '离开', 'ATTACKED': '被袭击', 'HEAL GIVEN': '已治疗', 'Map': '地图', 'Boarding': '登车中', 'Still aboard.': '还在车上。',

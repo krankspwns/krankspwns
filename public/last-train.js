@@ -1517,8 +1517,44 @@
     return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'Conversations Aboard'), txt('small','muted','ONE VOICE AT A TIME')),
       rounds.length ? el('div', { class: 'night-accordions' }, ...rounds.map(round => {
         const messages = state.speeches.filter(m => m.round === round);
-        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, nightBadge(round), txt('b', '', 'The Morning Conversation'), txt('small', '', messages.length + (messages.length === 1 ? ' voice' : ' voices')), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{ class: allyCls(m.id).trim() },who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.gagged ? txt('p','gagged-note','🤐 Gagged by a Saboteur. No words this round.') : m.audio ? voice.player(m) : el('p',{'data-no-tr':''},m.text))))));
+        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, nightBadge(round), txt('b', '', 'The Morning Conversation'), txt('small', '', messages.length + (messages.length === 1 ? ' voice' : ' voices')), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{ class: allyCls(m.id).trim() },who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.gagged ? txt('p','gagged-note','🤐 Gagged by a Saboteur. No words this round.') : m.audio ? voice.player(m) : messageText(m))))));
       })) : txt('p','muted small','Messages will appear here when the conversation begins.'));
+  }
+  // Lounge messages written in another language are shown in the reader's game language, with a tap to see the original.
+  // Translation runs in this browser for free: Chrome's built-in on-device translator when it is ready, otherwise the
+  // public MyMemory service. Each translation is kept on this phone, so a message is only translated once.
+  const showOriginal = new Set(), translated = new Map(), translating = new Map();
+  try { for (const [k, v] of JSON.parse(localStorage.getItem('lt-translations') || '[]')) translated.set(k, v); } catch {}
+  const keepTranslations = () => { try { localStorage.setItem('lt-translations', JSON.stringify([...translated].slice(-300))); } catch {} };
+  const isChinese = text => { const cjk = (text.match(/[\u3400-\u9fff]/g) || []).length, latin = (text.match(/[A-Za-z]/g) || []).length; return cjk > 0 && cjk * 2 >= latin; };
+  const needsTranslation = (text, lang) => lang === 'en' ? isChinese(text) : !isChinese(text) && (text.match(/[A-Za-z]/g) || []).length >= 2;
+  const decodeEntities = text => new DOMParser().parseFromString('<p>' + text + '</p>', 'text/html').body.textContent || text;
+  async function machineTranslate(text, lang) {
+    const from = isChinese(text) ? 'zh' : 'en';
+    if ('Translator' in self) try {
+      const pair = { sourceLanguage: from, targetLanguage: { en: 'en', zh: 'zh', zht: 'zh-Hant' }[lang] };
+      if (await self.Translator.availability(pair) === 'available') return await (await self.Translator.create(pair)).translate(text);
+    } catch {}
+    const pair = (from === 'zh' ? 'zh-CN' : 'en') + '|' + { en: 'en', zh: 'zh-CN', zht: 'zh-TW' }[lang];
+    const response = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=' + encodeURIComponent(pair));
+    const data = await response.json();
+    if (!response.ok || Number(data.responseStatus) !== 200 || !data.responseData?.translatedText) throw Error('Translation unavailable');
+    return decodeEntities(data.responseData.translatedText);
+  }
+  function askTranslation(text, lang) {
+    const id = lang + '|' + text, tried = translating.get(id);
+    if (tried && (tried === 'busy' || Date.now() - tried < 60000)) return;
+    translating.set(id, 'busy');
+    machineTranslate(text, lang).then(out => { translated.set(id, out); translating.delete(id); keepTranslations(); render(); }, () => { translating.set(id, Date.now()); render(); });
+  }
+  function messageText(m) {
+    const lang = window.ltI18n.lang, key = m.round + ':' + m.id, id = lang + '|' + m.text, original = el('p', { 'data-no-tr': '' }, m.text);
+    if (!needsTranslation(m.text, lang)) return original;
+    const done = translated.get(id);
+    if (!done) { askTranslation(m.text, lang); return translating.get(id) === 'busy' ? el('div', { class: 'message-text' }, original, txt('small', 'translate-note', '🌐 Translating…')) : original; }
+    const showing = showOriginal.has(key);
+    return el('div', { class: 'message-text' }, el('p', { 'data-no-tr': '' }, showing ? m.text : done),
+      el('button', { type: 'button', class: 'translate-toggle', 'data-focus': 'translate-' + key, onclick: () => { showing ? showOriginal.delete(key) : showOriginal.add(key); render(); } }, showing ? '🌐 Show Translation' : '🌐 Translated · Show Original'));
   }
   // One badge for a night everywhere it appears: a moon and a big night number, so nights stand apart at a glance.
   const nightBadge = round => el('span', { class: 'night-tag night-badge', 'data-night': String(round % 4) }, txt('span', 'night-moon', '☾'), txt('small', '', 'NIGHT'), txt('b', '', String(round)));
