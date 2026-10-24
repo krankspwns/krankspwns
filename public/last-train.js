@@ -165,6 +165,8 @@
         if (!response.ok) {
           // One "room not found" or "ticket not recognised" can be a passing glitch. Only after several in a row
           // (about five seconds) does the phone let go of the room, and then it says why.
+          // Removed by the host: let go of the room straight away and say why.
+          if (response.status === 410) { seat = null; state = null; save('lt-seat', null); throw Error(data.error || 'The host removed you from this room.'); }
           if ([401, 404].includes(response.status)) {
             if (++goneStrikes < 5) { connected = false; connectionError = true; error = 'Reconnecting to your room…'; render(); return; }
             seat = null; state = null; save('lt-seat', null);
@@ -442,13 +444,22 @@
       txt('small', allyCls(p.id), p.id === state.meId ? 'You' : p.name));
   }
   function playersDialog() {
-    const sess = state.session || {};
+    const sess = state.session || {}, host = state.hostId === state.meId;
+    // The host can remove anyone else: a bot, a friend who left the table, or an observer.
+    const removeButton = p => host && p.id !== state.meId && !p.departed ? btn('Remove', () => { d.close(); kickDialog(p); }, 'text-button players-remove', busy, 'remove-' + p.id) : null;
     const d = dialog('Travellers', txt('p', 'muted small', state.players.filter(p => !p.departed).length + ' in this room. Seat order sets the speaking order.'),
       el('div', { class: 'players-list' }, ...state.players.map(p => el('div', { class: 'players-row' + (p.id === state.meId ? ' me' : '') + (!p.alive && state.phase !== 'lobby' ? ' out' : '') },
-        avatar(p, 'players-face'), el('div', {}, el('b', {}, p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', [p.seat ? 'Seat ' + p.seat : null, p.id === state.hostId ? 'Host' : null, p.departed ? 'Away' : !p.alive && state.phase !== 'lobby' ? 'Out' : state.phase === 'lobby' ? 'Ready to board' : 'On board'].filter(Boolean).join(' · '))),
-        sess[p.id]?.journeys ? txt('span', 'players-wins', sess[p.id].wins + ' / ' + sess[p.id].journeys + ' wins') : null))));
-    if ((state.observers || []).length) d.insertBefore(el('div', { class: 'observers-list' }, txt('small', 'eyebrow', 'WATCHING · SEAT AT THE NEXT JOURNEY'), ...state.observers.map(o => el('div', { class: 'players-row observer' }, avatar(o, 'players-face'), el('div', {}, el('b', {}, o.name + (o.id === state.meId ? ' · You' : '')), txt('small', '', 'Observer'))))), null);
+        avatar(p, 'players-face'), el('div', {}, el('b', {}, p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', [p.seat ? 'Seat ' + p.seat : null, p.id === state.hostId ? 'Host' : null, p.kicked ? 'Removed' : p.departed ? 'Away' : !p.alive && state.phase !== 'lobby' ? 'Out' : state.phase === 'lobby' ? 'Ready to board' : 'On board'].filter(Boolean).join(' · '))),
+        sess[p.id]?.journeys ? txt('span', 'players-wins', sess[p.id].wins + ' / ' + sess[p.id].journeys + ' wins') : null, removeButton(p)))));
+    if ((state.observers || []).length) d.insertBefore(el('div', { class: 'observers-list' }, txt('small', 'eyebrow', 'WATCHING · SEAT AT THE NEXT JOURNEY'), ...state.observers.map(o => el('div', { class: 'players-row observer' }, avatar(o, 'players-face'), el('div', {}, el('b', {}, o.name + (o.id === state.meId ? ' · You' : '')), txt('small', '', 'Observer')), removeButton(o)))), null);
     d.append(btn('Close', () => d.close(), 'gold'));
+  }
+  function kickDialog(p) {
+    const lobby = state.phase === 'lobby' || p.observer;
+    const d = dialog('Remove ' + p.name + '?', el('div', { class: 'kick-who' }, avatar(p, 'players-face'), txt('b', '', p.name)),
+      txt('p', 'muted', lobby ? 'They leave the room and their seat is freed.' : 'Their phone is signed out and cannot come back. Their character stays aboard for this journey, doing nothing, so no team is revealed.'));
+    d.classList.add('leave-dialog');
+    d.append(el('div', { class: 'dialog-actions' }, btn('Cancel', () => d.close(), 'secondary'), btn('Remove', () => { d.close(); send('kick', { targetId: p.id }); }, 'danger kick-confirm')));
   }
   function header() {
     const inRoom = !!(state && seat), w = state?.me?.wallet;

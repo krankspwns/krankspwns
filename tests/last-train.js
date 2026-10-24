@@ -654,6 +654,20 @@ function engineTests() {
     assert.ok(joined.every(v=>v.s===200));const seats=[host,...joined.map(v=>v.j)];
     const get=s=>call(handler,null,{code:s.code,pid:s.meId},{'x-tok':s.tok});
     const post=async(s,action,extra={})=>{const v=(await get(s)).j;return call(handler,{action,requestId:uuid(),code:s.code,pid:s.meId,tok:s.tok,match:v.match,round:v.round,step:v.step,...extra});};
+    // The host can remove a player: in the lobby they leave; mid-journey they are signed out and cannot rejoin.
+    {
+      const kh=(await enter('create',{name:'Kicker'})).j,ks=[kh];for(let i=0;i<5;i++)ks.push((await enter('join',{code:kh.code,name:'Kick '+i})).j);
+      assert.equal((await post(ks[1],'kick',{targetId:ks[2].meId})).s,403);
+      assert.equal((await post(kh,'kick',{targetId:kh.meId})).s,400);
+      assert.equal((await post(kh,'kick',{targetId:ks[5].meId})).s,200);assert.equal((await get(kh)).j.players.length,5);
+      const gone=await get(ks[5]);assert.equal(gone.s,410);assert.equal(gone.j.error,'The host removed you from this room.');
+      ks.pop();ks.push((await enter('join',{code:kh.code,name:'Kick new'})).j);
+      assert.equal((await post(kh,'start')).j.phase,'briefing');
+      assert.equal((await post(kh,'kick',{targetId:ks[1].meId})).s,200);
+      const v=(await get(kh)).j;assert.equal(v.players.length,6);assert.ok(v.players.find(p=>p.id===ks[1].meId).departed&&v.players.find(p=>p.id===ks[1].meId).kicked);
+      assert.equal((await get(ks[1])).s,410);
+      assert.equal((await enter('join',{code:kh.code,name:'Kick 0',recoveryCode:'anything'})).s,403);
+    }
     const raw=async()=>redis?JSON.parse(await redis.client.get('last-train:room:'+host.code)):structuredClone(globalThis.__lastTrainRooms.get(host.code));
     const save=async room=>redis?redis.client.set('last-train:room:'+host.code,JSON.stringify(room)):globalThis.__lastTrainRooms.set(host.code,structuredClone(room));
     const expire=async()=>{const room=await raw();room.deadline=Date.now()-1;await save(room);return (await get(host)).j;};

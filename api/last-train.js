@@ -14,7 +14,7 @@ function player(name) { const tok = secret(); return { p: { id: crypto.randomUUI
 function view(room, me) { const result = rules.view(room, me); result.me.recoveryCode = recovery(room, me); return result; }
 async function execute(req, body) {
   const action = req.method === 'GET' ? (body.voice ? 'voice' : 'state') : body.action;
-  need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart'].includes(action), 400, 'Unknown choice. Please reload.');
+  need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick'].includes(action), 400, 'Unknown choice. Please reload.');
   if (action === 'create') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     let code;
@@ -47,6 +47,7 @@ async function execute(req, body) {
     if (me) {
       const replay = body.recoveryCode ? crypto.createHmac('sha256', String(body.recoveryCode).trim()).update('lt:' + code + ':' + me.id + ':' + body.requestId).digest('base64url') : null;
       if (me.recoveryReceipt === body.requestId && replay && equal(me.tokenHash, hash(replay))) return { ...view(room, me), tok: replay };
+      need(!me.kicked, 403, 'The host removed you from this room.');
       need(body.recoveryCode && equal(recovery(room, me), String(body.recoveryCode).trim()), 409, 'That name is already here. Enter its private rejoin code.');
       tok = replay; me.tokenHash = hash(tok); me.departed = false; me.recoveryReceipt = body.requestId;
     } else {
@@ -63,11 +64,14 @@ async function execute(req, body) {
     if (!room.players.some(p => p.id === room.hostId && !p.departed)) room.hostId = me.id;
     await store.save(room); return { ...view(room, me), tok };
   }
+  // A phone the host removed hears so plainly instead of a generic sign-in error.
+  need(!(room.kicked || []).includes(body.pid), 410, 'The host removed you from this room.');
   const me = room.players.find(p => p.id === body.pid) || (room.observers || []).find(p => p.id === body.pid);
   need(me && body.tok && equal(me.tokenHash, hash(body.tok)), 401, 'Use your private rejoin code to return to the game.');
   const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles, body.letterIds, body.ids, body.to, body.events, body.observers, body.autoShuffle, body.footsteps, body.e, body.kind, body.key, body.item, body.frame, body.voiceId, body.mimeType, body.durationMs, body.audioData ? hash(body.audioData) : null]));
   const receipt = (room.receipts || []).find(r => r.pid === me.id && r.id === body.requestId);
   if (action !== 'state' && receipt) { need(receipt.fingerprint === fingerprint, 409, 'That request was already used. Reload the game.'); return view(room, me); }
+  need(!me.kicked, 410, 'The host removed you from this room.');
   need(!me.departed || ['state', 'voice', 'dismissLetters', 'wear', 'buy'].includes(action), 403, 'Use your rejoin code to come back.');
   need(!me.observer || ['state', 'voice', 'emote', 'leave'].includes(action), 403, 'Observers watch this journey. You take a seat when the next journey starts.');
   const changed = rules.timed(room);
@@ -83,9 +87,9 @@ async function execute(req, body) {
   if (action === 'speakVoice') need(body.match === room.match && body.round === room.round, 409, 'This recording belongs to an earlier turn.');
   else if (['letter', 'dismissLetters'].includes(action)) need(body.match === (room.match || 0), 409, 'A new journey has started. Open your letters again.');
   // Reactions, the shop and pins are not tied to a turn, so a phase change never rejects them.
-  else if (!['leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
+  else if (!['leave', 'kick', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
   const host = () => need(room.hostId === me.id, 403, 'Only the host can do that.');
-  need(!room.paused || ['resume', 'leave', 'dismissLetters', 'speakVoice', 'emote', 'buy', 'wear', 'throw'].includes(action), 409, 'The game is paused.');
+  need(!room.paused || ['resume', 'leave', 'kick', 'dismissLetters', 'speakVoice', 'emote', 'buy', 'wear', 'throw'].includes(action), 409, 'The game is paused.');
   if (action === 'settings') {
     host(); need(['lobby','finished'].includes(room.phase), 409, 'Change roles before the game starts.');
     need(['brave', 'speaker'].includes(body.extra) && typeof body.blocker === 'boolean' && ['in-person', 'chat'].includes(body.discussion), 400, 'Choose the role mix on screen.');
@@ -137,6 +141,17 @@ async function execute(req, body) {
   if (action === 'resume') {
     host(); need(room.paused, 409, 'The game is already running.');
     room.paused = false; room.deadline = room.pauseRemaining === null ? null : Date.now() + room.pauseRemaining; room.pauseRemaining = null; room.step++;
+  }
+  // The host removes a player, bot or observer. In the lobby they leave the room; during a journey their character stays
+  // aboard like someone who left (so no team is revealed), and that phone cannot come back.
+  if (action === 'kick') {
+    host();
+    const target = room.players.find(p => p.id === body.targetId) || (room.observers || []).find(o => o.id === body.targetId);
+    need(target && target.id !== me.id && !target.kicked, 400, 'Choose another traveller to remove.');
+    room.kicked = [...(room.kicked || []), target.id].slice(-50);
+    if (target.observer) room.observers = room.observers.filter(o => o.id !== target.id);
+    else if (room.phase === 'lobby') room.players = room.players.filter(p => p.id !== target.id);
+    else { target.departed = true; target.kicked = true; }
   }
   if (action === 'leave' && me.observer) room.observers = room.observers.filter(o => o.id !== me.id);
   else if (action === 'leave') {

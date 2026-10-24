@@ -93,6 +93,7 @@
         catch (error) {
           if (version !== epoch) return;
           if (error.status === 409) return; // A human or timer advanced the phase; the next poll reads it.
+          if ([401, 410].includes(error.status)) { bots = bots.filter(b => b.pid !== bot.pid); save(); return; } // removed by the host
           message = bot.name + ': ' + (error.name === 'AbortError' ? 'Reconnecting…' : error.message); update();
         }
       }));
@@ -138,6 +139,8 @@
         if (key) try { const saved = JSON.parse(localStorage.getItem(key)); if (Array.isArray(saved)) bots = saved.filter(b => b.code === next.code && b.pid && b.tok && b.name); } catch {}
         running = !!bots.length; schedule();
       }
+      // Bots the host removed (or that left) drop out of this page's pool.
+      if (key && next.code && bots.some(b => !next.players.some(p => p.id === b.pid && !p.departed))) { bots = bots.filter(b => next.players.some(p => p.id === b.pid && !p.departed)); save(); }
       if (!key) { panel.remove(); return; }
       root.querySelector('.lt-header')?.after(panel); update();
       if (autoSetup && autoAttemptedKey !== key && next.phase === 'lobby') {

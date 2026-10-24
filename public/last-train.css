@@ -2467,3 +2467,7 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .mix-count { margin-left: 6px; padding: 1px 7px; border-radius: 8px; background: #f2ce8626; color: #f2ce86; font: 800 12px Inter, sans-serif; vertical-align: 2px; }
 .mix-team-count { margin-left: 6px; padding: 0 7px; border-radius: 8px; background: #ffffff14; color: inherit; font-size: 11px; letter-spacing: 0; }
 .gamecard-buttons button { white-space: nowrap; }
+/* The host's Remove button in the Players list, and the confirm card. */
+.players-row .players-remove { margin-left: auto; min-height: 32px !important; padding: 0 10px !important; color: #ff9aa8 !important; font-size: 12.5px !important; }
+.kick-who { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; }
+.kick-who b { font: 800 16px Inter, sans-serif; color: #fff5df; }
