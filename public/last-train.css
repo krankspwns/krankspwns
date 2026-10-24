@@ -2461,3 +2461,9 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .crest-stowaway { background: radial-gradient(circle at 50% 42%, #5a3a1c, #2a1a0e 62%, #170f08) !important; }
 .stowaway-picker .role-option { border-style: dashed; }
 .gagged-note { margin: 4px 0 0; color: #ff9aa8; font-weight: 700; }
+/* Roles This Journey: a button above Notes and the dealt mix, grouped by team. */
+.lt-fabs .roles-fab { order: 0; background: radial-gradient(circle at 35% 30%, #3b4f8a, #1c2547) !important; }
+.roles-fab svg { width: 33px; height: 33px; filter: drop-shadow(0 2px 3px #0008); }
+.mix-count { margin-left: 6px; padding: 1px 7px; border-radius: 8px; background: #f2ce8626; color: #f2ce86; font: 800 12px Inter, sans-serif; vertical-align: 2px; }
+.mix-team-count { margin-left: 6px; padding: 0 7px; border-radius: 8px; background: #ffffff14; color: inherit; font-size: 11px; letter-spacing: 0; }
+.gamecard-buttons button { white-space: nowrap; }

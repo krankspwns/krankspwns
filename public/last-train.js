@@ -26,6 +26,10 @@
   const mapFab = document.createElement('button'); mapFab.type = 'button'; mapFab.className = 'map-fab'; mapFab.hidden = true; mapFab.setAttribute('aria-label', 'Open carriage map'); mapFab.title = 'Carriage Map';
   mapFab.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="ltmapfab" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1c9"/><stop offset="1" stop-color="#e9c46f"/></linearGradient></defs><path d="M4 8.5 11 6l10 3 7-2.5v17L21 26l-10-3-7 2.5z" fill="url(#ltmapfab)" stroke="#7a4c14" stroke-width="1.2" stroke-linejoin="round"/><path d="M11 6v17M21 9v17" stroke="#7a4c14" stroke-width="1.1" opacity=".55"/><rect x="8" y="11.5" width="16" height="9" rx="4.5" fill="none" stroke="#a8323f" stroke-width="1.8"/><circle cx="12" cy="11.5" r="1.4" fill="#a8323f"/><circle cx="20" cy="20.5" r="1.4" fill="#a8323f"/></svg><span>Map</span>';
   mapFab.onclick = () => mapDialog(); fabDock.prepend(mapFab);
+  // The roles in this journey's mix, one tap away just above Notes.
+  const rolesFab = document.createElement('button'); rolesFab.type = 'button'; rolesFab.className = 'map-fab roles-fab'; rolesFab.hidden = true; rolesFab.setAttribute('aria-label', 'Roles this journey'); rolesFab.title = 'Roles This Journey';
+  rolesFab.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="ltrf1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fdcff"/><stop offset="1" stop-color="#3f86d6"/></linearGradient><linearGradient id="ltrf2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8f0c4"/><stop offset="1" stop-color="#2f9e66"/></linearGradient><linearGradient id="ltrf3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb0bc"/><stop offset="1" stop-color="#d6455d"/></linearGradient></defs><g transform="rotate(-18 16 27)"><rect x="9.5" y="6" width="13" height="18" rx="2.6" fill="#fff7e6" stroke="#7a4c14" stroke-width="1"/><rect x="11" y="7.5" width="10" height="15" rx="1.8" fill="url(#ltrf1)"/><rect x="12.6" y="12.6" width="6.8" height="4.6" rx="1" fill="#fff7e6"/><circle cx="18" cy="14.9" r=".9" fill="#3f86d6"/></g><g transform="rotate(18 16 27)"><rect x="9.5" y="6" width="13" height="18" rx="2.6" fill="#fff7e6" stroke="#7a4c14" stroke-width="1"/><rect x="11" y="7.5" width="10" height="15" rx="1.8" fill="url(#ltrf3)"/><path d="M16 9.6l1.3 1.4v5.4h-2.6V11z" fill="#fff7e6"/><path d="M13.6 16.6h4.8" stroke="#fff7e6" stroke-width="1.4" stroke-linecap="round"/><path d="M16 17v2.6" stroke="#5a1a28" stroke-width="1.6" stroke-linecap="round"/></g><rect x="9.5" y="4" width="13" height="18.5" rx="2.6" fill="#fff7e6" stroke="#7a4c14" stroke-width="1.1"/><rect x="11" y="5.5" width="10" height="15.5" rx="1.8" fill="url(#ltrf2)"/><path d="M16 8.4l1.5 3.1 3.4.5-2.5 2.4.6 3.4L16 16.2l-3 1.6.6-3.4-2.5-2.4 3.4-.5z" fill="#fff3c4" stroke="#7a4c14" stroke-width=".6" stroke-linejoin="round"/><circle cx="25.5" cy="25.5" r="4.6" fill="#f2ce86" stroke="#7a4c14" stroke-width="1"/><text x="25.5" y="28.2" text-anchor="middle" font-family="Inter,sans-serif" font-weight="900" font-size="7" fill="#5a3410">?</text></svg><span>Roles</span>';
+  rolesFab.onclick = () => rolesDialog(); mapFab.after(rolesFab);
   const fromModule = (data, owner) => { if (seat?.tok === owner.tok && seat.code === owner.code) { adopt(data); render(); } };
   const notebook = window.createTrainNotebook(fabDock);
   const letters = window.createTrainLetters(fabDock, { request, onState: fromModule, sfx });
@@ -299,6 +303,19 @@
     const team = (cls, title, keys) => el('section', { class: 'power-team ' + cls }, txt('h3', '', title), el('div', { class: 'power-cards' }, ...keys.map(card)));
     return el('div', { class: 'powers-rules' },
       team('passengers', 'Passengers', ['passenger', 'careful', 'brave', 'witness', 'speaker']), team('crew', 'Crew', ['inspector', 'medic', 'trainee', 'conductor', 'porter', 'guard', 'steward', 'signalman']), team('bad', 'Saboteurs', ['saboteur', 'blocker', 'forger', 'framer', 'silencer', 'smuggler', 'stowaway']));
+  }
+  // Roles This Journey: the dealt mix grouped by team, with how many of each and what they do. Who holds which stays secret.
+  function rolesDialog() {
+    if (!state?.mix?.length) return;
+    const total = state.mix.reduce((n, m) => n + m.count, 0), name = k => state.catalog?.[k]?.name || ROLE_NAMES[k];
+    const card = m => el('div', { class: 'power-card mix-card' }, rolePortrait(m.role, 'power-card-art'), el('div', { class: 'power-card-copy' }, el('b', {}, name(m.role), m.count > 1 ? txt('span', 'mix-count', '×' + m.count) : null),
+      ROLE_FACTS[m.role] ? el('div', { class: 'power-card-tags' }, txt('span', 'when', ROLE_FACTS[m.role][0]), txt('span', 'uses', ROLE_FACTS[m.role][1])) : null, txt('p', '', ROLE_FACTS[m.role]?.[2] || ''),
+      state.catalog?.[m.role] ? el('details', { class: 'power-more' }, el('summary', {}, 'Full rule'), txt('p', '', state.catalog[m.role].description)) : null));
+    const team = (cls, title, kind) => { const list = state.mix.filter(m => role(m.role).group === kind); if (!list.length) return null;
+      return el('section', { class: 'power-team ' + cls }, el('h3', {}, title, txt('span', 'mix-team-count', String(list.reduce((n, m) => n + m.count, 0)))), el('div', { class: 'power-cards' }, ...list.map(card))); };
+    const d = dialog('Roles This Journey', txt('p', 'muted small', total + ' travellers. Who holds which role stays secret.'),
+      el('div', { class: 'powers-rules mix-rules' }, team('passengers', 'Passengers', 'passenger'), team('crew', 'Crew', 'crew'), team('bad', 'Saboteurs', 'saboteur')));
+    d.classList.add('roles-dialog'); d.append(btn('Close', () => d.close(), 'gold'));
   }
   function extraRules() {
     return el('div', { class: 'powers-rules' },
@@ -1826,6 +1843,7 @@
     if (state?.phase === 'voteResult') requestAnimationFrame(flyVotes);
     letters.sync(state?.me?.observer ? null : state, state?.me?.observer ? null : seat);
     mapFab.hidden = !(seat && state && !['lobby', 'briefing', 'boarding'].includes(state.phase) && state.players.some(p => p.seat));
+    rolesFab.hidden = !(seat && state && state.phase !== 'lobby' && state.mix?.length);
     social.sync(state, seat);
     syncPrivateResult();
     syncShuffle();
