@@ -41,31 +41,62 @@
       bad = true;
     }
     const line = (dx, dz, from, to, ys) => { const out = []; for (let k = from; k <= to; k++) for (const yy of ys) out.push([x + dx * k, yy, z + dz * k]); return out; };
-    const sections = ['hops', 'lift', 'slime'].sort(() => r() - .5);
-    for (const kind of sections) {
-      for (let i = 0; i < (kind === 'hops' ? 4 : 2); i++) piece((dx, dz, px, pz) => {
+    // Five sections: an easy one first, then four from the rest in a random order, each a little harder than the last.
+    const easy = ['hops', 'lift', 'slime'][Math.floor(r() * 3)];
+    // A Fisher–Yates shuffle with the seeded generator: the same on every browser (sort with a random comparator is not).
+    const rest = ['hops', 'lift', 'slime', 'belt', 'elevator', 'beam', 'ice'].filter(k => k !== easy);
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+    const sections = [easy, ...rest.slice(0, 4)];
+    sections.forEach((kind, level) => {
+      for (let i = 0; i < (['hops', 'ice'].includes(kind) ? 4 : 2); i++) piece((dx, dz, px, pz) => {
         if (kind === 'lift') {
           // A baggage cart slides along the path; hop on when it is close, hop off when it reaches the far side.
           const track = line(dx, dz, 1, 5, [y]);
           return { need: [...track, ...line(dx, dz, 6, 6, [y])], place: () => {
-            const cx = x + dx * 3, cz = z + dz * 3; reserve(track); put(cx, y, cz, 'lift', { ax: dx, az: dz, amp: 1.4, period: 4.2 + r(), phase: r() * 6.28 });
+            const cx = x + dx * 3, cz = z + dz * 3; reserve(track); put(cx, y, cz, 'lift', { ax: dx, az: dz, amp: 1.4, period: 4.2 + r() - level * .25, phase: r() * 6.28 });
             x = cx + dx * 3; z = cz + dz * 3; put(x, y, z, 'stone'); } };
         }
         if (kind === 'slime') {
-          // A spring buffer bounces the ghost three levels up onto a wide landing.
-          const land = [x + dx * 4, y + 3, z + dz * 4], side = [land[0] + px, land[1], land[2] + pz];
+          // A spring buffer bounces the ghost three levels up onto a landing (narrower later on).
+          const land = [x + dx * 4, y + 3, z + dz * 4], side = [land[0] + px, land[1], land[2] + pz], wide = level < 3;
           return { need: [...line(dx, dz, 1, 4, [y, y + 3]), side], place: () => {
             reserve(line(dx, dz, 1, 4, [y + 1, y + 2])); put(x + dx * 2, y, z + dz * 2, 'slime');
-            [x, y, z] = land; put(x, y, z, 'stone'); put(...side, 'stone', { wide: true }); } };
+            [x, y, z] = land; put(x, y, z, 'stone'); if (wide) put(...side, 'stone', { wide: true }); else reserve([side]); } };
         }
-        const up = r() < .5 ? 1 : 0, len = up || r() < .7 ? 2 : 3, nx = x + dx * len, ny = y + up, nz = z + dz * len;
+        if (kind === 'belt') {
+          // A baggage conveyor: three belts in a row that push sideways (or back), then a gap to the next crate.
+          const cells = line(dx, dz, 1, 3, [y]), push = r() < .7 ? (r() < .5 ? 1 : -1) : 0, speed = 1.5 + level * .15;
+          const [bx, bz] = push ? [pz * push * speed, px * push * speed] : [-dx * speed * .7, -dz * speed * .7];
+          return { need: [...cells, ...line(dx, dz, 4, 5, [y]), [x + dx * 5 + px, y, z + dz * 5 + pz]], place: () => {
+            cells.forEach(([cx, cy, cz]) => put(cx, cy, cz, 'belt', { bx, bz, dirX: bx, dirZ: bz }));
+            x += dx * 5; z += dz * 5; put(x, y, z, 'stone'); put(x + px, y, z + pz, 'stone', { wide: true }); } };
+        }
+        if (kind === 'elevator') {
+          // A freight elevator: hop on at the bottom, ride up three levels, step off at the top.
+          const rise = 3, shaft = [];
+          for (let h = 0; h <= rise + 2; h++) shaft.push([x + dx * 2, y + h, z + dz * 2]);
+          return { need: [...line(dx, dz, 1, 1, [y, y + rise]), ...shaft, ...line(dx, dz, 3, 4, [y + rise]), [x + dx * 4 + px, y + rise, z + dz * 4 + pz]], place: () => {
+            reserve(shaft); put(x + dx * 2, y, z + dz * 2, 'elevator', { rise, period: 5.2 - level * .2, phase: r() * 6.28 });
+            [x, y, z] = [x + dx * 4, y + rise, z + dz * 4]; put(x, y, z, 'stone'); put(x + px, y, z + pz, 'stone', { wide: true }); } };
+        }
+        if (kind === 'beam') {
+          // A narrow steel beam three blocks long: walk the line. The second one starts after a small gap.
+          const gap = i ? 1 : 0, cells = line(dx, dz, 1 + gap, 3 + gap, [y]);
+          return { need: [...line(dx, dz, 1, 4 + gap, [y]), [x + dx * (4 + gap) + px, y, z + dz * (4 + gap) + pz]], place: () => {
+            const mid = cells[1]; reserve(cells); put(mid[0], y, mid[2], 'beam', { hx: dx ? 1.5 : .17, hz: dz ? 1.5 : .17 });
+            x += dx * (4 + gap); z += dz * (4 + gap); put(x, y, z, 'stone'); put(x + px, y, z + pz, 'stone', { wide: true }); } };
+        }
+        // Hops, on crates or slippery frosted ice: wide landings early on, longer and narrower later.
+        const ice = kind === 'ice', up = !ice && r() < .5 ? 1 : 0, len = up || r() < (ice ? .8 : .7 - level * .1) ? 2 : 3, nx = x + dx * len, ny = y + up, nz = z + dz * len;
+        const wide = !ice && r() > level * .2;
         return { need: [...line(dx, dz, 1, len - 1, [y, ny]), [nx, ny, nz], [nx + px, ny, nz + pz]], place: () => {
-          [x, y, z] = [nx, ny, nz]; put(x, y, z, 'stone'); put(x + px, y, z + pz, 'stone', { wide: true }); } };
+          [x, y, z] = [nx, ny, nz]; put(x, y, z, ice ? 'ice' : 'stone'); if (wide) put(x + px, y, z + pz, 'stone', { wide: true }); else reserve([[x + px, y, z + pz]]); } };
       });
       // A station platform after every section; the last one carries the signal.
-      piece((dx, dz, px, pz) => ({ need: [...line(dx, dz, 1, 3, [y]), [x + dx * 3 + px, y, z + dz * 3 + pz]], place: () => {
-        x += dx * 3; z += dz * 3; put(x, y, z, 'gold'); put(x + px, y, z + pz, 'gold', { wide: true }); } }));
-    }
+      // Each platform is one level up, so every course really climbs.
+      piece((dx, dz, px, pz) => ({ need: [...line(dx, dz, 1, 2, [y, y + 1]), [x + dx * 2 + px, y + 1, z + dz * 2 + pz]], place: () => {
+        x += dx * 2; y += 1; z += dz * 2; put(x, y, z, 'gold'); put(x + px, y, z + pz, 'gold', { wide: true }); } }));
+    });
     blocks.filter(b => b.kind === 'gold').slice(-2).forEach(b => { b.kind = 'peak'; });
     return { theme, blocks, top: y, bad };
   }
@@ -79,7 +110,7 @@
     const sim = simulate(blocks, { land: b => { if (b === B) landed = true; }, bounce: () => { bounced = true; } });
     let now = o.t0 * 1000; sim.step(0, now, 0, 0, false);
     const dx0 = B.cx - A.cx, dz0 = B.cz - A.cz, l0 = Math.hypot(dx0, dz0) || 1;
-    sim.place({ x: A.cx + dx0 / l0 * o.off, y: A.y + .5, z: A.cz + dz0 / l0 * o.off });
+    sim.place({ x: A.cx + dx0 / l0 * o.off, y: A.cy + .5, z: A.cz + dz0 / l0 * o.off });
     if (A.kind === 'slime') sim.me.vy = BOUNCE;
     for (let i = 0; i < 240; i++) {
       now += 1000 / 60; const dx = B.cx - sim.me.x, dz = B.cz - sim.me.z, dist = Math.hypot(dx, dz), go = dist > .05 && (!o.wait || !sim.me.ground || dist < o.wait);
@@ -93,8 +124,9 @@
     const { blocks, bad } = build(seed); if (bad) return false;
     const path = pathIndexes(blocks), pairs = [[blocks.findIndex(b => b.kind === 'roof' && b.x === 1 && b.z === 0), path[0]]];
     for (let k = 0; k < path.length - 1; k++) { const a = blocks[path[k]], b = blocks[path[k + 1]]; if (['gold', 'peak'].includes(a.kind) && a.kind === b.kind && a.y === b.y) continue; pairs.push([path[k], path[k + 1]]); }
-    return pairs.every(([ai, bi]) => { const lift = blocks[ai].kind === 'lift' || blocks[bi].kind === 'lift';
-      for (const t0 of lift ? [0, .4, .8, 1.2, 1.6, 2, 2.4, 2.8, 3.2, 3.6] : [0]) for (const off of [0, .3, .45]) for (const j of [3, 2.7, 2.4, 2.1, 1.8, 1.5, 1.2, .9]) for (const wait of lift && blocks[ai].kind !== 'lift' ? [0, 1.8, 2.2] : [0])
+    const moving = b => ['lift', 'elevator'].includes(b.kind);
+    return pairs.every(([ai, bi]) => { const lift = moving(blocks[ai]) || moving(blocks[bi]);
+      for (const t0 of lift ? [0, .4, .8, 1.2, 1.6, 2, 2.4, 2.8, 3.2, 3.6, 4, 4.4, 4.8] : [0]) for (const off of [0, .3, .45]) for (const j of [3, 2.7, 2.4, 2.1, 1.8, 1.5, 1.2, .9]) for (const wait of lift && !moving(blocks[ai]) ? [0, 1.8, 2.2] : [0])
         if (jumpPossible(seed, ai, bi, { t0, off, j, wait })) return true;
       return false; });
   }
@@ -107,30 +139,38 @@
   function simulate(blocks, on = {}) {
     const me = { x: 0, y: .5, z: 0, vx: 0, vy: 0, vz: 0, ground: null, coyote: 0, face: 0, jumped: false };
     const floor = Math.min(...blocks.map(b => b.y)) - BELOW;
-    for (const b of blocks) { b.cx ??= b.x; b.cz ??= b.z; }
+    // Every block has a centre (cx, cy, cz) that moving pieces update, and half-sizes (hx, hz): narrow beams are thin.
+    for (const b of blocks) { b.cx ??= b.x; b.cz ??= b.z; b.cy ??= b.y; b.hx ??= .5; b.hz ??= .5; }
     const liftPos = (b, now) => { const k = Math.sin(now / 1000 * 6.283 / b.period + b.phase) * b.amp; return [b.x + b.ax * k, b.z + b.az * k]; };
-    const overlaps = b => Math.abs(me.x - b.cx) < .5 + HALF && Math.abs(me.z - b.cz) < .5 + HALF && me.y < b.y + .5 && me.y + HEIGHT > b.y - .5;
-    const wall = b => Math.abs(me.x - b.cx) < .5 + HALF && Math.abs(me.z - b.cz) < .5 + HALF && me.y < b.y + .5 - .02 && me.y + HEIGHT > b.y - .5 + .02;
+    // Freight elevators rise from their level to `rise` blocks higher and back, pausing a little at each end.
+    const elevatorY = (b, now) => { const c = Math.cos(now / 1000 * 6.283 / b.period + b.phase); return b.y + b.rise * Math.min(1, Math.max(0, (1 - c) / 2 * 1.2 - .1)); };
+    const overlaps = b => Math.abs(me.x - b.cx) < b.hx + HALF && Math.abs(me.z - b.cz) < b.hz + HALF && me.y < b.cy + .5 && me.y + HEIGHT > b.cy - .5;
+    const wall = b => Math.abs(me.x - b.cx) < b.hx + HALF && Math.abs(me.z - b.cz) < b.hz + HALF && me.y < b.cy + .5 - .02 && me.y + HEIGHT > b.cy - .5 + .02;
     function step(dt, now, mx, mz, wantJump) {
-      // Lifts move first and carry whoever stands on them.
-      for (const b of blocks) if (b.kind === 'lift') { const [nx, nz] = liftPos(b, now); if (me.ground === b) { me.x += nx - b.cx; me.z += nz - b.cz; } b.cx = nx; b.cz = nz; }
-      const grip = me.ground ? 16 : 9; me.vx += (mx * SPEED - me.vx) * Math.min(1, dt * grip); me.vz += (mz * SPEED - me.vz) * Math.min(1, dt * grip);
+      // Moving pieces go first and carry whoever stands on them; belts push the ghost along.
+      for (const b of blocks) {
+        if (b.kind === 'lift') { const [nx, nz] = liftPos(b, now); if (me.ground === b) { me.x += nx - b.cx; me.z += nz - b.cz; } b.cx = nx; b.cz = nz; }
+        else if (b.kind === 'elevator') { const ny = elevatorY(b, now); if (me.ground === b) me.y += ny - b.cy; b.cy = ny; }
+      }
+      if (me.ground?.kind === 'belt') { me.x += me.ground.bx * dt; me.z += me.ground.bz * dt; }
+      // Ice barely grips, so the ghost slides; the air gives a little steering.
+      const grip = me.ground ? (me.ground.kind === 'ice' ? 2.4 : 16) : 9; me.vx += (mx * SPEED - me.vx) * Math.min(1, dt * grip); me.vz += (mz * SPEED - me.vz) * Math.min(1, dt * grip);
       if (Math.hypot(mx, mz) > .1) me.face = Math.atan2(me.vx, me.vz);
       me.coyote = me.ground ? COYOTE : me.coyote - dt; me.jumped = false;
       if (wantJump && me.coyote > 0) { me.vy = JUMP; me.ground = null; me.coyote = 0; me.jumped = true; on.jump?.(); }
       me.vy = Math.max(-30, me.vy - GRAVITY * dt);
-      const near = blocks.filter(b => Math.abs(b.cx - me.x) < 3 && Math.abs(b.cz - me.z) < 3 && Math.abs(b.y - me.y) < 4);
+      const near = blocks.filter(b => Math.abs(b.cx - me.x) < 3 + b.hx && Math.abs(b.cz - me.z) < 3 + b.hz && Math.abs(b.cy - me.y) < 4.5);
       // Vertical first (land or bump), then sideways, so standing on a block never reads as hitting a wall.
       me.ground = null; me.y += me.vy * dt;
       for (const b of near) if (overlaps(b)) {
         if (me.vy <= 0) {
-          me.y = b.y + .5; me.vy = 0; me.ground = b;
+          me.y = b.cy + .5; me.vy = 0; me.ground = b;
           if (b.kind === 'slime') { me.vy = BOUNCE; me.ground = null; on.bounce?.(b); }
           on.land?.(b);
-        } else { me.y = b.y - .5 - HEIGHT - 1e-3; me.vy = 0; }
+        } else { me.y = b.cy - .5 - HEIGHT - 1e-3; me.vy = 0; }
       }
-      me.x += me.vx * dt; for (const b of near) if (wall(b)) { me.x = me.vx > 0 ? b.cx - .5 - HALF - 1e-3 : b.cx + .5 + HALF + 1e-3; me.vx = 0; }
-      me.z += me.vz * dt; for (const b of near) if (wall(b)) { me.z = me.vz > 0 ? b.cz - .5 - HALF - 1e-3 : b.cz + .5 + HALF + 1e-3; me.vz = 0; }
+      me.x += me.vx * dt; for (const b of near) if (wall(b)) { me.x = me.vx > 0 ? b.cx - b.hx - HALF - 1e-3 : b.cx + b.hx + HALF + 1e-3; me.vx = 0; }
+      me.z += me.vz * dt; for (const b of near) if (wall(b)) { me.z = me.vz > 0 ? b.cz - b.hz - HALF - 1e-3 : b.cz + b.hz + HALF + 1e-3; me.vz = 0; }
       // Missing a jump lands on the floor, which sends the ghost back to its last block.
       if (me.y < floor) { me.y = floor; me.vy = 0; on.fell?.(); }
     }
@@ -184,6 +224,23 @@
       g.fillStyle = '#7a3a2e'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#9a4c3a';
       for (let row = 0; row < 8; row++) for (let col = -1; col < 5; col++) { rrect(g, col * 32 + (row % 2) * 16 + 2, 20 + row * 14, 28, 11, 2); g.fill(); }
       g.fillStyle = peak ? '#ffe08a' : '#f4ecdc'; g.fillRect(0, 0, 128, 16); },
+    // A rubber conveyor with chevrons pointing the way it moves (+x on the texture), steel rollers on the sides.
+    belt: (g, c, top) => {
+      if (top) { g.fillStyle = '#26282e'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#3a3d46'; for (let x = 0; x < 128; x += 16) g.fillRect(x, 0, 3, 128);
+        g.fillStyle = '#f2c230'; for (let x = 8; x < 128; x += 42) { g.beginPath(); g.moveTo(x, 34); g.lineTo(x + 22, 64); g.lineTo(x, 94); g.lineTo(x + 10, 94); g.lineTo(x + 32, 64); g.lineTo(x + 10, 34); g.fill(); } return; }
+      g.fillStyle = '#5a5f6a'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#26282e'; g.fillRect(0, 0, 128, 26); for (const x of [20, 64, 108]) { g.fillStyle = '#9aa3b5'; g.beginPath(); g.arc(x, 74, 16, 0, 7); g.fill(); g.fillStyle = '#3a3d46'; g.beginPath(); g.arc(x, 74, 6, 0, 7); g.fill(); } },
+    // A freight elevator: diamond plate with hazard edges, a steel cage below.
+    freight: (g, c, top) => {
+      if (top) { g.fillStyle = '#8a929f'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#a7aebb'; for (let x = 0; x < 128; x += 16) for (let y = (x / 16 % 2) * 8; y < 128; y += 16) { g.save(); g.translate(x + 8, y + 4); g.rotate(.7); g.fillRect(-5, -1.5, 10, 3); g.restore(); }
+        g.save(); rrect(g, 0, 0, 128, 128, 0); g.lineWidth = 14; g.setLineDash([14, 14]); g.strokeStyle = '#f2c230'; g.strokeRect(7, 7, 114, 114); g.setLineDash([14, 14]); g.lineDashOffset = 14; g.strokeStyle = '#22201c'; g.strokeRect(7, 7, 114, 114); g.restore(); return; }
+      g.fillStyle = '#4a505c'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#7a8292'; for (let x = 8; x < 128; x += 24) g.fillRect(x, 0, 6, 128); g.fillStyle = '#f2c230'; g.fillRect(0, 0, 128, 14); },
+    // A steel beam with a yellow safety line down the middle.
+    rail: (g, c, top) => { g.fillStyle = '#9aa3b5'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#7a8292'; g.fillRect(0, 0, 128, 10); g.fillRect(0, 118, 128, 10);
+      if (top) { g.fillStyle = '#f2c230'; g.fillRect(0, 58, 128, 12); } g.fillStyle = '#5a6272'; for (let x = 10; x < 128; x += 28) { g.beginPath(); g.arc(x, 24, 4, 0, 7); g.arc(x, 104, 4, 0, 7); g.fill(); } },
+    // Frosted ice: pale blue with white cracks and a sparkle.
+    ice: (g, c, top) => { const gr = g.createLinearGradient(0, 0, 128, 128); gr.addColorStop(0, '#e8fbff'); gr.addColorStop(1, '#8fd0ee'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+      g.strokeStyle = '#ffffffcc'; g.lineWidth = 2; g.beginPath(); g.moveTo(10, 30); g.lineTo(50, 60); g.lineTo(44, 100); g.moveTo(50, 60); g.lineTo(110, 50); g.moveTo(80, 120); g.lineTo(96, 80); g.stroke();
+      g.strokeStyle = '#5aa8d0'; g.lineWidth = 4; rrect(g, 3, 3, 122, 122, 14); g.stroke(); if (top) { g.fillStyle = '#fff'; g.beginPath(); g.arc(92, 30, 4, 0, 7); g.fill(); } },
     roof: (g, c, top) => {
       g.fillStyle = shade(c, -.1); g.fillRect(0, 0, 128, 128);
       if (top) { for (let y = 0; y < 128; y += 16) { g.fillStyle = shade(c, .18); g.fillRect(0, y, 128, 3); g.fillStyle = shade(c, -.35); g.fillRect(0, y + 13, 128, 3); } return; }
@@ -195,7 +252,7 @@
       + '<div class="climb-stage"><canvas></canvas><div class="climb-route" aria-hidden="true"><i class="route-line"></i><i class="route-fill"></i><span class="route-ghost"></span></div><i class="climb-cross" aria-hidden="true"></i><p class="climb-toast">Loading the line…</p>'
       + '<div class="climb-stick" aria-label="Move"><span class="stick-arrows" aria-hidden="true"></span><i></i></div>'
       + '<div class="climb-jump" role="button" aria-label="Jump"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l7 8h-4.5v7h-5v-7H5z"/></svg><span>JUMP</span></div>'
-      + '<p class="climb-hint">Drag to look · Stick to move · Jump</p></div>';
+      + '<p class="climb-hint">Drag to look · Stick to move · Jump</p><ol class="climb-news" aria-live="polite"></ol></div>';
     document.body.append(d); d.showModal(); document.body.classList.add('climbing'); onAudio?.(true);
     const canvas = d.querySelector('canvas'), stage = d.querySelector('.climb-stage'), timeEl = d.querySelector('.climb-time'), toast = d.querySelector('.climb-toast'), route = d.querySelector('.climb-route');
     let closed = false, raf = 0, renderer = null, camera = null, audio = null;
@@ -273,13 +330,18 @@
 
       // The course: luggage, carts, spring buffers, platforms, and the roof of the carriage the ghost escapes from.
       const pick = rng(seed ^ 0x2545f491), box = new THREE.BoxGeometry(.96, .96, .96), floorY = Math.min(...blocks.map(b => b.y)) - BELOW;
-      const post = new THREE.CylinderGeometry(.06, .06, 1, 8), postM = lambert({ color: C(theme.post) });
+      const postM = lambert({ color: C(theme.post) });
       for (const b of blocks) {
-        const style = { stone: theme.bag, lift: 'cart', slime: 'spring', gold: 'platform', peak: 'platform', roof: 'roof' }[b.kind];
-        b.mesh = new THREE.Mesh(b.kind === 'roof' ? new THREE.BoxGeometry(1, 1, 1) : box, faces(style, b.kind === 'roof' ? theme.carriage : theme.colors[Math.floor(pick() * theme.colors.length)], b.kind === 'peak'));
-        b.mesh.position.set(b.x, b.y, b.z); scene.add(b.mesh); b.cx = b.x; b.cz = b.z;
-        // Slim posts hold every fixed block up from the ground.
-        if (!['lift', 'roof'].includes(b.kind)) { const h = b.y - .48 - floorY; if (h > .1) { const p = new THREE.Mesh(post, postM); p.scale.y = h; p.position.set(b.x, floorY + h / 2, b.z); scene.add(p); } }
+        const style = { stone: theme.bag, lift: 'cart', slime: 'spring', gold: 'platform', peak: 'platform', roof: 'roof', belt: 'belt', elevator: 'freight', beam: 'rail', ice: 'ice' }[b.kind];
+        const geo = b.kind === 'roof' ? new THREE.BoxGeometry(1, 1, 1) : b.kind === 'beam' ? new THREE.BoxGeometry(b.hx * 2, .26, b.hz * 2) : box;
+        let mats = faces(style, b.kind === 'roof' ? theme.carriage : theme.colors[Math.floor(pick() * theme.colors.length)], b.kind === 'peak');
+        if (b.kind === 'belt') { mats = mats.map(m => m.clone()); mats[2].map = mats[2].map.clone(); mats[2].map.wrapS = THREE.RepeatWrapping; mats[2].map.needsUpdate = true; b.beltMap = mats[2].map; b.beltSpeed = Math.hypot(b.bx, b.bz); }
+        if (b.kind === 'ice') mats = mats.map(m => { const c = m.clone(); c.transparent = true; c.opacity = .9; c.emissive = C('#16384a'); return c; });
+        b.mesh = new THREE.Mesh(geo, mats);
+        if (b.kind === 'belt') b.mesh.rotation.y = Math.atan2(-b.bz, b.bx);
+        b.mesh.position.set(b.x, b.y, b.z); scene.add(b.mesh); b.cx = b.x; b.cz = b.z; b.cy = b.y;
+        // Blocks float freely; only elevators run between two short guide rails over their shaft.
+        if (b.kind === 'elevator') for (const s2 of [-1, 1]) { const h = b.rise + 1.2, g2 = new THREE.Mesh(new THREE.BoxGeometry(.08, h, .08), lambert({ color: C('#f2c230') })); g2.position.set(b.x + s2 * .56, b.y - .5 + h / 2, b.z + s2 * .56); scene.add(g2); }
       }
       // The carriage below the roof, its wheels, and the rails it stands on.
       const carM = lambert({ map: art(g => { g.fillStyle = theme.carriage; g.fillRect(0, 0, 256, 256); g.fillStyle = shade(theme.carriage, -.35); g.fillRect(0, 200, 256, 56);
@@ -353,6 +415,8 @@
       // A bobbing marker over the next block to jump to.
       const marker = new THREE.Mesh(new THREE.ConeGeometry(.16, .32, 16), new THREE.MeshBasicMaterial({ color: C(theme.accent), transparent: true, opacity: .9 })); marker.rotation.x = Math.PI; scene.add(marker);
 
+      // The first time each kind of obstacle is next, the board says what it does.
+      const TIPS = { lift: 'BAGGAGE CART · TIME YOUR HOP', slime: 'SPRING BUFFER · BOUNCE UP', belt: 'CONVEYOR · IT PUSHES YOU', elevator: 'FREIGHT LIFT · RIDE IT UP', beam: 'NARROW BEAM · WALK THE LINE', ice: 'FROSTED ICE · YOU WILL SLIDE' }, tipped = new Set();
       let safe = { x: 0, y: .5, z: 0 }, t0 = performance.now(), last = t0, finished = false, falls = 0, reached = -1, pads = 0, walked = 0;
       const camPos = new THREE.Vector3(), path = blocks.filter(b => b.kind !== 'roof' && !b.wide);
       // The route strip at the top: one stop per platform, and the ghost moving along it.
@@ -365,7 +429,7 @@
         bounce: b => { b.squash = performance.now(); audio?.fx('bounce'); },
         land: b => {
           // Falling puts you back on the last solid block you stood on.
-          if (['roof', 'stone', 'gold', 'peak'].includes(b.kind)) safe = { x: b.x, y: b.y + .5, z: b.z };
+          if (['roof', 'stone', 'gold', 'peak', 'beam', 'ice'].includes(b.kind)) safe = { x: b.x, y: b.y + .5, z: b.z };
           const i = path.indexOf(b.wide ? path.find(q => q.y === b.y && Math.abs(q.x - b.x) + Math.abs(q.z - b.z) === 1) : b);
           if (i > reached) { reached = i; if (['gold', 'peak'].includes(b.kind) && !['gold', 'peak'].includes(path[i - 1]?.kind)) { pads++; if (b.kind === 'gold') { say('PLATFORM ' + pads + ' · ALL CLEAR'); audio?.fx('platform'); } } }
           if (b.kind === 'peak' && !finished) { finished = true; win(); }
@@ -387,7 +451,8 @@
       }
       function draw(now) {
         for (const b of blocks) {
-          b.mesh.position.set(b.cx, b.y, b.cz);
+          b.mesh.position.set(b.cx, b.cy + (b.kind === 'beam' ? .37 : 0), b.cz);
+          if (b.beltMap) b.beltMap.offset.x = -(now / 1000) * b.beltSpeed;
           if (b.squash) { const t = now - b.squash; b.mesh.scale.y = t < 500 ? 1 - .3 * Math.exp(-t / 90) * Math.cos(t / 40) : 1; }
         }
         glow.material.opacity = .65 + Math.sin(now / 260) * .3;
@@ -400,9 +465,10 @@
         ghost.position.set(me.x, me.y + (me.ground ? Math.sin(now / 300) * .03 : 0), me.z);
         ghost.rotation.y += ((me.face - ghost.rotation.y + Math.PI * 3) % (Math.PI * 2) - Math.PI) * .2;
         // Shadow on the highest surface below the ghost.
-        let under = sim.floor; for (const b of blocks) if (Math.abs(b.cx - me.x) < .5 + HALF * .6 && Math.abs(b.cz - me.z) < .5 + HALF * .6 && b.y + .5 <= me.y + .01) under = Math.max(under, b.y + .5);
+        let under = sim.floor; for (const b of blocks) if (Math.abs(b.cx - me.x) < b.hx + HALF * .6 && Math.abs(b.cz - me.z) < b.hz + HALF * .6 && b.cy + .5 <= me.y + .01) under = Math.max(under, b.cy + .5);
         { shadow.position.set(me.x, under + .01, me.z); const h = me.y - under; shadow.scale.setScalar(Math.max(.4, 1 - h * .12)); shadow.material.opacity = Math.max(.1, .4 - h * .05); }
-        const nb = next(); marker.visible = !finished; marker.position.set(nb.cx, nb.y + 1.05 + Math.sin(now / 260) * .12, nb.cz); marker.rotation.y = now / 600;
+        const nb = next(); if (TIPS[nb.kind] && !tipped.has(nb.kind)) { tipped.add(nb.kind); say(TIPS[nb.kind], 2200); }
+        marker.visible = !finished; marker.position.set(nb.cx, nb.cy + 1.05 + Math.sin(now / 260) * .12, nb.cz); marker.rotation.y = now / 600;
         ghost.visible = view === 'third';
         if (view === 'first') {
           // Eyes high enough that block tops stay in view; pitch above zero looks down.
@@ -427,7 +493,16 @@
       resize(); addEventListener('resize', resize); toast.hidden = true; t0 = last = performance.now();
       faceNext(); camera.position.set(me.x + 4, me.y + 3, me.z + 4); raf = requestAnimationFrame(frame);
     }).catch(() => say('The climb could not load. Check your connection and try again.', 0));
-    return { close };
+    // News from the train while climbing: a short line that slides in and fades after a few seconds.
+    const news = d.querySelector('.climb-news');
+    function notify(text) {
+      if (closed || !text) return; const li = document.createElement('li'); li.textContent = text; news.prepend(li);
+      while (news.children.length > 3) news.lastChild.remove(); audio?.fx('news');
+      setTimeout(() => li.classList.add('gone'), 4200); setTimeout(() => li.remove(), 4800);
+    }
+    // When the journey ends mid-climb, say so and close after a moment.
+    function end(text) { if (closed) return; notify(text); say('THE JOURNEY HAS ENDED', 0); setTimeout(() => { close(); onClose?.(); }, 3200); }
+    return { close, notify, end, get open() { return !closed; } };
   };
   window.ghostClimbCourse = course;
   window.ghostClimbSim = simulate;

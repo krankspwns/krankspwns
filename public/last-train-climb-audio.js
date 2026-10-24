@@ -77,6 +77,7 @@
         jump: () => { tone({ f: 300, f2: 620, dur: .16, vol: .12, type: 'triangle' }); hiss({ dur: .12, vol: .03, f: 2500, f2: 5000, type: 'bandpass' }); },
         land: () => { tone({ f: 140, f2: 70, dur: .12, vol: .14 }); hiss({ dur: .06, vol: .05, f: 900, type: 'lowpass' }); },
         step: () => hiss({ dur: .035, vol: .025, f: 1400, type: 'bandpass' }),
+        news: () => [880, 1175].forEach((f, i) => tone({ f, at: t + i * .09, dur: .25, vol: .035, type: 'triangle' })),
         bounce: () => { tone({ f: 180, f2: 720, dur: .35, vol: .13, type: 'sine', vib: 18 }); tone({ f: 360, f2: 1100, dur: .25, vol: .04, type: 'triangle' }); },
         platform: () => [[1319, 0], [1047, .28]].forEach(([f, dt]) => { tone({ f, at: t + dt, dur: .9, vol: .07 }); tone({ f: f * 2.01, at: t + dt, dur: .4, vol: .02 }); }),
         fall: () => { tone({ f: 900, f2: 180, dur: .55, vol: .08, type: 'triangle' }); hiss({ at: t + .5, dur: .25, vol: .08, f: 600, type: 'lowpass', f2: 150 }); },

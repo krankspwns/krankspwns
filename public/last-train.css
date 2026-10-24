@@ -2255,3 +2255,59 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .cover-tips { margin: 4px 0 10px; padding: 10px 12px 10px 28px; border-radius: 12px; background: #ff9db00d; border: 1px solid #ff9db033; display: grid; gap: 4px; }
 .cover-tips li { font-size: 12.5px; line-height: 1.45; color: #f0d9de; }
 .night-question .phrase-bar { margin-bottom: 12px; }
+/* News from the train while climbing: small amber cards on the left, under the route strip. */
+.climb-news { position: absolute; left: 10px; top: 98px; margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; max-width: min(260px, 70%); pointer-events: none; z-index: 3; }
+.climb-news li { padding: 7px 10px; border-radius: 10px; background: #0d0f14e6; border: 1px solid #ffb84a55; color: #ffd27a; font: 700 11.5px/1.3 Inter, sans-serif; box-shadow: 0 6px 16px #0008; animation: news-in .35s cubic-bezier(.3, 1.3, .5, 1); transition: opacity .5s, transform .5s; }
+.climb-news li.gone { opacity: 0; transform: translateX(-12px); }
+@keyframes news-in { from { opacity: 0; transform: translateX(-16px); } }
+/* Powers And Extra Rules: team sections of role cards, then icon rows. */
+.powers-rules > summary { cursor: pointer; font: 800 15px Inter, sans-serif; color: #f2ce86; padding: 10px 0; }
+.power-team { margin: 12px 0 4px; }
+.power-team h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font: 800 11px Inter, sans-serif; letter-spacing: 1.8px; text-transform: uppercase; }
+.power-team h3::before { content: ''; width: 10px; height: 10px; border-radius: 50%; }
+.power-team.passengers h3 { color: #8fd6ff; } .power-team.passengers h3::before { background: #8fd6ff; }
+.power-team.crew h3 { color: #8de6ad; } .power-team.crew h3::before { background: #8de6ad; }
+.power-team.bad h3 { color: #ff8293; } .power-team.bad h3::before { background: #ff8293; }
+.power-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.power-card { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 14px; background: #ffffff08; border: 1px solid #ffffff14; border-left: 3px solid var(--team, #8fd6ff); min-width: 0; }
+.passengers .power-card { --team: #8fd6ff; } .crew .power-card { --team: #8de6ad; } .bad .power-card { --team: #ff8293; }
+.power-card-art { flex: none; width: 52px !important; height: 52px !important; border-radius: 12px !important; }
+.power-card-copy { min-width: 0; display: grid; gap: 4px; }
+.power-card-copy b { font: 800 14px Inter, sans-serif; color: #fff5df; }
+.power-card-copy p { margin: 0; font-size: 12.5px; line-height: 1.45; color: #d6cfe0; }
+.power-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.power-card-tags span { padding: 2px 8px; border-radius: 999px; font: 700 10.5px Inter, sans-serif; }
+.power-card-tags .when { background: #6c59aa2e; color: #d6cbff; border: 1px solid #a78bd84d; }
+.power-card-tags .uses { background: #f2ce861f; color: #f2ce86; border: 1px solid #f2ce864d; }
+.power-more summary { cursor: pointer; font: 700 11px Inter, sans-serif; color: #a99ebc; }
+.power-more p { margin-top: 4px !important; font-size: 11.5px !important; color: #b9b1cf !important; }
+.extra-rules { margin-top: 16px; display: grid; gap: 8px; }
+.extra-rules h3 { margin: 0 0 2px; font: 800 11px Inter, sans-serif; letter-spacing: 1.8px; text-transform: uppercase; color: #f2ce86; }
+.extra-rule { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 12px; background: #ffffff06; }
+.extra-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #ffffff0f; font-size: 18px; }
+.extra-rule b { display: block; font: 800 13px Inter, sans-serif; color: #fff5df; }
+.extra-rule p { margin: 1px 0 0; font-size: 12.5px; line-height: 1.45; color: #d6cfe0; }
+@media (max-width: 400px) { .power-cards { grid-template-columns: 1fr; } }
+/* Marked carriage map: your private Trust / Suspect colours and tag badges; tap a cabin to change it. */
+.carriage-panel > .map-with-legend { width: calc(100% - 28px); max-width: 460px; margin: 0 auto 12px; }
+.map-with-legend .loop-map { width: 100%; margin: 0; }
+.map-cabin.markable { cursor: pointer; transition: transform .12s, box-shadow .2s; }
+.map-cabin.markable:active { transform: translate(-50%, -50%) scale(.94); }
+.map-cabin.mark-trust { border-color: #4ee3a4 !important; background: linear-gradient(180deg, #1f6a4a, #0f3a2a) !important; box-shadow: 0 0 12px #4ee3a455; }
+.map-cabin.mark-suspect { border-color: #ff6b81 !important; background: linear-gradient(180deg, #7a2236, #3a0f1c) !important; box-shadow: 0 0 12px #ff6b8166; }
+.map-badges { position: absolute; top: -7px; right: -7px; display: flex; gap: 2px; z-index: 3; }
+.map-badges i { display: grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; font: 900 9px/1 Inter, sans-serif; font-style: normal; box-shadow: 0 1px 4px #0008; }
+.map-badges .badge-trust { background: #4ee3a4; color: #04301c; }
+.map-badges .badge-suspect { background: #ff6b81; color: #fff; }
+.map-badges .badge-steps { background: #8fd6ff; font-size: 8px; }
+.map-badges .badge-clash { background: #b89bff; color: #1f1040; }
+.map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; font: 700 11px Inter, sans-serif; color: #d6cfe0; }
+.map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.map-legend .lg-trust::before, .map-legend .lg-suspect::before, .map-legend .lg-unsure::before { content: ''; width: 12px; height: 12px; border-radius: 4px; border: 2px solid; }
+.map-legend .lg-trust::before { border-color: #4ee3a4; background: #1f6a4a; }
+.map-legend .lg-suspect::before { border-color: #ff6b81; background: #7a2236; }
+.map-legend .lg-unsure::before { border-color: #d9b06a88; background: #1d0f22; }
+.map-legend small { flex-basis: 100%; font-size: 10.5px; font-weight: 600; color: #a99ebc; }
+.power-card .power-more { margin: 0 !important; padding: 0 !important; border: 0 !important; background: none !important; }
+.power-card .power-more > summary { padding: 0 !important; margin: 0 !important; min-height: 0 !important; font: 700 11px Inter, sans-serif !important; color: #a99ebc !important; }
+.map-badges { top: auto; bottom: -7px; }
