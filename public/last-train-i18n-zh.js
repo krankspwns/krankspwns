@@ -425,6 +425,54 @@
     'The removed player’s team is revealed. Their role stays secret.': '公开出局者的阵营，身份保密。', 'The roles': '身份', 'Extra rules': '额外规则', '‹ Back': '‹ 上一页', 'Next ›': '下一页 ›',
   });
 
+  // New Crew roles
+  add({
+    'Conductor': '列车长', 'Night Porter': '夜间门房', 'Guard': '警卫', 'Steward': '乘务员', 'Signalman': '信号员',
+    'Each night, check another traveller’s ticket and learn straight away whether they left their cabin tonight. Anyone who walks the corridor counts: an attacker, a protector, the Night Porter, the Guard or the Steward. A Forger’s disguise hides a walk.': '每晚查验另一位乘客的车票，立刻得知他今晚是否离开过包厢。凡是走过走廊的人都算：袭击者、保护者、夜间门房、警卫或乘务员。伪装者的伪装能隐藏行走。',
+    'Each night, keep watch outside another traveller’s cabin. In the morning you learn who came to that door. Not the same cabin two nights in a row.': '每晚在另一位乘客的包厢外守望。早上你会得知谁来过那扇门。不能连续两晚守同一个包厢。',
+    'Each night, guard another traveller. If they are attacked and nothing else saves them, you take the attack and are out instead. Not the same traveller two nights in a row.': '每晚守护另一位乘客。如果他被袭击且没有其他保护，你会替他挨下袭击而出局。不能连续两晚守护同一人。',
+    'Each night, give another traveller a sleeping pill. Tonight their night power does nothing, but they cannot be attacked. Not the same traveller two nights in a row.': '每晚给另一位乘客一颗安眠药。今晚他的夜间能力无效，但他不会被袭击。不能连续两晚给同一人。',
+    'Once per game, call a Signal Stop at night. In the next vote a tie removes nobody, and there is no re-vote.': '每局一次，在夜里发出停车信号。下一轮投票如果平票，没有人出局，也不重新投票。',
+    'Learn whether a traveller left their cabin tonight.': '得知一位乘客今晚是否离开过包厢。', 'Watch a door; learn who came to it.': '守望一扇门，得知谁来过。', 'Guard someone; take the attack in their place.': '守护某人，替他挨下袭击。',
+    'A sleeping pill: no power tonight, but safe from attack.': '安眠药：今晚没有能力，但不会被袭击。', 'Signal Stop: a tie in the next vote removes nobody.': '停车信号：下一轮投票平票时没有人出局。',
+    'Each night, learn whether someone left their cabin.': '每晚得知某人是否离开过包厢。', 'Each night, watch a door and learn who came.': '每晚守望一扇门，得知谁来过。', 'Each night, take an attack for someone.': '每晚替某人挨下袭击。',
+    'Each night, a sleeping pill: no power, but safe.': '每晚一颗安眠药：没有能力，但很安全。', 'Once: a tie in the next vote removes nobody.': '一次：下一轮投票平票时没有人出局。',
+    'Night Porter watches a door': '夜间门房守望一扇门', 'Guard stands by someone': '警卫守在某人身边', 'Steward hands out a sleeping pill': '乘务员发放安眠药', 'Conductor checks who walked': '列车长查验谁走动过', 'Signalman may call a Signal Stop': '信号员可以发出停车信号',
+    'With 5 players, choose a Crew member who brings information.': '五人局请选择能带来信息的乘务组成员。', 'A Trainee needs an Inspector or Medic to take over from.': '实习生需要有检查员或医生可以接替。',
+    'With 5 players, the Crew member is the Inspector, Medic, Conductor or Night Porter.': '五人局的乘务组成员只能是检查员、医生、列车长或夜间门房。',
+    'Whose ticket will you check?': '你要查验谁的车票？', 'Every night.': '每晚。', 'See straight away whether they left their cabin tonight. Attackers and protectors walk; a Forger’s disguise hides a walk.': '立刻得知他今晚是否离开过包厢。袭击者和保护者都会走动；伪装者的伪装能隐藏行走。',
+    'You learn WALKED or STAYED IN as soon as you choose.': '选择后立即得知“走动过”或“待在包厢”。', 'Which door will you watch?': '你要守望哪扇门？', 'Every night · a new door each night.': '每晚 · 每晚换一扇门。',
+    'In the morning you learn who came to that door. You walk there too, so you may be heard.': '早上你会得知谁来过那扇门。你也会走过去，所以可能被听到。', 'You learn who came to their door by morning.': '早上前你会得知谁来过他的门前。',
+    'Who will you guard?': '你要守护谁？', 'Every night · someone new each night.': '每晚 · 每晚换一个人。', 'If they are attacked and nothing else saves them, you take the attack and are out instead.': '如果他被袭击且没有其他保护，你会替他挨下袭击而出局。',
+    'If they are attacked, you take it for them.': '如果他被袭击，你替他挨下。', 'Who gets a sleeping pill?': '谁吃安眠药？', 'Their night power does nothing tonight, but nobody can attack them.': '今晚他的夜间能力无效，但没人能袭击他。',
+    'No power tonight for them, but they are safe from the attack.': '他今晚没有能力，但不会被袭击。', 'Call a Signal Stop?': '发出停车信号？', 'In the next vote a tie removes nobody, and there is no re-vote. Everyone sees the signal in the morning.': '下一轮投票平票时没有人出局，也不重新投票。早上所有人都会看到这个信号。',
+    'Call Signal Stop': '发出停车信号', 'WALKED': '走动过', 'STAYED IN': '待在包厢', 'LAST NIGHT': '昨晚选过', 'Ticket check': '车票查验', 'Door watch': '门前守望', 'Sleeping pill': '安眠药', 'Your door watch': '你的门前守望', 'A sleeping pill.': '一颗安眠药。',
+    'Your ticket check was stopped. No result is known.': '你的车票查验被阻止了，没有结果。', 'You could not keep watch tonight. No result is known.': '你今晚无法守望，没有结果。',
+    'Someone gave you a sleeping pill. Your power did nothing tonight, but you were safe from the attack.': '有人给了你一颗安眠药。你今晚的能力无效，但你不会被袭击。',
+    'Signal Stop': '停车信号', 'SIGNAL': '信号', 'CALLED LAST NIGHT': '昨晚发出', 'If today’s vote ties, nobody leaves the train and there is no re-vote.': '如果今天的投票平票，没有人下车，也不重新投票。',
+    '🚦 Signal Stop: the vote tied, so nobody leaves this time.': '🚦 停车信号：投票平票，这次没有人下车。', 'Choose someone different from last night.': '请选择和昨晚不同的人。',
+  });
+
+  // New bad roles
+  add({
+    'Framer': '栽赃者', 'Silencer': '封口者', 'Smuggler': '走私者', 'Stowaway': '偷渡者',
+    'Choose the shared attack with your team. Once per game, frame a good traveller: if the Inspector checks them tonight, they read as BAD.': '与队友共同选择袭击。每局一次，栽赃一位好人：如果检查员今晚查验他，会显示为坏人。',
+    'Choose the shared attack with your team. Once per game, gag a traveller: they cannot speak in the next lounge, and everyone sees they were gagged.': '与队友共同选择袭击。每局一次，封住一位乘客的嘴：他在下一次休息车厢里不能发言，所有人都会看到他被封口了。',
+    'Choose the shared attack with your team. Once per game, make tonight’s attack silent: no footsteps, and the Conductor and Night Porter cannot see that walk.': '与队友共同选择袭击。每局一次，让今晚的袭击悄无声息：没有脚步声，列车长和夜间门房也看不到这次行走。',
+    'You start as a Passenger with no power, on the good team. The first time a Saboteur is out, you secretly join the bad team and take their place.': '你一开始是没有能力的乘客，属于好人阵营。第一次有破坏者出局时，你会秘密加入坏人阵营，接替他的位置。',
+    'Make a good traveller read BAD to the Inspector.': '让一位好人被检查员查验为坏人。', 'Gag someone: they skip the next lounge.': '封住某人的嘴：他跳过下一次发言。', 'A silent attack: no footsteps, no walk seen.': '无声的袭击：没有脚步声，看不到行走。',
+    'Hidden': '隐藏', 'Turns once': '转变一次', 'Good until a Saboteur is out, then joins the bad team.': '在破坏者出局前是好人，之后加入坏人阵营。',
+    'Framer frames a good traveller': '栽赃者栽赃一位好人', 'Silencer gags someone': '封口者封住某人的嘴', 'Smuggler hides the attack walk': '走私者隐藏袭击的行走',
+    'A Saboteur who can frame a good traveller once: they read BAD to the Inspector.': '可以栽赃一位好人一次的破坏者：检查员会查验为坏人。', 'A Saboteur who can gag someone once: they skip the next lounge.': '可以封口一次的破坏者：对方跳过下一次发言。',
+    'A Saboteur who can make one attack silent: no footsteps, no walk seen.': '可以让一次袭击悄无声息的破坏者：没有脚步声，看不到行走。', 'Takes a Passenger seat. Good until a Saboteur is out, then secretly joins the bad team.': '占一个乘客座位。在破坏者出局前是好人，之后秘密加入坏人阵营。',
+    'Each power replaces one normal Saboteur.': '每个能力替换一名普通破坏者。', 'Hidden traitor': '隐藏的叛徒', 'OPTIONAL': '可选', 'Use Framer Power': '使用栽赃能力', 'Gag Someone': '封住某人的嘴', 'Make The Attack Silent': '让袭击悄无声息',
+    'Who will you frame?': '你要栽赃谁？', 'Once per game. If the Inspector checks them tonight, they read as BAD.': '每局一次。如果检查员今晚查验他，会显示为坏人。', 'Who will you gag?': '你要封谁的嘴？',
+    'Once per game. They cannot speak in the next lounge, and everyone sees they were gagged.': '每局一次。他在下一次休息车厢里不能发言，所有人都会看到他被封口了。', 'Tonight’s attack is silent.': '今晚的袭击悄无声息。', 'Frame used': '栽赃已使用', 'Gag used': '封口已使用',
+    'A Saboteur is out. You have turned: you are now on the bad team, and you attack with them from tonight.': '一名破坏者出局了。你已转变：你现在属于坏人阵营，从今晚起和他们一起袭击。',
+    'You turned': '你转变了', 'New teammate': '新队友', 'You have turned.': '你已转变。', 'The Stowaway joins you.': '偷渡者加入了你们。', '🤐 Gagged by a Saboteur. No words this round.': '🤐 被破坏者封口，本回合不能发言。',
+    'Frame a good traveller still in.': '请栽赃一位还在场的好人。', 'Each Saboteur power can appear once, one per Saboteur.': '每种破坏者能力只能出现一次，每名破坏者最多一种。', 'Leave a Passenger seat free for the Stowaway.': '请为偷渡者留一个乘客座位。', 'Choose the bad team on screen.': '请在屏幕上选择坏人阵营。',
+  });
+
   // Status words and short labels that are joined with other text
   add({
     'out': '出局', 'speaking': '发言中', 'voted': '已投票', 'away': '离开', 'ATTACKED': '被袭击', 'HEAL GIVEN': '已治疗', 'Map': '地图', 'Boarding': '登车中', 'Still aboard.': '还在车上。',
@@ -505,6 +553,13 @@
     ['{0} 🗡️', '{0} 🗡️'], ['{0}:', '{0}：'], ['✓ {0}', '✓ {0}'], ['Use {#} Test Players', '使用 {#} 位测试玩家'], ['Complete {#} Test Players', '补齐 {#} 位测试玩家'],
     ['Heads: you listen for footsteps tonight. {0}', '正面：你今晚会听脚步声。{0}'], ['Tap the coin {#} times to earn {0} flip.', '点击硬币 {#} 次，赢得{0}抛掷机会。'], ['Rub the coin for luck, {0}', '搓搓硬币求好运，{0}'],
     ['{#} of {#}', '{#} / {#}'], ['{#} listening', '{#} 人在偷听'], ['{#} rubbing', '搓了 {#} 次'], ['Choose {#} More', '再选 {#} 个'],
+    ['UP TO {#} POWER', '最多 {#} 个能力'], ['UP TO {#} POWERS', '最多 {#} 个能力'], ['{#} normal Saboteur. Each power replaces one normal Saboteur.', '{#} 名普通破坏者。每个能力替换一名普通破坏者。'], ['{#} normal Saboteurs. Each power replaces one normal Saboteur.', '{#} 名普通破坏者。每个能力替换一名普通破坏者。'],
+    ['Frame used: {0}', '已栽赃：{0}'], ['Gag used: {0}', '已封口：{0}'], ['{0} was the Stowaway. They have joined your team.', '{0} 是偷渡者，已经加入了你们。'],
+    ['The Framer framed {0}.', '栽赃者栽赃了 {0}。'], ['The Silencer gagged {0}.', '封口者封住了 {0} 的嘴。'], ['The attack was smuggled: {N0} walked to {N1} without a sound.', '袭击被掩盖了：{0} 悄无声息地走到了 {1} 那里。'],
+    ['{0} left their cabin tonight.', '{0} 今晚离开过包厢。'], ['{0} stayed in their cabin tonight.', '{0} 今晚一直待在包厢里。'], ['{0} came to {1}’s door.', '{0} 来过 {1} 的门前。'], ['Nobody came to {0}’s door.', '没有人来过 {0} 的门前。'],
+    ['The Steward gave {0} a sleeping pill.', '乘务员给了 {0} 一颗安眠药。'], ['{N0} guarded {1} and took the attack.', '{0} 守护了 {1}，替他挨下了袭击。'], ['{N0} guarded {1}.', '{0} 守护了 {1}。'], ['{N0} could not guard tonight.', '{0} 今晚无法守护。'],
+    ['{N0} watched {1}’s door.', '{0} 守望了 {1} 的门。'], ['{N0} could not keep watch tonight.', '{0} 今晚无法守望。'], ['{N0} checked {1}’s ticket.', '{0} 查验了 {1} 的车票。'], ['{N0} called a Signal Stop.', '{0} 发出了停车信号。'], ['{N0} tried to call a Signal Stop, but was stopped.', '{0} 试图发出停车信号，但被阻止了。'],
+    ['{N0} ({N1}) walked from cabin {#} to cabin {#}. Nobody heard them.', '{0}（{1}）从 {#} 号包厢走到 {#} 号包厢，没有人听到。'], ['{N0} ({N1}) walked from cabin {#} to cabin {#}. {2} heard the footsteps.', '{0}（{1}）从 {#} 号包厢走到 {#} 号包厢，{2} 听到了脚步声。'],
     ['{0} walked from cabin {#} to cabin {#}. Nobody heard them.', '{0} 从 {#} 号包厢走到 {#} 号包厢，没有人听到。'], ['{0} (Brave) walked from cabin {#} to cabin {#}. Nobody heard them.', '{0}（勇敢乘客）从 {#} 号包厢走到 {#} 号包厢，没有人听到。'],
     ['{0} walked from cabin {#} to cabin {#}. {1} heard the footsteps.', '{0} 从 {#} 号包厢走到 {#} 号包厢，{1} 听到了脚步声。'], ['{0} (Brave) walked from cabin {#} to cabin {#}. {1} heard the footsteps.', '{0}（勇敢乘客）从 {#} 号包厢走到 {#} 号包厢，{1} 听到了脚步声。'],
     ['{N0} ({N1})', '{0}（{1}）'], ['The {0} is out. You are now the {0}, with their power and anything they used. It starts next night; your own power is gone.', '{0}出局了。你现在是{0}，继承其能力和已使用的状态。从下一晚开始生效，你原本的能力消失。'],

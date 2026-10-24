@@ -89,6 +89,17 @@
     if (me.role === 'careful') return choice?.power === 'lock' ? "I'm Careful Passenger. I used my door lock last night." : "I'm Careful Passenger. I did not lock my door last night. My lock is " + (me.used?.lock ? 'already used.' : 'still available.');
     if (me.role === 'speaker') return "I'm Speaker. My double vote is " + (me.used?.double ? 'already used.' : 'still available.');
     if (me.role === 'trainee') return "I'm Trainee. I have not been promoted, so I have no night action yet.";
+    if (me.role === 'conductor') {
+      const t = reports.find(r => r.type === 'manifest');
+      return t ? "I'm Conductor. I checked " + name(view, t.targetId) + "'s ticket: they " + (t.walked ? 'left their cabin' : 'stayed in') + ' last night.' : "I'm Conductor. I have no ticket check from last night.";
+    }
+    if (me.role === 'porter') {
+      const t = reports.find(r => r.type === 'post');
+      return t ? "I'm Night Porter. I watched " + name(view, t.targetId) + "'s door. " + (t.ids.length ? t.ids.map(id => name(view, id)).join(' and ') + ' came by.' : 'Nobody came.') : "I'm Night Porter. I did not keep watch last night.";
+    }
+    if (me.role === 'guard') return choice?.power === 'guard' ? "I'm Guard. I guarded " + name(view, choice.targetId) + ' last night.' : "I'm Guard. I guarded nobody last night.";
+    if (me.role === 'steward') return choice?.power === 'pill' ? "I'm Steward. I gave " + name(view, choice.targetId) + ' a sleeping pill last night.' : "I'm Steward. I gave out no pill last night.";
+    if (me.role === 'signalman') return "I'm Signalman. My Signal Stop is " + (me.used?.signal ? 'already used.' : 'still available.');
     return "I'm a Passenger. I have no night power.";
   }
   return { remember, statement };

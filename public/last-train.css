@@ -2435,3 +2435,29 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .guide-dialog { padding-bottom: 0 !important; }
 .guide-foot { position: sticky; bottom: 0; z-index: 2; margin: 14px -23px 0; padding: 14px 23px 18px; background: linear-gradient(#121b2c00, #121b2c 18px); border-top: 0; }
 .guide-foot button { position: static !important; }
+/* Crests for the Crew roles without a painted portrait: their tool on a lamp-lit badge. */
+.role-crest { display: inline-grid; place-items: center; overflow: hidden; background: radial-gradient(circle at 50% 38%, #4a3a7a, #24183f 62%, #170f2b) !important; }
+.role-crest svg { width: 82%; height: 82%; filter: drop-shadow(0 3px 6px #0009); }
+.crest-guard { background: radial-gradient(circle at 50% 38%, #2f4b7a, #1a2540 62%, #111a2e) !important; }
+.crest-porter { background: radial-gradient(circle at 50% 42%, #6a4a1c, #2b1d0e 62%, #170f08) !important; }
+.crest-signalman { background: radial-gradient(circle at 50% 30%, #5a2638, #241220 62%, #150a14) !important; }
+/* Ticket checks and last night's pick on the target cards. */
+.ticket-tag { background: #8fd6ff22 !important; color: #bfe8ff !important; }
+.ticket-tag.walked { background: #ffb34733 !important; color: #ffd08a !important; }
+.manifest-target.last-night { opacity: .45; filter: grayscale(.6); }
+.last-tag { background: #ffffff1a !important; color: #c9c2d6 !important; }
+.report-verdict.ticket { background: #8fd6ff26; color: #bfe8ff; } .report-verdict.ticket.walked { background: #ffb34733; color: #ffd08a; }
+.private-night-result.crew-result.walked .result-verdict { color: #ffd08a; }
+/* Walks on the carriage map, one colour per walker. */
+.loop-steps.porter { fill: #ffd56b; filter: drop-shadow(0 0 2px #ffd56b99); }
+.loop-steps.guard { fill: #8fb8ff; filter: drop-shadow(0 0 2px #8fb8ff99); }
+.loop-steps.steward { fill: #c8bdff; filter: drop-shadow(0 0 2px #c8bdff99); }
+.map-walker.porter, .map-walker.guard, .map-walker.steward { border-color: #8fb8ff; }
+/* The Signal Stop chip uses the event chip, in signal red. */
+.event-signal summary { border-color: #ff8a9a66 !important; }
+.event-signal .event-name small { color: #ff9aa8; }
+/* Bad-team crests and the hidden Stowaway. */
+.crest-framer, .crest-silencer, .crest-smuggler { background: radial-gradient(circle at 50% 38%, #6a2236, #2a0f1c 62%, #180812) !important; }
+.crest-stowaway { background: radial-gradient(circle at 50% 42%, #5a3a1c, #2a1a0e 62%, #170f08) !important; }
+.stowaway-picker .role-option { border-style: dashed; }
+.gagged-note { margin: 4px 0 0; color: #ff9aa8; font-weight: 700; }

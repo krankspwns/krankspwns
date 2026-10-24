@@ -14,6 +14,120 @@ function turn(room, role) { while (room.phase === 'night' && r.nightRole(room) !
 function morning(room) { while(room.phase === 'night')r.advance(room); assert.equal(room.phase,'gathering'); r.advance(room); assert.equal(room.phase,'morning'); }
 function attack(room, target) { for(const p of r.alive(room).filter(p=>r.group(p)==='saboteur'))r.nightChoice(room,p,{attackId:target}); }
 function sharedNightTests() {
+  // New Crew roles.
+  const crewRoom = roles => { const room = fixture(roles); room.nightMode = 'shared'; room.settings.footsteps = true; r.phase(room, 'night', 45); return room; };
+  const toResponses = room => { r.advance(room); assert.equal(r.nightRole(room), 'responses'); };
+  const toMorning = room => { while (room.phase === 'night') r.advance(room); };
+  // Conductor: an attacker and a Brave protector "walked"; a traveller who stayed in did not; a disguised attacker hides the walk.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'conductor', 'medic', 'saboteur', 'saboteur']), c = person(room, 'conductor'), b = person(room, 'brave');
+    const [s1, s2] = room.players.filter(p => r.group(p) === 'saboteur'), victim = person(room, 'passenger');
+    r.nightChoice(room, b, { power: 'cover', targetId: person(room, 'careful').id });
+    for (const s of [s1, s2]) r.nightChoice(room, s, { attackId: victim.id, power: 'walk', walkerId: s1.id }); r.nightChoice(room, s1, { attackId: victim.id }); r.nightChoice(room, s2, { attackId: victim.id });
+    toResponses(room);
+    rejected(() => r.nightChoice(room, c, { power: 'manifest', targetId: c.id }), 400);
+    r.nightChoice(room, c, { power: 'manifest', targetId: s1.id });
+    assert.deepEqual(c.reports.at(-1), { type: 'manifest', round: 1, targetId: s1.id, walked: true });
+    const room2 = crewRoom(['careful', 'brave', 'passenger', 'conductor', 'medic', 'saboteur', 'saboteur']), c2 = person(room2, 'conductor'), b2 = person(room2, 'brave'), p2 = person(room2, 'passenger');
+    r.nightChoice(room2, b2, { power: 'cover', targetId: p2.id }); toResponses(room2);
+    r.nightChoice(room2, c2, { power: 'manifest', targetId: b2.id }); assert.equal(c2.reports.at(-1).walked, true);
+    const room3 = crewRoom(['careful', 'brave', 'passenger', 'conductor', 'medic', 'forger', 'saboteur']), c3 = person(room3, 'conductor'), f = person(room3, 'forger'), t = person(room3, 'passenger');
+    r.nightChoice(room3, f, { attackId: t.id, power: 'walk', walkerId: f.id }); r.nightChoice(room3, f, { power: 'disguise', targetId: f.id });
+    r.nightChoice(room3, person(room3, 'saboteur'), { attackId: t.id, power: 'walk', walkerId: f.id }); r.nightChoice(room3, person(room3, 'saboteur'), { attackId: t.id });
+    toResponses(room3); r.nightChoice(room3, c3, { power: 'manifest', targetId: f.id });
+    assert.equal(c3.reports.at(-1).walked, false);
+  }
+  // Night Porter: learns who came to the watched door; never the same cabin two nights running.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'porter', 'medic', 'saboteur', 'saboteur']), porter = person(room, 'porter'), b = person(room, 'brave'), target = person(room, 'passenger');
+    r.nightChoice(room, porter, { power: 'post', targetId: target.id }); r.nightChoice(room, b, { power: 'cover', targetId: target.id });
+    attack(room, target.id); toMorning(room);
+    const rep = porter.reports.find(x => x.type === 'post'); assert.equal(rep.targetId, target.id);
+    assert.ok(rep.ids.includes(b.id)); assert.ok(rep.ids.some(id => r.group(room.players.find(p => p.id === id)) === 'saboteur')); assert.ok(target.alive);
+    room.phase = 'voteResult'; r.advance(room); r.advance(room);
+    rejected(() => r.nightChoice(room, porter, { power: 'post', targetId: target.id }), 409);
+    r.nightChoice(room, porter, { power: 'post', targetId: b.id });
+  }
+  // Guard: takes an attack that would land on the guarded traveller, and stays safe if something else saved them.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'guard', 'medic', 'saboteur', 'saboteur']), guard = person(room, 'guard'), target = person(room, 'passenger');
+    r.nightChoice(room, guard, { power: 'guard', targetId: target.id }); attack(room, target.id); toMorning(room);
+    assert.ok(target.alive); assert.equal(guard.alive, false); assert.deepEqual(room.history[0].outs.find(o => o.id === guard.id).causes, ['attack']);
+    const room2 = crewRoom(['careful', 'brave', 'passenger', 'guard', 'medic', 'saboteur', 'saboteur']), g2 = person(room2, 'guard'), t2 = person(room2, 'passenger');
+    r.nightChoice(room2, g2, { power: 'guard', targetId: t2.id }); r.nightChoice(room2, person(room2, 'brave'), { power: 'cover', targetId: t2.id }); attack(room2, t2.id); toMorning(room2);
+    assert.ok(t2.alive); assert.ok(g2.alive);
+  }
+  // Steward: the pill stops the taker's power and keeps them safe from the attack; a pilled Saboteur's attack vote is ignored.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'steward', 'inspector', 'saboteur', 'saboteur']), st = person(room, 'steward'), ins = person(room, 'inspector');
+    r.nightChoice(room, st, { power: 'pill', targetId: ins.id }); attack(room, ins.id); toResponses(room);
+    r.nightChoice(room, ins, { power: 'check', targetId: st.id }); assert.equal(ins.reports.at(-1).type, 'check-blocked');
+    toMorning(room); assert.ok(ins.alive); assert.ok(ins.reports.some(x => x.type === 'sleep'));
+    const room2 = crewRoom(['careful', 'brave', 'passenger', 'steward', 'inspector', 'saboteur']), st2 = person(room2, 'steward'), bad = person(room2, 'saboteur');
+    r.nightChoice(room2, st2, { power: 'pill', targetId: bad.id }); r.nightChoice(room2, bad, { attackId: person(room2, 'careful').id }); toMorning(room2);
+    assert.equal(room2.history[0].outs.length, 0);
+  }
+  // Signalman: once per game; after a Signal Stop a tied vote removes nobody and has no re-vote.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'signalman', 'medic', 'saboteur', 'saboteur']), sig = person(room, 'signalman');
+    toResponses(room); r.nightChoice(room, sig, { power: 'signal' }); toMorning(room); assert.equal(room.signalRound, 1);
+    r.advance(room); r.beginVote(room);
+    const [a, b] = r.alive(room).slice(0, 2), voters = r.alive(room);
+    voters.forEach(v => r.vote(room, v, { targetId: v.id === a.id ? b.id : v.id === b.id ? a.id : null }));
+    const tally = room.history.at(-1); assert.equal(tally.reason, 'signal'); assert.equal(tally.outs.length, 0); assert.equal(room.phase, 'voteResult'); assert.ok(a.alive && b.alive);
+    assert.equal(sig.used.signal, true);
+  }
+  // Framer: a framed good traveller reads BAD to tonight's Inspector check.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'inspector', 'medic', 'framer', 'saboteur']), f = person(room, 'framer'), ins = person(room, 'inspector'), good = person(room, 'careful');
+    rejected(() => r.nightChoice(room, f, { power: 'frame', targetId: person(room, 'saboteur').id }), 400);
+    r.nightChoice(room, f, { attackId: person(room, 'passenger').id }); r.nightChoice(room, f, { power: 'frame', targetId: good.id });
+    assert.equal(room.night.choices[f.id].attackId, person(room, 'passenger').id);
+    rejected(() => r.nightChoice(room, f, { power: 'frame', targetId: good.id }), 409);
+    toResponses(room); r.nightChoice(room, ins, { power: 'check', targetId: good.id }); assert.equal(ins.reports.at(-1).alignment, 'bad');
+  }
+  // Silencer: the gagged traveller skips the next lounge, and everyone sees it.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'inspector', 'medic', 'silencer', 'saboteur']), sil = person(room, 'silencer'), quiet = person(room, 'careful');
+    r.nightChoice(room, sil, { power: 'gag', targetId: quiet.id }); toMorning(room); r.advance(room); r.advance(room);
+    assert.equal(room.phase, 'discussion'); assert.ok(!room.speakingOrder.includes(quiet.id));
+    assert.deepEqual(room.speeches.find(m => m.id === quiet.id), { round: 1, id: quiet.id, text: '', gagged: true });
+  }
+  // Smuggler: tonight's attack walk is silent: no footsteps and invisible to the Conductor.
+  {
+    const room = crewRoom(['careful', 'brave', 'passenger', 'conductor', 'medic', 'smuggler', 'saboteur']), sm = person(room, 'smuggler'), c = person(room, 'conductor'), t = person(room, 'passenger');
+    // Using the power before choosing a target does not count as choosing Skip.
+    r.nightChoice(room, sm, { power: 'smuggle' }); assert.equal(r.view(room, sm).me.teamChoices.find(c => c.id === sm.id).selected, false);
+    for (const s of room.players.filter(p => r.group(p) === 'saboteur')) { r.nightChoice(room, s, { attackId: t.id, power: 'walk', walkerId: sm.id }); r.nightChoice(room, s, { attackId: t.id }); }
+    toResponses(room);
+    r.nightChoice(room, c, { power: 'manifest', targetId: sm.id }); assert.equal(c.reports.at(-1).walked, false);
+    toMorning(room); assert.equal(t.alive, false); assert.ok(room.nightLog[0].silentWalk); assert.ok(!room.nightLog[0].footsteps.some(w => w.kind === 'saboteur'));
+  }
+  // Stowaway: GOOD until a Saboteur is out, then turns and keeps the bad team in the game.
+  {
+    const room = crewRoom(['careful', 'brave', 'stowaway', 'inspector', 'medic', 'saboteur']), st = person(room, 'stowaway'), bad = person(room, 'saboteur');
+    assert.equal(r.group(st), 'passenger'); toResponses(room);
+    r.nightChoice(room, person(room, 'inspector'), { power: 'check', targetId: st.id }); assert.equal(person(room, 'inspector').reports.at(-1).alignment, 'good');
+    toMorning(room); r.remove(room, [bad.id]);
+    assert.equal(st.turned, true); assert.equal(r.group(st), 'saboteur'); assert.ok(!room.winner); assert.deepEqual(st.reports.at(-1), { round: 1, type: 'turned' });
+    room.phase = 'voteResult'; r.advance(room); r.advance(room); assert.equal(r.activeRole(room, st), 'saboteur');
+  }
+  // Bad mixes: several specials, one per Saboteur; the Stowaway needs a free Passenger seat.
+  {
+    assert.deepEqual(r.validateLoadout(10, { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'], stowaway: true }), { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'], stowaway: true });
+    rejected(() => r.validateLoadout(8, { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'] }), 400);
+    rejected(() => r.validateLoadout(5, { crew: ['inspector'], passengers: ['careful', 'brave', 'witness'], bad: [], stowaway: true }), 400);
+    const roles = r.plan(8, { roles: { crew: ['inspector'], passengers: [], bad: ['framer', 'smuggler'], stowaway: true } });
+    assert.deepEqual(['framer', 'smuggler', 'stowaway'].map(k => roles.filter(x => x === k).length), [1, 1, 1]); assert.equal(roles.length, 8);
+  }
+  // Loadouts: any Crew mix; a Trainee still needs Inspector or Medic; a 5-player Crew member brings information.
+  {
+    assert.deepEqual(r.validateLoadout(8, { crew: ['guard', 'steward'], passengers: [], saboteur: 'normal' }).crew, ['guard', 'steward']);
+    rejected(() => r.validateLoadout(8, { crew: ['trainee', 'guard'], passengers: [], saboteur: 'normal' }), 400);
+    rejected(() => r.validateLoadout(5, { crew: ['guard'], passengers: [], saboteur: 'normal' }), 400);
+    assert.deepEqual(r.validateLoadout(5, { crew: ['porter'], passengers: [], saboteur: 'normal' }).crew, ['porter']);
+    for (let i = 0; i < 40; i++) { const l = r.randomLoadout(5 + (i % 8)); r.validateLoadout(5 + (i % 8), l); }
+  }
   // Five-player backup: the single Crew member falls on night 1, so a random Passenger takes the job (and the medicine state).
   for (const crewRole of ['inspector', 'medic']) {
     const room = fixture(['careful', 'witness', 'passenger', crewRole, 'saboteur']); room.nightMode = 'shared'; r.phase(room, 'night', 45);

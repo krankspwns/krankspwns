@@ -54,10 +54,13 @@
               const result = await request(bot, 'medicine', view, { power });
               if (window.trainTestStrategy.remember(bot, result)) save();
             }
-          } else if (['brave', 'careful', 'inspector', 'witness'].includes(active)) {
-            let power = { brave: 'cover', careful: 'lock', inspector: 'check', witness: 'watch' }[active];
-            if (me.used[power] || (['cover', 'check'].includes(power) && !others.length)) power = 'pass';
-            await request(bot, 'night', view, { power, ...(['cover', 'check'].includes(power) ? { targetId: choose(others).id } : {}) });
+          } else if (['brave', 'careful', 'inspector', 'witness', 'conductor', 'porter', 'guard', 'steward', 'signalman'].includes(active)) {
+            let power = { brave: 'cover', careful: 'lock', inspector: 'check', witness: 'watch', conductor: 'manifest', porter: 'post', guard: 'guard', steward: 'pill', signalman: 'signal' }[active];
+            const targeted = ['cover', 'check', 'manifest', 'post', 'guard', 'pill'].includes(power);
+            // The Porter, Guard and Steward cannot pick last night's traveller again.
+            const pool = others.filter(p => !(me.used.last?.round === view.round - 1 && me.used.last.targetId === p.id));
+            if ((['lock', 'cover', 'signal'].includes(power) && me.used[power]) || (targeted && !pool.length)) power = 'pass';
+            await request(bot, 'night', view, { power, ...(power !== 'pass' && targeted ? { targetId: choose(pool).id } : {}) });
           }
         }
       }
