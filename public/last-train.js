@@ -5,7 +5,7 @@
   const save = (key, value) => { try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, JSON.stringify(value)); } catch {} };
   const lastGame = () => { try { localStorage.setItem('arcade-last-game', 'last-train'); } catch {} };
   const invitation = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
-  let seat = read('lt-seat'), state = null, busy = false, error = '', connected = true, timer, polling, pollFails = 0, connectionError = false;
+  let goneStrikes = 0, seat = read('lt-seat'), state = null, busy = false, error = '', connected = true, timer, polling, pollFails = 0, connectionError = false;
   let name = read('lt-name') || '', code = invitation, recovery = '', showCard = false, sceneKey = '', enteredKey = '';
   let speechDraft = '', whisperDraft = '', draftStep = '';
   let dockNode = null, dockStamp = '', drawerGesture = null, suppressDrawerClick = false;
@@ -144,11 +144,17 @@
         const response = await fetch('/api/last-train?code=' + owner.code + '&pid=' + owner.pid, { headers: { 'x-tok': owner.tok }, signal: controller.signal });
         const data = await response.json(); if (seat !== owner) return;
         if (!response.ok) {
-          if ([401, 404].includes(response.status)) { seat = null; state = null; save('lt-seat', null); }
+          // One "room not found" or "ticket not recognised" can be a passing glitch. Only after several in a row
+          // (about five seconds) does the phone let go of the room, and then it says why.
+          if ([401, 404].includes(response.status)) {
+            if (++goneStrikes < 5) { connected = false; connectionError = true; error = 'Reconnecting to your room…'; render(); return; }
+            seat = null; state = null; save('lt-seat', null);
+            throw Error(response.status === 404 ? 'That room has closed. Rooms close after 12 hours without play.' : 'This seat was opened on another phone. Rejoin with your name and private rejoin code.');
+          }
           throw Error(data.error || 'Please try again.');
         }
         const changed = !state || state.version !== data.version || !connected || connectionError;
-        pollFails = 0; if (connectionError) { error = ''; connectionError = false; }
+        pollFails = 0; goneStrikes = 0; if (connectionError) { error = ''; connectionError = false; }
         adopt(data); connected = true; if (changed) render(); else tick();
       } catch (e) {
         if (seat !== owner && seat) return;
@@ -205,7 +211,7 @@
   // Powers And Extra Rules: role cards grouped by team (portrait, when it acts, how often, one line), then the
   // extra rules as short rows with an icon each, so the page can be scanned instead of read.
   const ROLE_FACTS = {
-    passenger: ['Day', 'Always', 'Listen, share and vote. No night power.'], careful: ['Night · phase 1', 'Once', 'Lock your door: stops an attack on you.'],
+    passenger: ['Day', 'Always', 'Listen, share and vote. No night power.'], careful: ['Night · phase 1', 'Once', 'Lock your door: stops an attack on you. Listening neighbours may hear it click.'],
     brave: ['Night · phase 1', 'Once', 'Protect someone from tonight’s attack.'], witness: ['Night · phase 2', 'Twice', 'Watch the attack, or glimpse two faces (one is bad).'],
     speaker: ['Day · vote', 'Once', 'Your vote counts twice.'], inspector: ['Night · phase 2', 'Every night', 'Check a player: GOOD or BAD.'],
     medic: ['Night · phase 2', '1 heal + 1 poison', 'Heal the attacked player, or poison someone.'], trainee: ['When Crew falls', 'Takes over', 'Becomes Inspector or Medic if one is out.'],
@@ -974,6 +980,7 @@
     glimpse: r => r.ids.length ? r.ids.map(who).join(' or ') + ' is bad' : 'Empty corridor',
     footsteps: r => 'Footsteps from cabin ' + cabinList(r.from),
     clue: r => who(r.targetId) + ' isn’t ' + role(r.role).name,
+    lock: r => 'Lock: ' + lockNeighbours(r).map(p => p.name).join(' or '),
   };
   const GOOD_ROLES = ['passenger', 'careful', 'brave', 'witness', 'speaker', 'inspector', 'medic', 'trainee'];
   const fakeChips = () => [
@@ -1089,11 +1096,14 @@
     return el('section', { class: 'world lounge-scene phase-' + phase, 'aria-label': 'The train gathering lounge' }, hud('ROUND ' + state.round + ' · THE GATHERING LOUNGE', titles[phase], subtitles[phase]), el('div', { class: 'lounge-room', 'aria-label': 'Everyone seated together in the observation lounge' }, art('lounge-room'), loungeSeats(), el('div', { class: 'lounge-light', 'aria-hidden': 'true' }), pinBar()), ghostBlock(), carriagePanel(),
       gathering ? txt('p', 'gathering-caption', 'Take your seat…') : phase === 'morning' ? el('section', { class: 'lounge-console morning-reveal' }, outs(latest), thinkCard()) : phase === 'revoteInfo' ? el('section', { class: 'lounge-console' }, revoteInfoCard(), el('details', {}, el('summary', {}, 'See The First Vote'), ledger(latest))) : phase === 'discussion' ? speechConsole() : phase === 'voting' ? el('section', { class: 'lounge-console voting-console' }, el('h2', {}, state.me.vote ? 'Your vote is sealed.' : state.me.alive ? 'Your vote. Your decision.' : 'Watch the vote quietly.'), state.me.vote ? txt('p', 'choice-saved', '✓ ' + (state.me.vote.targetId ? who(state.me.vote.targetId) : 'Skip') + (state.me.vote.weight === 2 ? ' · counts twice' : '')) : state.me.alive && !state.paused ? btn('Choose A Player Or Skip', () => chooseTarget('Who should leave the train?', state.voteAttempt === 2 ? 'Only tied players can be chosen. Another tie is decided at random.' : 'Your vote is final. Skip is an abstention. A tie starts one re-vote.', 'vote', {}, { self: true, skip: true }), 'gold') : null, txt('p', 'console-hint', state.players.filter(p => p.voteLocked).length + ' / ' + state.players.filter(p => p.alive).length + ' votes sealed'), state.voteAttempt === 2 && latest?.reason === 'revote' ? el('details', { class: 'previous-vote', 'data-details': 'first-vote-' + state.round }, el('summary', {}, 'See The First Vote'), ledger(latest)) : null) : el('section', { class: 'lounge-console ejection-reveal' }, outs(latest), lastWordsBlock(latest), latest?.reason === 'random' ? txt('p', 'console-hint', 'The re-vote tied. One tied player was chosen at random.') : latest?.reason === 'skip' ? txt('p', 'console-hint', 'No player received a vote. Everyone stays aboard.') : null, latest?.votes ? el('div', { class: 'inline-votes' }, ledger(latest)) : latest?.sealed ? txt('p', 'console-hint sealed-note', '✉️ Sealed ballots: who voted for whom is revealed at the end.') : null, txt('p', 'console-hint', 'The next part begins when the timer ends.')));
   }
+  const cabinPerson = cabin => state.players.find(p => p.seat === cabin);
+  const lockNeighbours = r => [...new Set(r.near || [])].map(cabinPerson).filter(Boolean);
   function reportMessage(r) {
     if (r.type === 'watch') return r.targetId ? 'The Saboteurs tried to attack ' + who(r.targetId) + '. The target may be good or bad.' : 'The Saboteurs did not choose an attack.';
     if (r.type === 'watch-blocked') return 'Your watch was blocked. No target is known.';
     if (r.type === 'glimpse') return r.ids.length ? 'One of ' + r.ids.map(who).join(r.ids.length > 2 ? ', ' : ' and ').replace(/, ([^,]*)$/, ' and $1') + ' is a Saboteur.' : 'The corridor was empty.';
     if (r.type === 'glimpse-blocked') return 'Your glimpse was blocked. You saw no one.';
+    if (r.type === 'lock') return 'At ' + r.time + ' a lock clicked shut next door: either ' + lockNeighbours(r).map(p => p.name + '’s').join(' or ') + '. You couldn’t tell which side.';
     if (r.type === 'footsteps') return 'Footsteps at ' + r.time + ': someone came past your door from the direction of cabin ' + cabinList(r.from) + '.';
     if (r.type === 'ghostReveal') return 'From the peak: ' + who(r.targetId) + ' is the ' + role(r.role).name + '.';
     if (r.type === 'clue') return 'Lost luggage: ' + who(r.targetId) + ' is not the ' + role(r.role).name + '.';
@@ -1110,16 +1120,17 @@
     clue: '<rect x="5" y="9" width="22" height="17" rx="3" fill="#c9893f" stroke="#7a4e14" stroke-width="1.4"/><path d="M12 9V6.5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 20 6.5V9" fill="none" stroke="#7a4e14" stroke-width="2"/><rect x="13" y="14" width="10" height="7" rx="1" fill="#fff6dc"/><path d="M15 17h6" stroke="#7a4e14" stroke-width="1.3"/>',
     footsteps: '<g fill="#f2ce86"><ellipse cx="10" cy="9" rx="4" ry="5.2"/><ellipse cx="10" cy="18" rx="3" ry="2.6"/><ellipse cx="21" cy="14" rx="4" ry="5.2"/><ellipse cx="21" cy="23" rx="3" ry="2.6"/></g>',
     ghostReveal: '<path d="M3 27 12 12l4 6 3-4 10 13z" fill="#8b97b3"/><path d="M12 12l2.4 3.6L12 15l-2 1.2z" fill="#f4f8ff"/><path d="M22 6v8" stroke="#f3eadb" stroke-width="1.4"/><path d="M22 6l6 2.2-6 2.2z" fill="#ffd36a"/>',
+    lock: '<rect x="7" y="14" width="18" height="13" rx="3" fill="#f2ce86" stroke="#9a6a1e" stroke-width="1.4"/><path d="M11 14v-3.5a5 5 0 0 1 10 0V14" fill="none" stroke="#e8fdff" stroke-width="2.6" stroke-linecap="round"/><circle cx="16" cy="20" r="2" fill="#5a3a0e"/><path d="M27 9l2.5-2M28 13h3M5 9 2.5 7M4 13H1" stroke="#ffe7a8" stroke-width="1.6" stroke-linecap="round"/>',
     promotion: '<path d="M16 3l3.8 7.8 8.6 1.2-6.2 6 1.5 8.6L16 22.5l-7.7 4.1 1.5-8.6-6.2-6 8.6-1.2z" fill="#ffd56b" stroke="#c98f12" stroke-width="1.2" stroke-linejoin="round"/>',
   };
   function reportCard(r) {
     const kind = r.type.endsWith('-blocked') ? 'blocked' : r.type === 'promotion' ? 'promotion' : r.type;
     const icon = el('span', { class: 'report-icon', 'aria-hidden': 'true' }); icon.innerHTML = '<svg viewBox="0 0 32 32">' + REPORT_ICONS[kind] + '</svg>';
-    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', ghostReveal: 'Ghost climb', blocked: 'Power blocked', promotion: 'Promotion' }[kind];
+    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', lock: 'Lock click', ghostReveal: 'Ghost climb', blocked: 'Power blocked', promotion: 'Promotion' }[kind];
     const verdict = kind === 'check' ? txt('span', 'report-verdict ' + r.alignment, r.alignment.toUpperCase()) : kind === 'watch' && r.targetId ? txt('span', 'report-verdict watch', 'TARGET') : null;
     return el('article', { class: 'report-item ' + kind + (r.alignment ? ' ' + r.alignment : '') },
       icon, el('div', { class: 'report-body' }, txt('small', '', title), txt('p', '', reportMessage(r))),
-      kind === 'glimpse' && r.ids?.length ? el('div', { class: 'report-faces' }, ...r.ids.map(id => avatar(id, 'report-face'))) : r.targetId && kind !== 'blocked' ? el('div', { class: 'report-target' }, avatar(r.targetId, 'report-face'), verdict) : kind === 'promotion' ? rolePortrait(r.role, 'report-face') : null);
+      kind === 'glimpse' && r.ids?.length ? el('div', { class: 'report-faces' }, ...r.ids.map(id => avatar(id, 'report-face'))) : kind === 'lock' ? el('div', { class: 'report-faces' }, ...lockNeighbours(r).map(p => avatar(p.id, 'report-face'))) : r.targetId && kind !== 'blocked' ? el('div', { class: 'report-target' }, avatar(r.targetId, 'report-face'), verdict) : kind === 'promotion' ? rolePortrait(r.role, 'report-face') : null);
   }
   function reportList() {
     const rounds = [...new Set(state.me.reports.map(r => r.round))].sort((a, b) => a - b);
@@ -1334,7 +1345,7 @@
           n.attackId ? line('🗡️', 'The Saboteurs attacked ' + name(n.attackId) + '.', n.attackId) : line('🗡️', 'The Saboteurs chose no attack.'),
           n.blockedId ? line('🚫', 'The Blocker blocked ' + name(n.blockedId) + '.', n.blockedId) : null,
           n.disguiseId ? line('🎭', 'The Forger disguised ' + name(n.disguiseId) + '.', n.disguiseId) : null,
-          n.lockId ? line('🔒', name(n.lockId) + ' locked their door.', n.lockId) : null,
+          ...(n.locks?.length ? n.locks.map(l => line('🔒', name(l.by) + ' locked their door' + (n.lockId === l.by ? ', which stopped the attack' : '') + (l.heardBy?.length ? '. ' + l.heardBy.map(who).join(' and ') + ' heard it click.' : '.'), l.by)) : n.lockId ? [line('🔒', name(n.lockId) + ' locked their door.', n.lockId)] : []),
           n.coverId ? line('🛡️', 'Brave protected ' + name(n.coverId) + '.', n.coverId) : null,
           n.healId ? line('🧪', 'Medic healed ' + name(n.healId) + '.', n.healId) : null,
           n.poisonId ? line('☠️', 'Medic poisoned ' + name(n.poisonId) + '.', n.poisonId) : null,
@@ -1508,12 +1519,15 @@
   }
   function currentPrivateResult() {
     // The morning's lost-luggage clue comes first after the night; the night result was already shown in the cabin.
-    const clue = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && r.type === 'footsteps' && !seenResult(r)) || state?.me.reports.find(r => r.round === state.round && r.type === 'clue') : null;
+    const clue = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && ['footsteps', 'lock'].includes(r.type) && !seenResult(r)) || state?.me.reports.find(r => r.round === state.round && r.type === 'clue') : null;
     return clue || state?.me.reports.find(r => r.round === state.round && ['check','watch','glimpse','check-blocked','watch-blocked','glimpse-blocked'].includes(r.type));
   }
   const resultKey = r => [state.code, state.meId, state.match, r.round, r.type, r.time || ''].join(':');
   const seenResult = r => { try { return !!sessionStorage.getItem('lt-result:' + resultKey(r)); } catch { return false; } };
   function privateResultCard(result) {
+    if (result.type === 'lock') return el('section', { class: 'private-night-result lock-result', 'aria-label': 'Your night result' }, txt('span', 'eyebrow', 'ONLY YOU HEARD THIS'),
+      el('div', { class: 'glimpse-faces' }, ...lockNeighbours(result).map(p => el('div', { class: 'glimpse-face' }, avatar(p.id, 'result-portrait'), txt('b', '', p.name)))),
+      el('h3', {}, 'A lock clicked next door.'), txt('p', '', reportMessage(result) + ' Only a Careful Passenger can lock their door.'));
     if (result.type === 'footsteps') return el('section', { class: 'private-night-result footsteps-result', 'aria-label': 'Your night result' }, txt('span', 'eyebrow', 'ONLY YOU HEARD THIS'),
       el('h3', {}, 'Footsteps in the night.'), carriageMap({ route: heardRoute(result), fade: true }), footstepsNote(result));
     const blocked = result.type.endsWith('-blocked'), check = result.type.startsWith('check');

@@ -417,7 +417,7 @@
 
       // The first time each kind of obstacle is next, the board says what it does.
       const TIPS = { lift: 'BAGGAGE CART · TIME YOUR HOP', slime: 'SPRING BUFFER · BOUNCE UP', belt: 'CONVEYOR · IT PUSHES YOU', elevator: 'FREIGHT LIFT · RIDE IT UP', beam: 'NARROW BEAM · WALK THE LINE', ice: 'FROSTED ICE · YOU WILL SLIDE' }, tipped = new Set();
-      let safe = { x: 0, y: .5, z: 0 }, t0 = performance.now(), last = t0, finished = false, falls = 0, reached = -1, pads = 0, walked = 0;
+      let safe = { x: 0, y: .5, z: 0, index: -1 }, t0 = performance.now(), last = t0, finished = false, falls = 0, reached = -1, best = -1, pads = 0, walked = 0;
       const camPos = new THREE.Vector3(), path = blocks.filter(b => b.kind !== 'roof' && !b.wide);
       // The route strip at the top: one stop per platform, and the ghost moving along it.
       const stops = path.map((b, i) => [b, i]).filter(([b, i]) => ['gold', 'peak'].includes(b.kind) && !['gold', 'peak'].includes(path[i - 1]?.kind));
@@ -429,12 +429,14 @@
         bounce: b => { b.squash = performance.now(); audio?.fx('bounce'); },
         land: b => {
           // Falling puts you back on the last solid block you stood on.
-          if (['roof', 'stone', 'gold', 'peak', 'beam', 'ice'].includes(b.kind)) safe = { x: b.x, y: b.y + .5, z: b.z };
+          // Falling sends the ghost back to the latest station platform it reached (the carriage roof at first).
           const i = path.indexOf(b.wide ? path.find(q => q.y === b.y && Math.abs(q.x - b.x) + Math.abs(q.z - b.z) === 1) : b);
-          if (i > reached) { reached = i; if (['gold', 'peak'].includes(b.kind) && !['gold', 'peak'].includes(path[i - 1]?.kind)) { pads++; if (b.kind === 'gold') { say('PLATFORM ' + pads + ' · ALL CLEAR'); audio?.fx('platform'); } } }
+          if (i > reached) reached = i;
+          if (b.kind === 'gold' && i >= safe.index) safe = { x: path[i].x, y: path[i].y + .5, z: path[i].z, index: i };
+          if (i > best) { best = i; if (['gold', 'peak'].includes(b.kind) && !['gold', 'peak'].includes(path[i - 1]?.kind)) { pads++; if (b.kind === 'gold') { say('PLATFORM ' + pads + ' · CHECKPOINT SAVED'); audio?.fx('platform'); } } }
           if (b.kind === 'peak' && !finished) { finished = true; win(); }
         },
-        fell: () => { falls++; sim.place(safe); faceNext(); say('WHOOPS · TRY THAT JUMP AGAIN'); audio?.fx('fall'); },
+        fell: () => { falls++; sim.place(safe); reached = safe.index; faceNext(); say(safe.index < 0 ? 'WHOOPS · BACK TO THE CARRIAGE' : 'WHOOPS · BACK TO THE CHECKPOINT'); audio?.fx('fall'); },
       });
       const me = sim.me;
       function step(dt, now) {
@@ -480,7 +482,7 @@
         }
         sky.position.copy(camera.position);
         renderer.render(scene, camera);
-        route.style.setProperty('--done', ((reached + 1) / path.length * 100).toFixed(1) + '%');
+        route.style.setProperty('--done', ((best + 1) / path.length * 100).toFixed(1) + '%');
       }
       function frame(now) {
         const dt = Math.max(0, Math.min(.033, (now - last) / 1000)); last = Math.max(last, now);

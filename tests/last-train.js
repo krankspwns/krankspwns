@@ -220,6 +220,18 @@ function roundFiveTests() {
     while (room.phase === 'night') r.advance(room);
     const by = room.nightLog.at(-1).footsteps[0].by; if (i % 2) assert.ok([a.id, b.id].includes(by)); else assert.equal(by, b.id);
   }
+  // A locked door clicks: listening neighbours on either side hear which cabin; others and a blocked lock hear nothing.
+  for (const blocked of [false, true]) {
+    const room = shared(['careful','passenger','passenger','passenger','inspector','medic','saboteur','blocker']), c = person(room,'careful'), order = room.seatOrder, at = order.indexOf(c.id), n = order.length;
+    const near = [order[(at + n - 1) % n], order[(at + 1) % n]].map(id => room.players.find(p => p.id === id)), far = room.players.find(p => p.id === order[(at + 3) % n]);
+    while (r.nightRole(room) !== 'moves') r.advance(room);
+    for (const p of [...near, far]) (room.night.listen ||= {})[p.id] = { flips: ['heads'], heads: true };
+    r.nightChoice(room, c, { power: 'lock' }); if (blocked) r.nightChoice(room, person(room,'blocker'), { power: 'block', targetId: c.id, attackId: near[0].id });
+    while (room.phase === 'night') r.advance(room);
+    const heard = p => p.reports.some(x => x.type === 'lock' && x.near.includes(at + 1) && !('cabin' in x));
+    if (!blocked) { assert.ok(near.every(heard)); assert.ok(!heard(far)); assert.deepEqual(room.nightLog.at(-1).locks[0].heardBy.sort(), near.map(p => p.id).sort()); }
+    else { assert.equal(room.nightLog.at(-1).blockedId, c.id); assert.ok(![...near, far].some(heard)); }
+  }
   // Ghost guesses: open until the journey ends, naming only Saboteurs still aboard from travellers still aboard.
   {
     const room = shared(['passenger','passenger','passenger','inspector','medic','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), out = room.players.find(p => p.role === 'passenger');

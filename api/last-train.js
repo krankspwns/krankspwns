@@ -29,7 +29,10 @@ async function execute(req, body) {
     await store.save(room); return { ...view(room, p), tok };
   }
   const code = String(body.code || '').toUpperCase(); need(/^[A-Z]{4}$/.test(code), 400, 'Enter a four-letter room code.');
-  const room = await store.load(code); need(room, 404, 'Room not found.');
+  // A room that was just written can briefly read as missing from the database; look once more before saying it is gone.
+  let room = await store.load(code);
+  if (!room) { await new Promise(done => setTimeout(done, 350)); room = await store.load(code); }
+  need(room, 404, 'Room not found.');
   let upgraded = false;
   if (room.rulesVersion !== 2) {
     Object.assign(room, { rulesVersion: 2, phase: 'lobby', round: 0, step: (room.step || 0) + 1, deadline: null, duration: null, night: null, votes: {}, history: [], speeches: [], seatOrder: null, paused: false, winner: null, receipts: [], notice: 'Last Train has a new journey and night order. The host can start the new game.' });
