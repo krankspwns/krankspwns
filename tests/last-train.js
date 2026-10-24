@@ -14,6 +14,26 @@ function turn(room, role) { while (room.phase === 'night' && r.nightRole(room) !
 function morning(room) { while(room.phase === 'night')r.advance(room); assert.equal(room.phase,'gathering'); r.advance(room); assert.equal(room.phase,'morning'); }
 function attack(room, target) { for(const p of r.alive(room).filter(p=>r.group(p)==='saboteur'))r.nightChoice(room,p,{attackId:target}); }
 function sharedNightTests() {
+  // Five-player backup: the single Crew member falls on night 1, so a random Passenger takes the job (and the medicine state).
+  for (const crewRole of ['inspector', 'medic']) {
+    const room = fixture(['careful', 'witness', 'passenger', crewRole, 'saboteur']); room.nightMode = 'shared'; r.phase(room, 'night', 45);
+    const crew = person(room, crewRole), passengers = room.players.filter(p => r.group(p) === 'passenger');
+    attack(room, crew.id); r.advance(room);
+    if (crewRole === 'medic') r.medicineChoice(room, crew, { power: 'poison', targetId: passengers[0].id });
+    morning(room);
+    assert.ok(!room.winner);
+    const heirs = room.players.filter(p => p.alive && p.role === crewRole); assert.equal(heirs.length, 1);
+    assert.ok(passengers.includes(heirs[0])); assert.equal(heirs[0].originalRole === crewRole, false); assert.equal(heirs[0].promotedAt, 1);
+    assert.deepEqual(heirs[0].reports.at(-1), { round: 1, type: 'promotion', role: crewRole, backup: true });
+    if (crewRole === 'medic') assert.deepEqual(room.medicine, { heal: 1, poison: 0 });
+  }
+  // Not after the first night, and not in bigger games: losing every Crew member still ends the journey.
+  {
+    const room = fixture(['careful', 'witness', 'passenger', 'inspector', 'saboteur']); room.nightMode = 'shared'; room.round = 2; r.phase(room, 'night', 45);
+    attack(room, person(room, 'inspector').id); while (room.phase === 'night') r.advance(room); assert.equal(room.winner, 'bad');
+    const six = fixture(['careful', 'witness', 'passenger', 'inspector', 'saboteur', 'saboteur']); six.nightMode = 'shared'; r.phase(six, 'night', 45);
+    attack(six, person(six, 'inspector').id); while (six.phase === 'night') r.advance(six); assert.equal(six.winner, 'bad');
+  }
   const shared = () => { const room = fixture(['careful','brave','witness','passenger','inspector','medic','trainee','saboteur','blocker']); room.nightMode = 'shared'; r.phase(room, 'night', 45); return room; };
   for (const blockedRole of [null, 'careful', 'brave', 'medic', 'inspector', 'witness']) {
     const room = shared(), c = person(room,'careful'), b = person(room,'brave'), m = person(room,'medic'), i = person(room,'inspector'), w = person(room,'witness'), bad = person(room,'blocker');
@@ -294,6 +314,9 @@ function roundFiveTests() {
   {
     const room = shared(['witness','passenger','inspector','medic','saboteur']); room.settings.autoShuffle = true; room.settings.roles = null;
     for (let i = 0; i < 6; i++) { r.restart(room, 'deal'); assert.ok(room.settings.roles); assert.deepEqual(r.validateLoadout(5, room.settings.roles), room.settings.roles); assert.equal(room.players.filter(p => r.group(p) === 'saboteur').length, 1); }
+    // A mix the host shuffled or picked in the lobby is kept for that journey only.
+    const kept = r.randomLoadout(5); room.settings.roles = kept; room.settings.mixPicked = true; r.restart(room, 'deal');
+    assert.deepEqual(room.settings.roles, kept); assert.equal(room.settings.mixPicked, undefined);
     assert.equal(r.TIMERS.morning, 30);
   }
 }

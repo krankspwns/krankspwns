@@ -16,7 +16,8 @@
   let cache = new Map(), compiled = null;
   const harvest = window.LT_I18N_HARVEST ? new Set() : null;
   // Each dictionary file registers itself: { exact: { English: translation }, patterns: [[template, translation]] }.
-  // In a template, {0} {1}… stand for any text and {#} for a number; captured text is translated too when it can be.
+  // In a template, {0} {1}… stand for any text, {N0} {N1}… for a short name (no sentence punctuation) and {#} for a
+  // number; captured text is translated too when it can be.
   window.LT_I18N_REGISTER = (code, dict) => { dicts[code] = dict; if (code === lang) { compiled = null; cache = new Map(); refresh(); } };
   function load(code) {
     if (code === 'en' || dicts[code] || loading[code]) return;
@@ -27,10 +28,10 @@
   }
   function compile(dict) {
     return (dict.patterns || []).map(([from, to]) => {
-      const parts = from.split(/(\{\d\}|\{#\})/), order = [];
+      const parts = from.split(/(\{N?\d\}|\{#\})/), order = [];
       const source = parts.map(p => {
         if (p === '{#}') { order.push('#'); return '([\\d.,]+)'; }
-        const m = /^\{(\d)\}$/.exec(p); if (m) { order.push(+m[1]); return '(.+?)'; }
+        const m = /^\{(N?)(\d)\}$/.exec(p); if (m) { order.push(+m[2]); return m[1] ? '([^.!?,:;。]{1,40}?)' : '(.+?)'; }
         return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       }).join('');
       return { re: new RegExp('^' + source + '$'), order, to };

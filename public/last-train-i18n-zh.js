@@ -27,6 +27,7 @@
     'Footsteps & Map': '脚步声与地图', 'Hear Saboteurs walk past your door.': '听见破坏者从你门前走过。',
     'Shuffle Roles': '随机身份', 'A new role mix every journey.': '每程都换一套新身份组合。',
     'Shuffle is on: a new role mix is drawn when the journey starts.': '随机已开启：旅程开始时会抽一套新的身份组合。',
+    'This journey uses the mix you set. After it, a new mix is drawn each journey.': '这一程使用你设定的组合，之后每程都会抽新的组合。',
     'Roles are dealt to players at random.': '身份会随机发给玩家。', 'The host will start your journey.': '房主会开始你的旅程。', 'See The Rules': '查看规则',
     'Host': '房主', 'Away': '离开', 'Ready to board': '准备登车', 'On board': '在车上', 'Observer': '旁观者',
     'WATCHING · SEAT AT THE NEXT JOURNEY': '旁观中 · 下一程入座', 'You': '你', 'Me': '我', 'Nobody': '没有人', 'Someone': '某人', 'Secret team': '秘密阵营', 'Secret role': '秘密身份',
@@ -119,6 +120,7 @@
     'Instant results': '即时结果', 'Inspector learns GOOD or BAD, Witness learns the original target (even if saved). Both see it straight away.': '检查员得知好人或坏人，目击者得知原本的目标（即使被救）。两者都会立即看到。',
     'Spent powers': '已用能力', 'A confirmed once-only power is spent even if blocked. Missing your turn skips without spending it. A blocked Medic spends nothing.': '确认使用的一次性能力即使被封锁也算用掉。错过回合不会消耗。被封锁的医生不消耗任何药。',
     'Trainee promotion': '实习生晋升', 'If Inspector or Medic is out, the Trainee takes the job next night (Inspector first if both are lost), with only the medicine left.': '如果检查员或医生出局，实习生从下一晚接替（两者都出局时先接替检查员），药物只剩余下的部分。',
+    'Five-player backup': '五人局替补', 'With 5 players there is one Crew member. If they are out on the first night, a random Passenger still aboard secretly takes their job next night, with any medicine already used, and loses their own power.': '五人局只有一名乘务组成员。如果他在第一晚出局，一位还在车上的随机乘客会在下一晚秘密接替他的工作（已用掉的药物照样算用掉），并失去自己原本的能力。',
     'Dawn ties': '黎明同归', 'Night deaths happen together. If the last Saboteur and the last good group fall together, good wins.': '夜间死亡同时发生。如果最后一名破坏者与最后一个好人群体同时倒下，好人获胜。',
     'Carriage events': '车厢事件', 'Some nights one public event changes the rules: Power Cut, Long Tunnel, Sealed Ballots and more. The host can turn events off.': '某些夜晚会有一个公开事件改变规则：停电、长隧道、密封投票等。房主可以关闭事件。',
     'Ghosts': '幽灵', 'Out players watch quietly. They can climb the Ghost Climb to see a role, and make a guess before the journey ends for +5 WP each.': '出局的玩家安静旁观。他们可以通过幽灵攀登查看一个身份，并在旅程结束前猜测，每猜对一个 +5 WP。',
@@ -197,7 +199,8 @@
     'If Brave also protects your healed patient, that player dies from overdose.': '如果勇敢乘客也保护了你治疗的病人，他会因用药过量死亡。',
     'Your turn is complete.': '你的回合已完成。', 'You have used both sightings.': '你已用完两次观察。', 'Use your private night notebook to prepare for the lounge.': '用私人夜间笔记本为休息车厢做准备。',
     'Power cut tonight.': '今晚停电。', 'Sightings do not work tonight. Your sightings are not spent.': '今晚观察无效，不会消耗次数。', 'Use a sighting tonight?': '今晚使用一次观察？',
-    'See who they attack': '看他们袭击谁', 'Three faces, one is bad': '三张面孔，一个是坏人', 'Two faces, one is bad': '两张面孔，一个是坏人',
+    'See who they attack': '看他们袭击谁', 'See who the Saboteurs attack tonight, even if they are saved.': '看到破坏者今晚袭击了谁，即使那人被救下。',
+    'See three faces in the corridor. One of them is the Saboteur.': '在走廊瞥见三张面孔，其中一个就是破坏者。', 'See two faces in the corridor. One of them is a Saboteur.': '在走廊瞥见两张面孔，其中一个是破坏者。', 'Three faces, one is bad': '三张面孔，一个是坏人', 'Two faces, one is bad': '两张面孔，一个是坏人',
     'Checks do not work tonight. Try again next night.': '今晚查验无效，明晚再试。', 'Your power is already used.': '你的能力已经用过了。',
     'Who needs protection?': '谁需要保护？', 'Lock your door tonight?': '今晚锁门吗？', 'Who will you check?': '你要查验谁？', 'Watch tonight’s attack?': '观察今晚的袭击？',
     'Every night.': '每晚。', 'Once per game.': '每局一次。',
@@ -405,6 +408,23 @@
     'Keep your recording within 45 seconds.': '录音请控制在 45 秒以内。', 'The recording is too large or could not be read. Try a shorter clip.': '录音太大或无法读取，请录短一点。',
   });
 
+  // The paged How To Play guide
+  add({
+    'Own phone': '各用手机', '5–12 players, one phone each': '5–12 位玩家，每人一部手机', 'Secret role': '秘密身份', 'Only you see your ticket': '只有你能看到你的车票', 'Nights and days': '黑夜与白天', 'Secret moves, then talk': '暗中行动，然后讨论',
+    'Get all Passengers OR all Crew out. You know your teammates.': '让所有乘客或所有乘务组出局。你知道队友是谁。', 'SABOTEURS ABOARD': '车上的破坏者', 'players': '位玩家',
+    'How a journey goes': '一程怎么玩', 'Board': '登车', 'Meet tonight’s roles and get your secret ticket. Seats are shuffled; your seat is your speaking order.': '认识今晚的身份，拿到你的秘密车票。座位会打乱，你的座位就是发言顺序。',
+    'Night': '夜晚', 'Two 45-second phases. Everyone with a power uses it at the same time, in secret.': '两个 45 秒的阶段。有能力的人同时秘密行动。', 'See who is out, and read your private reports.': '看看谁出局了，阅读你的私人报告。',
+    'Lounge': '休息车厢', 'One at a time, in seat order, share what you know, or what you want them to believe.': '按座位顺序一个一个发言，分享你知道的，或你想让大家相信的。',
+    'Vote someone off the train, or Skip. Then the next night falls.': '投票让某人下车，或弃权。然后下一个夜晚降临。', '🔁 Repeat until one team wins.': '🔁 重复直到一方获胜。',
+    'At night': '夜里', 'PHASE 1 · MOVES': '阶段 1 · 行动', 'Saboteurs attack': '破坏者袭击', 'Blocker blocks a power': '封锁者封锁一项能力', 'Forger disguises a teammate': '伪装者伪装一位队友', 'Brave protects': '勇敢乘客保护', 'Careful locks their door': '谨慎乘客锁门',
+    'PHASE 2 · RESPONSES': '阶段 2 · 回应', 'Medic heals or poisons': '医生治疗或下毒', 'Inspector checks GOOD or BAD': '检查员查验好人或坏人', 'Witness watches or glimpses': '目击者观察或瞥视',
+    'Saboteurs agree on one target. A tie is random; no pick means no attack.': '破坏者商定一个目标。平票随机；不选就没有袭击。', 'Good travellers can flip a coin to listen for footsteps at their door.': '好人可以抛硬币，在门边偷听脚步声。',
+    'Everyone has a private notebook while the timer runs.': '计时期间每个人都有私人笔记本。', 'Talk and vote': '讨论与投票', 'Up to 45 seconds each, in seat order. The host can choose 15–45.': '按座位顺序，每人最多 45 秒。房主可选 15–45 秒。',
+    'Chat Room: type or record one message. In Person: speak aloud.': '聊天室：输入或录制一条消息。面对面：大声说出来。', 'Pin a suspect: everyone sees the count, never who pinned.': '标记嫌疑人：所有人都能看到数量，但看不到是谁标记的。',
+    'Most votes leaves the train. Skip is an abstention.': '得票最多的人下车。跳过即弃权。', 'A tie gets one re-vote. Another tie is decided at random.': '平票会重新投票一次，再平票则随机决定。',
+    'The removed player’s team is revealed. Their role stays secret.': '公开出局者的阵营，身份保密。', 'The roles': '身份', 'Extra rules': '额外规则', '‹ Back': '‹ 上一页', 'Next ›': '下一页 ›',
+  });
+
   // Status words and short labels that are joined with other text
   add({
     'out': '出局', 'speaking': '发言中', 'voted': '已投票', 'away': '离开', 'ATTACKED': '被袭击', 'HEAL GIVEN': '已治疗', 'Map': '地图', 'Boarding': '登车中', 'Still aboard.': '还在车上。',
@@ -420,6 +440,7 @@
 
   // Text with names or numbers inside. {0} {1} are any text, {#} a number.
   const patterns = [
+    ['Look at who is out and check your reports. {0}', '看看谁出局了，查看你的报告。{0}'], ['Look at who is out and check your reports.', '看看谁出局了，查看你的报告。'],
     ['Night {#}', '第 {#} 夜'], ['NIGHT {#}', '第 {#} 夜'], ['Round {#}', '第 {#} 回合'], ['ROUND {#}', '第 {#} 回合'],
     ['Lounge · Round {#}', '休息车厢 · 第 {#} 回合'], ['Morning · Round {#}', '早晨 · 第 {#} 回合'], ['Vote · Round {#}', '投票 · 第 {#} 回合'], ['Re-vote · Round {#}', '重新投票 · 第 {#} 回合'], ['Vote result · Round {#}', '投票结果 · 第 {#} 回合'],
     ['{#}s', '{#} 秒'], ['{#} WP', '{#} WP'], ['Shop · {#} WP', '商店 · {#} WP'], ['Seat {#}', '{#} 号座位'], ['SEAT {#}', '{#} 号座位'], ['Cabin {#}', '{#} 号包厢'], ['CABIN {#}', '{#} 号包厢'], ['cabin {#}', '{#} 号包厢'],
@@ -431,11 +452,11 @@
     ['Point a phone camera at the code to open room {0}', '用手机相机对准二维码打开房间 {0}'], ['Copy this link: {0}', '复制此链接：{0}'],
     ['Carriage event: {0}', '车厢事件：{0}'], ['CARRIAGE EVENT · NIGHT {#}', '车厢事件 · 第 {#} 夜'], ['{#} selected', '已选 {#} 个'], ['CHOOSE 1–{#}', '选择 1–{#} 个'],
     ['{#} Passengers', '{#} 名乘客'], ['{#} Passenger', '{#} 名乘客'], ['{#} Crew', '{#} 名乘务组'], ['{#} Saboteur', '{#} 名破坏者'], ['{#} Saboteurs', '{#} 名破坏者'],
-    ['Confirm: {0}', '确认：{0}'], ['Teammate · Seat {#}', '队友 · {#} 号座位'], ['{0} picked', '{0} 已选'], ['You agree on {0}', '你们商定了 {0}'], ['Also choose {0}', '也选择 {0}'], ['{0} has not chosen', '{0} 还没选'],
-    ['{0} chose', '{0} 已选'], ['{0} · no vote yet', '{0} · 还没投票'], ['Save {0}', '救 {0}'], ['Heal {0}', '治疗 {0}'], ['{#} left', '剩 {#}'], ['{0} was attacked.', '{0} 被袭击了。'],
+    ['Confirm: {0}', '确认：{0}'], ['Teammate · Seat {#}', '队友 · {#} 号座位'], ['{N0} picked', '{0} 已选'], ['You agree on {0}', '你们商定了 {0}'], ['Also choose {0}', '也选择 {0}'], ['{0} has not chosen', '{0} 还没选'],
+    ['{N0} chose', '{0} 已选'], ['{0} · no vote yet', '{0} · 还没投票'], ['Save {0}', '救 {0}'], ['Heal {0}', '治疗 {0}'], ['{#} left', '剩 {#}'], ['{0} was attacked.', '{0} 被袭击了。'],
     ['{#} sighting left', '剩 {#} 次观察'], ['{#} sightings left', '剩 {#} 次观察'], ['Your role: {0}', '你的身份：{0}'], ['Carriage map: {0}', '车厢地图：{0}'], ['Night {#} of 2.', '第 {#}/2 夜。'],
-    ['{0}, wake up.', '{0}，醒醒。'], ['{0} is out', '{0} 出局'], ['{0} is out.', '{0} 出局了。'], ['{0} are out.', '{0} 出局了。'], ['{0} abstained', '{0} 弃权'], ['{#} vote', '{#} 票'], ['{#} votes', '{#} 票'], ['{#} skipped', '{#} 人弃权'],
-    ['{0} voted for {1}', '{0} 投给了 {1}'], ['{0} voted for {1} with a double vote', '{0} 用双倍票投给了 {1}'], ['Attack on {0}', '袭击 {0}'], ['{0} or {1}', '{0} 或 {1}'], ['{0} is bad', '{0} 是坏人'],
+    ['{0}, wake up.', '{0}，醒醒。'], ['{N0} is out', '{0} 出局'], ['{N0} is out.', '{0} 出局了。'], ['{N0} are out.', '{0} 出局了。'], ['{0} abstained', '{0} 弃权'], ['{#} vote', '{#} 票'], ['{#} votes', '{#} 票'], ['{#} skipped', '{#} 人弃权'],
+    ['{0} voted for {1}', '{0} 投给了 {1}'], ['{0} voted for {1} with a double vote', '{0} 用双倍票投给了 {1}'], ['Attack on {0}', '袭击 {0}'], ['{N0} or {N1}', '{0} 或 {1}'], ['{N0} is bad', '{0} 是坏人'],
     ['Footsteps from cabin {#}', '来自 {#} 号包厢的脚步声'], ['I’m the {0}', '我是{0}'], ['I’m the {0}.', '我是{0}。'], ['I checked {0}: GOOD.', '我查验了 {0}：好人。'], ['I checked {0}: BAD.', '我查验了 {0}：坏人。'],
     ['I heard footsteps from {0}’s side of the corridor.', '我听到走廊 {0} 那一边有脚步声。'], ['I protected {0} last night.', '我昨晚保护了 {0}。'], ['I suspect {0}', '我怀疑 {0}'], ['I suspect {0}.', '我怀疑 {0}。'],
     ['I trust {0}', '我信任 {0}'], ['I trust {0}.', '我信任 {0}。'], ['Let’s vote out {0}', '我们投出 {0} 吧'], ['Let’s vote out {0}.', '我们投出 {0} 吧。'],
@@ -445,7 +466,7 @@
     ['{#} heard', '{#} 人听到'], ['Someone walked past your door at {0}.', '有人在 {0} 走过你的门前。'], ['They came from the direction of cabin {#}, and kept walking past you.', '他们从 {#} 号包厢方向过来，走过了你的门前。'],
     ['{#} done', '{#} 人完成'], ['Speak in seat order. You have up to {#} seconds.', '按座位顺序发言，你最多有 {#} 秒。'], ['ROUND {#} · THE GATHERING LOUNGE', '第 {#} 回合 · 休息车厢'],
     ['{0} · counts twice', '{0} · 算两票'], ['{#} votes sealed', '已封存 {#} 票'], ['{#} / {#} votes sealed', '已封存 {#} / {#} 票'], ['The Saboteurs tried to attack {0}.', '破坏者试图袭击 {0}。'],
-    ['One of {0} is a Saboteur.', '{0} 中有一个是破坏者。'], ['{0} and {1}', '{0} 和 {1}'], ['{0}, {1} and {2}', '{0}、{1} 和 {2}'],
+    ['One of {0} is a Saboteur.', '{0} 中有一个是破坏者。'], ['{N0} and {N1}', '{0} 和 {1}'], ['{N0}, {N1} and {N2}', '{0}、{1} 和 {2}'],
     ['At {0} a lock clicked shut in {1}’s cabin, right next to you. Your sharp ears caught the side.', '{0}，你隔壁 {1} 的包厢传来锁门声。你灵敏的耳朵听出了方向。'],
     ['At {0} a lock clicked shut next door: either {1}.', '{0}，隔壁传来锁门声：是 {1}。'], ['Footsteps at {0}: someone came past your door from the direction of cabin {#}.', '{0} 的脚步声：有人从 {#} 号包厢方向经过你的门前。'],
     ['From the peak: {0} is the {1}.', '从顶端看到：{0} 是{1}。'], ['Lost luggage: {0} is not the {1}.', '失物行李：{0} 不是{1}。'], ['You are now {0}.', '你现在是{0}。'], ['You are now the {0}.', '你现在是{0}。'],
@@ -467,10 +488,10 @@
     ['{#} Left To Match', '还剩 {#} 个待配对'], ['Re-vote begins in {#}', '{#} 秒后重新投票'], ['{#} seconds remaining', '还剩 {#} 秒'], ['{#} test players · {0}', '{#} 位测试玩家 · {0}'],
     ['Add {#} Test Players', '添加 {#} 位测试玩家'], ['Added {#} test players.', '已添加 {#} 位测试玩家。'], ['Not enough room for {#} test players. Free a seat, then use the button below.', '没有足够空位容纳 {#} 位测试玩家。请空出座位后使用下方按钮。'],
     ['{0} · Heal {#} / Poison {#}', '{0} · 解药 {#} / 毒药 {#}'], ['HEAL {#}   /   POISON {#}', '解药 {#}   /   毒药 {#}'], ['{#} AM', '凌晨 {#} 点'], ['{0} AM', '凌晨 {0}'],
-    ['{0} is a Saboteur.', '{0} 是破坏者。'], ['{0} is the {1}', '{0} 是{1}'], ['{0} isn’t {1}', '{0} 不是{1}'], ['Lock: {0}', '锁门：{0}'],
+    ['{N0} is a Saboteur.', '{0} 是破坏者。'], ['{N0} is the {N1}', '{0} 是{1}'], ['{N0} isn’t {N1}', '{0} 不是{1}'], ['Lock: {0}', '锁门：{0}'],
     ['{0} are taking their turn. Keep your eyes closed and your role secret.', '{0} 正在行动，请闭上眼睛，保守身份秘密。'],
     ['{#} Out', '{#} 人出局'], ['{#}/{#} IN ROOM', '房间 {#}/{#} 人'], ['{#} Travellers', '{#} 位乘客'], ['{#} sightings left', '剩 {#} 次观察'],
-    ['Block used: {0}', '已封锁：{0}'], ['Disguise used: {0}', '已伪装：{0}'], ['{0} is GOOD', '{0} 是好人'], ['{0} is BAD', '{0} 是坏人'], ['{0} is unconscious on the cabin floor', '{0} 昏倒在包厢地板上'],
+    ['Block used: {0}', '已封锁：{0}'], ['Disguise used: {0}', '已伪装：{0}'], ['{N0} is GOOD', '{0} 是好人'], ['{N0} is BAD', '{0} 是坏人'], ['{0} is unconscious on the cabin floor', '{0} 昏倒在包厢地板上'],
     ['{0}, already checked: {1} on Night {#}', '{0}，已查验：第 {#} 夜为{1}'], ['{0}, {1}: unsure. Tap to change.', '{0}，{1}：不确定。点击更改。'], ['{0}, {1}: trust. Tap to change.', '{0}，{1}：信任。点击更改。'], ['{0}, {1}: suspect. Tap to change.', '{0}，{1}：怀疑。点击更改。'],
     ['Night phase {#} of 2.', '夜晚阶段 {#}/2。'], ['Night phase {#} of 2', '夜晚阶段 {#}/2'], ['Whisper To Your Team ({#})', '对队友耳语（{#}）'], ['👣 Passes {#} door', '👣 经过 {#} 扇门'], ['👣 Passes {#} doors', '👣 经过 {#} 扇门'],
     ['Who holds each power still aboard? {0}. Open until the journey ends. +5 WP for each right guess. Climb to the peak first to learn a role.', '还在车上的人谁拥有哪种能力？{0}。旅程结束前都可以猜。每猜对一个 +5 WP。先爬到顶端可以得知一个身份。'],
@@ -486,7 +507,7 @@
     ['{#} of {#}', '{#} / {#}'], ['{#} listening', '{#} 人在偷听'], ['{#} rubbing', '搓了 {#} 次'], ['Choose {#} More', '再选 {#} 个'],
     ['{0} walked from cabin {#} to cabin {#}. Nobody heard them.', '{0} 从 {#} 号包厢走到 {#} 号包厢，没有人听到。'], ['{0} (Brave) walked from cabin {#} to cabin {#}. Nobody heard them.', '{0}（勇敢乘客）从 {#} 号包厢走到 {#} 号包厢，没有人听到。'],
     ['{0} walked from cabin {#} to cabin {#}. {1} heard the footsteps.', '{0} 从 {#} 号包厢走到 {#} 号包厢，{1} 听到了脚步声。'], ['{0} (Brave) walked from cabin {#} to cabin {#}. {1} heard the footsteps.', '{0}（勇敢乘客）从 {#} 号包厢走到 {#} 号包厢，{1} 听到了脚步声。'],
-    ['{0} ({1})', '{0}（{1}）'],
+    ['{N0} ({N1})', '{0}（{1}）'], ['The {0} is out. You are now the {0}, with their power and anything they used. It starts next night; your own power is gone.', '{0}出局了。你现在是{0}，继承其能力和已使用的状态。从下一晚开始生效，你原本的能力消失。'],
     ['{0} frame, {#} WP', '{0}头像框，{#} WP'], ['Course #{#}', '第 {#} 号路线'], ['Course #{#} · {#} fall', '第 {#} 号路线 · 摔落 {#} 次'], ['Course #{#} · {#} falls', '第 {#} 号路线 · 摔落 {#} 次'],
   ];
   window.LT_I18N_REGISTER('zh', { exact, patterns });

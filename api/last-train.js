@@ -92,9 +92,11 @@ async function execute(req, body) {
     const speakSeconds = body.speakSeconds === undefined ? room.settings.speakSeconds || 45 : body.speakSeconds;
     need(rules.SPEAK_SECONDS.includes(speakSeconds), 400, 'Choose 15, 20, 30 or 45 seconds.');
     const roles = body.roles === undefined ? room.settings.roles || null : body.roles === null ? null : rules.validateLoadout(present(room).length, body.roles);
-    room.settings = { extra: body.extra, blocker: body.blocker, discussion: body.discussion, speakSeconds, roles, events: body.events === undefined ? room.settings.events !== false : !!body.events, observers: body.observers === undefined ? room.settings.observers !== false : !!body.observers, autoShuffle: body.autoShuffle === undefined ? !!room.settings.autoShuffle : !!body.autoShuffle, footsteps: body.footsteps === undefined ? room.settings.footsteps !== false : !!body.footsteps };
+    // A mix the host picks or shuffles is kept for the next journey, even with auto shuffle on.
+    const mixPicked = roles !== null && (JSON.stringify(roles) !== JSON.stringify(room.settings.roles || null) || !!room.settings.mixPicked);
+    room.settings = { mixPicked, extra: body.extra, blocker: body.blocker, discussion: body.discussion, speakSeconds, roles, events: body.events === undefined ? room.settings.events !== false : !!body.events, observers: body.observers === undefined ? room.settings.observers !== false : !!body.observers, autoShuffle: body.autoShuffle === undefined ? !!room.settings.autoShuffle : !!body.autoShuffle, footsteps: body.footsteps === undefined ? room.settings.footsteps !== false : !!body.footsteps };
   }
-  if (action === 'shuffleRoles') { host(); need(['lobby','finished'].includes(room.phase), 409, 'Shuffle roles before the journey starts.'); room.settings.roles = rules.randomLoadout(present(room).length); }
+  if (action === 'shuffleRoles') { host(); need(['lobby','finished'].includes(room.phase), 409, 'Shuffle roles before the journey starts.'); room.settings.roles = rules.randomLoadout(present(room).length); room.settings.mixPicked = true; }
   if (action === 'start') { host(); need(['lobby', 'finished'].includes(room.phase), 409, 'A game is already running.'); rules.start(room); }
   if (action === 'ready') {
     need(room.phase === 'briefing' && me.alive, 409, 'You cannot use Ready now.');

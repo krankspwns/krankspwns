@@ -2348,3 +2348,90 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 :root:lang(zh) .lt-shell, :root:lang(zh) dialog, :root:lang(zh) #lt-overlays { font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif; }
 :root:lang(zh-TW) .lt-shell, :root:lang(zh-TW) dialog, :root:lang(zh-TW) #lt-overlays { font-family: Inter, "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", system-ui, sans-serif; }
 :root:lang(zh) .gamecard-buttons button, :root:lang(zh-TW) .gamecard-buttons button { white-space: nowrap; }
+/* Narrow phones: seven header buttons fit in 288px by trimming their size and gaps. */
+@media (max-width: 374px) {
+  .lt-topbar { gap: 4px; }
+  .lt-topbar .lt-iconbtn, .lt-topbar .lt-pill { height: 38px; min-width: 38px; border-radius: 12px; }
+  .lt-topbar .lt-pill { padding: 0 7px 0 8px; gap: 2px; }
+  .lt-topbar .lt-pill .caret { display: none; }
+  .lt-topbar .lt-iconbtn svg { width: 22px; height: 22px; flex-shrink: 0; }
+  .lt-topbar .shop-button svg { width: 20px; height: 20px; }
+  .lt-topbar .shop-button { padding: 0 5px; }
+  .lt-topbar .wp-badge { padding: 5px 6px; font-size: 10.5px; }
+}
+/* Holding the lean-in button must never select text or show the phone's long-press highlight. */
+.ear-game, .ear-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.ear-hold { touch-action: none; -webkit-tap-highlight-color: transparent; outline: none; }
+.ear-hold:focus:not(:focus-visible) { box-shadow: none; }
+.ear-hold:hover:not(.down), .ear-hold:active:not(.down) { background: #8fd6ff1a !important; transform: none; }
+/* Witness sightings: two wide cards, each with a small night scene, the full effect and a go arrow. */
+.witness-console .sight-options { grid-template-columns: 1fr; gap: 10px; margin: 10px 0 8px; }
+.sight-card { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 64px 1fr 22px; align-items: center; gap: 14px; width: 100%; padding: 14px 14px 14px 12px; border-radius: 20px; cursor: pointer; text-align: left; position: relative; overflow: hidden; transition: transform .15s ease, filter .2s, box-shadow .2s; }
+.sight-card.watch { background: linear-gradient(120deg, #17345f, #0f2140 70%); border: 1px solid #8fd6ff66; box-shadow: inset 0 1px #ffffff1a, 0 10px 26px #04102a80; }
+.sight-card.glimpse { background: linear-gradient(120deg, #382468, #1f1442 70%); border: 1px solid #c8bdff66; box-shadow: inset 0 1px #ffffff1a, 0 10px 26px #12062e80; }
+.sight-card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 12% 50%, #ffffff14, transparent 45%); pointer-events: none; }
+.sight-art svg { display: block; width: 64px; height: 64px; filter: drop-shadow(0 4px 10px #0008); }
+.sight-copy { display: grid; gap: 4px; min-width: 0; }
+.sight-copy b { font: 800 19px/1.1 Inter, system-ui, sans-serif; color: #fff5df; letter-spacing: -.2px; }
+.sight-copy small { font: 500 13px/1.4 Inter, system-ui, sans-serif; color: #c9d6ea; }
+.sight-card.glimpse .sight-copy small { color: #d6cff2; }
+.sight-go { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font: 800 18px/1 Inter, sans-serif; color: #10203a; background: #8fd6ff; }
+.sight-card.glimpse .sight-go { background: #c8bdff; color: #1f1442; }
+.sight-card:hover:not(:disabled) { filter: brightness(1.08); }
+.sight-card:active:not(:disabled) { transform: scale(.98); }
+.sight-card:focus-visible { outline: 3px solid #f2ce86; outline-offset: 2px; }
+.sight-card:disabled { filter: saturate(.3) brightness(.7); cursor: default; }
+@media (max-width: 374px) { .sight-card { grid-template-columns: 50px 1fr 20px; gap: 10px; } .sight-art svg { width: 50px; height: 50px; } .sight-copy b { font-size: 17px; } .sight-copy small { font-size: 12.5px; } }
+/* How to play: one idea per row, an icon for each, pages with dots like Row of Reckoning's guide. */
+.guide-dialog { display: flex; flex-direction: column; }
+.guide-dialog > h2 { margin-bottom: 4px; }
+.guide-page { display: grid; gap: 14px; min-height: 340px; align-content: start; animation: guide-in .22s ease-out; }
+@keyframes guide-in { from { opacity: 0; transform: translateX(10px); } }
+.lt-calm .guide-page { animation: none; }
+.guide-step-no { font: 800 10px Inter, sans-serif; letter-spacing: 1.6px; color: #a99ebc; }
+.guide-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.guide-tile { display: grid; justify-items: center; text-align: center; gap: 4px; padding: 12px 6px; border-radius: 16px; background: #ffffff08; border: 1px solid #ffffff14; }
+.guide-emoji { font-size: 26px; line-height: 1; }
+.guide-tile b { font: 800 13px/1.2 Inter, sans-serif; color: #fff5df; }
+.guide-tile small { font: 500 11px/1.35 Inter, sans-serif; color: #b9b1cf; }
+.guide-teams { display: grid; gap: 10px; }
+.guide-team { display: grid; grid-template-columns: 58px 1fr; gap: 12px; align-items: center; padding: 12px; border-radius: 18px; }
+.guide-team.good { background: linear-gradient(120deg, #123a4a, #10233a); border: 1px solid #8fd6ff55; }
+.guide-team.bad { background: linear-gradient(120deg, #4a1426, #24101f); border: 1px solid #ff829355; }
+.guide-team-art { width: 58px !important; height: 58px !important; border-radius: 16px; }
+.guide-team-tag { font: 800 10px Inter, sans-serif; letter-spacing: 1.6px; }
+.guide-team.good .guide-team-tag { color: #8fd6ff; } .guide-team.bad .guide-team-tag { color: #ff8293; }
+.guide-team b { display: block; font: 800 16px/1.2 Inter, sans-serif; color: #fff5df; margin: 2px 0; }
+.guide-team p { margin: 0; font: 500 13px/1.45 Inter, sans-serif; color: #d6d0e4; }
+.guide-counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.guide-counts > small { grid-column: 1 / -1; font: 800 10px Inter, sans-serif; letter-spacing: 1.6px; color: #a99ebc; }
+.guide-count { display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border-radius: 14px; background: #ffffff06; border: 1px solid #ffffff10; }
+.guide-count b { font: 800 18px Inter, sans-serif; color: #f2ce86; } .guide-count span { font: 600 11px Inter, sans-serif; color: #b9b1cf; } .guide-count i { font: 700 13px Inter, sans-serif; font-style: normal; color: #ffb3bd; }
+.guide-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; position: relative; }
+.guide-steps li { display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 6px 0 12px; position: relative; }
+.guide-steps li:not(:last-child)::before { content: ''; position: absolute; left: 21px; top: 48px; bottom: -2px; width: 2px; background: linear-gradient(#f2ce8666, #f2ce8618); }
+.guide-step-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; font-size: 21px; background: #2a2150; border: 1px solid #f2ce8655; box-shadow: 0 4px 12px #0006; }
+.guide-steps b, .guide-phase-tag { font: 800 15px Inter, sans-serif; color: #fff5df; }
+.guide-steps p { margin: 3px 0 0; font: 500 13px/1.45 Inter, sans-serif; color: #c9c2d6; }
+.guide-note { margin: 0; text-align: center; font: 700 13px Inter, sans-serif; color: #f2ce86; }
+.guide-phases { display: grid; gap: 10px; }
+.guide-phase { display: grid; gap: 6px; padding: 12px; border-radius: 18px; background: linear-gradient(120deg, #2b1840, #1a1230); border: 1px solid #c8bdff40; }
+.guide-phase.two { background: linear-gradient(120deg, #12304a, #10203a); border-color: #8fd6ff40; }
+.guide-phase-tag { font-size: 10px !important; letter-spacing: 1.6px; color: #c8bdff !important; } .guide-phase.two .guide-phase-tag { color: #8fd6ff !important; }
+.guide-row { display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: center; }
+.guide-row > span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: #ffffff0d; font-size: 16px; }
+.guide-row p { margin: 0; font: 500 13.5px/1.4 Inter, sans-serif; color: #e2dcef; }
+.guide-list { display: grid; gap: 8px; padding: 4px 0; }
+.guide-list .guide-row { padding: 8px 10px; border-radius: 14px; background: #ffffff06; }
+.guide-foot { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #ffffff12; }
+.guide-foot button.guide-back, .guide-foot button.guide-next { min-height: 42px; padding: 0 16px; white-space: nowrap; }
+.guide-foot button.guide-back:disabled { opacity: .35; }
+.guide-dots { display: flex; justify-content: center; gap: 6px; }
+.guide-dot { all: unset; width: 8px; height: 8px; border-radius: 50%; background: #ffffff30; cursor: pointer; transition: width .2s, background .2s; }
+.guide-dot.on { width: 20px; border-radius: 5px; background: #f2ce86; }
+.guide-dot:focus-visible { outline: 2px solid #f2ce86; outline-offset: 3px; }
+@media (max-width: 374px) { .guide-tiles { gap: 6px; } .guide-tile { padding: 10px 4px; } .guide-foot button.guide-back, .guide-foot button.guide-next { padding: 0 12px; } }
+/* The page footer stays at the bottom of long pages (the roles) on a solid strip, so it never sits over text. */
+.guide-dialog { padding-bottom: 0 !important; }
+.guide-foot { position: sticky; bottom: 0; z-index: 2; margin: 14px -23px 0; padding: 14px 23px 18px; background: linear-gradient(#121b2c00, #121b2c 18px); border-top: 0; }
+.guide-foot button { position: static !important; }

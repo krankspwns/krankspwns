@@ -16,7 +16,9 @@
     // Trust marks are shared with the night notebook in the cabin: same device, same game.
     const MARKS = [['trust', 'Trust', '✓'], ['unsure', 'Unsure', '?'], ['suspect', 'Suspect', '✕']];
     const readMarks = () => { try { const v = JSON.parse(localStorage.getItem(marksKey) || 'null'); return v && typeof v === 'object' ? { marks: {}, stories: {}, people: {}, tags: {}, ...v } : { marks: {}, stories: {}, people: {}, tags: {} }; } catch { return { marks: {}, stories: {}, people: {} }; } };
-    const writeMarks = change => { try { localStorage.setItem(marksKey, JSON.stringify({ ...readMarks(), ...change })); if (status) status.textContent = 'Saved on this device'; } catch {} };
+    const writeMarks = change => { try { localStorage.setItem(marksKey, JSON.stringify({ ...readMarks(), ...change })); if (status) status.textContent = 'Saved on this device'; } catch {} dispatchEvent(new CustomEvent('lt-notes-change', { detail: 'notebook' })); };
+    // Marks changed on the carriage map or in the cabin notebook: redraw the People page unless a note is being typed.
+    addEventListener('lt-notes-change', e => { if (e.detail !== 'notebook' && mode === 'people' && !peopleBox?.contains(document.activeElement)) renderPeople(); });
     function renderPeople() {
       if (!peopleBox) return;
       const notes = readMarks(); peopleBox.replaceChildren();
