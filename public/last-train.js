@@ -58,7 +58,8 @@
   const role = key => state?.catalog?.[key] || { name: 'Secret role', icon: '🔒', description: '' };
   const who = id => state?.players.find(p => p.id === id)?.name || 'Nobody';
   const ROLE_ART = { passenger:0, careful:1, brave:2, witness:3, speaker:4, inspector:5, medic:6, trainee:7, saboteur:8, blocker:9, steward:10, forger:11 };
-  // Crew roles without a painted portrait get a crest: their tool on a lamp-lit badge.
+  const ADDITIONAL_ROLE_ART = { conductor:0, porter:1, guard:2, signalman:3, framer:4, silencer:5, smuggler:6 };
+  // Fallback crests remain available if a future role has no painted portrait.
   const ROLE_CRESTS = {
     conductor: '<rect x="13" y="34" width="38" height="20" rx="3" fill="#fff1c9" stroke="#b8862c" stroke-width="2"/><path d="M19 40h16M19 46h10" stroke="#b8862c" stroke-width="2.4" stroke-linecap="round"/><circle cx="43" cy="44" r="4" fill="#1b1130"/><path d="M14 27c0-9 8-15 18-15s18 6 18 15z" fill="#22355f"/><path d="M10 27h44v5H10z" fill="#16233f"/><path d="M14 23h36" stroke="#e9c46f" stroke-width="3"/><circle cx="32" cy="18" r="3.4" fill="#e9c46f"/>',
     porter: '<path d="M32 6v6" stroke="#b8862c" stroke-width="3" stroke-linecap="round"/><path d="M24 12h16l-2 6H26z" fill="#e9c46f"/><rect x="21" y="18" width="22" height="30" rx="4" fill="#3a2a10" stroke="#e9c46f" stroke-width="2.4"/><rect x="25" y="22" width="14" height="22" rx="3" fill="#ffd56b"/><path d="M32 26c3 4 3 9 0 13-3-4-3-9 0-13z" fill="#fff8e0"/><path d="M19 48h26l-3 6H22z" fill="#e9c46f"/><circle cx="32" cy="34" r="16" fill="#ffd56b" opacity=".16"/>',
@@ -73,6 +74,8 @@
     return el('span', { class: 'portrait portrait-' + set + ' ' + cls, style: '--px:' + ((index % 4) * 100 / 3) + '%;--py:' + (Math.floor(index / 4) * 50) + '%', 'aria-hidden': 'true', 'data-portrait-set': set, ...(label ? { 'data-role-art': label } : {}) });
   }
   function rolePortrait(key, cls = '') {
+    const additional = ADDITIONAL_ROLE_ART[key];
+    if (additional !== undefined) return el('span', { class: 'portrait portrait-role-additional ' + cls, style: '--px:' + ((additional % 4) * 100 / 3) + '%;--py:' + (Math.floor(additional / 4) * 100) + '%', 'aria-hidden': 'true', 'data-role-art': key });
     if (ROLE_ART[key] !== undefined || !ROLE_CRESTS[key]) return portrait(ROLE_ART[key] ?? 0, 'roles', cls, key);
     const crest = el('span', { class: 'portrait role-crest crest-' + key + ' ' + cls, 'aria-hidden': 'true', 'data-role-art': key });
     crest.innerHTML = '<svg viewBox="0 0 64 64" aria-hidden="true">' + ROLE_CRESTS[key] + '</svg>'; return crest;

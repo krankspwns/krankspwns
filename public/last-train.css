@@ -2474,3 +2474,6 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .translate-note { display: block; margin-top: 4px; color: #a99ebc; font-size: 11.5px; }
 .translate-toggle { all: unset; display: inline-block; margin-top: 6px; color: #8fd6ff; font: 700 11.5px Inter, sans-serif; cursor: pointer; }
 .translate-toggle:focus-visible { outline: 2px solid #f2ce86; outline-offset: 2px; border-radius: 4px; }
+
+/* Seven added roles, four columns by two rows; final cell intentionally unused. */
+.portrait-role-additional { background-image: url('/last-train/roles-additional.webp'); background-size: 400% 200%; }
