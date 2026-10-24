@@ -2480,3 +2480,6 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .listen-card, .listen-card * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .ear-hold, .ear-game { touch-action: none; }
 html.lt-holding, html.lt-holding * { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }
+
+/* Seven added roles, four columns by two rows; final cell intentionally unused. */
+.portrait-role-additional { background-image: url('/last-train/roles-additional.webp'); background-size: 400% 200%; }
