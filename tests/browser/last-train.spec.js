@@ -19,7 +19,7 @@ test('twelve phones board, meet their cabins, take sequential night turns, speak
     for(let i=0;i<12;i++){const c=await browser.newContext({viewport:{width:i===0?1240:390,height:i===0?960:844},reducedMotion:'reduce'});contexts.push(c);const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));pages.push(p);await p.goto('/last-train.html');await p.getByLabel('Your name',{exact:true}).fill('Player '+i);}
     const host=pages[0];await host.getByRole('button',{name:'Create A Room',exact:true}).click();const code=await host.locator('.room-code').textContent();
     for(const p of pages.slice(1)){await p.getByLabel('Room code',{exact:true}).fill(code);await p.getByRole('button',{name:'Join Room',exact:true}).click();}
-    await expect(host.locator('.seat')).toHaveCount(12);await host.getByRole('button',{name:'START JOURNEY'}).click();
+    await expect(host.locator('.seat')).toHaveCount(12);await host.getByRole('button',{name:'In Person',exact:true}).click();await expect(host.getByRole('button',{name:'In Person',exact:true})).toHaveClass(/selected/);await host.getByRole('button',{name:'START JOURNEY'}).click();
     await expect(host.getByRole('heading',{name:'Meet the two teams.'})).toBeVisible();await expect(host.locator('.introduced-role')).toHaveCount(9);expect((await read(host)).me.role).toBeNull();
     await host.screenshot({path:info.outputPath('journey-team-introductions.png'),fullPage:true});
     await Promise.all(pages.map(async p=>{await expect(p.getByRole('button',{name:'I’m Ready · Board The Train',exact:true})).toBeVisible();await p.getByRole('button',{name:'I’m Ready · Board The Train',exact:true}).click();}));

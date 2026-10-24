@@ -72,7 +72,7 @@
       for (const m of letters) {
         const w = when(m); if (w !== label) { label = w; log.append(node('p', 'thread-when', w)); }
         const mine = m.from === state.meId, bubble = node('div', 'letter-bubble' + (mine ? ' mine' : '') + (!mine && !m.read ? ' fresh' : ''));
-        bubble.append(node('p', '', m.text)); log.append(bubble);
+        { const body = node('p', '', m.text); body.dataset.noTr = ''; bubble.append(body); } log.append(bubble);
       }
       wrap.append(head, log);
       if (p && canWrite(p)) {

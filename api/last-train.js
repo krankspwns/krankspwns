@@ -25,7 +25,7 @@ async function execute(req, body) {
     }
     need(code, 503, 'Please try creating the room again.');
     const { p, tok } = player(name); p.avatarIndex = crypto.randomInt(12);
-    const room = { code, version: 0, hostId: p.id, phase: 'lobby', rulesVersion: 2, settings: { extra: 'brave', blocker: true, discussion: 'in-person', speakSeconds: 45, autoShuffle: process.env.LAST_TRAIN_AUTO_SHUFFLE !== 'off' }, players: [p], history: [], step: 0 };
+    const room = { code, version: 0, hostId: p.id, phase: 'lobby', rulesVersion: 2, settings: { extra: 'brave', blocker: true, discussion: 'chat', speakSeconds: 45, autoShuffle: process.env.LAST_TRAIN_AUTO_SHUFFLE !== 'off' }, players: [p], history: [], step: 0 };
     await store.save(room); return { ...view(room, p), tok };
   }
   const code = String(body.code || '').toUpperCase(); need(/^[A-Z]{4}$/.test(code), 400, 'Enter a four-letter room code.');

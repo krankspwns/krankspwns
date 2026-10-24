@@ -270,6 +270,14 @@
     const menu = el('div', { class: 'lt-menu sound-menu', role: 'menu' }, ...SOUND_MODES.map((label, m) => el('button', { type: 'button', role: 'menuitemradio', 'aria-checked': String(sfx.mode === m), class: sfx.mode === m ? 'on' : '', onclick: () => { menu.remove(); sfx.setMode(m); if (m) sfx.play('pop'); } }, label)));
     popMenu(anchor, menu);
   }
+  // Languages: the same choice as Row of Reckoning. The page text is swapped by last-train-i18n.js; the menu shows each
+  // language in its own script, so those names stay as written.
+  const i18n = window.ltI18n;
+  i18n.onChange(() => render());
+  function langMenu(anchor) {
+    const menu = el('div', { class: 'lt-menu lang-menu', role: 'menu', 'data-no-tr': '' }, ...Object.entries(i18n.LANGS).map(([code, [short, full]]) => el('button', { type: 'button', role: 'menuitemradio', 'aria-checked': String(i18n.lang === code), class: i18n.lang === code ? 'on' : '', onclick: () => { menu.remove(); i18n.set(code); } }, txt('b', '', short), txt('span', '', full))));
+    popMenu(anchor, menu);
+  }
   function popMenu(anchor, menu) {
     document.querySelectorAll('.lt-menu').forEach(m => m.remove());
     const r = anchor.getBoundingClientRect();
@@ -321,6 +329,7 @@
           editable ? el('div', { class: 'set-actions' }, btn('Choose Roles', () => { d.close(); roleSettingsDialog(); }, 'secondary'), st.autoShuffle ? null : btn('Shuffle Roles', async () => { await send('shuffleRoles'); draw(); }, 'text-button')) : null) : null,
         card('🎨', 'Display', 'THIS PHONE',
           row('Colour Scheme', (THEMES.find(t => t[0] === ui.theme) || THEMES[0])[1], el('div', { class: 'set-swatches', role: 'radiogroup', 'aria-label': 'Colour scheme' }, ...THEMES.map(([key, name, bg, accent]) => el('button', { type: 'button', role: 'radio', class: 'set-swatch' + (ui.theme === key ? ' on' : ''), 'aria-checked': String(ui.theme === key), 'aria-label': name, title: name, style: '--sw-bg:' + bg + ';--sw-accent:' + accent, onclick: () => { setUi('theme', key); draw(); } }))), true),
+          row('Language', '', el('div', { class: 'set-seg', role: 'group', 'data-no-tr': '' }, ...Object.entries(i18n.LANGS).map(([code, [, full]]) => el('button', { type: 'button', class: code === i18n.lang ? 'on' : '', 'aria-pressed': String(code === i18n.lang), onclick: () => { i18n.set(code); draw(); } }, full))), true),
           row('Text Size', '', seg([[0, 'A'], [1, 'A+'], [2, 'A++']], ui.text, v => { setUi('text', v); draw(); }), true),
           row('Calm Mode', 'Turns off most animations', sw(!!ui.calm, v => { setUi('calm', v); draw(); }, false, 'Calm Mode'))),
         card('🔔', 'Sound & Feel', 'THIS PHONE',
@@ -369,6 +378,7 @@
       svgButton('lt-iconbtn settings-button', 'Settings', ICONS.gear, settingsDialog),
       el('span', { class: 'lt-spacer' }),
       (() => { const b = svgButton('lt-pill sound-pill', SOUND_MODES[sfx.mode], ICONS.sound[sfx.mode], e => soundMenu(e.currentTarget)); b.insertAdjacentHTML('beforeend', '<svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'); b.setAttribute('aria-haspopup', 'menu'); return b; })(),
+      (() => { const b = el('button', { type: 'button', class: 'lt-pill lang-pill', 'aria-haspopup': 'menu', 'aria-label': 'Language', title: 'Language', onclick: e => langMenu(e.currentTarget) }, el('span', { 'data-no-tr': '' }, i18n.LANGS[i18n.lang][0])); b.insertAdjacentHTML('beforeend', '<svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'); return b; })(),
       inRoom && w ? (() => { const b = svgButton('lt-iconbtn shop-button', 'Shop · ' + w.wp + ' WP', ICONS.shop, () => social.openShop()); b.append(txt('b', 'wp-badge', w.wp + ' WP')); return b; })() : null);
     const title = el('a', { href: '/last-train.html', class: 'lt-title' }, txt('i', '', ''), trainMark('brand-icon'), txt('span', '', 'LAST TRAIN'), txt('i', '', ''));
     if (!inRoom) return el('header', { class: 'lt-header' }, top, title);
@@ -414,10 +424,11 @@
   function waitingRoom() {
     const n = state.players.filter(p => !p.departed).length, host = state.hostId === state.meId;
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Gather at least 5 players. Each person needs their own phone.'), txt('div', 'large-code', state.code),
-      el('div', { class: 'room-setting' }, txt('b', '', 'How will you share your findings?'), el('div', { class: 'mode-switch', role: 'group', 'aria-label': 'Speaking mode' }, ...[['in-person','In Person'],['chat','Chat Room']].map(([mode,label]) => btn(label, () => setting({ discussion: mode }), state.settings.discussion === mode ? 'selected' : '', !host, 'mode-' + mode))), txt('p', 'muted small', state.settings.discussion === 'chat' ? 'Each player gets ' + state.speakSeconds + ' seconds to type or record one message. Voice recordings can be played after their turn.' : 'Sit together. Each player gets ' + state.speakSeconds + ' seconds to speak aloud, in seat order.')),
+      el('div', { class: 'room-setting' }, txt('b', '', 'How will everyone talk each round?'), el('div', { class: 'mode-switch', role: 'group', 'aria-label': 'Speaking mode' }, ...[['chat','Chat Room'],['in-person','In Person']].map(([mode,label]) => btn(label, () => setting({ discussion: mode }), state.settings.discussion === mode ? 'selected' : '', !host, 'mode-' + mode))), txt('p', 'muted small', state.settings.discussion === 'chat' ? 'Each player gets ' + state.speakSeconds + ' seconds to type or record one message. Voice recordings can be played after their turn.' : 'Sit together. Each player gets ' + state.speakSeconds + ' seconds to speak aloud, in seat order.')),
       el('div', { class: 'room-setting' }, txt('b', '', 'Speaking time per player'), el('div', { class: 'mode-switch speak-switch', role: 'group', 'aria-label': 'Speaking time per player' }, ...[15, 20, 30, 45].map(n => btn(n + 's', () => setting({ speakSeconds: n }), state.speakSeconds === n ? 'selected' : '', !host, 'speak-' + n)))),
-      el('div', { class: 'room-setting toggles' }, ...[['events', 'Carriage Events', 'A random event on some nights, like a power cut or a long tunnel.'], ['observers', 'Allow Observers', 'People who join mid-journey can watch and take a seat next journey.'], ['footsteps', 'Footsteps & Carriage Map', 'A Saboteur walks the corridor to attack. One traveller they pass may hear them.'], ['autoShuffle', 'Shuffle Roles Every Journey', 'A new random role mix is drawn each time a journey starts.']].map(([key, label, hint]) =>
-        el('label', { class: 'switch-row' }, el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: key === 'autoShuffle' ? !!state.settings.autoShuffle : state.settings[key] !== false, disabled: !host || busy, onchange: e => setting({ [key]: e.target.checked }) })))),
+      // Four room switches as a compact 2×2 grid: title and switch on top, a short line under.
+      el('div', { class: 'room-setting toggles toggle-grid' }, ...[['events', 'Carriage Events', 'A random twist on some nights.'], ['observers', 'Allow Observers', 'Late joiners watch, then play next.'], ['footsteps', 'Footsteps & Map', 'Hear Saboteurs walk past your door.'], ['autoShuffle', 'Shuffle Roles', 'A new role mix every journey.']].map(([key, label, hint]) =>
+        el('label', { class: 'switch-row toggle-card' }, toggleIcon(key), el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: key === 'autoShuffle' ? !!state.settings.autoShuffle : state.settings[key] !== false, disabled: !host || busy, onchange: e => setting({ [key]: e.target.checked }) })))),
       n >= 5 ? el('div', { class: 'role-mix' }, ...state.mix.map(m => el('span', {}, rolePortrait(m.role, 'mix-portrait'), txt('b', '', m.count + '×'), role(m.role).name))) : txt('p', 'muted', (5 - n) + ' more needed to start.'),
       host ? el('div', { class: 'role-settings-actions' }, btn('Choose Roles', roleSettingsDialog, 'secondary', n < 5), state.settings.autoShuffle ? null : btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', state.settings.autoShuffle ? 'Shuffle is on: a new role mix is drawn when the journey starts.' : 'Roles are dealt to players at random.')) : null,
       host ? startJourneyButton(n < 5) : txt('p', 'waiting', 'The host will start your journey.'), btn('See The Rules', rules, 'text-button')), roster());
@@ -446,6 +457,14 @@
     d.append(content, commit, btn('Recommended Roles', () => { d.close(); setting({ roles: null, autoShuffle: false }); }, 'text-button'), btn('Cancel', () => d.close(), 'text-button')); refresh();
   }
   function clock() { return el('div', { class: 'journey-clock', role: 'timer', 'aria-live': 'off' }, txt('span', 'countdown', ''), txt('small', '', state.paused ? 'PAUSED' : 'SECONDS')); }
+  // One small picture per room switch: a lightning-struck lantern, opera glasses, footprints and shuffle arrows.
+  const TOGGLE_ICONS = {
+    events: '<path d="M18.5 3 7 18h7.5L12 29l13-16h-7.8z" fill="#ffd56b" stroke="#c98f12" stroke-width="1.3" stroke-linejoin="round"/>',
+    observers: '<path d="M9 9h5v4H9zM18 9h5v4h-5z" fill="#8b97b3"/><circle cx="9.5" cy="19" r="6.5" fill="#2d4a72" stroke="#8fd6ff" stroke-width="2.2"/><circle cx="22.5" cy="19" r="6.5" fill="#2d4a72" stroke="#8fd6ff" stroke-width="2.2"/><path d="M14 17.5h4" stroke="#8fd6ff" stroke-width="2.2"/><circle cx="7.5" cy="17" r="1.8" fill="#e8fdff"/><circle cx="20.5" cy="17" r="1.8" fill="#e8fdff"/>',
+    footsteps: '<g fill="#f2ce86"><ellipse cx="10" cy="9" rx="4" ry="5.2"/><ellipse cx="10" cy="18" rx="3" ry="2.6"/><ellipse cx="21" cy="14" rx="4" ry="5.2"/><ellipse cx="21" cy="23" rx="3" ry="2.6"/></g>',
+    autoShuffle: '<g fill="none" stroke="#c9a2ff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h5c6 0 8 14 14 14h4M4 23h5c2.5 0 4-2.4 5.4-5M18 12.6C19.6 10.4 21 9 23 9h4"/><path d="M24 5.5 27.5 9 24 12.5M24 19.5l3.5 3.5-3.5 3.5"/></g>',
+  };
+  const toggleIcon = key => { const i = el('span', { class: 'toggle-icon', 'aria-hidden': 'true' }); i.innerHTML = '<svg viewBox="0 0 32 32">' + TOGGLE_ICONS[key] + '</svg>'; return i; };
   const EVENT_ICONS = { 'long-tunnel': '🚇', express: '⚡', fog: '🌫️', snack: '🍰', 'power-cut': '🔌', sealed: '✉️', luggage: '🧳', 'full-moon': '🌕', quiet: '🤫' };
   function eventChip() {
     if (!state.event || ['lobby', 'briefing', 'boarding', 'finished'].includes(state.phase)) return null;
@@ -626,7 +645,7 @@
       state.settings.footsteps !== false ? el('details', { class: 'team-map', 'data-details': 'team-map', open: true }, el('summary', {}, '🗺️ Carriage Map · Your Team In Red'), carriageMap({})) : null,
       me.role === 'forger' ? me.used.disguise ? txt('p', 'console-hint', 'Disguise used' + (me.nightChoice?.disguiseId ? ': ' + who(me.nightChoice.disguiseId) : '')) : btn('Use Forger Disguise', disguiseTarget, 'secondary', false, 'use-disguise') : null,
       me.role === 'blocker' ? me.used.block ? txt('p', 'console-hint', 'Block used' + (me.nightChoice?.targetId ? ': ' + who(me.nightChoice.targetId) : '')) : btn('Use Blocker Power', blockTarget, 'text-button') : null,
-      el('details', { class: 'team-chat', 'data-details': 'team-chat', open: false }, el('summary', {}, 'Whisper To Your Team' + (me.whispers.length ? ' (' + me.whispers.length + ')' : '')), el('div', { class: 'whispers', role: 'log', 'aria-label': 'Private Saboteur chat' }, ...me.whispers.map(m => el('p', {}, el('b', {}, who(m.id) + ': '), m.text))), el('form', { class: 'whisper-form', onsubmit: async e => { e.preventDefault(); const text = whisperDraft; if (!text.trim()) return; whisperDraft = ''; await send('whisper', { text }); } }, el('input', { id: 'lt-whisper', maxLength: 160, value: whisperDraft, placeholder: 'Only your bad team can read this', 'aria-label': 'Whisper To Your Team', disabled: busy, oninput: e => whisperDraft = e.target.value }), el('button', { type: 'submit', disabled: busy, 'data-focus': 'send-whisper' }, 'Send'))));
+      el('details', { class: 'team-chat', 'data-details': 'team-chat', open: false }, el('summary', {}, 'Whisper To Your Team' + (me.whispers.length ? ' (' + me.whispers.length + ')' : '')), el('div', { class: 'whispers', role: 'log', 'aria-label': 'Private Saboteur chat' }, ...me.whispers.map(m => el('p', {}, el('b', {}, who(m.id) + ': '), el('span', { 'data-no-tr': '' }, m.text)))), el('form', { class: 'whisper-form', onsubmit: async e => { e.preventDefault(); const text = whisperDraft; if (!text.trim()) return; whisperDraft = ''; await send('whisper', { text }); } }, el('input', { id: 'lt-whisper', maxLength: 160, value: whisperDraft, placeholder: 'Only your bad team can read this', 'aria-label': 'Whisper To Your Team', disabled: busy, oninput: e => whisperDraft = e.target.value }), el('button', { type: 'submit', disabled: busy, 'data-focus': 'send-whisper' }, 'Send'))));
   }
   function medicineButton(kind, label, click, disabled) {
     const n = btn(label, click, kind === 'heal' ? 'heal' : 'danger', disabled);
@@ -1053,11 +1072,11 @@
     const off = busy || state.paused, chips = target === 'story' ? fakeChips() : phraseChips(), picking = chips.find(c => c.label === phrasePick), add = text => addPhrase(text, target);
     return el('div', { class: 'phrase-bar', 'aria-label': 'Quick phrases' },
       el('div', { class: 'phrase-chips' }, ...chips.map(c => el('button', { type: 'button', class: 'phrase-chip' + (c.cls ? ' ' + c.cls : '') + (phrasePick === c.label ? ' on' : ''), disabled: off, 'data-focus': 'phrase-' + c.label,
-        onclick: () => { if (c.pick || c.roles) { phrasePick = phrasePick === c.label ? null : c.label; render(); } else add(c.text); } }, c.label))),
+        onclick: () => { if (c.pick || c.roles) { phrasePick = phrasePick === c.label ? null : c.label; render(); } else add(window.ltI18n.t(c.text)); } }, c.label))),
       picking?.pick ? el('div', { class: 'phrase-people' }, ...state.players.filter(p => p.alive && p.id !== state.meId).map(p => el('button', { type: 'button', class: 'phrase-person', disabled: off, 'aria-label': p.name,
-        onclick: () => add(picking.pick(p.name)) }, avatar(p), txt('small', allyCls(p.id), p.name)))) : null,
+        onclick: () => add(window.ltI18n.t(picking.pick(p.name))) }, avatar(p), txt('small', allyCls(p.id), p.name)))) : null,
       picking?.roles ? el('div', { class: 'phrase-people phrase-roles' }, ...GOOD_ROLES.filter(k => k === 'passenger' || !state.mix?.length || state.mix.some(m => m.role === k)).map(k => el('button', { type: 'button', class: 'phrase-person', disabled: off, 'aria-label': role(k).name,
-        onclick: () => add(picking.roles(k)) }, rolePortrait(k, 'phrase-role-art'), txt('small', '', role(k).name)))) : null);
+        onclick: () => add(window.ltI18n.t(picking.roles(k))) }, rolePortrait(k, 'phrase-role-art'), txt('small', '', role(k).name)))) : null);
   }
   function speechConsole() {
     const me = state.me, own = state.speakerId === state.meId, mode = state.settings.discussion;
@@ -1098,7 +1117,7 @@
   let lastWordsDraft = '';
   function lastWordsBlock(entry) {
     if (!entry?.outs.length || entry.type !== 'vote') return null;
-    if (entry.lastWords) return el('blockquote', { class: 'last-words' }, avatar(entry.lastWords.id, 'last-words-face'), el('div', {}, txt('small', '', 'LAST WORDS · ' + who(entry.lastWords.id).toUpperCase()), txt('p', '', '“' + entry.lastWords.text + '”')));
+    if (entry.lastWords) return el('blockquote', { class: 'last-words' }, avatar(entry.lastWords.id, 'last-words-face'), el('div', {}, txt('small', '', 'LAST WORDS · ' + who(entry.lastWords.id).toUpperCase()), el('p', { 'data-no-tr': '' }, '“' + entry.lastWords.text + '”')));
     if (!entry.outs.some(o => o.id === state.meId)) return txt('p', 'console-hint last-words-wait', who(entry.outs[0].id) + ' may say a few last words…');
     return el('form', { class: 'last-words-form', onsubmit: e => { e.preventDefault(); if (lastWordsDraft.trim()) send('lastWords', { text: lastWordsDraft }); } },
       el('label', { htmlFor: 'lt-last-words' }, 'Your last words'), el('input', { id: 'lt-last-words', maxLength: 120, value: lastWordsDraft, placeholder: 'One line for the group…', autocomplete: 'off', oninput: e => lastWordsDraft = e.target.value }), el('button', { type: 'submit', class: 'gold', disabled: busy, 'data-focus': 'send-last-words' }, 'Say It'));
@@ -1340,7 +1359,7 @@
     return el('section', { class: 'panel train-chat' }, el('div', {class:'panel-heading'}, el('h2',{},'Conversations Aboard'), txt('small','muted','ONE VOICE AT A TIME')),
       rounds.length ? el('div', { class: 'night-accordions' }, ...rounds.map(round => {
         const messages = state.speeches.filter(m => m.round === round);
-        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, nightBadge(round), txt('b', '', 'The Morning Conversation'), txt('small', '', messages.length + (messages.length === 1 ? ' voice' : ' voices')), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{ class: allyCls(m.id).trim() },who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : txt('p','',m.text))))));
+        return el('details', { class: 'night-accordion', 'data-details': 'chat-night-' + round, open: round === (night ? rounds.at(-1) : state.round) }, el('summary', {}, nightBadge(round), txt('b', '', 'The Morning Conversation'), txt('small', '', messages.length + (messages.length === 1 ? ' voice' : ' voices')), txt('span', 'accordion-chevron', '⌄')), el('div', {class:'public-messages',role:'log','aria-label':'Shared findings · Night ' + round}, ...messages.map(m => el('article', {class:'public-message'}, avatar(m.id, 'message-avatar'), el('div',{}, el('div', {class:'message-byline'}, el('b',{ class: allyCls(m.id).trim() },who(m.id)), txt('small','','SEAT ' + player(m.id).seat)), m.audio ? voice.player(m) : el('p',{'data-no-tr':''},m.text))))));
       })) : txt('p','muted small','Messages will appear here when the conversation begins.'));
   }
   // One badge for a night everywhere it appears: a moon and a big night number, so nights stand apart at a glance.

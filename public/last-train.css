@@ -2328,3 +2328,23 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .ear-hold.down { background: #8fd6ff40 !important; transform: scale(.98); }
 .ear-hold span { font-size: 20px; }
 .ear-hint { font-size: 11.5px; color: #a9c6d8; }
+/* Room switches as a compact 2×2 grid of small cards: an icon and the switch on top, then the title and a short line. */
+.room-setting.toggle-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+.toggle-card { display: grid !important; grid-template-columns: auto 1fr; grid-template-areas: "icon switch" "text text"; grid-template-rows: auto 1fr; align-items: center; align-content: start; gap: 8px; padding: 10px 12px !important; border-radius: 14px; background: #ffffff08; border: 1px solid #ffffff16; min-width: 0; }
+.toggle-icon { grid-area: icon; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #0b0a1a99; box-shadow: inset 0 0 0 1px #ffffff14; }
+.toggle-icon svg { width: 22px; height: 22px; }
+.toggle-card > span:not(.toggle-icon) { grid-area: text; display: grid; gap: 3px; min-width: 0; align-self: start; }
+.toggle-card b { font-size: 13px !important; line-height: 1.25; }
+.toggle-card small { font-size: 11px !important; line-height: 1.35; color: #b9b1cf; }
+.toggle-card input[role="switch"] { grid-area: switch; justify-self: end; margin: 0; }
+.toggle-card:has(input:not(:checked)) .toggle-icon svg { opacity: .45; filter: grayscale(1); }
+/* Language pill and menu, like Row of Reckoning: the short name in the pill, each language in its own script. */
+.lang-pill { white-space: nowrap; flex-shrink: 0; }
+.lang-pill > span { white-space: nowrap; font: 700 13px/1 Inter, system-ui, sans-serif; letter-spacing: .3px; color: #f3e3b8; }
+.lang-menu { min-width: 170px; }
+.lang-menu button { display: flex; align-items: baseline; gap: 10px; }
+.lang-menu button b { min-width: 34px; font-weight: 800; }
+.lang-menu button span { opacity: .8; font-weight: 500; }
+:root:lang(zh) .lt-shell, :root:lang(zh) dialog, :root:lang(zh) #lt-overlays { font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif; }
+:root:lang(zh-TW) .lt-shell, :root:lang(zh-TW) dialog, :root:lang(zh-TW) #lt-overlays { font-family: Inter, "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", system-ui, sans-serif; }
+:root:lang(zh) .gamecard-buttons button, :root:lang(zh-TW) .gamecard-buttons button { white-space: nowrap; }
