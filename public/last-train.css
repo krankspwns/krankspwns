@@ -2456,10 +2456,8 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 /* The Signal Stop chip uses the event chip, in signal red. */
 .event-signal summary { border-color: #ff8a9a66 !important; }
 .event-signal .event-name small { color: #ff9aa8; }
-/* Bad-team crests and the hidden Stowaway. */
+/* Bad-team crests. */
 .crest-framer, .crest-silencer, .crest-smuggler { background: radial-gradient(circle at 50% 38%, #6a2236, #2a0f1c 62%, #180812) !important; }
-.crest-stowaway { background: radial-gradient(circle at 50% 42%, #5a3a1c, #2a1a0e 62%, #170f08) !important; }
-.stowaway-picker .role-option { border-style: dashed; }
 .gagged-note { margin: 4px 0 0; color: #ff9aa8; font-weight: 700; }
 /* Roles This Journey: a button above Notes and the dealt mix, grouped by team. */
 .lt-fabs .roles-fab { order: 0; background: radial-gradient(circle at 35% 30%, #3b4f8a, #1c2547) !important; }

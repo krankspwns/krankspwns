@@ -103,22 +103,12 @@ function sharedNightTests() {
     r.nightChoice(room, c, { power: 'manifest', targetId: sm.id }); assert.equal(c.reports.at(-1).walked, false);
     toMorning(room); assert.equal(t.alive, false); assert.ok(room.nightLog[0].silentWalk); assert.ok(!room.nightLog[0].footsteps.some(w => w.kind === 'saboteur'));
   }
-  // Stowaway: GOOD until a Saboteur is out, then turns and keeps the bad team in the game.
+  // Bad mixes: several specials, one per Saboteur.
   {
-    const room = crewRoom(['careful', 'brave', 'stowaway', 'inspector', 'medic', 'saboteur']), st = person(room, 'stowaway'), bad = person(room, 'saboteur');
-    assert.equal(r.group(st), 'passenger'); toResponses(room);
-    r.nightChoice(room, person(room, 'inspector'), { power: 'check', targetId: st.id }); assert.equal(person(room, 'inspector').reports.at(-1).alignment, 'good');
-    toMorning(room); r.remove(room, [bad.id]);
-    assert.equal(st.turned, true); assert.equal(r.group(st), 'saboteur'); assert.ok(!room.winner); assert.deepEqual(st.reports.at(-1), { round: 1, type: 'turned' });
-    room.phase = 'voteResult'; r.advance(room); r.advance(room); assert.equal(r.activeRole(room, st), 'saboteur');
-  }
-  // Bad mixes: several specials, one per Saboteur; the Stowaway needs a free Passenger seat.
-  {
-    assert.deepEqual(r.validateLoadout(10, { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'], stowaway: true }), { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'], stowaway: true });
+    assert.deepEqual(r.validateLoadout(10, { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'] }), { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'] });
     rejected(() => r.validateLoadout(8, { crew: ['inspector'], passengers: [], bad: ['framer', 'silencer', 'smuggler'] }), 400);
-    rejected(() => r.validateLoadout(5, { crew: ['inspector'], passengers: ['careful', 'brave', 'witness'], bad: [], stowaway: true }), 400);
-    const roles = r.plan(8, { roles: { crew: ['inspector'], passengers: [], bad: ['framer', 'smuggler'], stowaway: true } });
-    assert.deepEqual(['framer', 'smuggler', 'stowaway'].map(k => roles.filter(x => x === k).length), [1, 1, 1]); assert.equal(roles.length, 8);
+    const roles = r.plan(8, { roles: { crew: ['inspector'], passengers: [], bad: ['framer', 'smuggler'] } });
+    assert.deepEqual(['framer', 'smuggler'].map(k => roles.filter(x => x === k).length), [1, 1]); assert.equal(roles.length, 8);
   }
   // Loadouts: any Crew mix; a Trainee still needs Inspector or Medic; a 5-player Crew member brings information.
   {

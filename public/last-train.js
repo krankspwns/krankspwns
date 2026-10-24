@@ -66,7 +66,6 @@
     framer: '<rect x="11" y="10" width="42" height="44" rx="3" fill="#5a2a1a" stroke="#e9c46f" stroke-width="3"/><rect x="17" y="16" width="30" height="32" rx="2" fill="#2a1420"/><circle cx="32" cy="27" r="6" fill="#c9b8a8"/><path d="M21 46c2-8 7-11 11-11s9 3 11 11z" fill="#c9b8a8"/><path d="M18 22l28 22M46 22 18 44" stroke="#ff5c6c" stroke-width="3.4" stroke-linecap="round"/>',
     silencer: '<circle cx="32" cy="32" r="20" fill="#f1d7c4"/><circle cx="25" cy="27" r="2.6" fill="#2a1420"/><circle cx="39" cy="27" r="2.6" fill="#2a1420"/><path d="M22 39h20" stroke="#2a1420" stroke-width="2.4" stroke-linecap="round"/><path d="M15 34l34 10M15 44l34-10" stroke="#b02a3f" stroke-width="6" stroke-linecap="round"/>',
     smuggler: '<path d="M12 24l20-10 20 10v22L32 56 12 46z" fill="#8a5a2c" stroke="#e9c46f" stroke-width="2"/><path d="M12 24l20 10 20-10M32 34v22" stroke="#e9c46f" stroke-width="2"/><path d="M20 20l20 10" stroke="#5a3a18" stroke-width="5"/><circle cx="46" cy="12" r="7" fill="#170f08" stroke="#c8bdff" stroke-width="2"/><path d="M43 12h6" stroke="#c8bdff" stroke-width="2" stroke-linecap="round"/>',
-    stowaway: '<rect x="12" y="22" width="40" height="30" rx="5" fill="#7a4b1e" stroke="#e9c46f" stroke-width="2.4"/><path d="M24 22v-6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v6" fill="none" stroke="#e9c46f" stroke-width="2.6"/><path d="M12 33h40" stroke="#5a3415" stroke-width="2.4"/><path d="M27 27q5-6 10 0v4H27z" fill="#170f08"/><circle cx="30" cy="30" r="1.4" fill="#ff5c6c"/><circle cx="34.5" cy="30" r="1.4" fill="#ff5c6c"/>',
     signalman: '<path d="M30 14h4v42h-4z" fill="#8b97b3"/><path d="M22 56h20" stroke="#8b97b3" stroke-width="4" stroke-linecap="round"/><rect x="21" y="8" width="22" height="30" rx="6" fill="#16233f" stroke="#e9c46f" stroke-width="2.2"/><circle cx="32" cy="17" r="5.5" fill="#ff5c6c"/><circle cx="32" cy="17" r="8.5" fill="#ff5c6c" opacity=".25"/><circle cx="32" cy="30" r="5.5" fill="#2f5f45"/><path d="M43 14l14-4v8z" fill="#e9c46f"/>',
   };
   let crestSerial = 0;
@@ -281,9 +280,9 @@
     saboteur: ['Night · phase 1', 'Every night', 'Agree on one attack with your team.'], blocker: ['Night · phase 1', 'Once', 'Stop one player’s night power.'],
     forger: ['Night · phase 1', 'Once', 'Make a teammate read GOOD to the Inspector.'],
     framer: ['Night · phase 1', 'Once', 'Make a good traveller read BAD to the Inspector.'], silencer: ['Night · phase 1', 'Once', 'Gag someone: they skip the next lounge.'],
-    smuggler: ['Night · phase 1', 'Once', 'A silent attack: no footsteps, no walk seen.'], stowaway: ['Hidden', 'Turns once', 'Good until a Saboteur is out, then joins the bad team.'],
+    smuggler: ['Night · phase 1', 'Once', 'A silent attack: no footsteps, no walk seen.'],
   };
-  const ROLE_NAMES = { passenger: 'Passenger', careful: 'Careful Passenger', brave: 'Brave Passenger', witness: 'Witness', speaker: 'Speaker', inspector: 'Inspector', medic: 'Medic', trainee: 'Trainee', conductor: 'Conductor', porter: 'Night Porter', guard: 'Guard', steward: 'Steward', signalman: 'Signalman', saboteur: 'Saboteur', blocker: 'Blocker', forger: 'Forger', framer: 'Framer', silencer: 'Silencer', smuggler: 'Smuggler', stowaway: 'Stowaway' };
+  const ROLE_NAMES = { passenger: 'Passenger', careful: 'Careful Passenger', brave: 'Brave Passenger', witness: 'Witness', speaker: 'Speaker', inspector: 'Inspector', medic: 'Medic', trainee: 'Trainee', conductor: 'Conductor', porter: 'Night Porter', guard: 'Guard', steward: 'Steward', signalman: 'Signalman', saboteur: 'Saboteur', blocker: 'Blocker', forger: 'Forger', framer: 'Framer', silencer: 'Silencer', smuggler: 'Smuggler' };
   const EXTRA_RULES = [
     ['🧪', 'Medicine', 'One heal and one poison for the whole game, one per night. Heal answers the original attack. Poison gets past protection and locked doors.'],
     ['⚠️', 'Too much help', 'If Brave protects and Medic heals the same person on the same night, they die from an overdose.'],
@@ -304,7 +303,7 @@
       state?.catalog?.[k] ? el('details', { class: 'power-more' }, el('summary', {}, 'Full rule'), txt('p', '', state.catalog[k].description)) : null));
     const team = (cls, title, keys) => el('section', { class: 'power-team ' + cls }, txt('h3', '', title), el('div', { class: 'power-cards' }, ...keys.map(card)));
     return el('div', { class: 'powers-rules' },
-      team('passengers', 'Passengers', ['passenger', 'careful', 'brave', 'witness', 'speaker']), team('crew', 'Crew', ['inspector', 'medic', 'trainee', 'conductor', 'porter', 'guard', 'steward', 'signalman']), team('bad', 'Saboteurs', ['saboteur', 'blocker', 'forger', 'framer', 'silencer', 'smuggler', 'stowaway']));
+      team('passengers', 'Passengers', ['passenger', 'careful', 'brave', 'witness', 'speaker']), team('crew', 'Crew', ['inspector', 'medic', 'trainee', 'conductor', 'porter', 'guard', 'steward', 'signalman']), team('bad', 'Saboteurs', ['saboteur', 'blocker', 'forger', 'framer', 'silencer', 'smuggler']));
   }
   // Roles This Journey: the dealt mix grouped by team, with how many of each and what they do. Who holds which stays secret.
   function rolesDialog() {
@@ -529,15 +528,15 @@
   function roleSettingsDialog() {
     const slots = state.teamSlots; if (!slots || state.hostId !== state.meId) return;
     const selectedMix = state.phase === 'finished' ? state.nextMix : state.mix;
-    let draft = { crew: selectedMix.filter(m => role(m.role).group === 'crew').map(m => m.role), passengers: selectedMix.filter(m => role(m.role).group === 'passenger' && !['passenger', 'stowaway'].includes(m.role)).map(m => m.role),
-      bad: selectedMix.filter(m => BAD_KEYS.includes(m.role)).map(m => m.role), stowaway: selectedMix.some(m => m.role === 'stowaway') };
+    let draft = { crew: selectedMix.filter(m => role(m.role).group === 'crew').map(m => m.role), passengers: selectedMix.filter(m => role(m.role).group === 'passenger' && m.role !== 'passenger').map(m => m.role),
+      bad: selectedMix.filter(m => BAD_KEYS.includes(m.role)).map(m => m.role) };
     const d = dialog('Choose tonight’s roles', txt('p', 'muted small', 'Choose the role mix. Players receive their roles at random. ' + (state.players.filter(p => !p.departed).length === 6 ? 'Six players can have two Passengers and two Crew.' : 'Passengers outnumber Crew.')));
     d.classList.add('role-picker'); d.dataset.turn = fence();
     const content = el('div', { class: 'role-picker-content' });
     const commit = btn('Use These Roles', () => { d.close(); setting({ roles: draft, autoShuffle: false }); }, 'gold');
     const refresh = () => {
       const passengerSeats = slots.good - draft.crew.length;
-      const free = passengerSeats - draft.passengers.length - (draft.stowaway ? 1 : 0);
+      const free = passengerSeats - draft.passengers.length;
       const valid = free >= 0 && draft.bad.length <= slots.saboteur && draft.crew.length >= 1 && draft.crew.length <= slots.maxCrew && (!draft.crew.includes('trainee') || draft.crew.some(k => k === 'inspector' || k === 'medic')) && (slots.maxCrew > 1 || SOLO_CREW.includes(draft.crew[0])) && draft.passengers.length <= passengerSeats;
       commit.disabled = !valid || busy;
       const option = (key, list, disabled = false) => el('label', { class: 'role-option' + (draft[list].includes(key) ? ' selected' : '') },
@@ -546,12 +545,10 @@
         el('div', { class: 'role-budget' }, txt('b', '', passengerSeats + ' Passengers'), txt('span', '', draft.crew.length + ' Crew'), txt('span', '', slots.saboteur + (slots.saboteur === 1 ? ' Saboteur' : ' Saboteurs'))),
         el('section', { class: 'picker-group' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Crew'), txt('small', '', slots.maxCrew === 1 ? 'CHOOSE 1' : 'CHOOSE 1–' + slots.maxCrew)), txt('p', 'muted small', slots.maxCrew === 1 ? 'With 5 players, choose a Crew member who brings information.' : 'A Trainee needs an Inspector or Medic to take over from.'), el('div', { class: 'picker-grid' }, ...CREW_KEYS.map(k => option(k, 'crew', slots.maxCrew === 1 ? !SOLO_CREW.includes(k) : !draft.crew.includes(k) && (draft.crew.length >= slots.maxCrew || draft.passengers.length > passengerSeats - 1))))),
         el('section', { class: 'picker-group' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Passengers'), btn('All Normal', () => { draft.passengers = []; refresh(); }, 'text-button')), txt('p', 'muted small', Math.max(0, free) + ' normal Passengers. Add powers below, or leave every Passenger normal.'), el('div', { class: 'picker-grid' }, ...['careful', 'brave', 'witness', 'speaker'].map(k => option(k, 'passengers', !draft.passengers.includes(k) && free <= 0)))),
-        // Bad team: give some Saboteurs a power (one each), and choose whether a Stowaway hides among the Passengers.
+        // Bad team: give some Saboteurs a power, one each.
         el('section', { class: 'picker-group bad-picker' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Bad team'), txt('small', '', 'UP TO ' + slots.saboteur + (slots.saboteur === 1 ? ' POWER' : ' POWERS'))),
           txt('p', 'muted small', (slots.saboteur - draft.bad.length) + (slots.saboteur - draft.bad.length === 1 ? ' normal Saboteur.' : ' normal Saboteurs.') + ' Each power replaces one normal Saboteur.'),
-          el('div', { class: 'picker-grid' }, ...BAD_KEYS.filter(k => slots.saboteur > 1 || k !== 'blocker').map(k => option(k, 'bad', !draft.bad.includes(k) && draft.bad.length >= slots.saboteur)))),
-        el('section', { class: 'picker-group stowaway-picker' }, el('div', { class: 'picker-heading' }, el('h3', {}, 'Hidden traitor'), txt('small', '', 'OPTIONAL')),
-          el('label', { class: 'role-option' + (draft.stowaway ? ' selected' : '') }, el('input', { type: 'checkbox', name: 'role-stowaway', checked: draft.stowaway, disabled: !draft.stowaway && free <= 0, onchange: e => { draft.stowaway = e.target.checked; refresh(); } }), rolePortrait('stowaway', 'picker-portrait'), el('div', {}, txt('b', '', role('stowaway').name), txt('small', '', rolePreview.stowaway)))));
+          el('div', { class: 'picker-grid' }, ...BAD_KEYS.filter(k => slots.saboteur > 1 || k !== 'blocker').map(k => option(k, 'bad', !draft.bad.includes(k) && draft.bad.length >= slots.saboteur)))));
     };
     d.append(content, commit, btn('Recommended Roles', () => { d.close(); setting({ roles: null, autoShuffle: false }); }, 'text-button'), btn('Cancel', () => d.close(), 'text-button')); refresh();
   }
@@ -574,7 +571,7 @@
   const signalChip = () => state.signalStop ? el('details', { class: 'event-chip event-signal', 'data-details': 'signal-' + state.match + '-' + state.round }, el('summary', { 'aria-label': 'Signal Stop. Tap for details' }, txt('span', 'event-icon', '🚦'), el('span', { class: 'event-name' }, txt('small', '', 'SIGNAL'), txt('b', '', 'Signal Stop')), txt('span', 'event-more', 'i')), el('div', { class: 'event-about' }, txt('small', '', 'CALLED LAST NIGHT'), txt('p', '', 'If today’s vote ties, nobody leaves the train and there is no re-vote.'))) : null;
   function hud(kicker, title, subtitle) { return el('div', { class: 'scene-hud' }, el('div', {}, txt('span', 'eyebrow', kicker), el('h1', {}, title), subtitle ? txt('p', '', subtitle) : null, eventChip(), signalChip()), state.deadline || state.paused ? clock() : null); }
   const art = name => { const mobile = { cabin:'cabin', 'lounge-room':'lounge-room-mobile' }[name]; return el('picture', { class: 'world-picture' }, mobile ? el('source', { media: '(max-width: 680px)', srcset: '/last-train/' + mobile + '.webp' }) : null, el('img', { class: 'world-art', src: '/last-train/' + name + '.webp', alt: '', 'aria-hidden': 'true' })); };
-  const rolePreview = { passenger: 'Listen, share and vote.', careful: 'Lock your own door once.', brave: 'Protect someone once. Heal + protection is deadly.', witness: 'Twice: watch the attack, or glimpse two faces (one is bad).', speaker: 'Use a double vote once.', inspector: 'Check GOOD or BAD each night.', medic: 'One heal and one poison. Choose one per night.', trainee: 'Take a fallen Crew member’s job.', conductor: 'Each night, learn whether someone left their cabin.', porter: 'Each night, watch a door and learn who came.', guard: 'Each night, take an attack for someone.', steward: 'Each night, a sleeping pill: no power, but safe.', signalman: 'Once: a tie in the next vote removes nobody.', saboteur: 'Choose one shared attack. Anyone can be a target.', blocker: 'A Saboteur who can also block one power once.', forger: 'A Saboteur who can disguise one teammate once: they read GOOD to the Inspector that night.', framer: 'A Saboteur who can frame a good traveller once: they read BAD to the Inspector.', silencer: 'A Saboteur who can gag someone once: they skip the next lounge.', smuggler: 'A Saboteur who can make one attack silent: no footsteps, no walk seen.', stowaway: 'Takes a Passenger seat. Good until a Saboteur is out, then secretly joins the bad team.' };
+  const rolePreview = { passenger: 'Listen, share and vote.', careful: 'Lock your own door once.', brave: 'Protect someone once. Heal + protection is deadly.', witness: 'Twice: watch the attack, or glimpse two faces (one is bad).', speaker: 'Use a double vote once.', inspector: 'Check GOOD or BAD each night.', medic: 'One heal and one poison. Choose one per night.', trainee: 'Take a fallen Crew member’s job.', conductor: 'Each night, learn whether someone left their cabin.', porter: 'Each night, watch a door and learn who came.', guard: 'Each night, take an attack for someone.', steward: 'Each night, a sleeping pill: no power, but safe.', signalman: 'Once: a tie in the next vote removes nobody.', saboteur: 'Choose one shared attack. Anyone can be a target.', blocker: 'A Saboteur who can also block one power once.', forger: 'A Saboteur who can disguise one teammate once: they read GOOD to the Inspector that night.', framer: 'A Saboteur who can frame a good traveller once: they read BAD to the Inspector.', silencer: 'A Saboteur who can gag someone once: they skip the next lounge.', smuggler: 'A Saboteur who can make one attack silent: no footsteps, no walk seen.' };
   function introScene() {
     prepareBoardingVideo();
     const groups = [['good', 'GOOD TEAM', 'Passengers + Crew', 'Find every Saboteur. Keep both good groups alive.'], ['bad', 'BAD TEAM', 'Saboteurs', 'Get all Passengers OR all Crew out. Your team knows each other.']];
@@ -1322,8 +1319,6 @@
     if (r.type === 'manifest-blocked') return 'Your ticket check was stopped. No result is known.';
     if (r.type === 'post') return r.ids.length ? (r.ids.length === 1 ? who(r.ids[0]) + ' came to ' + who(r.targetId) + '’s door.' : r.ids.map(who).join(' and ') + ' came to ' + who(r.targetId) + '’s door.') : 'Nobody came to ' + who(r.targetId) + '’s door.';
     if (r.type === 'post-blocked') return 'You could not keep watch tonight. No result is known.';
-    if (r.type === 'turned') return 'A Saboteur is out. You have turned: you are now on the bad team, and you attack with them from tonight.';
-    if (r.type === 'stowaway') return who(r.targetId) + ' was the Stowaway. They have joined your team.';
     if (r.type === 'sleep') return 'Someone gave you a sleeping pill. Your power did nothing tonight, but you were safe from the attack.';
     if (r.backup) return 'The ' + role(r.role).name + ' is out. You are now the ' + role(r.role).name + ', with their power and anything they used. It starts next night; your own power is gone.';
     return 'You are now ' + role(r.role).name + '. Your new power starts next night.';
@@ -1340,15 +1335,13 @@
     lock: '<rect x="7" y="14" width="18" height="13" rx="3" fill="#f2ce86" stroke="#9a6a1e" stroke-width="1.4"/><path d="M11 14v-3.5a5 5 0 0 1 10 0V14" fill="none" stroke="#e8fdff" stroke-width="2.6" stroke-linecap="round"/><circle cx="16" cy="20" r="2" fill="#5a3a0e"/><path d="M27 9l2.5-2M28 13h3M5 9 2.5 7M4 13H1" stroke="#ffe7a8" stroke-width="1.6" stroke-linecap="round"/>',
     manifest: '<rect x="4" y="9" width="24" height="15" rx="2.5" fill="#fff1c9" stroke="#b8862c" stroke-width="1.6"/><path d="M8 14h11M8 19h7" stroke="#b8862c" stroke-width="2" stroke-linecap="round"/><circle cx="23" cy="18" r="2.6" fill="#1b1130"/>',
     post: '<path d="M16 3v4" stroke="#b8862c" stroke-width="2" stroke-linecap="round"/><path d="M11 7h10l-1.5 4h-7z" fill="#e9c46f"/><rect x="9.5" y="11" width="13" height="16" rx="3" fill="#3a2a10" stroke="#e9c46f" stroke-width="1.6"/><rect x="12" y="13.5" width="8" height="11" rx="2" fill="#ffd56b"/>',
-    turned: '<rect x="5" y="11" width="22" height="16" rx="3" fill="#7a4b1e" stroke="#e9c46f" stroke-width="1.6"/><path d="M12 11V8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" fill="none" stroke="#e9c46f" stroke-width="1.6"/><circle cx="13" cy="18" r="1.6" fill="#ff5c6c"/><circle cx="19" cy="18" r="1.6" fill="#ff5c6c"/>',
-    stowaway: '<rect x="5" y="11" width="22" height="16" rx="3" fill="#7a4b1e" stroke="#e9c46f" stroke-width="1.6"/><path d="M12 11V8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" fill="none" stroke="#e9c46f" stroke-width="1.6"/><path d="M11 20h10" stroke="#ff8a9a" stroke-width="2" stroke-linecap="round"/>',
     sleep: '<path d="M21 5a11 11 0 1 0 6 18 9 9 0 0 1-6-18z" fill="#c8bdff"/><rect x="5" y="20" width="14" height="7" rx="3.5" fill="#fff" stroke="#8f7bff" stroke-width="1.4"/><path d="M12 20v7" stroke="#8f7bff" stroke-width="1.4"/><text x="22" y="12" font-family="Inter,sans-serif" font-weight="900" font-size="7" fill="#fff">z</text>',
     promotion: '<path d="M16 3l3.8 7.8 8.6 1.2-6.2 6 1.5 8.6L16 22.5l-7.7 4.1 1.5-8.6-6.2-6 8.6-1.2z" fill="#ffd56b" stroke="#c98f12" stroke-width="1.2" stroke-linejoin="round"/>',
   };
   function reportCard(r) {
     const kind = r.type.endsWith('-blocked') ? 'blocked' : r.type === 'promotion' ? 'promotion' : r.type;
     const icon = el('span', { class: 'report-icon', 'aria-hidden': 'true' }); icon.innerHTML = '<svg viewBox="0 0 32 32">' + REPORT_ICONS[kind] + '</svg>';
-    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', lock: 'Lock click', ghostReveal: 'Ghost climb', blocked: 'Power blocked', promotion: 'Promotion', manifest: 'Ticket check', post: 'Door watch', sleep: 'Sleeping pill', turned: 'You turned', stowaway: 'New teammate' }[kind];
+    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', lock: 'Lock click', ghostReveal: 'Ghost climb', blocked: 'Power blocked', promotion: 'Promotion', manifest: 'Ticket check', post: 'Door watch', sleep: 'Sleeping pill' }[kind];
     const verdict = kind === 'check' ? txt('span', 'report-verdict ' + r.alignment, r.alignment.toUpperCase()) : kind === 'watch' && r.targetId ? txt('span', 'report-verdict watch', 'TARGET') : kind === 'manifest' ? txt('span', 'report-verdict ticket' + (r.walked ? ' walked' : ''), r.walked ? 'WALKED' : 'STAYED IN') : null;
     return el('article', { class: 'report-item ' + kind + (r.alignment ? ' ' + r.alignment : '') },
       icon, el('div', { class: 'report-body' }, txt('small', '', title), txt('p', '', reportMessage(r))),
@@ -1787,7 +1780,7 @@
   function currentPrivateResult() {
     // The morning's lost-luggage clue comes first after the night; the night result was already shown in the cabin.
     const clue = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && ['footsteps', 'lock'].includes(r.type) && !seenResult(r)) || state?.me.reports.find(r => r.round === state.round && r.type === 'clue') : null;
-    const dawn = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && ['post', 'post-blocked', 'sleep', 'turned', 'stowaway'].includes(r.type) && !seenResult(r)) : null;
+    const dawn = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && ['post', 'post-blocked', 'sleep'].includes(r.type) && !seenResult(r)) : null;
     return clue || dawn || state?.me.reports.find(r => r.round === state.round && ['check','watch','glimpse','manifest','check-blocked','watch-blocked','glimpse-blocked','manifest-blocked'].includes(r.type));
   }
   const resultKey = r => [state.code, state.meId, state.match, r.round, r.type, r.time || ''].join(':');
@@ -1799,8 +1792,6 @@
     if (result.type === 'footsteps') return el('section', { class: 'private-night-result footsteps-result', 'aria-label': 'Your night result' }, txt('span', 'eyebrow', 'ONLY YOU HEARD THIS'),
       el('h3', {}, 'Footsteps in the night.'), carriageMap({ route: heardRoute(result), fade: true }), footstepsNote(result));
     const blocked = result.type.endsWith('-blocked'), check = result.type.startsWith('check');
-    if (['turned', 'stowaway'].includes(result.type)) return el('section', { class: 'private-night-result crew-result turned-result', 'aria-label': 'Your night result' }, txt('span', 'eyebrow', 'FOR YOUR EYES ONLY'),
-      result.type === 'stowaway' ? avatar(result.targetId, 'result-portrait') : rolePortrait('stowaway', 'result-portrait'), el('h3', {}, result.type === 'turned' ? 'You have turned.' : 'The Stowaway joins you.'), txt('p', '', reportMessage(result)));
     if (!blocked && ['manifest', 'post', 'sleep'].includes(result.type)) return el('section', { class: 'private-night-result crew-result ' + result.type + '-result' + (result.walked ? ' walked' : ''), 'aria-label': 'Your night result' },
       txt('span', 'eyebrow', 'FOR YOUR EYES ONLY'),
       result.type === 'post' && result.ids.length ? el('div', { class: 'glimpse-faces' }, ...result.ids.map(id => el('div', { class: 'glimpse-face' }, avatar(id, 'result-portrait'), txt('b', '', who(id))))) : result.targetId ? avatar(result.targetId, 'result-portrait') : txt('span', 'result-symbol', result.type === 'sleep' ? '☾' : '—'),

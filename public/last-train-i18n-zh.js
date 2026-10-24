@@ -455,22 +455,19 @@
 
   // New bad roles
   add({
-    'Framer': '栽赃者', 'Silencer': '封口者', 'Smuggler': '走私者', 'Stowaway': '偷渡者',
+    'Framer': '栽赃者', 'Silencer': '封口者', 'Smuggler': '走私者',
     'Choose the shared attack with your team. Once per game, frame a good traveller: if the Inspector checks them tonight, they read as BAD.': '与队友共同选择袭击。每局一次，栽赃一位好人：如果检查员今晚查验他，会显示为坏人。',
     'Choose the shared attack with your team. Once per game, gag a traveller: they cannot speak in the next lounge, and everyone sees they were gagged.': '与队友共同选择袭击。每局一次，封住一位乘客的嘴：他在下一次休息车厢里不能发言，所有人都会看到他被封口了。',
     'Choose the shared attack with your team. Once per game, make tonight’s attack silent: no footsteps, and the Conductor and Night Porter cannot see that walk.': '与队友共同选择袭击。每局一次，让今晚的袭击悄无声息：没有脚步声，列车长和夜间门房也看不到这次行走。',
-    'You start as a Passenger with no power, on the good team. The first time a Saboteur is out, you secretly join the bad team and take their place.': '你一开始是没有能力的乘客，属于好人阵营。第一次有破坏者出局时，你会秘密加入坏人阵营，接替他的位置。',
     'Make a good traveller read BAD to the Inspector.': '让一位好人被检查员查验为坏人。', 'Gag someone: they skip the next lounge.': '封住某人的嘴：他跳过下一次发言。', 'A silent attack: no footsteps, no walk seen.': '无声的袭击：没有脚步声，看不到行走。',
-    'Hidden': '隐藏', 'Turns once': '转变一次', 'Good until a Saboteur is out, then joins the bad team.': '在破坏者出局前是好人，之后加入坏人阵营。',
     'Framer frames a good traveller': '栽赃者栽赃一位好人', 'Silencer gags someone': '封口者封住某人的嘴', 'Smuggler hides the attack walk': '走私者隐藏袭击的行走',
     'A Saboteur who can frame a good traveller once: they read BAD to the Inspector.': '可以栽赃一位好人一次的破坏者：检查员会查验为坏人。', 'A Saboteur who can gag someone once: they skip the next lounge.': '可以封口一次的破坏者：对方跳过下一次发言。',
-    'A Saboteur who can make one attack silent: no footsteps, no walk seen.': '可以让一次袭击悄无声息的破坏者：没有脚步声，看不到行走。', 'Takes a Passenger seat. Good until a Saboteur is out, then secretly joins the bad team.': '占一个乘客座位。在破坏者出局前是好人，之后秘密加入坏人阵营。',
-    'Each power replaces one normal Saboteur.': '每个能力替换一名普通破坏者。', 'Hidden traitor': '隐藏的叛徒', 'OPTIONAL': '可选', 'Use Framer Power': '使用栽赃能力', 'Gag Someone': '封住某人的嘴', 'Make The Attack Silent': '让袭击悄无声息',
+    'A Saboteur who can make one attack silent: no footsteps, no walk seen.': '可以让一次袭击悄无声息的破坏者：没有脚步声，看不到行走。',
+    'Each power replaces one normal Saboteur.': '每个能力替换一名普通破坏者。', 'Use Framer Power': '使用栽赃能力', 'Gag Someone': '封住某人的嘴', 'Make The Attack Silent': '让袭击悄无声息',
     'Who will you frame?': '你要栽赃谁？', 'Once per game. If the Inspector checks them tonight, they read as BAD.': '每局一次。如果检查员今晚查验他，会显示为坏人。', 'Who will you gag?': '你要封谁的嘴？',
     'Once per game. They cannot speak in the next lounge, and everyone sees they were gagged.': '每局一次。他在下一次休息车厢里不能发言，所有人都会看到他被封口了。', 'Tonight’s attack is silent.': '今晚的袭击悄无声息。', 'Frame used': '栽赃已使用', 'Gag used': '封口已使用',
-    'A Saboteur is out. You have turned: you are now on the bad team, and you attack with them from tonight.': '一名破坏者出局了。你已转变：你现在属于坏人阵营，从今晚起和他们一起袭击。',
-    'You turned': '你转变了', 'New teammate': '新队友', 'You have turned.': '你已转变。', 'The Stowaway joins you.': '偷渡者加入了你们。', '🤐 Gagged by a Saboteur. No words this round.': '🤐 被破坏者封口，本回合不能发言。',
-    'Frame a good traveller still in.': '请栽赃一位还在场的好人。', 'Each Saboteur power can appear once, one per Saboteur.': '每种破坏者能力只能出现一次，每名破坏者最多一种。', 'Leave a Passenger seat free for the Stowaway.': '请为偷渡者留一个乘客座位。', 'Choose the bad team on screen.': '请在屏幕上选择坏人阵营。',
+    '🤐 Gagged by a Saboteur. No words this round.': '🤐 被破坏者封口，本回合不能发言。',
+    'Frame a good traveller still in.': '请栽赃一位还在场的好人。', 'Each Saboteur power can appear once, one per Saboteur.': '每种破坏者能力只能出现一次，每名破坏者最多一种。', 'Choose the bad team on screen.': '请在屏幕上选择坏人阵营。',
   });
 
   add({ 'Roles this journey': '本程的身份', 'Roles This Journey': '本程的身份', 'Roles': '身份' });
@@ -562,7 +559,7 @@
     ['Heads: you listen for footsteps tonight. {0}', '正面：你今晚会听脚步声。{0}'], ['Tap the coin {#} times to earn {0} flip.', '点击硬币 {#} 次，赢得{0}抛掷机会。'], ['Rub the coin for luck, {0}', '搓搓硬币求好运，{0}'],
     ['{#} of {#}', '{#} / {#}'], ['{#} listening', '{#} 人在偷听'], ['{#} rubbing', '搓了 {#} 次'], ['Choose {#} More', '再选 {#} 个'],
     ['UP TO {#} POWER', '最多 {#} 个能力'], ['UP TO {#} POWERS', '最多 {#} 个能力'], ['{#} normal Saboteur. Each power replaces one normal Saboteur.', '{#} 名普通破坏者。每个能力替换一名普通破坏者。'], ['{#} normal Saboteurs. Each power replaces one normal Saboteur.', '{#} 名普通破坏者。每个能力替换一名普通破坏者。'],
-    ['Frame used: {0}', '已栽赃：{0}'], ['Gag used: {0}', '已封口：{0}'], ['{0} was the Stowaway. They have joined your team.', '{0} 是偷渡者，已经加入了你们。'],
+    ['Frame used: {0}', '已栽赃：{0}'], ['Gag used: {0}', '已封口：{0}'],
     ['The Framer framed {0}.', '栽赃者栽赃了 {0}。'], ['The Silencer gagged {0}.', '封口者封住了 {0} 的嘴。'], ['The attack was smuggled: {N0} walked to {N1} without a sound.', '袭击被掩盖了：{0} 悄无声息地走到了 {1} 那里。'],
     ['{#} travellers. Who holds which role stays secret.', '{#} 位乘客。谁拿到哪个身份是秘密。'], ['×{#}', '×{#}'],
     ['Remove {0}?', '移除 {0}？'],
