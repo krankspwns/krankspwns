@@ -692,18 +692,62 @@
     const me = state.me; if (state.settings.footsteps === false || state.nightPhase !== 1 || !me.alive || me.group === 'saboteur' || me.observer) return null;
     // While the big toss plays, the card keeps showing the flips from before it.
     const real = me.listen || { flips: [], heads: false }, flips = real.flips.slice(0, revealCap ?? real.flips.length), l = { flips, heads: flips.at(-1) === 'heads' };
-    const left = 2 - l.flips.length, last = l.flips.at(-1), key = [state.code, state.match, state.round].join(':');
-    if (key !== flipsKey) { flipsKey = key; flipsSeen = l.flips.length; }
+    const left = 2 + (real.bonus || 0) - l.flips.length, last = l.flips.at(-1), key = [state.code, state.match, state.round].join(':');
+    if (key !== flipsKey) { flipsKey = key; flipsSeen = l.flips.length; rubs = 0; ear.progress = 0; ear.pos = .2; ear.vel = 0; }
     const fresh = l.flips.length > flipsSeen; flipsSeen = l.flips.length; if (fresh) flipAt = Date.now();
     // Re-renders continue the same spin instead of restarting it.
     const spinning = last && Date.now() - flipAt < 1100;
     const coin = el('div', { class: 'coin' + (spinning ? ' spin-' + last : '') + (last ? ' show-' + last : ''), style: spinning ? 'animation-delay:-' + (Date.now() - flipAt) + 'ms' : '' }, el('span', { class: 'coin-face heads' }), el('span', { class: 'coin-face tails' }));
     coin.children[0].innerHTML = COIN('heads'); coin.children[1].innerHTML = COIN('tails');
     if (fresh && revealCap === null && !motionOK) sfx.play('coin');
-    return el('section', { class: 'listen-card' + (l.heads ? ' listening' : '') }, coin, el('div', { class: 'listen-copy' }, txt('span', 'eyebrow', 'LISTEN AT YOUR DOOR'),
-      el('h3', {}, l.heads ? 'Heads! You’re listening tonight.' : last === 'tails' && !left ? 'Tails again. You dozed off.' : last === 'tails' ? 'Tails. Try once more?' : 'Flip a coin to stay awake.'),
-      txt('p', '', l.heads ? 'If footsteps pass your door tonight, you might hear them.' : !left ? 'You won’t hear footsteps tonight.' : 'Heads: you listen for footsteps tonight. You get two tries.'),
-      !l.heads && left ? btn(l.flips.length ? 'Flip Again (1 Left)' : 'Flip The Coin', flipCoin, 'gold flip-button', busy || state.paused || revealCap !== null, 'flip-coin') : null));
+    // Out of flips: rub the coin 15 times for luck to earn one more.
+    const rubbing = !l.heads && !left && (real.bonus || 0) < RUB_TAPS.length && revealCap === null, RUBS = RUB_TAPS[real.bonus || 0];
+    if (rubbing) { coin.classList.add('rubbable'); coin.setAttribute('role', 'button'); coin.setAttribute('aria-label', 'Rub the coin for luck, ' + rubs + ' of ' + RUBS); coin.tabIndex = 0; coin.onclick = rubCoin; coin.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rubCoin(); } }; }
+    const sharp = l.heads && real.sharp;
+    return el('section', { class: 'listen-card' + (l.heads ? ' listening' : '') + (rubbing ? ' rubbing' : '') }, coin, el('div', { class: 'listen-copy' }, txt('span', 'eyebrow', 'LISTEN AT YOUR DOOR'),
+      el('h3', {}, sharp ? 'Sharp ears tonight.' : l.heads ? 'Heads! You’re listening tonight.' : rubbing ? (real.bonus ? 'Rub harder for one last flip.' : 'Rub the coin for luck.') : last === 'tails' && !left ? 'Tails again. You dozed off.' : last === 'tails' ? 'Tails. Try once more?' : 'Flip a coin to stay awake.'),
+      txt('p', '', sharp ? 'Footsteps will narrow to the nearest cabins, and you’ll hear which side a lock clicks.' : l.heads ? 'Optional: press your ear to the door. Keep the line in the green to get sharp ears.' : rubbing ? 'Tap the coin ' + RUBS + ' times to earn ' + (real.bonus ? 'a fourth' : 'a third') + ' flip.' : !left ? 'You won’t hear anything tonight.' : 'Heads: you listen for footsteps tonight.' + (real.bonus ? ' One lucky flip left.' : ' You get two tries.')),
+      rubbing ? el('div', { class: 'rub-meter', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(RUBS), 'aria-valuenow': String(rubs) }, el('i', { style: 'width:' + (rubs / RUBS * 100) + '%' }), txt('b', '', rubs + ' / ' + RUBS)) : null,
+      l.heads && !sharp ? earGame() : null,
+      !l.heads && left ? btn(real.bonus && l.flips.length >= 2 ? 'Flip Your Lucky Coin' : l.flips.length ? 'Flip Again (1 Left)' : 'Flip The Coin', flipCoin, 'gold flip-button', busy || state.paused || revealCap !== null, 'flip-coin') : null));
+  }
+  // Taps to earn the third and fourth flips (matching the rules).
+  const RUB_TAPS = [15, 25]; let rubs = 0;
+  function rubCoin() {
+    const RUBS = RUB_TAPS[state.me.listen?.bonus || 0]; if (busy || state.paused || !RUBS || rubs >= RUBS) return;
+    rubs++; sfx.play(rubs === RUBS ? 'chime' : 'tick'); if (ui.haptics) try { navigator.vibrate?.(8); } catch {}
+    const coin = root.querySelector('.listen-card .coin'); coin?.animate([{ transform: 'rotate(-12deg) scale(1.05)' }, { transform: 'rotate(10deg)' }, { transform: 'none' }], { duration: 220 });
+    if (rubs === RUBS) { rubs = 0; send('earnFlip'); } else render();
+  }
+  // Ear to the door: hold to press closer (the needle moves left), let go and the train's rattle pushes it right.
+  // Keep the needle in the quiet zone for 8 seconds in total to get sharp ears.
+  const ear = { pos: .2, vel: 0, progress: 0, holding: false, raf: 0, last: 0, done: false };
+  const EAR_GOAL = 8, QUIET = [.38, .62];
+  function earGame() {
+    const knob = el('i', { class: 'ear-needle' }), fill = el('i', { class: 'ear-fill' });
+    const hold = el('button', { type: 'button', class: 'ear-hold' + (ear.holding ? ' down' : ''), 'data-focus': 'ear-hold', disabled: state.paused }, txt('span', '', '👂'), txt('b', '', 'Hold To Lean In'));
+    // The page redraws often, so letting go is heard on the whole window, not just this button.
+    const press = on => e => { e.preventDefault(); ear.holding = on; root.querySelector('.ear-hold')?.classList.toggle('down', on);
+      if (on) for (const t of ['pointerup', 'pointercancel', 'blur']) addEventListener(t, press(false), { once: true }); };
+    hold.addEventListener('pointerdown', press(true));
+    hold.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') press(true)(e); }); hold.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') press(false)(e); });
+    if (!ear.raf) { ear.last = performance.now(); ear.raf = requestAnimationFrame(earTick); }
+    return el('div', { class: 'ear-game' }, el('div', { class: 'ear-track', 'aria-hidden': 'true' }, el('span', { class: 'ear-quiet', style: 'left:' + QUIET[0] * 100 + '%;width:' + (QUIET[1] - QUIET[0]) * 100 + '%' }), knob),
+      txt('small', 'ear-hint', 'Hold to lean in (moves left), let go to ease off. Fill the bar below.'),
+      el('div', { class: 'ear-progress', role: 'progressbar', 'aria-label': 'Listening steadily', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(ear.progress / EAR_GOAL * 100)) }, fill), hold);
+  }
+  function earTick(now) {
+    const game = root.querySelector('.ear-game'); if (!game || !state || state.paused) { ear.raf = 0; ear.holding = false; return; }
+    const dt = Math.min(.05, (now - ear.last) / 1000); ear.last = now;
+    // Holding pushes left; the rattle pushes right with a little random shake.
+    ear.vel += ((ear.holding ? -1.1 : .9) + (Math.random() - .5) * 2.4) * dt; ear.vel *= .96; ear.pos = Math.min(1, Math.max(0, ear.pos + ear.vel * dt * 1.6));
+    if (ear.pos <= 0 || ear.pos >= 1) ear.vel *= -.3;
+    const quiet = ear.pos >= QUIET[0] && ear.pos <= QUIET[1];
+    ear.progress = Math.max(0, ear.progress + (quiet ? dt : -dt * .35));
+    game.querySelector('.ear-needle').style.left = (ear.pos * 100) + '%'; game.classList.toggle('quiet', quiet);
+    game.querySelector('.ear-fill').style.width = Math.min(100, ear.progress / EAR_GOAL * 100) + '%';
+    if (ear.progress >= EAR_GOAL && !ear.done) { ear.done = true; ear.raf = 0; sfx.play('chime'); send('sharpen').finally(() => { ear.done = false; }); return; }
+    ear.raf = requestAnimationFrame(earTick);
   }
   async function flipCoin() {
     const from = root.querySelector('.listen-card .coin')?.getBoundingClientRect(), before = state.me.listen?.flips.length || 0;
@@ -1103,6 +1147,7 @@
     if (r.type === 'watch-blocked') return 'Your watch was blocked. No target is known.';
     if (r.type === 'glimpse') return r.ids.length ? 'One of ' + r.ids.map(who).join(r.ids.length > 2 ? ', ' : ' and ').replace(/, ([^,]*)$/, ' and $1') + ' is a Saboteur.' : 'The corridor was empty.';
     if (r.type === 'glimpse-blocked') return 'Your glimpse was blocked. You saw no one.';
+    if (r.type === 'lock' && r.sharp) return 'At ' + r.time + ' a lock clicked shut in ' + (lockNeighbours(r)[0]?.name || 'a neighbour') + '’s cabin, right next to you. Your sharp ears caught the side.';
     if (r.type === 'lock') return 'At ' + r.time + ' a lock clicked shut next door: either ' + lockNeighbours(r).map(p => p.name + '’s').join(' or ') + '. You couldn’t tell which side.';
     if (r.type === 'footsteps') return 'Footsteps at ' + r.time + ': someone came past your door from the direction of cabin ' + cabinList(r.from) + '.';
     if (r.type === 'ghostReveal') return 'From the peak: ' + who(r.targetId) + ' is the ' + role(r.role).name + '.';

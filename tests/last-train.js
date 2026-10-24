@@ -232,6 +232,21 @@ function roundFiveTests() {
     if (!blocked) { assert.ok(near.every(heard)); assert.ok(!heard(far)); assert.deepEqual(room.nightLog.at(-1).locks[0].heardBy.sort(), near.map(p => p.id).sort()); }
     else { assert.equal(room.nightLog.at(-1).blockedId, c.id); assert.ok(![...near, far].some(heard)); }
   }
+  // Two tails, then rubbing the coin earns exactly one more flip; heads plus a steady ear gives sharp ears,
+  // which names the side of a lock click.
+  {
+    const room = shared(['careful','passenger','passenger','passenger','inspector','medic','saboteur']), c = person(room,'careful'), order = room.seatOrder, at = order.indexOf(c.id), n = order.length;
+    const near = [order[(at + 1) % n], order[(at + n - 1) % n]].map(id => room.players.find(p => p.id === id)).find(p => r.group(p) !== 'saboteur'); while (r.nightRole(room) !== 'moves') r.advance(room);
+    assert.throws(() => r.earnFlip(room, near), /used up/);
+    room.night.listen = { [near.id]: { flips: ['tails', 'tails'], heads: false } };
+    assert.throws(() => r.listen(room, near), /used your flips/); r.earnFlip(room, near); assert.throws(() => r.earnFlip(room, near), /used up/);
+    room.night.listen[near.id].flips.push('tails'); r.earnFlip(room, near); assert.equal(room.night.listen[near.id].bonus, 2);
+    room.night.listen[near.id].flips.push('tails'); assert.throws(() => r.earnFlip(room, near), /used up/); assert.throws(() => r.listen(room, near), /used your flips/);
+    assert.deepEqual(r.RUB_TAPS, [15, 25]);
+    room.night.listen[near.id] = { flips: ['heads'], heads: true }; r.sharpen(room, near); assert.throws(() => r.sharpen(room, person(room,'saboteur')), /Only good/);
+    r.nightChoice(room, c, { power: 'lock' }); while (room.phase === 'night') r.advance(room);
+    const rep = near.reports.find(x => x.type === 'lock'); assert.ok(rep.sharp); assert.deepEqual(rep.near, [at + 1]);
+  }
   // Ghost guesses: open until the journey ends, naming only Saboteurs still aboard from travellers still aboard.
   {
     const room = shared(['passenger','passenger','passenger','inspector','medic','saboteur']); const bad = room.players.find(p => r.group(p) === 'saboteur'), out = room.players.find(p => p.role === 'passenger');

@@ -2311,3 +2311,20 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .power-card .power-more { margin: 0 !important; padding: 0 !important; border: 0 !important; background: none !important; }
 .power-card .power-more > summary { padding: 0 !important; margin: 0 !important; min-height: 0 !important; font: 700 11px Inter, sans-serif !important; color: #a99ebc !important; }
 .map-badges { top: auto; bottom: -7px; }
+/* Coin rubbing and the ear-to-the-door game. */
+.listen-card.rubbing .coin { cursor: pointer; animation: rub-hint 1.4s ease-in-out infinite; }
+@keyframes rub-hint { 0%, 100% { filter: drop-shadow(0 0 0 #f2ce8600); } 50% { filter: drop-shadow(0 0 12px #f2ce86aa); } }
+.rub-meter { position: relative; height: 22px; margin-top: 8px; border-radius: 999px; background: #ffffff12; border: 1px solid #f2ce8655; overflow: hidden; }
+.rub-meter i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #f2ce86, #ffe7a8); transition: width .15s; }
+.rub-meter b { position: relative; display: block; text-align: center; font: 800 11px/20px Inter, sans-serif; color: #231b2d; mix-blend-mode: normal; text-shadow: 0 0 4px #fff8; }
+.ear-game { display: grid; gap: 8px; margin-top: 10px; }
+.ear-track { position: relative; height: 26px; border-radius: 999px; background: linear-gradient(90deg, #ff6b8144, #ffffff10 30%, #ffffff10 70%, #ff6b8144); border: 1px solid #ffffff22; }
+.ear-quiet { position: absolute; top: 2px; bottom: 2px; border-radius: 999px; background: #4ee3a433; border: 1px solid #4ee3a488; }
+.ear-game.quiet .ear-quiet { background: #4ee3a466; box-shadow: 0 0 12px #4ee3a466; }
+.ear-needle { position: absolute; top: -4px; width: 6px; height: 34px; margin-left: -3px; border-radius: 3px; background: #fff5df; box-shadow: 0 0 8px #fff8; }
+.ear-progress { height: 6px; border-radius: 999px; background: #ffffff14; overflow: hidden; }
+.ear-fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8fd6ff, #4ee3a4); }
+.ear-hold { display: inline-flex !important; align-items: center; justify-content: center; gap: 8px; min-height: 46px !important; border-radius: 14px !important; background: #8fd6ff1a !important; border: 1px solid #8fd6ff66 !important; color: #dff5ff !important; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.ear-hold.down { background: #8fd6ff40 !important; transform: scale(.98); }
+.ear-hold span { font-size: 20px; }
+.ear-hint { font-size: 11.5px; color: #a9c6d8; }
