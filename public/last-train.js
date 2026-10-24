@@ -52,7 +52,11 @@
   applyUi();
   // A soft click for every button press; buttons with their own sound play that on top.
   document.addEventListener('click', e => { const b = e.target.closest?.('button, summary, [role=switch]'); if (b && !b.disabled && b.closest('#lt-app, dialog, #lt-overlays, .lt-menu')) sfx.play('tap'); }, true);
-  if (!seat?.tok || (invitation && invitation !== seat.code)) { seat = null; save('lt-seat', null); }
+  // An invite link for another room never throws away the seat you already have: it waits on the entrance as
+  // "Return to your room" while the link's room code is filled in.
+  let savedSeat = null;
+  if (!seat?.tok) { seat = null; save('lt-seat', null); }
+  else if (invitation && invitation !== seat.code) { savedSeat = seat; seat = null; }
   if (seat) lastGame();
   const groupName = group => ({ passenger: 'Good · Passenger', crew: 'Good · Crew', saboteur: 'Bad · Saboteur' }[group] || 'Secret team');
   const role = key => state?.catalog?.[key] || { name: 'Secret role', icon: '🔒', description: '' };
@@ -127,8 +131,13 @@
       finally { clearTimeout(timeout); }
     }
   }
+  // The address bar always names the room you are in, so reopening the browser returns you to it.
+  function syncAddress(roomCode) {
+    try { const url = new URL(location.href); if (url.searchParams.get('room') === roomCode) return; url.searchParams.set('room', roomCode); window.history.replaceState(window.history.state, '', url); } catch {}
+  }
   function adopt(data) {
     if (state && state.code === data.code && data.version < state.version) return;
+    if (data.code && seat?.code === data.code) syncAddress(data.code);
     const changed = state?.step !== data.step;
     if (state && (state.code !== data.code || state.match !== data.match || state.step !== data.step)) document.querySelectorAll('dialog[data-turn]').forEach(d => d.close());
     if (state && (data.phase !== state.phase || data.nightRole !== state.nightRole || data.nightPhase !== state.nightPhase)) showCard = false;
@@ -480,11 +489,13 @@
         !['lobby', 'finished'].includes(state.phase) && host ? btn(state.paused ? 'Resume' : 'Pause', () => send(state.paused ? 'resume' : 'pause'), 'card-button slate', false, 'pause') : null,
         state.phase !== 'lobby' && host ? (() => { const b = btn('Restart', restartDialog, 'card-button restart-button', false, 'restart'); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M20.5 3.5v5h-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Restart</span>'; b.setAttribute('aria-label', 'Restart'); return b; })() : null),
       el('div', { class: 'lt-roster', 'aria-label': 'Travellers in seat order' }, ...state.players.filter(p => !p.departed || state.phase !== 'lobby').map(rosterPerson)));
-    return el('header', { class: 'lt-header in-room' }, top, title, card);
+    // The host is told plainly when the server is not saving rooms, since the room would vanish when the server idles.
+    const unsaved = state.storageWarning && host ? el('p', { class: 'storage-warning', role: 'alert' }, txt('b', '', '⚠️ This room is not being saved.'), ' The server has no database set up, so the room disappears a few minutes after everyone closes the game.') : null;
+    return el('header', { class: 'lt-header in-room' }, top, title, card, unsaved);
   }
   function landing() {
     return el('div', { class: 'landing' }, el('section', { class: 'intro' }, txt('span', 'eyebrow', 'EVERY CABIN HIDES A SECRET.'), train(), el('h1', {}, 'All aboard.', el('br'), el('em', {}, 'Trust no easy story.')), txt('p', 'muted', 'A secret role. A private cabin. A train full of suspects. Use your power at night, then meet to talk and vote.'), el('div', { class: 'chips' }, txt('span', '', '5–12 friends'), txt('span', '', 'Secret teams'), txt('span', '', 'Night powers'))),
-      el('section', { class: 'panel entrance' }, txt('span', 'eyebrow', 'YOUR TICKET TO PLAY'), el('h2', {}, 'Catch the last train.'), el('label', { htmlFor: 'lt-name' }, 'Your name'), el('input', { id: 'lt-name', value: name, maxLength: 10, autocomplete: 'nickname', placeholder: 'Your name', oninput: e => name = e.target.value }), ctaButton('Create A Room', 'Host a game for friends', () => enter('create'), 'cta-create', CTA_ICONS.create), txt('div', 'or', 'or join your friends'), el('label', { htmlFor: 'lt-code' }, 'Room code'), el('form', { class: 'join-row', onsubmit: e => { e.preventDefault(); enter('join'); } }, el('input', { id: 'lt-code', class: 'code-input', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', enterkeyhint: 'go', oninput: e => code = e.target.value }), el('button', { type: 'submit', class: 'join-go', disabled: busy, 'data-focus': 'Join Room', 'aria-label': 'Join Room' }, txt('span', '', 'Join'), arrowMark('join-arrow'))), el('details', {}, el('summary', {}, 'Rejoin On Another Phone'), txt('p', 'muted small', 'Use the same name and your saved private code.'), el('label', { htmlFor: 'lt-recovery' }, 'Rejoin code'), el('input', { id: 'lt-recovery', value: recovery, oninput: e => recovery = e.target.value })), txt('p', 'muted small', 'Good players and bad players can both lie. Your private role tells you which side you are on.')));
+      el('section', { class: 'panel entrance' }, txt('span', 'eyebrow', 'YOUR TICKET TO PLAY'), el('h2', {}, 'Catch the last train.'), el('label', { htmlFor: 'lt-name' }, 'Your name'), el('input', { id: 'lt-name', value: name, maxLength: 10, autocomplete: 'nickname', placeholder: 'Your name', oninput: e => name = e.target.value }), ctaButton('Create A Room', 'Host a game for friends', () => enter('create'), 'cta-create', CTA_ICONS.create), txt('div', 'or', 'or join your friends'), el('label', { htmlFor: 'lt-code' }, 'Room code'), el('form', { class: 'join-row', onsubmit: e => { e.preventDefault(); enter('join'); } }, el('input', { id: 'lt-code', class: 'code-input', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', enterkeyhint: 'go', oninput: e => code = e.target.value }), el('button', { type: 'submit', class: 'join-go', disabled: busy, 'data-focus': 'Join Room', 'aria-label': 'Join Room' }, txt('span', '', 'Join'), arrowMark('join-arrow'))), savedSeat ? btn('Return To Room ' + savedSeat.code, () => { seat = savedSeat; savedSeat = null; code = ''; syncAddress(seat.code); lastGame(); render(); poll(); }, 'secondary return-room', busy, 'return-room') : null, el('details', {}, el('summary', {}, 'Rejoin On Another Phone'), txt('p', 'muted small', 'Use the same name and your saved private code.'), el('label', { htmlFor: 'lt-recovery' }, 'Rejoin code'), el('input', { id: 'lt-recovery', value: recovery, oninput: e => recovery = e.target.value })), txt('p', 'muted small', 'Good players and bad players can both lie. Your private role tells you which side you are on.')));
   }
   function traveller(p, cls = '') {
     return el('div', { class: 'traveller ' + cls, 'aria-hidden': 'true' }, avatar(p));
@@ -855,7 +866,9 @@
     const knob = el('i', { class: 'ear-needle' }), fill = el('i', { class: 'ear-fill' });
     const hold = el('button', { type: 'button', class: 'ear-hold' + (ear.holding ? ' down' : ''), 'data-focus': 'ear-hold', disabled: state.paused }, txt('span', '', '👂'), txt('b', '', 'Hold To Lean In'));
     // The page redraws often, so letting go is heard on the whole window, not just this button.
+    // While held, nothing on the page can be selected, and a selection made by a long press is cleared.
     const press = on => e => { e.preventDefault(); ear.holding = on; root.querySelector('.ear-hold')?.classList.toggle('down', on);
+      document.documentElement.classList.toggle('lt-holding', on); try { window.getSelection()?.removeAllRanges(); } catch {}
       if (on) for (const t of ['pointerup', 'pointercancel', 'blur']) addEventListener(t, press(false), { once: true }); };
     hold.addEventListener('pointerdown', press(true)); hold.addEventListener('contextmenu', e => e.preventDefault());
     hold.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') press(true)(e); }); hold.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') press(false)(e); });

@@ -478,6 +478,8 @@
 
   add({ '🌐 Translating…': '🌐 翻译中…', '🌐 Show Translation': '🌐 显示翻译', '🌐 Translated · Show Original': '🌐 已翻译 · 显示原文', });
 
+  add({ '⚠️ This room is not being saved.': '⚠️ 这个房间没有被保存。', 'The server has no database set up, so the room disappears a few minutes after everyone closes the game.': '服务器没有设置数据库，所以在大家关闭游戏几分钟后房间就会消失。' });
+
   // Status words and short labels that are joined with other text
   add({
     'out': '出局', 'speaking': '发言中', 'voted': '已投票', 'away': '离开', 'ATTACKED': '被袭击', 'HEAL GIVEN': '已治疗', 'Map': '地图', 'Boarding': '登车中', 'Still aboard.': '还在车上。',
@@ -563,6 +565,7 @@
     ['The Framer framed {0}.', '栽赃者栽赃了 {0}。'], ['The Silencer gagged {0}.', '封口者封住了 {0} 的嘴。'], ['The attack was smuggled: {N0} walked to {N1} without a sound.', '袭击被掩盖了：{0} 悄无声息地走到了 {1} 那里。'],
     ['{#} travellers. Who holds which role stays secret.', '{#} 位乘客。谁拿到哪个身份是秘密。'], ['×{#}', '×{#}'],
     ['Remove {0}?', '移除 {0}？'],
+    ['Return To Room {0}', '返回房间 {0}'],
     ['{0} left their cabin tonight.', '{0} 今晚离开过包厢。'], ['{0} stayed in their cabin tonight.', '{0} 今晚一直待在包厢里。'], ['{0} came to {1}’s door.', '{0} 来过 {1} 的门前。'], ['Nobody came to {0}’s door.', '没有人来过 {0} 的门前。'],
     ['The Steward gave {0} a sleeping pill.', '乘务员给了 {0} 一颗安眠药。'], ['{N0} guarded {1} and took the attack.', '{0} 守护了 {1}，替他挨下了袭击。'], ['{N0} guarded {1}.', '{0} 守护了 {1}。'], ['{N0} could not guard tonight.', '{0} 今晚无法守护。'],
     ['{N0} watched {1}’s door.', '{0} 守望了 {1} 的门。'], ['{N0} could not keep watch tonight.', '{0} 今晚无法守望。'], ['{N0} checked {1}’s ticket.', '{0} 查验了 {1} 的车票。'], ['{N0} called a Signal Stop.', '{0} 发出了停车信号。'], ['{N0} tried to call a Signal Stop, but was stopped.', '{0} 试图发出停车信号，但被阻止了。'],
