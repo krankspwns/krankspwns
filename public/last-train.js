@@ -525,14 +525,27 @@
     n.lastChild.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
     return n;
   }
+  const ROOM_TOGGLES = [['events', 'Carriage Events', 'A random twist on some nights.'], ['observers', 'Allow Observers', 'Late joiners watch, then play next.'], ['footsteps', 'Footsteps & Map', 'Hear Saboteurs walk past your door.'], ['autoShuffle', 'Shuffle Roles', 'A new role mix every journey.']];
+  const toggleOn = key => key === 'autoShuffle' ? !!state.settings.autoShuffle : state.settings[key] !== false;
+  // Guests can't change the room, so they get one compact read-only line of chips instead of disabled controls.
+  function roomRulesSummary() {
+    const chat = state.settings.discussion === 'chat';
+    return el('div', { class: 'room-setting rules-summary', 'aria-label': 'Room rules set by the host' },
+      el('div', { class: 'rules-summary-head' }, txt('b', '', 'Room Rules'), txt('small', '', 'SET BY HOST')),
+      el('div', { class: 'rules-chips' },
+        el('span', { class: 'rules-chip on' }, txt('i', '', chat ? '💬' : '🗣️'), txt('span', '', chat ? 'Chat Room' : 'In Person')),
+        el('span', { class: 'rules-chip on' }, txt('i', '', '⏱️'), txt('span', '', state.speakSeconds + 's Each')),
+        ...ROOM_TOGGLES.map(([key, label]) => { const on = toggleOn(key); return el('span', { class: 'rules-chip' + (on ? ' on' : ' off'), title: on ? 'On' : 'Off' }, toggleIcon(key), txt('span', '', label), on ? null : txt('em', '', 'Off')); })));
+  }
   function waitingRoom() {
     const n = state.players.filter(p => !p.departed).length, host = state.hostId === state.meId;
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Gather at least 5 players. Each person needs their own phone.'), txt('div', 'large-code', state.code),
-      el('div', { class: 'room-setting' }, txt('b', '', 'How will everyone talk each round?'), el('div', { class: 'mode-switch', role: 'group', 'aria-label': 'Speaking mode' }, ...[['chat','Chat Room'],['in-person','In Person']].map(([mode,label]) => btn(label, () => setting({ discussion: mode }), state.settings.discussion === mode ? 'selected' : '', !host, 'mode-' + mode))), txt('p', 'muted small', state.settings.discussion === 'chat' ? 'Each player gets ' + state.speakSeconds + ' seconds to type or record one message. Voice recordings can be played after their turn.' : 'Sit together. Each player gets ' + state.speakSeconds + ' seconds to speak aloud, in seat order.')),
-      el('div', { class: 'room-setting' }, txt('b', '', 'Speaking time per player'), el('div', { class: 'mode-switch speak-switch', role: 'group', 'aria-label': 'Speaking time per player' }, ...[15, 20, 30, 45].map(n => btn(n + 's', () => setting({ speakSeconds: n }), state.speakSeconds === n ? 'selected' : '', !host, 'speak-' + n)))),
+      host ? null : roomRulesSummary(),
+      !host ? null : el('div', { class: 'room-setting' }, txt('b', '', 'How will everyone talk each round?'), el('div', { class: 'mode-switch', role: 'group', 'aria-label': 'Speaking mode' }, ...[['chat','Chat Room'],['in-person','In Person']].map(([mode,label]) => btn(label, () => setting({ discussion: mode }), state.settings.discussion === mode ? 'selected' : '', !host, 'mode-' + mode))), txt('p', 'muted small', state.settings.discussion === 'chat' ? 'Each player gets ' + state.speakSeconds + ' seconds to type or record one message. Voice recordings can be played after their turn.' : 'Sit together. Each player gets ' + state.speakSeconds + ' seconds to speak aloud, in seat order.')),
+      !host ? null : el('div', { class: 'room-setting' }, txt('b', '', 'Speaking time per player'), el('div', { class: 'mode-switch speak-switch', role: 'group', 'aria-label': 'Speaking time per player' }, ...[15, 20, 30, 45].map(n => btn(n + 's', () => setting({ speakSeconds: n }), state.speakSeconds === n ? 'selected' : '', !host, 'speak-' + n)))),
       // Four room switches as a compact 2×2 grid: title and switch on top, a short line under.
-      el('div', { class: 'room-setting toggles toggle-grid' }, ...[['events', 'Carriage Events', 'A random twist on some nights.'], ['observers', 'Allow Observers', 'Late joiners watch, then play next.'], ['footsteps', 'Footsteps & Map', 'Hear Saboteurs walk past your door.'], ['autoShuffle', 'Shuffle Roles', 'A new role mix every journey.']].map(([key, label, hint]) =>
-        el('label', { class: 'switch-row toggle-card' }, toggleIcon(key), el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: key === 'autoShuffle' ? !!state.settings.autoShuffle : state.settings[key] !== false, disabled: !host || busy, onchange: e => setting({ [key]: e.target.checked }) })))),
+      !host ? null : el('div', { class: 'room-setting toggles toggle-grid' }, ...ROOM_TOGGLES.map(([key, label, hint]) =>
+        el('label', { class: 'switch-row toggle-card' }, toggleIcon(key), el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: toggleOn(key), disabled: busy, onchange: e => setting({ [key]: e.target.checked }) })))),
       n >= 5 ? el('div', { class: 'role-mix' }, ...state.mix.map(m => el('span', {}, rolePortrait(m.role, 'mix-portrait'), txt('b', '', m.count + '×'), role(m.role).name))) : txt('p', 'muted', (5 - n) + ' more needed to start.'),
       host ? el('div', { class: 'role-settings-actions' }, btn('Choose Roles', roleSettingsDialog, 'secondary', n < 5), btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', state.settings.autoShuffle ? (state.settings.mixPicked ? 'This journey uses the mix you set. After it, a new mix is drawn each journey.' : 'Shuffle is on: a new role mix is drawn when the journey starts.') : 'Roles are dealt to players at random.')) : null,
       host ? startJourneyButton(n < 5) : txt('p', 'waiting', 'The host will start your journey.'), btn('See The Rules', rules, 'text-button')), roster());

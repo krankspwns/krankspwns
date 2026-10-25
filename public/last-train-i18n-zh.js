@@ -49,7 +49,7 @@
 
   // Settings, sound and display
   add({
-    'Room Rules': '房间规则', 'HOST': '房主', 'BETWEEN JOURNEYS': '旅程之间', 'HOST ONLY': '仅房主',
+    'Room Rules': '房间规则', 'SET BY HOST': '由房主设置', 'Room rules set by the host': '房主设置的房间规则', 'HOST': '房主', 'BETWEEN JOURNEYS': '旅程之间', 'HOST ONLY': '仅房主',
     'You can change these on the platform or after the journey ends.': '你可以在站台上或旅程结束后更改这些设置。',
     'Only the host can change these. Everyone sees the same rules.': '只有房主可以更改，所有人看到的规则相同。',
     'Sharing Findings': '分享线索', 'Speaking Time': '发言时间', 'Per player, per turn': '每位玩家每轮',
@@ -498,7 +498,7 @@
     ['Look at who is out and check your reports. {0}', '看看谁出局了，查看你的报告。{0}'], ['Look at who is out and check your reports.', '看看谁出局了，查看你的报告。'],
     ['Night {#}', '第 {#} 夜'], ['NIGHT {#}', '第 {#} 夜'], ['Round {#}', '第 {#} 回合'], ['ROUND {#}', '第 {#} 回合'],
     ['Lounge · Round {#}', '休息车厢 · 第 {#} 回合'], ['Morning · Round {#}', '早晨 · 第 {#} 回合'], ['Vote · Round {#}', '投票 · 第 {#} 回合'], ['Re-vote · Round {#}', '重新投票 · 第 {#} 回合'], ['Vote result · Round {#}', '投票结果 · 第 {#} 回合'],
-    ['{#}s', '{#} 秒'], ['{#} WP', '{#} WP'], ['Shop · {#} WP', '商店 · {#} WP'], ['Seat {#}', '{#} 号座位'], ['SEAT {#}', '{#} 号座位'], ['Cabin {#}', '{#} 号包厢'], ['CABIN {#}', '{#} 号包厢'], ['cabin {#}', '{#} 号包厢'],
+    ['{#}s', '{#} 秒'], ['{#}s Each', '每人 {#} 秒'], ['{#} WP', '{#} WP'], ['Shop · {#} WP', '商店 · {#} WP'], ['Seat {#}', '{#} 号座位'], ['SEAT {#}', '{#} 号座位'], ['Cabin {#}', '{#} 号包厢'], ['CABIN {#}', '{#} 号包厢'], ['cabin {#}', '{#} 号包厢'],
     ['Room {0}', '房间 {0}'], ['{#} Ready', '{#} 人准备'], ['{#} Aboard', '{#} 人在车上'], ['{#} watching', '{#} 人旁观'], ['{#} Travellers ·', '{#} 位乘客 ·'],
     ['{#} in this room. Seat order sets the speaking order.', '本房间 {#} 人，座位顺序决定发言顺序。'], ['{0} · You', '{0} · 你'], ['{#} / {#} wins', '{#} / {#} 胜'], ['{#} suspect pins', '{#} 个嫌疑标记'], ['{#} suspect pin', '{#} 个嫌疑标记'],
     ['{#} more needed to start.', '还需要 {#} 人才能开始。'], ['Each player gets {#} seconds to type or record one message. Voice recordings can be played after their turn.', '每位玩家有 {#} 秒输入或录制一条消息，语音在其回合结束后可播放。'],

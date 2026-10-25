@@ -2483,3 +2483,17 @@ html.lt-holding, html.lt-holding * { -webkit-user-select: none !important; user-
 
 /* Seven added roles, four columns by two rows; final cell intentionally unused. */
 .portrait-role-additional { background-image: url('/last-train/roles-additional.webp'); background-size: 400% 200%; }
+/* Read-only room rules for guests: one compact card of chips. */
+.rules-summary { display: grid; gap: 10px; padding: 12px 14px !important; }
+.rules-summary-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rules-summary-head b { font-size: 14px; }
+.rules-summary-head small { font-size: 10px; letter-spacing: .12em; color: #c9a96a; }
+.rules-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rules-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px 4px 6px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 1.2; background: #ffffff0d; border: 1px solid #ffffff1a; color: #eee6d6; }
+.rules-chip > i { font-style: normal; font-size: 13px; width: 20px; text-align: center; }
+.rules-chip .toggle-icon { width: 20px; height: 20px; border-radius: 6px; background: none; box-shadow: none; }
+.rules-chip .toggle-icon svg { width: 16px; height: 16px; }
+.rules-chip.off { opacity: .55; }
+.rules-chip.off .toggle-icon svg { filter: grayscale(1); }
+.rules-chip.off span { text-decoration: line-through; text-decoration-color: #ffffff66; }
+.rules-chip em { font-style: normal; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #b9b1cf; }
