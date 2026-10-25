@@ -18,6 +18,10 @@ const {call,startRedis}=require('./helpers');
     const expire=async seat=>{const r=await raw(seat.code);r.deadline=Date.now()-1;await save(r);return (await get(seat)).j;};
     assert.equal((await post(seats[1],'start')).s,403);
     assert.equal((await enter('join',{code:host.code,name:'Host'})).s,409);
+    assert.equal((await post(seats[1],'settings',{discussionSeconds:90})).s,403);
+    assert.equal((await post(host,'settings',{discussionSeconds:12})).s,400);
+    assert.equal((await post(host,'settings',{discussionSeconds:90})).j.settings.discussionSeconds,90);
+    assert.equal((await post(host,'settings',{discussionSeconds:0})).s,200);
     assert.equal((await post(host,'start')).j.phase,'forging');
     assert.equal((await enter('join',{code:host.code,name:'Late arrival'})).s,409);
     let firstVoteRequest;
@@ -38,15 +42,42 @@ const {call,startRedis}=require('./helpers');
       assert.equal((await post(house,'forge',{targetId})).s,403);
       assert.equal((await post(editor,'forge',{targetId:'invalid'})).s,400);
       const forgeId=id();
-      assert.equal((await post(editor,'forge',{targetId,requestId:forgeId})).j.phase,'discussion');
+      assert.equal((await post(editor,'forge',{targetId,requestId:forgeId})).j.phase,'forging');
+      assert.equal((await get(house)).j.me.document,null,'sealing never shortens the private setup window');
+      assert.equal((await post(editor,'forge',{targetId})).s,409,'a confirmed alteration cannot be changed');
       assert.equal((await post(editor,'forge',{targetId,requestId:forgeId})).s,200,'forgery replay is idempotent');
       assert.equal((await post(editor,'forge',{targetId:options.find(o=>o.ownerId!==targetId).ownerId,requestId:forgeId})).s,409);
+      await expire(host);
       const delivered=(await Promise.all(seats.map(get))).map(r=>r.j);
       assert.equal(new Set(delivered.map(v=>v.me.document.source)).size,6,'each player has a distinct source');
       assert.equal(delivered.find(v=>v.meId===targetId).me.document.text,options.find(o=>o.ownerId===targetId).altered);
       for(const v of delivered.filter(v=>v.me.team==='house')){
         assert.ok(!('tamper'in v.me.document)&&!('original'in v.me.document)&&!('replacement'in v.me.document));
         assert.ok(!JSON.stringify(v).includes('oppositeForged'));
+      }
+      assert.equal(delivered[0].discussionSeconds,60);assert.deepEqual(delivered[0].claims,[]);
+      if(round===1){
+        assert.equal((await post(host,'settings',{discussionSeconds:120})).s,409);
+        const auditor=seats.find(s=>s.meId!==targetId&&delivered.find(v=>v.meId===s.meId).me.team==='house');
+        assert.equal((await post(auditor,'audit',{targetId:auditor.meId})).s,400);
+        assert.equal((await post(auditor,'audit',{targetId:'missing'})).s,400);
+        const auditId=id(),checked=await post(auditor,'audit',{targetId,requestId:auditId});assert.equal(checked.s,200);
+        assert.equal(checked.j.me.auditUsed,true);assert.equal(checked.j.me.auditReport.text,options.find(o=>o.ownerId===targetId).original);
+        assert.equal(checked.j.me.auditReport.targetId,targetId);assert.ok(!('team' in checked.j.me.auditReport));
+        assert.equal((await post(auditor,'audit',{targetId,requestId:auditId})).s,200);
+        assert.equal((await post(auditor,'audit',{targetId})).s,409);
+        for(const other of seats.filter(s=>s.meId!==auditor.meId))assert.equal((await get(other)).j.me.auditReport,null,'private check is never shared');
+        assert.equal((await post(host,'claim',{text:'',choice:'unsure'})).s,400);
+        assert.equal((await post(host,'claim',{text:'a'.repeat(181),choice:'approve'})).s,400);
+        assert.equal((await post(host,'claim',{text:'Hello',choice:'bad'})).s,400);
+        const claimId=id(),claimText='<img src=x onerror=alert(1)> My clue says the frame changed.';
+        assert.equal((await post(host,'claim',{text:claimText,choice:'reject',requestId:claimId})).s,200);
+        assert.equal((await post(host,'claim',{text:claimText,choice:'reject',requestId:claimId})).s,200);
+        assert.equal((await post(host,'claim',{text:'Different',choice:'reject',requestId:claimId})).s,409);
+        assert.equal((await get(seats[1])).j.claims[0].text,claimText);assert.equal((await get(seats[1])).j.claims[0].choice,'reject');
+        assert.equal((await post(host,'claim',{text:'Too fast',choice:'approve'})).s,429);
+        const edited=await raw(host.code);edited.claims[0].updatedAt=Date.now()-3000;await save(edited);
+        assert.equal((await post(host,'claim',{text:'I changed my mind after hearing another clue.',choice:'unsure'})).s,200);
       }
       if(round===1){
         const before=delivered[0].deadline,extension=(await post(house,'extend')).j;
@@ -67,7 +98,8 @@ const {call,startRedis}=require('./helpers');
       const votes=await Promise.all(seats.slice(1).map(s=>post(s,'vote',{choice})));
       assert.ok(votes.every(r=>r.s===200));
       const result=(await get(host)).j;assert.equal(result.phase,'reveal');assert.equal(result.history.length,round);
-      const last=result.history.at(-1);assert.equal(last.pointTo,housePoint?'house':'ring');assert.equal(last.documents.length,6);
+      const last=result.history.at(-1);if(round===1){assert.equal(last.claims.length,1);assert.equal(last.claims[0].text,'I changed my mind after hearing another clue.');assert.equal((await post(host,'claim',{text:'Late',choice:'approve'})).s,409);}
+      assert.equal(last.pointTo,housePoint?'house':'ring');assert.equal(last.documents.length,6);
       assert.equal(last.documents.filter(d=>d.received!==d.original).length,1,'exactly one report changes');
       assert.equal(last.tamper.ownerId,targetId);assert.ok(result.players.every(p=>!('team'in p)),'teams stay hidden at deal reveals');
       assert.equal((await post(host,'vote',{choice,requestId})).s,200,'vote response can be replayed after settlement');
@@ -94,7 +126,7 @@ const {call,startRedis}=require('./helpers');
     // Every authored case works with both truths and 4–12 distinct document assignments.
     for(const c of require('../lib/grand-con-cases'))for(const genuine of [false,true])for(let n=4;n<=12;n++){
       const r={lot:0,players:Array.from({length:n},(_,i)=>({id:String(i),team:i<Math.floor(n/3)?'ring':'house'})),lots:[{caseId:c.id,genuine}]};
-      rules.beginLot(r);rules.deliver(r,r.players[0].id);assert.equal(r.documents.length,n);assert.equal(new Set(r.documents.map(d=>d.source)).size,n);
+      rules.beginLot(r);rules.deliver(r,r.players[0].id);assert.equal(r.documents.length,n);assert.equal(new Set(r.documents.map(d=>d.source)).size,n);assert.equal(c.records.length,12);assert.ok(r.documents.every(d=>d.text!==d.replacement));
       assert.ok(r.documents.some(d=>d.ownerId===r.tamper.ownerId&&d.text!==r.tamper.altered));
       assert.ok(r.players.some(p=>p.id===r.tamper.ownerId));
     }
@@ -107,6 +139,7 @@ const {call,startRedis}=require('./helpers');
     // Saved auction seats survive the rules upgrade, but their obsolete match does not.
     const legacy=(await enter('create',{name:'Legacy'})).j,r=await raw(legacy.code);delete r.rulesVersion;r.phase='bidding';r.players[0].team='gilt';r.lots=[{name:'Old auction'}];await save(r);
     const upgraded=(await get(legacy)).j;assert.equal(upgraded.phase,'lobby');assert.equal(upgraded.me.team,null);assert.ok(upgraded.notice);assert.equal(upgraded.me.recoveryCode,legacy.me.recoveryCode);
+    assert.equal(require('../lib/grand-con-cases').length,8);
     console.log('Grand Con '+(redis?'Redis':'memory')+': five-deal match, privacy, sabotage, sealed votes, deadlines, 12-player concurrency, recovery and migration passed');
   }finally{if(redis)await redis.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

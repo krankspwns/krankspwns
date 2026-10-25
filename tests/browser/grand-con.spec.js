@@ -11,6 +11,7 @@ test('game hub selects both games and keeps legacy invitations working',async({p
   await expect(page.getByRole('heading',{name:'Ready to play?'})).toBeVisible();
 });
 test('six phones forge evidence, vote through a full match, and reveal teams',async({browser},testInfo)=>{
+  test.setTimeout(300000);
   const contexts=[],pages=[],errors=[];
   try{
     for(let i=0;i<6;i++){
@@ -36,13 +37,14 @@ test('six phones forge evidence, vote through a full match, and reveal teams',as
       await Promise.all(pages.map(async p=>{await expect(p.getByRole('heading',{name:'One clue is being changed.'})).toBeVisible();await p.getByRole('button',{name:'Open my card',exact:true}).click();}));
       await expect(editor.getByRole('heading',{name:'Pick a clue to change'})).toBeVisible();
       await editor.locator('.forgery-option').first().click();
-      if(deal===1)await editor.screenshot({path:testInfo.outputPath('grand-con-ring-editor.png'),fullPage:true});
+      if(deal===1)await editor.screenshot({path:testInfo.outputPath('grand-con-ring-editor.png')});
       await editor.getByRole('button',{name:'Confirm clue change',exact:true}).click();
-      await expect(host.getByRole('heading',{name:'Talk about your clues.'})).toBeVisible();
+      await expect(host.getByRole('heading',{name:'Talk about your clues.'})).toBeVisible({timeout:35000});
       await Promise.all(pages.map(async(p,i)=>{
         await expect(p.locator('.clue')).toBeVisible();
         if(states[i].me.team==='house')await expect(p.locator('.ring-brief')).toHaveCount(0);
       }));
+      await Promise.all(pages.map(p=>p.getByRole('button',{name:'Hide my card',exact:true}).click()));
       if(deal===1){
         await pages[1].getByRole('button',{name:'More time · +30 seconds',exact:true}).click();
         await expect(host.getByRole('button',{name:'Extra time added'})).toBeDisabled();

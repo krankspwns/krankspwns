@@ -534,3 +534,147 @@ details>p { font-size: 12px; }
 .gc-rules>details { border-top: 1px solid var(--line); padding-top: 17px; }
 .identity-card div>span { line-height: 1.6; }
 @media (max-width: 359px) { .rule-teams { grid-template-columns: 1fr; } }
+
+/* The Grand Con: midnight gallery, champagne brass and a cast of real people. */
+@font-face { font-family: Inter; src: url('/fonts/inter-variable.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+:root { --bg:#0b191c; --ink:#f6edda; --muted:#abbdbb; --gold:#ead09a; --gold-dark:#98783f; --line:#c5d6cd21; --green:#8cdbc0; --purple:#d4b0e2; --red:#f7acb8; }
+html { background:#081416; scroll-padding-bottom:100px; }
+body { background:radial-gradient(ellipse at 15% 0,#79633324,transparent 50%),radial-gradient(ellipse at 90% 40%,#263d4d40,transparent 60%),linear-gradient(155deg,#142e30,#0d2024 55%,#081316); }
+body::before { opacity:.07; }
+.gc-panel { background:linear-gradient(145deg,#1b3033f0,#13262aef); border-color:#c7d2bb28; box-shadow:0 16px 40px #0002; }
+.gc-shell:has(.dossier) { padding-bottom:125px; }
+.muted,.gc-intro>p,.gc-footer { color:var(--muted); }
+.primary { background:linear-gradient(155deg,#f3dfaa,#d5b36a); border-color:#ead09a88; color:#231b10; box-shadow:0 4px 15px #0002,inset 0 1px #fff6; }
+.host-button { background:linear-gradient(155deg,#7c8eb3,#53688d); color:#fff5df; border-color:#b9c8e46b; box-shadow:inset 0 1px #e8eeff38,0 5px 18px #0002; }
+.host-button.start-ticket { position:relative; overflow:hidden; background:linear-gradient(115deg,#b48b3c,#f7e4aa 36%,#dfbb68 65%,#f4dda0); color:#31240d; border:1px solid #f4dda0; border-radius:8px; box-shadow:inset 0 0 0 4px #b58d3b50,0 6px 25px #d8b35a20; letter-spacing:1px; }
+.host-button.start-ticket::after { content:''; position:absolute; inset:-50%; background:linear-gradient(110deg,transparent 40%,#fff7 50%,transparent 60%); transform:translateX(-100%); pointer-events:none; }
+.guest-portrait { display:inline-block; flex:none; width:42px; height:42px; border-radius:50%; border:1px solid #dbbb7d80; background:#123333 url('/grand-con/guests.webp') var(--guest-x) var(--guest-y)/400% 300% no-repeat; box-shadow:0 3px 10px #0003; vertical-align:middle; }
+.seat-avatar { background:none!important; padding:0; width:42px; height:42px; }
+.seat-avatar .guest-portrait { width:100%; height:100%; }
+.target-avatar { display:grid; place-items:center; }
+.target-avatar .guest-portrait { width:30px; height:30px; }
+.artifact-image { display:block; width:100%; height:100%; background:url('/grand-con/lots.webp') var(--art-x) var(--art-y)/400% 200% no-repeat; border-radius:16px; }
+.lot-art { position:relative; width:210px; height:210px; margin:0; }
+.lot-art::before { display:none!important; }
+.gallery-invitation { position:relative; height:340px; overflow:hidden; border-radius:22px; border:1px solid #b89b6759; box-shadow:0 18px 45px #0005; margin:0 0 28px; }
+.gallery-window { position:absolute; inset:0; background:linear-gradient(transparent 45%,#091c1dcb),url('/grand-con/gallery.webp') center/cover; }
+.gallery-invitation .lot-art { position:absolute; bottom:32px; left:50%; transform:translateX(-50%); width:185px; height:185px; filter:drop-shadow(0 10px 12px #0007); }
+.gallery-invitation .artifact-image { mask-image:radial-gradient(ellipse,#000 50%,transparent 72%); }
+.invitation-seal { position:absolute; top:18px; left:18px; display:flex; align-items:center; gap:9px; font-size:8px; color:#f3d6a0; letter-spacing:2px; padding:7px 12px; background:#0b1717c9; border:1px solid #e1c58d4d; border-radius:20px; }
+.invitation-teams { position:absolute; bottom:18px; inset-inline:18px; display:flex; justify-content:space-between; gap:10px; font-size:8px; letter-spacing:1px; color:#b1e4cf; }
+.invitation-teams span:last-child { color:#e4bded; }
+.gc-intro h1 { font-size:clamp(48px,5vw,70px); }
+.gc-landing { align-items:center; }
+.lobby-gallery { height:200px; margin:-30px -30px 28px; background:linear-gradient(transparent,#152b2e),url('/grand-con/gallery.webp') center 44%/cover; }
+.waiting-card { overflow:hidden; }
+.waiting-emblem { margin-top:-56px; position:relative; background:#173335; }
+.pace-settings { margin:24px 0 16px; border:1px solid #bfcbb629; border-radius:14px; padding:14px; }
+.pace-settings legend { color:#ead09a; font-size:12px; padding:0 6px; }
+.pace-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+.pace-options button { padding:9px 4px; font-size:12px; min-height:42px; }
+.pace-options button.selected { border-color:#edcf8b9c; background:#dbc17e1c; color:#f4dda0; }
+.score-strip { background:linear-gradient(135deg,#183333,#15282b); border-color:#d3c49338; }
+.phase-rail { background:#0b1b1eea; border-color:#c5cda438; backdrop-filter:blur(14px); }
+.lot-hero { display:block; padding:0; overflow:hidden; }
+.lot-top { padding:17px 22px; margin:0; }
+.artifact-stage { display:grid; place-items:center; height:290px; background:radial-gradient(ellipse,#254b4770,transparent 65%),#0d2929; border-block:1px solid #b7c4ab20; }
+.artifact-stage .lot-art { width:270px; height:270px; }
+.lot-caption { padding:24px; text-align:left; }
+.lot-caption h1 { margin:8px 0 12px; font-size:30px; }
+.lot-caption p { font-size:14px; line-height:1.7; margin-bottom:0; color:#d2d7ca; }
+.lot-caption .eyebrow { color:#b79f70; font-size:9px; }
+.match-grid { grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:22px; align-items:start; }
+.match-grid>div { min-width:0; }
+.claims-board { margin-top:22px; }
+.claims-board h2 { font-size:25px; margin:7px 0 0; }
+.claims-board .panel-heading { align-items:center; }
+.public-claims { display:grid; gap:15px; }
+.public-claim { display:grid; grid-template-columns:42px minmax(0,1fr); gap:11px; padding:13px 0; border-bottom:1px solid var(--line); }
+.public-claim b { font-size:13px; }
+.public-claim p { margin:7px 0 0; font-size:13px; color:#dbdfd3; overflow-wrap:anywhere; white-space:pre-wrap; }
+.claim-position { display:inline-block; margin-left:9px; font-size:8px; font-weight:800; color:#c3c7ba; }
+.claim-position.approve { color:#9ce3bf; }.claim-position.reject { color:#f3aab6; }
+.claim-form { border-top:1px solid var(--line); margin-top:18px; }
+.claim-form textarea { display:block; width:100%; min-width:0; resize:vertical; max-height:200px; font:inherit; line-height:1.6; color:#f6edda; background:#0b1b20; border:1px solid #c9c6a140; border-radius:12px; padding:12px; }
+.claim-compose-bottom { display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:10px; }
+.claim-compose-bottom label { margin:0; min-width:0; }
+.claim-compose-bottom select { font:inherit; max-width:100%; background:#102b30; color:#eee1c0; border:1px solid #bfbf9840; border-radius:9px; padding:11px 8px; }
+.claim-compose-bottom button { flex:none; }
+.dossier { position:fixed; z-index:50; bottom:max(10px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); width:min(660px,calc(100% - 24px)); padding:13px 20px; margin:0; background:linear-gradient(135deg,#203538fa,#102429fc); border-color:#cdb27c8a; box-shadow:0 -8px 45px #0006; border-radius:18px; }
+.dossier>.panel-heading { margin:0; align-items:center; gap:10px; }
+.dossier h3 { margin-bottom:0; font-size:14px; }
+.dossier>.panel-heading .eyebrow { font-size:7px; }
+.dossier-closed>:not(.panel-heading) { display:none; }
+.dossier-content { max-height:min(67dvh,680px); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding:16px 3px 5px; margin-top:8px; }
+.dossier .identity-card { margin-top:0; }
+.clue { margin-bottom:0; }
+.clue .audit-report,.clue .private-check { margin-top:25px; padding-top:20px; border-top:1px solid #604f363b; }
+.private-check p,.audit-report p { color:#443e32; font-size:13px; line-height:1.7; }
+.private-check h3,.audit-report h3 { color:#30291e; }
+.private-check .muted,.audit-report .muted { color:#6c6554; }
+.check-targets { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:15px 0; }
+.check-targets button { display:grid; place-items:center; align-content:start; gap:7px; border-color:#806d504d; background:#89754c0a; color:#3e3628; padding:10px 4px; min-width:0; font-size:11px; }
+.check-targets button span:last-child { max-width:100%; overflow-wrap:anywhere; }
+.check-targets button.selected { border-color:#24695e; background:#45896f19; }
+.private-check>.secondary { background:#214d48; color:#f8edcf; border-color:#2d7064; width:100%; }
+.audit-report .eyebrow { color:#316a5d; font-size:9px; }
+.audit-person { display:flex; align-items:center; gap:10px; margin:13px 0; }
+.audit-report>small { color:#67563a; }
+.grouped-ledger { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:12px; }
+.vote-choice-group { border:1px solid var(--line); border-radius:13px; padding:12px; min-width:0; }
+.vote-choice-group h3 { font-size:12px; color:var(--gold); }
+.vote-choice-group .vote-row { padding:9px 0; background:none; border-bottom:1px solid var(--line); gap:7px; flex-wrap:wrap; }
+.vote-row .guest-portrait { width:31px; height:31px; }
+.vote-chip { margin-left:auto; }
+.claim-comparison { background:#aab6940b; border-left:2px solid #d4bf89; padding:10px 13px; margin-top:12px; }
+.claim-comparison small { color:#d4bf89; font-size:9px; }
+.tamper-reveal { background:#b89aca0d; border-color:#c39aca50; }
+.finale-panel { background:linear-gradient(#0b1d21b0,#10292a 340px),url('/grand-con/gallery.webp') center top/100% auto no-repeat; }
+.team-score { padding:20px 14px; background:#1835358a; }
+.team-score.ring { background:#36243c85; }
+.team-player { display:grid; place-items:center; text-align:center; gap:9px; padding:15px 5px; border-top:1px solid var(--line); }
+.team-player>.guest-portrait { width:82px; height:82px; font-size:inherit; box-shadow:0 0 0 4px #d1b87d18,0 8px 20px #0003; }
+.team-player>b { max-width:100%; overflow-wrap:anywhere; font-size:14px; }
+.team-player>small { color:#adbfba; font-size:11px; }
+.entrance,.gc-rules { background:linear-gradient(145deg,#203b3d,#11262c); border-color:#c8b68555; }
+textarea:focus-visible,select:focus-visible { outline:3px solid #ffe1a0; outline-offset:3px; }
+.gc-footer { margin-top:30px; }
+@media(prefers-reduced-motion:no-preference) { .host-button.start-ticket::after { animation:gc-ticket-glint 5s 1s ease-in-out infinite; } .scene-enter .reveal-panel .tamper-reveal { animation:gc-unseal .5s .35s ease-out both; } .scene-enter .point-award { animation:gc-point .5s .2s ease-out both; } }
+@keyframes gc-ticket-glint { 40%,100% { transform:translateX(100%); } }
+@media(max-width:800px) { .gallery-invitation { height:280px; } .gallery-invitation .lot-art { width:165px; height:165px; } .lobby-gallery { margin:-21px -21px 28px; } }
+@media(max-width:650px) {
+  .match-grid { grid-template-columns:1fr; gap:0; }.match-grid>div { display:contents; }
+  .lot-hero { order:0; }.action-panel,.reveal-panel { order:1; margin-top:18px; }.claims-board { order:2; margin-top:18px; }.table-roster { order:3; margin-top:18px; }
+  .artifact-stage { height:210px; }.artifact-stage .lot-art { width:200px; height:200px; }
+  .lot-caption { padding:21px; }.lot-caption h1 { font-size:27px; }.lot-caption p { font-size:13px; }
+  .lot-top { padding:13px 19px; }.gc-intro h1 { font-size:52px; }
+  .gallery-invitation { height:255px; margin-bottom:24px; }.gallery-invitation .lot-art { bottom:23px; width:150px; height:150px; }
+  .dossier { padding:11px 14px; }.dossier>.panel-heading .secondary { min-height:42px; padding:9px 13px; font-size:12px; }
+  .dossier .identity-card b { font-size:23px; }.dossier-content { max-height:65dvh; }
+  .grouped-ledger { gap:8px; }.vote-choice-group { padding:10px 8px; }.vote-row .guest-portrait { width:27px; height:27px; }.vote-chip { font-size:7px; }
+  .history .grouped-ledger { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .lobby-gallery { margin:-28px -22px 28px; }.pace-options button { font-size:11px; }
+  .claims-board { padding:21px 18px; }.claim-compose-bottom { gap:7px; }.claim-compose-bottom button { padding:12px 10px; font-size:12px; }
+}
+@media(max-width:900px),(pointer:coarse) { :root body :is(input:not([type=checkbox]):not([type=radio]),textarea,select) { font-size:16px!important; } }
+.claim-compose-bottom label { flex:1; }
+.claim-compose-bottom .primary { width:auto; min-width:105px; }
+.artifact-stage { background:linear-gradient(#0a232888,#0c2327cf),url('/grand-con/gallery.webp') center 44%/cover; }
+.artifact-stage .artifact-image { mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent),linear-gradient(to bottom,transparent,#000 6%,#000 94%,transparent); mask-composite:intersect; }
+.vote-choice-group:only-child { grid-column:1/-1; }
+.choice-voters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 9px; }
+.vote-choice-group:not(:only-child) .choice-voters { grid-template-columns:1fr; }
+.first-look textarea { width:100%; min-width:0; resize:vertical; font:inherit; padding:12px; background:#0d2228; border:1px solid #b4c3a940; border-radius:10px; color:#f0e5c7; }
+.first-look small { display:block; margin-top:8px; font-size:11px; }
+.private-prompt { border-left:2px solid #bda878; padding:9px 13px; margin:18px 0; background:#c5b97a08; }
+.private-prompt small { color:#c5b681; font-size:8px; }.private-prompt p { font-size:12px; margin:5px 0 0; overflow-wrap:anywhere; }
+.artifact-stage,.lot-top { width:100%; }
+.team-score { display:flex; flex-wrap:wrap; justify-content:center; align-content:flex-start; gap:0 10px; }
+.team-heading { width:100%; }
+.team-player { flex:0 1 calc(50% - 5px); min-width:0; margin-top:0; }
+@media(max-width:650px) { .syndicate-scores { grid-template-columns:1fr; }.team-score { gap:0 7px; }.team-player { flex-basis:calc(33.333% - 5px); }.team-player>.guest-portrait { width:66px; height:66px; }.team-player>b { font-size:12px; } }
+@media(max-width:359px) { .team-player { flex-basis:calc(50% - 4px); } }
+/* The winner's cup uses the same rich material finish as the collectible lots. */
+.victory-cup { width:200px; height:200px; border:0; border-radius:0; background:radial-gradient(ellipse,#edca6c20,transparent 65%); box-shadow:none; margin-bottom:20px; }
+.victory-cup>img { display:block; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 12px 18px #0005); }
+@media(max-width:650px) { .victory-cup { width:170px; height:170px; } }
