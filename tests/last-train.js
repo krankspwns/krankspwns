@@ -1,7 +1,7 @@
 process.env.LAST_TRAIN_AUTO_SHUFFLE = 'off';
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
-const r = require('../lib/last-train-rules');
+let r;
 const { call, startRedis } = require('./helpers');
 const uuid = () => crypto.randomUUID();
 const rejected = (fn, status) => assert.throws(fn, e => e.status === status);
@@ -693,12 +693,20 @@ function funTests() {
   }
 }
 (async()=>{
-  engineTests();sharedNightTests();socialTests();roundFiveTests();funTests();const redis=process.argv.includes('--redis')?await startRedis():null;
+  const redis=process.argv.includes('--redis')?await startRedis():null;
   try{
     if(redis){process.env.UPSTASH_REDIS_REST_URL=redis.url;process.env.UPSTASH_REDIS_REST_TOKEN='test';}
+    // Rules also import the store. Configure Redis before either module is loaded,
+    // otherwise the API silently uses memory while the test edits Redis rooms.
+    r=require('../lib/last-train-rules');
+    engineTests();sharedNightTests();socialTests();roundFiveTests();funTests();
     const handler=require('../api/last-train');assert.equal((await call(handler,'null')).s,400);
     const enter=(action,data)=>call(handler,{action,requestId:uuid(),...data});
     const host=(await enter('create',{name:'Host'})).j,joined=await Promise.all(Array.from({length:11},(_,i)=>enter('join',{code:host.code,name:'Guest '+i})));
+    if(redis){
+      assert.ok(await redis.client.get('last-train:room:'+host.code),'Redis mode must persist API-created rooms in Redis');
+      assert.equal(globalThis.__lastTrainRooms.has(host.code),false,'Redis mode must not fall back to memory');
+    }
     assert.ok(joined.every(v=>v.s===200));const seats=[host,...joined.map(v=>v.j)];
     const get=s=>call(handler,null,{code:s.code,pid:s.meId},{'x-tok':s.tok});
     const post=async(s,action,extra={})=>{const v=(await get(s)).j;return call(handler,{action,requestId:uuid(),code:s.code,pid:s.meId,tok:s.tok,match:v.match,round:v.round,step:v.step,...extra});};
