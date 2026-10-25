@@ -13,8 +13,12 @@ jobs:
       - run: npm test
       - run: sudo apt-get update && sudo apt-get install -y redis-server
       - run: npm run test:redis
-      - run: npx playwright install --with-deps chromium
+      # The boarding clip uses H.264/AAC. Use Chrome's licensed codecs rather
+      # than Playwright's Chromium headless shell for real media playback.
+      - run: npx playwright install --with-deps chrome
       - run: npm run test:browser
+        env:
+          CHROMIUM_CHANNEL: chrome
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

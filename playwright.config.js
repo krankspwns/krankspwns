@@ -11,6 +11,7 @@ module.exports = defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:3000',
     browserName: 'chromium',
+    channel: process.env.CHROMIUM_CHANNEL || undefined,
     launchOptions: process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
     reducedMotion: 'reduce',
     trace: 'retain-on-failure',
