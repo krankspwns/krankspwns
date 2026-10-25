@@ -148,7 +148,17 @@
     const previous = state;
     state = { ...data, receivedAt: Date.now() };
     cue(previous, state);
-    if (changed) announce(data.phase === 'night' ? (data.nightPhase ? 'Night phase ' + data.nightPhase + ' of 2. Everyone has 45 seconds.' : roleName(data.nightRole) + ' turn.') : data.phase === 'discussion' ? 'Speaking turn: ' + data.players.find(p => p.id === data.speakerId)?.name : ({ briefing: 'Meet the good and bad teams.', boarding: 'All aboard.', settling: 'Close your eyes. Your cabin is ready.', gathering: 'Meet in the lounge.', morning: 'Morning. See who is out.', revoteInfo: 'The vote is tied. A re-vote will begin shortly.', voting: data.voteAttempt === 2 ? 'The vote tied. Vote again between the tied players.' : 'Time to vote.', voteResult: 'The votes are in.', finished: 'The game has ended.' }[data.phase] || 'Room ready.'));
+    if (previous && previous.code === state.code && previous.match === state.match) {
+      const q0 = previous.me.quest, q1 = state.me.quest, b0 = previous.me.lastBet, b1 = state.me.lastBet;
+      if (q1?.done && q0 && !q0.done) { toast('📜', 'Side Quest Complete!', q1.name + ' · +' + q1.wp + ' WP'); sfx.play('chime'); }
+      if (b1 && JSON.stringify(b0) !== JSON.stringify(b1)) toast(b1.won ? '🪙' : '🎲', b1.won ? 'Your Bet Paid Out' : 'Your Bet Missed', b1.won ? '+' + b1.stake * 2 + ' WP' : '−' + b1.stake + ' WP');
+    }
+    if (changed) announce(data.phase === 'night' ? (data.nightPhase ? 'Night phase ' + data.nightPhase + ' of 2. Everyone has ' + data.duration + ' seconds.' : roleName(data.nightRole) + ' turn.') : data.phase === 'discussion' ? 'Speaking turn: ' + data.players.find(p => p.id === data.speakerId)?.name : ({ briefing: 'Meet the good and bad teams.', boarding: 'All aboard.', settling: 'Close your eyes. Your cabin is ready.', gathering: 'Meet in the lounge.', morning: 'Morning. See who is out.', revoteInfo: 'The vote is tied. A re-vote will begin shortly.', voting: data.voteAttempt === 2 ? 'The vote tied. Vote again between the tied players.' : 'Time to vote.', voteResult: 'The votes are in.', finished: 'The game has ended.' }[data.phase] || 'Room ready.'));
+  }
+  // A short private note that slides in at the top and leaves on its own.
+  function toast(icon, title, sub) {
+    const n = el('div', { class: 'lt-toast', role: 'status' }, txt('span', 'lt-toast-icon', icon), el('div', {}, txt('b', '', title), sub ? txt('small', '', sub) : null));
+    overlayRoot.append(n); setTimeout(() => n.classList.add('out'), 3800); setTimeout(() => n.remove(), 4400);
   }
   // Every phone hears the same cues at the same moments, so a sound never gives away a secret choice.
   function cue(prev, next) {
@@ -242,7 +252,7 @@
     ] },
     { title: 'How a journey goes', body: () => [
       el('ol', { class: 'guide-steps' }, ...[['🎟️', 'Board', 'Meet tonight’s roles and get your secret ticket. Seats are shuffled; your seat is your speaking order.'],
-        ['🌙', 'Night', 'Two 45-second phases. Everyone with a power uses it at the same time, in secret.'],
+        ['🌙', 'Night', 'Two 45-second phases (30 on a Quick Journey). Everyone with a power uses it at the same time, in secret.'],
         ['☀️', 'Morning', 'See who is out, and read your private reports.'],
         ['💬', 'Lounge', 'One at a time, in seat order, share what you know, or what you want them to believe.'],
         ['🗳️', 'Vote', 'Vote someone off the train, or Skip. Then the next night falls.']].map(([i, t, s]) => el('li', {}, txt('span', 'guide-step-icon', i), el('div', {}, txt('b', '', t), txt('p', '', s))))),
@@ -305,6 +315,10 @@
     ['⚖️', 'Dawn ties', 'Night deaths happen together. If the last Saboteur and the last good group fall together, good wins.'],
     ['🎲', 'Carriage events', 'Some nights one public event changes the rules: Power Cut, Long Tunnel, Sealed Ballots and more. The host can turn events off.'],
     ['👻', 'Ghosts', 'Out players watch quietly. They can climb the Ghost Climb to see a role, and make a guess before the journey ends for +5 WP each.'],
+    ['🕯️', 'Ghost whisper', 'Once per journey, an out player can send one word, about someone or no one, to a traveller still aboard. It arrives at dawn with their name. Climbing to see a role gives it up.'],
+    ['🎲', 'Vote bets', 'Ghosts and observers can bet 5 or 10 WP on who leaves this round, or on nobody. A right bet pays back double.'],
+    ['📜', 'Side quests', 'Everyone gets a private goal each journey, shown on their role card, worth +10 WP. All quests are revealed at the end.'],
+    ['🚄', 'Quick Journey', 'The host can pick a quick journey: shorter nights, mornings and votes, and speaking turns of at most 20 seconds.'],
     ['👀', 'Observers', 'People who join mid-journey watch what is public and take a seat next journey.'],
     ['⏱️', 'Fair timing', 'Night windows never shorten, so nobody learns who acted from the timing. Missing votes count as Skip; leaving never kills a character.'],
   ];
@@ -414,6 +428,7 @@
         inRoom ? card('🚂', 'Room Rules', host ? (editable ? 'HOST' : 'BETWEEN JOURNEYS') : 'HOST ONLY',
           !editable ? txt('p', 'set-note', host ? 'You can change these on the platform or after the journey ends.' : 'Only the host can change these. Everyone sees the same rules.') : null,
           row('Sharing Findings', '', seg([['in-person', 'In Person'], ['chat', 'Chat Room']], st.discussion, v => change({ discussion: v }), !editable), true),
+          row('Journey Pace', st.quick ? 'Shorter waits; turns of at most 20s' : 'The standard timers', seg([[false, 'Full'], [true, 'Quick']], !!st.quick, v => change({ quick: v }), !editable), true),
           row('Speaking Time', 'Per player, per turn', seg([15, 20, 30, 45].map(n => [n, n + 's']), state.speakSeconds, v => change({ speakSeconds: v }), !editable), true),
           row('Carriage Events', 'A random event on some nights', sw(st.events !== false, v => change({ events: v }), !editable, 'Carriage Events')),
           row('Footsteps & Carriage Map', 'Walks can be heard; good travellers flip to listen', sw(st.footsteps !== false, v => change({ footsteps: v }), !editable, 'Footsteps & Carriage Map')),
@@ -535,6 +550,7 @@
       el('div', { class: 'rules-chips' },
         el('span', { class: 'rules-chip on' }, txt('i', '', chat ? '💬' : '🗣️'), txt('span', '', chat ? 'Chat Room' : 'In Person')),
         el('span', { class: 'rules-chip on' }, txt('i', '', '⏱️'), txt('span', '', state.speakSeconds + 's Each')),
+        state.settings.quick ? el('span', { class: 'rules-chip on' }, txt('i', '', '🚄'), txt('span', '', 'Quick Journey')) : null,
         ...ROOM_TOGGLES.map(([key, label]) => { const on = toggleOn(key); return el('span', { class: 'rules-chip' + (on ? ' on' : ' off'), title: on ? 'On' : 'Off' }, toggleIcon(key), txt('span', '', label), on ? null : txt('em', '', 'Off')); })));
   }
   function waitingRoom() {
@@ -542,7 +558,8 @@
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Gather at least 5 players. Each person needs their own phone.'), txt('div', 'large-code', state.code),
       host ? null : roomRulesSummary(),
       !host ? null : el('div', { class: 'room-setting' }, txt('b', '', 'How will everyone talk each round?'), el('div', { class: 'mode-switch', role: 'group', 'aria-label': 'Speaking mode' }, ...[['chat','Chat Room'],['in-person','In Person']].map(([mode,label]) => btn(label, () => setting({ discussion: mode }), state.settings.discussion === mode ? 'selected' : '', !host, 'mode-' + mode))), txt('p', 'muted small', state.settings.discussion === 'chat' ? 'Each player gets ' + state.speakSeconds + ' seconds to type or record one message. Voice recordings can be played after their turn.' : 'Sit together. Each player gets ' + state.speakSeconds + ' seconds to speak aloud, in seat order.')),
-      !host ? null : el('div', { class: 'room-setting' }, txt('b', '', 'Speaking time per player'), el('div', { class: 'mode-switch speak-switch', role: 'group', 'aria-label': 'Speaking time per player' }, ...[15, 20, 30, 45].map(n => btn(n + 's', () => setting({ speakSeconds: n }), state.speakSeconds === n ? 'selected' : '', !host, 'speak-' + n)))),
+      !host ? null : el('div', { class: 'room-setting' }, txt('b', '', 'How long is the journey?'), el('div', { class: 'mode-switch pace-switch', role: 'group', 'aria-label': 'Journey pace' }, ...[[false, 'Full Journey'], [true, 'Quick Journey']].map(([fast, label]) => btn(label, () => setting({ quick: fast }), !!state.settings.quick === fast ? 'selected' : '', false, fast ? 'pace-quick' : 'pace-full'))), txt('p', 'muted small', state.settings.quick ? 'About 10 minutes: shorter nights, mornings and votes. Speaking turns last at most 20 seconds.' : 'The standard timers: 45-second nights and a full morning to talk.')),
+      !host ? null : el('div', { class: 'room-setting' }, txt('b', '', 'Speaking time per player'), el('div', { class: 'mode-switch speak-switch', role: 'group', 'aria-label': 'Speaking time per player' }, ...[15, 20, 30, 45].map(n => btn(n + 's', () => setting({ speakSeconds: n }), state.speakSeconds === n ? 'selected' : '', !!state.settings.quick && n > 20, 'speak-' + n)))),
       // Four room switches as a compact 2×2 grid: title and switch on top, a short line under.
       !host ? null : el('div', { class: 'room-setting toggles toggle-grid' }, ...ROOM_TOGGLES.map(([key, label, hint]) =>
         el('label', { class: 'switch-row toggle-card' }, toggleIcon(key), el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: toggleOn(key), disabled: busy, onchange: e => setting({ [key]: e.target.checked }) })))),
@@ -1340,6 +1357,7 @@
     if (r.type === 'lock' && r.sharp) return 'At ' + r.time + ' a lock clicked shut in ' + (lockNeighbours(r)[0]?.name || 'a neighbour') + '’s cabin, right next to you. Your sharp ears caught the side.';
     if (r.type === 'lock') return 'At ' + r.time + ' a lock clicked shut next door: either ' + lockNeighbours(r).map(p => p.name + '’s').join(' or ') + '. You couldn’t tell which side.';
     if (r.type === 'footsteps') return 'Footsteps at ' + r.time + ': someone came past your door from the direction of cabin ' + cabinList(r.from) + '.';
+    if (r.type === 'ghostWhisper') return r.aboutId ? who(r.from) + '’s ghost whispers “' + r.word + '” about ' + who(r.aboutId) + '.' : who(r.from) + '’s ghost whispers “' + r.word + '”.';
     if (r.type === 'ghostReveal') return 'From the peak: ' + who(r.targetId) + ' is the ' + role(r.role).name + '.';
     if (r.type === 'clue') return 'Lost luggage: ' + who(r.targetId) + ' is not the ' + role(r.role).name + '.';
     if (r.type === 'check') return who(r.targetId) + ' is ' + r.alignment.toUpperCase() + '.';
@@ -1365,16 +1383,17 @@
     manifest: '<rect x="4" y="9" width="24" height="15" rx="2.5" fill="#fff1c9" stroke="#b8862c" stroke-width="1.6"/><path d="M8 14h11M8 19h7" stroke="#b8862c" stroke-width="2" stroke-linecap="round"/><circle cx="23" cy="18" r="2.6" fill="#1b1130"/>',
     post: '<path d="M16 3v4" stroke="#b8862c" stroke-width="2" stroke-linecap="round"/><path d="M11 7h10l-1.5 4h-7z" fill="#e9c46f"/><rect x="9.5" y="11" width="13" height="16" rx="3" fill="#3a2a10" stroke="#e9c46f" stroke-width="1.6"/><rect x="12" y="13.5" width="8" height="11" rx="2" fill="#ffd56b"/>',
     sleep: '<path d="M21 5a11 11 0 1 0 6 18 9 9 0 0 1-6-18z" fill="#c8bdff"/><rect x="5" y="20" width="14" height="7" rx="3.5" fill="#fff" stroke="#8f7bff" stroke-width="1.4"/><path d="M12 20v7" stroke="#8f7bff" stroke-width="1.4"/><text x="22" y="12" font-family="Inter,sans-serif" font-weight="900" font-size="7" fill="#fff">z</text>',
+    ghostWhisper: '<path d="M15 4c-5.5 0-9 4.2-9 9.7V26c0 1 1.1 1.5 1.9.9l1.7-1.4 1.9 1.6a1.5 1.5 0 0 0 2 0l1.6-1.4 1.6 1.4a1.5 1.5 0 0 0 2 0l1.9-1.6 1.7 1.4c.8.6 1.9.1 1.9-.9V13.7C24 8.2 20.5 4 15 4z" fill="#e3dcff"/><circle cx="11.5" cy="13" r="1.7" fill="#2a1f4a"/><circle cx="18.5" cy="13" r="1.7" fill="#2a1f4a"/><path d="M24 9q4 2 5 6M25 5q5 3 6 8" stroke="#b8a6ff" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
     promotion: '<path d="M16 3l3.8 7.8 8.6 1.2-6.2 6 1.5 8.6L16 22.5l-7.7 4.1 1.5-8.6-6.2-6 8.6-1.2z" fill="#ffd56b" stroke="#c98f12" stroke-width="1.2" stroke-linejoin="round"/>',
   };
   function reportCard(r) {
     const kind = r.type.endsWith('-blocked') ? 'blocked' : r.type === 'promotion' ? 'promotion' : r.type;
     const icon = el('span', { class: 'report-icon', 'aria-hidden': 'true' }); icon.innerHTML = '<svg viewBox="0 0 32 32">' + REPORT_ICONS[kind] + '</svg>';
-    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', lock: 'Lock click', ghostReveal: 'Ghost climb', blocked: 'Power blocked', promotion: 'Promotion', manifest: 'Ticket check', post: 'Door watch', sleep: 'Sleeping pill' }[kind];
+    const title = { check: 'Inspector check', watch: 'Witness sighting', glimpse: 'Corridor glimpse', clue: 'Lost luggage', footsteps: 'Footsteps', lock: 'Lock click', ghostReveal: 'Ghost climb', ghostWhisper: 'Ghost whisper', blocked: 'Power blocked', promotion: 'Promotion', manifest: 'Ticket check', post: 'Door watch', sleep: 'Sleeping pill' }[kind];
     const verdict = kind === 'check' ? txt('span', 'report-verdict ' + r.alignment, r.alignment.toUpperCase()) : kind === 'watch' && r.targetId ? txt('span', 'report-verdict watch', 'TARGET') : kind === 'manifest' ? txt('span', 'report-verdict ticket' + (r.walked ? ' walked' : ''), r.walked ? 'WALKED' : 'STAYED IN') : null;
     return el('article', { class: 'report-item ' + kind + (r.alignment ? ' ' + r.alignment : '') },
       icon, el('div', { class: 'report-body' }, txt('small', '', title), txt('p', '', reportMessage(r))),
-      kind === 'glimpse' && r.ids?.length ? el('div', { class: 'report-faces' }, ...r.ids.map(id => avatar(id, 'report-face'))) : kind === 'lock' ? el('div', { class: 'report-faces' }, ...lockNeighbours(r).map(p => avatar(p.id, 'report-face'))) : kind === 'post' && r.ids?.length ? el('div', { class: 'report-faces' }, ...r.ids.map(id => avatar(id, 'report-face'))) : r.targetId && kind !== 'blocked' ? el('div', { class: 'report-target' }, avatar(r.targetId, 'report-face'), verdict) : kind === 'promotion' ? rolePortrait(r.role, 'report-face') : null);
+      kind === 'ghostWhisper' ? el('div', { class: 'report-faces' }, ...[r.from, r.aboutId].filter(Boolean).map(id => avatar(id, 'report-face'))) : kind === 'glimpse' && r.ids?.length ? el('div', { class: 'report-faces' }, ...r.ids.map(id => avatar(id, 'report-face'))) : kind === 'lock' ? el('div', { class: 'report-faces' }, ...lockNeighbours(r).map(p => avatar(p.id, 'report-face'))) : kind === 'post' && r.ids?.length ? el('div', { class: 'report-faces' }, ...r.ids.map(id => avatar(id, 'report-face'))) : r.targetId && kind !== 'blocked' ? el('div', { class: 'report-target' }, avatar(r.targetId, 'report-face'), verdict) : kind === 'promotion' ? rolePortrait(r.role, 'report-face') : null);
   }
   function reportList() {
     const rounds = [...new Set(state.me.reports.map(r => r.round))].sort((a, b) => a - b);
@@ -1395,6 +1414,13 @@
     content.inert = !showCard;
     content.setAttribute('aria-hidden', String(!showCard));
     if (!showCard && content.contains(document.activeElement)) handle.focus({ preventScroll: true });
+  }
+  // Side quest: a private goal for this journey, shown on the role card.
+  function questBox(q) {
+    if (!q) return null;
+    return el('section', { class: 'quest-box' + (q.done ? ' done' : ''), 'aria-label': 'Your side quest' }, txt('span', 'quest-seal', q.done ? '✓' : '📜'),
+      el('div', { class: 'quest-copy' }, txt('small', '', 'SIDE QUEST · +' + q.wp + ' WP'), txt('b', '', q.name), txt('p', '', q.goal)),
+      txt('span', 'quest-status', q.done ? 'Done' : q.end ? 'Scored At The End' : q.n + '/' + q.target));
   }
   function syncRoleDock(visible) {
     if (!visible) { dockNode?.remove(); dockNode = null; dockStamp = ''; drawerGesture = null; return; }
@@ -1439,13 +1465,14 @@
       });
     }
     const me = state.me, limited = { careful:'lock', brave:'cover', witness:'watch', speaker:'double', blocker:'block', forger:'disguise' }[me.role];
-    const stamp = JSON.stringify([me.role, me.alive, me.used, me.medicine, me.reports, me.allies, busy]);
+    const stamp = JSON.stringify([me.role, me.alive, me.used, me.medicine, me.reports, me.allies, me.quest, busy]);
     if (stamp !== dockStamp) {
       const focusedReports = document.activeElement?.dataset.focus === 'role-reports';
       dockNode.querySelector('.drawer-content').replaceChildren(...[
         el('div', { class: 'ticket-face' }, rolePortrait(me.role, 'ticket-icon ticket-role-portrait'), el('div', { class:'ticket-copy' }, txt('small','', !me.alive ? 'YOUR ROLE · YOU ARE OUT' : 'YOUR PRIVATE ROLE'), el('b',{},role(me.role).name), txt('span','ticket-subtitle',groupName(me.group) + (limited ? ' · ' + (me.used[limited] ? 'POWER USED' : 'POWER AVAILABLE') : me.medicine ? ' · Heal ' + me.medicine.heal + ' / Poison ' + me.medicine.poison : '')))),
         me.group === 'saboteur' ? el('section', { class: 'ticket-allies', 'aria-label': 'Your Saboteur teammates' }, txt('small', 'eyebrow', 'YOUR TEAMMATES'), me.allies.filter(p => p.id !== state.meId).length ? el('div', { class: 'ticket-allies-list' }, ...me.allies.filter(p => p.id !== state.meId).map(p => el('div', { class: 'ticket-ally' + (p.alive ? '' : ' is-out'), 'data-player': p.id }, avatar(p.id, 'ally-portrait'), el('div', {}, txt('b', '', p.name), txt('small', '', role(p.role).name + (p.alive ? ' · On board' : ' · Out')))))) : txt('p', '', 'You are the only Saboteur.')) : null,
         txt('p','ticket-rule',role(me.role).description),
+        questBox(me.quest),
         me.reports.length ? btn('Reports (' + me.reports.length + ')', reportsDialog, 'report-button', false, 'role-reports') : null
       ].filter(Boolean));
       dockStamp = stamp;
@@ -1642,7 +1669,38 @@
           n.signal ? line('🚦', who(n.signal.by) + (n.signal.stopped ? ' tried to call a Signal Stop, but was stopped.' : ' called a Signal Stop.'), n.signal.by) : null,
           ...walksOf(n).map(w => line(w.kind === 'saboteur' ? '👣' : WALK_ICON[w.kind] || '👣', who(w.by) + (WALK_LABEL[w.kind] ? ' (' + WALK_LABEL[w.kind] + ') walked from cabin ' : ' walked from cabin ') + String(w.from).padStart(2, '0') + ' to cabin ' + String(w.to).padStart(2, '0') + (w.heardBy ? '. ' + who(w.heardBy) + ' heard the footsteps.' : '. Nobody heard them.'), w.by)),
           n.outs.length ? line('🎟️', n.outs.map(o => who(o.id)).join(' and ') + (n.outs.length > 1 ? ' were' : ' was') + ' out by morning.', ...n.outs.map(o => o.id)) : line('☀️', 'Everyone woke up.'),
+          ...Object.entries(state.ghostWhispers || {}).filter(([, w]) => w.delivered === n.round).map(([from, w]) => line('👻', who(from) + '’s ghost whispered ' + whisperLine(w).replace(/\.$/, '') + ' at dawn.', from, w.to)),
         ].filter(Boolean)), walksOf(n).length ? carriageMap({ walks: walksOf(n), victim: n.attackId }) : null)));
+  }
+  // Claims vs truth: the last role each traveller claimed out loud in the chat, next to the role they really had.
+  function claimOf(id) {
+    const names = Object.entries(state.catalog || {}).map(([key, r]) => [key, r.name]).sort((a, b) => b[1].length - a[1].length);
+    const re = new RegExp('(?:\\bI(?:\'m|’m| am)|\\bmy role is|\\bI was|\\bjust a|\\bonly a)\\s+(?:a |an |the |only a |just a )?(' + names.map(n => n[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'gi');
+    let claim = null;
+    for (const m of (state.speeches || []).filter(x => x.id === id && x.text)) for (const hit of m.text.matchAll(re)) claim = names.find(n => n[1].toLowerCase() === hit[1].toLowerCase())?.[0] || claim;
+    return claim;
+  }
+  function claimsPanel() {
+    if (state.settings.discussion !== 'chat') return null;
+    const rows = state.players.filter(p => p.role).map(p => {
+      const said = claimOf(p.id), honest = said && (said === p.role || (said === 'trainee' && ['inspector', 'medic'].includes(p.role)));
+      return { p, said, verdict: !said ? 'quiet' : honest ? 'honest' : 'bluff' };
+    }).sort((a, b) => ['bluff', 'honest', 'quiet'].indexOf(a.verdict) - ['bluff', 'honest', 'quiet'].indexOf(b.verdict));
+    if (!rows.some(r => r.said)) return null;
+    return el('section', { class: 'panel claims-panel' }, txt('span', 'eyebrow', 'WHAT REALLY HAPPENED'), el('h2', {}, 'The Stories They Told'),
+      el('div', { class: 'claims-list' }, ...rows.map(({ p, said, verdict }) => el('div', { class: 'claim-row ' + verdict + ' ' + (p.group === 'saboteur' ? 'bad' : 'good') }, avatar(p, 'claim-face'),
+        el('div', { class: 'claim-who' }, txt('b', '', p.id === state.meId ? 'You' : p.name), txt('small', '', said ? 'Said: ' + role(said).name : 'Never claimed a role')),
+        el('div', { class: 'claim-truth' }, txt('small', '', 'Really'), txt('b', '', role(p.role).name)),
+        txt('span', 'claim-badge', verdict === 'bluff' ? 'Bluffed' : verdict === 'honest' ? 'Honest' : 'Quiet')))));
+  }
+  // Every traveller's side quest, revealed at the end.
+  function questsPanel() {
+    const all = Object.entries(state.quests || {}).filter(([id, q]) => q && player(id)); if (!all.length) return null;
+    const done = all.filter(([, q]) => q.done).length;
+    return el('section', { class: 'panel quests-panel' }, txt('span', 'eyebrow', 'SIDE QUESTS'), el('h2', {}, done + ' Of ' + all.length + ' Completed'),
+      el('div', { class: 'quest-list' }, ...all.sort(([, a], [, b]) => b.done - a.done).map(([id, q]) => el('div', { class: 'quest-row' + (q.done ? ' done' : '') }, avatar(id, 'claim-face'),
+        el('div', { class: 'quest-row-copy' }, txt('b', '', (id === state.meId ? 'You' : who(id)) + ' · ' + q.name), txt('small', '', q.goal)),
+        txt('span', 'quest-row-status', q.done ? '✓ +' + q.wp + ' WP' : q.n + '/' + q.target)))));
   }
   function ghostStrip() {
     const ghosts = Object.entries(state.ghosts || {}); if (!ghosts.length) return null;
@@ -1671,7 +1729,7 @@
           // With auto shuffle on, every new journey already draws a fresh mix.
           state.hostId === state.meId ? actionChip('shuffle', 'Shuffle Roles', 'Random mix', () => send('shuffleRoles'), state.players.filter(p => !p.departed).length < 5) : null,
           latest?.votes ? actionChip('votes', 'Final Vote', 'Who voted whom', () => ledgerDialog(latest), false, 'final-vote') : null].filter(Boolean)))),
-      el('section',{class:'panel final-manifest'},txt('span','eyebrow','BEHIND EVERY FACE'),el('h2',{},'The Full Cast'),el('div',{class:'final-roles'},...state.players.map(p=>el('div',{class:'final-role '+p.group},avatar(p,'role-icon'),el('div',{},txt('b','',p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name + ' · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD')))))))),awardsPanel(),nightReplay(),ghostStrip(),chatLog(),history());
+      el('section',{class:'panel final-manifest'},txt('span','eyebrow','BEHIND EVERY FACE'),el('h2',{},'The Full Cast'),el('div',{class:'final-roles'},...state.players.map(p=>el('div',{class:'final-role '+p.group},avatar(p,'role-icon'),el('div',{},txt('b','',p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name + ' · ' + (p.group === 'saboteur' ? 'BAD' : 'GOOD')))))))),awardsPanel(),claimsPanel(),questsPanel(),nightReplay(),ghostStrip(),chatLog(),history());
   }
   // Ghost guess: right after going out, good players lock in who they think the Saboteurs are.
   const GHOST_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lt-ghost-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#e3dcff"/><stop offset="1" stop-color="#a996f2"/></linearGradient><radialGradient id="lt-ghost-glow"><stop offset="0" stop-color="#b8a6ff" stop-opacity=".55"/><stop offset="1" stop-color="#b8a6ff" stop-opacity="0"/></radialGradient></defs><circle cx="23" cy="24" r="22" fill="url(#lt-ghost-glow)"/><path d="M22 5.5c-8.6 0-14 6.6-14 15.2v17.6c0 1.5 1.7 2.3 2.9 1.3l2.5-2.1 2.9 2.5a2.3 2.3 0 0 0 3 0l2.7-2.4 2.7 2.4a2.3 2.3 0 0 0 3 0l2.9-2.5 2.5 2.1c1.2 1 2.9.2 2.9-1.3V20.7c0-8.6-5.4-15.2-14-15.2z" fill="url(#lt-ghost-body)" stroke="#6d5bd0" stroke-width="1.3" stroke-linejoin="round"/><path d="M13 13.5c1.6-3.3 4.7-5.3 8.4-5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/><ellipse cx="17.3" cy="20" rx="2.3" ry="3.1" fill="#2a1d55"/><ellipse cx="26.7" cy="20" rx="2.3" ry="3.1" fill="#2a1d55"/><circle cx="18" cy="18.9" r=".9" fill="#fff"/><circle cx="27.4" cy="18.9" r=".9" fill="#fff"/><ellipse cx="22" cy="26.6" rx="1.7" ry="2.1" fill="#2a1d55"/><circle cx="13.6" cy="24.6" r="1.9" fill="#ff9ec2" opacity=".55"/><circle cx="30.4" cy="24.6" r="1.9" fill="#ff9ec2" opacity=".55"/><path d="M33.5 27.5c2 .2 3.3 1 4 2.3" fill="none" stroke="#c9bdf7" stroke-width="3" stroke-linecap="round"/><circle cx="38.5" cy="33" r="5.2" fill="#bdf6ff55" stroke="#f2c86b" stroke-width="2.4"/><path d="M36.6 31.2a2.6 2.6 0 0 1 2.6-.9" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><path d="M42.2 36.7l3.3 3.3" stroke="#d99a2b" stroke-width="3.2" stroke-linecap="round"/></svg>';
@@ -1681,7 +1739,7 @@
     const me = state.me; if (!me.climbOpen || !window.createGhostClimb) return null;
     const seen = (me.reports || []).filter(r => r.type === 'ghostReveal');
     return el('section', { class: 'climb-card' }, el('div', { class: 'climb-card-art', 'aria-hidden': 'true' }), el('div', { class: 'climb-card-copy' },
-      txt('span', 'eyebrow', 'GHOST CLIMB'), el('h3', {}, 'Escape Up The Luggage'), txt('p', '', 'Climb to the green signal to see one traveller’s role. Ghosts stay silent: no hints to the living.'),
+      txt('span', 'eyebrow', 'GHOST CLIMB'), el('h3', {}, 'Escape Up The Luggage'), txt('p', '', me.whisperOpen ? 'Climb to the green signal to see one traveller’s role. Starting a climb gives up your whisper.' : 'Climb to the green signal to see one traveller’s role. Ghosts who climb stay silent.'),
       seen.length ? el('div', { class: 'climb-seen' }, ...seen.map(r => el('span', { class: 'climb-seen-item' }, avatar(r.targetId, 'climb-seen-face'), el('span', {}, txt('b', '', who(r.targetId)), txt('small', '', role(r.role).name))))) : null,
       // A finished climb whose reveal was not picked yet keeps its reward.
       me.ghostClimb && !me.ghostClimb.done && climbedSeeds.has(me.ghostClimb.seed) ? btn('Choose Whose Role To See', pickReveal, 'gold climb-start', busy || state.paused, 'pick-reveal')
@@ -1720,8 +1778,51 @@
   }
   // The ghost area: the guess first, then the climb once the guess is settled.
   function ghostBlock() {
-    const guess = ghostGuessBlock(), climb = state.phase === 'finished' ? null : climbCard();
-    return guess || climb ? el('div', { class: 'ghost-stack' }, guess, climb) : null;
+    const guess = ghostGuessBlock(), whisper = whisperBlock(), wager = betBlock(), climb = state.phase === 'finished' ? null : climbCard();
+    return guess || whisper || wager || climb ? el('div', { class: 'ghost-stack' }, guess, whisper, wager, climb) : null;
+  }
+  // Ghost whisper: once per journey, one word to a traveller still aboard, delivered at dawn.
+  const whisperLine = w => '“' + w.word + '”' + (w.aboutId ? ' about ' + who(w.aboutId) : '') + ' to ' + who(w.to) + '.';
+  function whisperBlock() {
+    const me = state.me; if (me.observer || me.alive || ['lobby', 'finished'].includes(state.phase)) return null;
+    if (me.whisper) return el('div', { class: 'ghost-block locked whisper-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Your Whisper Is Sent'), el('small', {}, txt('span', '', whisperLine(me.whisper)), ' ', txt('span', '', me.whisper.delivered === undefined ? 'It arrives at the next dawn.' : me.whisper.delivered === false ? 'They were out before dawn, so it was lost.' : 'Delivered.'))));
+    if (!me.whisperOpen) return null;
+    return el('div', { class: 'ghost-block whisper-block' }, ghostIcon(), el('div', {}, txt('b', '', 'Whisper To The Living'), txt('small', '', 'Once per journey, send one word to a traveller still aboard. It arrives at dawn with your name. Climbing to see a role gives this up.')), btn('Whisper', whisperDialog, 'gold', busy || state.paused, 'ghost-whisper'));
+  }
+  function whisperDialog() {
+    const pick = { to: null, word: null, about: null }, living = state.players.filter(p => p.alive !== false && p.id !== state.meId);
+    const d = dialog('Whisper to the living', el('div', { class: 'target-hint' }, ghostIcon('tone-icon ghost-tone'), txt('p', '', 'Pick who hears it, one word, and who it is about. They see your name, and your team is already public.'))); d.classList.add('target-dialog', 'tone-pin', 'whisper-dialog');
+    const body = el('div', { class: 'whisper-steps' }), send_ = btn('Send Whisper', () => { d.close(); send('ghostWhisper', { targetId: pick.to, word: pick.word, aboutId: pick.about }); }, 'gold', true, 'confirm-whisper');
+    const face = (p, on, click) => el('button', { type: 'button', class: 'whisper-person' + (on ? ' on' : ''), 'aria-pressed': String(on), onclick: click }, avatar(p, 'whisper-face'), txt('small', '', p.name));
+    function paint() {
+      body.replaceChildren(
+        el('section', {}, txt('small', 'eyebrow', '1 · WHO HEARS IT'), el('div', { class: 'whisper-people' }, ...living.map(p => face(p, pick.to === p.id, () => { pick.to = p.id; if (pick.about === p.id) pick.about = null; paint(); })))),
+        el('section', {}, txt('small', 'eyebrow', '2 · ONE WORD'), el('div', { class: 'whisper-words' }, ...state.whisperWords.map(w => el('button', { type: 'button', class: 'whisper-word-chip' + (pick.word === w ? ' on' : ''), 'aria-pressed': String(pick.word === w), onclick: () => { pick.word = w; paint(); } }, w)))),
+        el('section', {}, txt('small', 'eyebrow', '3 · ABOUT (OPTIONAL)'), el('div', { class: 'whisper-people' }, el('button', { type: 'button', class: 'whisper-person nobody' + (!pick.about ? ' on' : ''), 'aria-pressed': String(!pick.about), onclick: () => { pick.about = null; paint(); } }, txt('span', 'whisper-face none', '—'), txt('small', '', 'Nobody')), ...living.filter(p => p.id !== pick.to).map(p => face(p, pick.about === p.id, () => { pick.about = p.id; paint(); })))));
+      send_.disabled = !pick.to || !pick.word;
+      send_.textContent = pick.to && pick.word ? 'Whisper “' + pick.word + '” To ' + who(pick.to) : 'Send Whisper';
+    }
+    paint(); d.append(body, el('div', { class: 'confirm-bar' }, send_, btn('Cancel', () => d.close(), 'text-button')));
+  }
+  // Vote betting for ghosts and observers: who leaves this round? A right bet pays back double.
+  function betBlock() {
+    const me = state.me; if (!['morning', 'discussion', 'voting', 'revoteInfo'].includes(state.phase) || (me.alive && !me.observer)) return null;
+    if (me.bet) return el('div', { class: 'ghost-block locked bet-block' }, txt('span', 'bet-icon', '🎲'), el('div', {}, txt('b', '', 'Your Bet Is On'), txt('small', '', (me.bet.targetId ? who(me.bet.targetId) + ' leaves' : 'Nobody leaves') + ' · ' + me.bet.stake + ' WP. If you are right, you get ' + me.bet.stake * 2 + ' WP.')));
+    if (!me.betOpen) return null;
+    return el('div', { class: 'ghost-block bet-block' }, txt('span', 'bet-icon', '🎲'), el('div', {}, txt('b', '', 'Bet On The Vote'), txt('small', '', 'Who leaves the train this round? A right bet pays back double. You have ' + me.wallet.wp + ' WP.')), btn('Place A Bet', betDialog, 'gold', busy || state.paused || me.wallet.wp < Math.min(...state.betStakes), 'place-bet'));
+  }
+  function betDialog() {
+    let stake = state.betStakes[0], choice;
+    const d = dialog('Who leaves this round?', el('div', { class: 'target-hint' }, txt('span', 'bet-icon big', '🎲'), txt('p', '', 'Pick a traveller, or bet that nobody leaves. A right bet pays back double; a wrong one loses the stake.'))); d.classList.add('target-dialog', 'tone-pin', 'bet-dialog');
+    const stakes = el('div', { class: 'mode-switch bet-stakes', role: 'group', 'aria-label': 'Stake' });
+    const confirm = btn('Choose Who Leaves', () => { d.close(); send('bet', { targetId: choice === 'skip' ? null : choice, stake }); }, 'gold', true, 'confirm-bet');
+    const grid = el('div', { class: 'manifest-targets' }, ...state.players.filter(p => p.alive !== false).map(p => targetCard(p, () => { choice = p.id; paint(); })), (() => { const b = skipCard(() => { choice = 'skip'; paint(); }); b.querySelector('b').textContent = 'Nobody'; b.querySelector('small').textContent = 'No one leaves'; b.setAttribute('aria-label', 'Nobody leaves'); return b; })());
+    function paint() {
+      stakes.replaceChildren(...state.betStakes.map(n => btn(n + ' WP', () => { stake = n; paint(); }, stake === n ? 'selected' : '', state.me.wallet.wp < n, 'stake-' + n)));
+      grid.querySelectorAll('.manifest-target').forEach(n => { n.classList.toggle('selected', n.dataset.id === choice); n.setAttribute('aria-pressed', String(n.dataset.id === choice)); });
+      confirm.disabled = !choice; confirm.textContent = !choice ? 'Choose Who Leaves' : 'Bet ' + stake + ' WP · ' + (choice === 'skip' ? 'Nobody Leaves' : who(choice));
+    }
+    paint(); d.append(stakes, grid, el('div', { class: 'confirm-bar' }, confirm, btn('Cancel', () => d.close(), 'text-button')));
   }
   function ghostGuessBlock() {
     const me = state.me;
@@ -1810,11 +1911,19 @@
     // The morning's lost-luggage clue comes first after the night; the night result was already shown in the cabin.
     const clue = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && ['footsteps', 'lock'].includes(r.type) && !seenResult(r)) || state?.me.reports.find(r => r.round === state.round && r.type === 'clue') : null;
     const dawn = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && ['post', 'post-blocked', 'sleep'].includes(r.type) && !seenResult(r)) : null;
-    return clue || dawn || state?.me.reports.find(r => r.round === state.round && ['check','watch','glimpse','manifest','check-blocked','watch-blocked','glimpse-blocked','manifest-blocked'].includes(r.type));
+    const ghostNote = state?.phase !== 'night' ? state?.me.reports.find(r => r.round === state.round && r.type === 'ghostWhisper' && !seenResult(r)) : null;
+    return clue || dawn || ghostNote || state?.me.reports.find(r => r.round === state.round && ['check','watch','glimpse','manifest','check-blocked','watch-blocked','glimpse-blocked','manifest-blocked'].includes(r.type));
   }
   const resultKey = r => [state.code, state.meId, state.match, r.round, r.type, r.time || ''].join(':');
   const seenResult = r => { try { return !!sessionStorage.getItem('lt-result:' + resultKey(r)); } catch { return false; } };
   function privateResultCard(result) {
+    if (result.type === 'ghostWhisper') {
+      const ghost = player(result.from);
+      return el('section', { class: 'private-night-result whisper-result', 'aria-label': 'A ghost whisper' }, txt('span', 'eyebrow', 'A WHISPER FROM BEYOND'),
+        el('div', { class: 'glimpse-faces' }, el('div', { class: 'glimpse-face whisper-from' }, avatar(result.from, 'result-portrait'), ghostIcon('whisper-ghost'), txt('b', '', who(result.from))), result.aboutId ? el('div', { class: 'glimpse-face' }, avatar(result.aboutId, 'result-portrait'), txt('b', '', who(result.aboutId))) : null),
+        el('h3', {}, who(result.from) + '’s ghost whispers:'), txt('strong', 'result-verdict whisper-word', result.word), result.aboutId ? txt('p', 'whisper-about', 'About ' + who(result.aboutId) + '.') : null,
+        txt('p', '', 'Ghosts can be wrong, and a Saboteur ghost may lie. ' + who(result.from) + ' was on the ' + (ghost?.alignment === 'bad' ? 'BAD' : 'GOOD') + ' team.'));
+    }
     if (result.type === 'lock') return el('section', { class: 'private-night-result lock-result', 'aria-label': 'Your night result' }, txt('span', 'eyebrow', 'ONLY YOU HEARD THIS'),
       el('div', { class: 'glimpse-faces' }, ...lockNeighbours(result).map(p => el('div', { class: 'glimpse-face' }, avatar(p.id, 'result-portrait'), txt('b', '', p.name)))),
       el('h3', {}, 'A lock clicked next door.'), txt('p', '', reportMessage(result) + ' Only a Careful Passenger can lock their door.'));
@@ -1873,7 +1982,9 @@
     if (key === privateResultKey) return;
     privateResultKey = key;
     try { if (sessionStorage.getItem('lt-result:' + key)) return; sessionStorage.setItem('lt-result:' + key, '1'); } catch {}
-    const d = dialog('Your private result', privateResultCard(result)); d.classList.add('night-result-dialog'); d.dataset.turn = fence();
+    const d = dialog('Your private result', privateResultCard(result)); d.classList.add('night-result-dialog');
+    // A night result belongs to its night turn; a dawn result stays until the player reads it, past the short gathering.
+    if (state.phase === 'night') d.dataset.turn = fence();
     d.append(el('button', { type: 'button', class: 'gold', onclick: () => d.close() }, 'Got It'));
     if (result.type === 'footsteps') sfx.play('steps');
     d.addEventListener('close', () => requestAnimationFrame(syncPrivateResult));

@@ -452,10 +452,10 @@ function engineTests() {
     const original=crypto.randomInt;let calls=0;
     try {
       crypto.randomInt=limit=>{calls++;return limit-1;};r.start(room);const first=room.players.map(p=>p.role);
-      assert.equal(calls,10);assert.equal(room.match,1);assert.deepEqual(room.players.map(p=>p.id),['p0','p1','p2','p3','p4','p5']);
-      for(const p of room.players)r.view(room,p);assert.equal(calls,10);assert.deepEqual(room.players.map(p=>p.role),first);
+      assert.equal(calls,16);assert.equal(room.match,1);assert.deepEqual(room.players.map(p=>p.id),['p0','p1','p2','p3','p4','p5']);
+      for(const p of room.players)r.view(room,p);assert.equal(calls,16);assert.deepEqual(room.players.map(p=>p.role),first);
       crypto.randomInt=()=>{calls++;return 0;};r.start(room);
-      assert.equal(calls,20);assert.equal(room.match,2);assert.notDeepEqual(room.players.map(p=>p.role),first);
+      assert.equal(calls,32);assert.equal(room.match,2);assert.notDeepEqual(room.players.map(p=>p.role),first);
       assert.deepEqual(room.players.map(p=>p.role).sort(),first.sort());
     }finally{crypto.randomInt=original;}
   }
@@ -634,8 +634,66 @@ function engineTests() {
     r.beginVote(room);rejected(()=>r.vote(room,s,{targetId:room.players[0].id,doubled:true}),403);
   }
 }
+// Side quests, ghost whispers, vote betting and Quick Journey.
+function funTests() {
+  const deal=()=>{const room={code:'FUNN',players:Array.from({length:8},(_,i)=>({id:'p'+i,name:'P'+i})),settings:{discussion:'chat',events:false},history:[]};r.start(room);return room;};
+  {
+    const room=deal();
+    for(const p of room.players){const q=room.quests[p.id];assert.ok(r.QUESTS[q.key]);const team=r.group(p)==='saboteur'?'bad':'good';assert.ok(['any',team].includes(r.QUESTS[q.key].team));}
+    const me=room.players[0];room.quests[me.id]={key:'penpal',n:0,done:false};
+    const others=room.players.slice(1,5);
+    r.sendLetter(room,me,others[0].id,'hi');r.sendLetter(room,me,others[0].id,'again');assert.equal(room.quests[me.id].n,1);
+    r.sendLetter(room,me,others[1].id,'hi');r.sendLetter(room,me,others[2].id,'hi');assert.equal(room.quests[me.id].done,true);
+    assert.ok(room.earnings[me.id].some(e=>e.reason==='Side quest: Pen Pal'&&e.n===10));
+    assert.equal(r.view(room,me).me.quest,null);r.advance(room);r.advance(room);const v=r.view(room,me);assert.equal(v.me.quest.name,'Pen Pal');assert.equal(v.me.quest.done,true);assert.equal(r.view(room,room.players[1]).quests,null);
+  }
+  {
+    // Crowd and misdirection score as soon as the vote is public; the hunter quest waits for the end.
+    const room=deal();while(room.phase!=='morning')r.advance(room);r.beginDiscussion(room);
+    const good=r.alive(room).filter(p=>r.group(p)!=='saboteur'),bad=r.alive(room).filter(p=>r.group(p)==='saboteur');
+    const voter=bad[0],hunter=good[1];room.quests[voter.id]={key:'misdirect',n:0,done:false};room.quests[good[2].id]={key:'crowd',n:0,done:false};room.quests[hunter.id]={key:'hunter',n:0,done:false};
+    r.beginVote(room);for(const p of r.alive(room))r.vote(room,p,{targetId:p.id===hunter.id?bad[1].id:p.id===good[0].id?bad[0].id:good[0].id});
+    assert.equal(good[0].alive,false);assert.equal(room.quests[voter.id].done,true);assert.equal(room.quests[good[2].id].n,1);assert.equal(room.quests[hunter.id].n,0);
+  }
+  {
+    // A ghost whispers once, before climbing; it reaches the living traveller at the next dawn with the ghost's name.
+    const room=deal();while(room.phase!=='morning')r.advance(room);
+    const ghost=r.alive(room)[0];ghost.alive=false;const to=r.alive(room)[0],about=r.alive(room)[1];
+    assert.equal(r.view(room,ghost).me.whisperOpen,true);
+    rejected(()=>r.ghostWhisper(room,ghost,{targetId:to.id,word:'Hello'}),400);
+    rejected(()=>r.ghostWhisper(room,to,{targetId:about.id,word:'Liar'}),409);
+    r.ghostWhisper(room,ghost,{targetId:to.id,word:'Liar',aboutId:about.id});
+    rejected(()=>r.ghostWhisper(room,ghost,{targetId:to.id,word:'Trust'}),409);
+    assert.ok(!to.reports.some(x=>x.type==='ghostWhisper'));
+    r.beginDiscussion(room);while(room.phase!=='gathering'&&!room.winner)r.advance(room);
+    if(!room.winner&&to.alive){const w=to.reports.find(x=>x.type==='ghostWhisper');assert.deepEqual([w.from,w.word,w.aboutId],[ghost.id,'Liar',about.id]);}
+    const climber=r.alive(room).find(p=>p.id!==to.id);if(climber&&!room.winner){climber.alive=false;r.ghostClimb(room,climber);assert.equal(r.view(room,climber).me.whisperOpen,false);}
+  }
+  {
+    // Ghosts and observers bet on the vote; a right bet pays back double and an unsettled bet is refunded.
+    const room=deal();while(room.phase!=='morning')r.advance(room);
+    const ghost=r.alive(room)[0];ghost.alive=false;const living=r.alive(room),target=living[0];
+    const start=r.balance(room,ghost);
+    rejected(()=>r.bet(room,living[1],{targetId:target.id,stake:5}),409);
+    rejected(()=>r.bet(room,ghost,{targetId:target.id,stake:7}),400);
+    r.bet(room,ghost,{targetId:target.id,stake:10});assert.equal(r.balance(room,ghost),start-10);
+    rejected(()=>r.bet(room,ghost,{targetId:null,stake:5}),409);
+    r.beginDiscussion(room);while(room.phase==='discussion')r.advance(room);
+    for(const p of r.alive(room))r.vote(room,p,{targetId:p.id===target.id?living[1].id:target.id});
+    assert.equal(target.alive,false);assert.equal(r.balance(room,ghost),start+10);assert.equal(room.betLog.at(-1).won,true);
+    if(!room.winner){r.advance(room);while(room.phase!=='morning'&&!room.winner&&room.phase!=='finished')r.advance(room);
+      if(room.phase==='morning'){const before=r.balance(room,ghost);r.bet(room,ghost,{targetId:null,stake:5});r.restart(room,'lobby');assert.equal(r.balance(room,ghost),before);}}
+  }
+  {
+    // Quick Journey shortens every wait and caps speaking turns at 20 seconds.
+    const room=deal();room.settings.quick=true;room.settings.speakSeconds=45;r.start(room);assert.equal(room.duration,12);
+    while(room.phase!=='night')r.advance(room);assert.equal(room.duration,30);
+    while(room.phase!=='morning')r.advance(room);assert.equal(room.duration,15);
+    r.beginDiscussion(room);assert.equal(room.duration,20);r.beginVote(room);assert.equal(room.duration,25);
+  }
+}
 (async()=>{
-  engineTests();sharedNightTests();socialTests();roundFiveTests();const redis=process.argv.includes('--redis')?await startRedis():null;
+  engineTests();sharedNightTests();socialTests();roundFiveTests();funTests();const redis=process.argv.includes('--redis')?await startRedis():null;
   try{
     if(redis){process.env.UPSTASH_REDIS_REST_URL=redis.url;process.env.UPSTASH_REDIS_REST_TOKEN='test';}
     const handler=require('../api/last-train');assert.equal((await call(handler,'null')).s,400);

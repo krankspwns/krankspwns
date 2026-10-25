@@ -10,12 +10,15 @@
     const title = document.createElement('h3'); title.textContent = 'Playtest with bots';
     const hint = document.createElement('p'); hint.className = 'muted small'; hint.textContent = targetCount + ' simulated players can ready up, use powers, share role claims and vote. Saboteurs make false claims. Friends can join with the normal room link. Keep this test-mode page open while playing.';
     const status = document.createElement('p'); status.className = 'test-player-status'; status.setAttribute('role', 'status');
+    const cast = document.createElement('p'); cast.className = 'test-player-cast';
     const actions = document.createElement('div'); actions.className = 'test-player-actions';
     const add = document.createElement('button'); add.type = 'button'; add.className = 'secondary';
     const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'secondary';
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button'; remove.textContent = 'Remove Test Players';
-    actions.append(add, toggle, remove); panel.append(title, hint, status, actions);
-    const save = () => { try { localStorage.setItem(key, JSON.stringify(bots.map(({ code, pid, tok, name, memory }) => ({ code, pid, tok, name, memory })))); } catch {} };
+    actions.append(add, toggle, remove); panel.append(title, hint, status, cast, actions);
+    const save = () => { try { localStorage.setItem(key, JSON.stringify(bots.map(({ code, pid, tok, name, memory, persona }) => ({ code, pid, tok, name, memory, persona })))); } catch {} };
+    const strategy = () => window.trainTestStrategy, style = bot => strategy().PERSONAS[strategy().persona(bot.pid, bot.persona)];
+    const chance = p => Math.random() < p;
     function update() {
       const count = bots.length;
       status.textContent = message || (count ? count + ' test players · ' + (running ? 'Playing automatically' : 'Stopped') : 'No test players added.');
@@ -23,6 +26,7 @@
       add.hidden = count === targetCount; add.disabled = working || state?.phase !== 'lobby' || (state?.players.length || 0) + Math.max(0, targetCount - count) > 12;
       toggle.hidden = !count; toggle.textContent = running ? 'Stop Autoplay' : 'Resume Autoplay'; toggle.disabled = working;
       remove.hidden = !count; remove.disabled = working || state?.phase !== 'lobby';
+      cast.textContent = count ? 'Personalities: ' + bots.map(b => b.name.split(' ')[1] + ' · ' + style(b).label).join(', ') : '';
     }
     async function request(bot, action, view, extra = {}) {
       const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 8000);
@@ -36,8 +40,24 @@
     async function act(bot, view) {
       const me = view.me, phase = view.phase;
       if (window.trainTestStrategy.remember(bot, view)) save();
-      if (view.paused || !me.alive || me.departed) return;
-      const others = view.players.filter(p => p.alive && p.id !== view.meId);
+      if (view.paused || me.departed) return;
+      const others = view.players.filter(p => p.alive && p.id !== view.meId), mood = style(bot), roundKey = view.match + ':' + view.round;
+      // Bots who are out whisper once and sometimes bet on the vote, so ghosts' features get exercised too.
+      if (!me.alive) {
+        const any = list => list[Math.floor(Math.random() * list.length)];
+        if (me.whisperOpen && others.length && chance(.3)) { const to = any(others), about = others.filter(p => p.id !== to.id); await request(bot, 'ghostWhisper', view, { targetId: to.id, word: any(view.whisperWords), aboutId: about.length && chance(.7) ? any(about).id : null }); }
+        else if (me.betOpen && view.phase === 'discussion' && me.wallet.wp >= 5 && bot.betRound !== roundKey) { bot.betRound = roundKey; if (chance(.6)) await request(bot, 'bet', view, { targetId: chance(.15) ? null : others[Math.floor(Math.random() * others.length)]?.id || null, stake: chance(.3) ? 10 : 5 }); }
+        return;
+      }
+      // Pins and reactions follow the bot's personality: cocky and detective bots always pin someone, chill ones rarely.
+      if (['morning', 'discussion'].includes(phase) && view.pinsOpen && !me.suspect && bot.pinRound !== roundKey) {
+        bot.pinRound = roundKey;
+        const allies = new Set((me.allies || []).map(p => p.id)), suspects = others.filter(p => !allies.has(p.id));
+        const checked = (me.reports || []).find(r => r.type === 'check' && r.alignment === 'bad' && suspects.some(p => p.id === r.targetId));
+        const odds = { cocky: 1, sleuth: 1, nervous: .5, chill: .25 }[strategy().persona(bot.pid, bot.persona)];
+        if (suspects.length && chance(odds)) await request(bot, 'suspect', view, { targetId: checked?.targetId || suspects[Math.floor(Math.random() * suspects.length)].id });
+      }
+      if (['morning', 'voteResult'].includes(phase) && view.socialOpen && bot.emoteKey !== view.step && chance(.35)) { bot.emoteKey = view.step; await request(bot, 'emote', view, { e: mood.emote }); }
       const choose = players => { const tests = players.filter(p => p.name.startsWith('Bot ')); const list = tests.length ? tests : players; return list[Math.floor(Math.random() * list.length)]; };
       if (phase === 'briefing' && !me.ready) await request(bot, 'ready', view);
       if (phase === 'night' && !me.nightChoice) {
@@ -77,8 +97,8 @@
       if (phase === 'voting' && !me.vote) {
         const pool = view.voteCandidates ? view.players.filter(p => p.alive && view.voteCandidates.includes(p.id) && p.id !== view.meId) : others;
         // Mostly vote bots, but about 40% of the time pick any player so real players get voted for too.
-        const real = pool.filter(p => !p.name.startsWith('Bot '));
-        const target = real.length && Math.random() < .4 ? real[Math.floor(Math.random() * real.length)] : choose(pool);
+        const real = pool.filter(p => !p.name.startsWith('Bot ')), pinned = pool.find(p => p.id === me.suspect);
+        const target = pinned && chance(.7) ? pinned : real.length && Math.random() < .4 ? real[Math.floor(Math.random() * real.length)] : choose(pool);
         await request(bot, 'vote', view, { targetId: target?.id || null });
       }
     }
@@ -115,7 +135,7 @@
           const name = 'Bot ' + names[bots.length] + ' ' + crypto.randomUUID().slice(0, 1); // fits the 10-character name limit
           const result = await request({ code }, 'join', null, { name });
           if (version !== epoch) { await request({ code, pid: result.meId, tok: result.tok }, 'leave'); return; }
-          bots.push({ code, pid: result.meId, tok: result.tok, name }); save();
+          bots.push({ code, pid: result.meId, tok: result.tok, name, persona: Object.keys(window.trainTestStrategy.PERSONAS)[bots.length % 4] }); save();
         }
         running = true; message = ''; schedule();
       } catch (error) { message = 'Added ' + bots.length + '/' + targetCount + '. ' + (error.name === 'AbortError' ? 'Connection stopped. Check the room before retrying.' : error.message); }

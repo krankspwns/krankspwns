@@ -14,7 +14,7 @@ function player(name) { const tok = secret(); return { p: { id: crypto.randomUUI
 function view(room, me) { const result = rules.view(room, me); result.me.recoveryCode = recovery(room, me); return result; }
 async function execute(req, body) {
   const action = req.method === 'GET' ? (body.voice ? 'voice' : 'state') : body.action;
-  need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick'].includes(action), 400, 'Unknown choice. Please reload.');
+  need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick', 'ghostWhisper', 'bet'].includes(action), 400, 'Unknown choice. Please reload.');
   if (action === 'create') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     let code;
@@ -68,12 +68,12 @@ async function execute(req, body) {
   need(!(room.kicked || []).includes(body.pid), 410, 'The host removed you from this room.');
   const me = room.players.find(p => p.id === body.pid) || (room.observers || []).find(p => p.id === body.pid);
   need(me && body.tok && equal(me.tokenHash, hash(body.tok)), 401, 'Use your private rejoin code to return to the game.');
-  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles, body.letterIds, body.ids, body.to, body.events, body.observers, body.autoShuffle, body.footsteps, body.e, body.kind, body.key, body.item, body.frame, body.voiceId, body.mimeType, body.durationMs, body.audioData ? hash(body.audioData) : null]));
+  const fingerprint = hash(JSON.stringify([action, body.match, body.round, body.step, body.power, body.targetId, body.attackId, body.doubled, body.extra, body.blocker, body.discussion, body.text, body.roles, body.letterIds, body.ids, body.to, body.events, body.observers, body.autoShuffle, body.footsteps, body.e, body.kind, body.key, body.item, body.frame, body.voiceId, body.mimeType, body.durationMs, body.word, body.aboutId, body.stake, body.quick, body.audioData ? hash(body.audioData) : null]));
   const receipt = (room.receipts || []).find(r => r.pid === me.id && r.id === body.requestId);
   if (action !== 'state' && receipt) { need(receipt.fingerprint === fingerprint, 409, 'That request was already used. Reload the game.'); return view(room, me); }
   need(!me.kicked, 410, 'The host removed you from this room.');
   need(!me.departed || ['state', 'voice', 'dismissLetters', 'wear', 'buy'].includes(action), 403, 'Use your rejoin code to come back.');
-  need(!me.observer || ['state', 'voice', 'emote', 'leave'].includes(action), 403, 'Observers watch this journey. You take a seat when the next journey starts.');
+  need(!me.observer || ['state', 'voice', 'emote', 'leave', 'bet'].includes(action), 403, 'Observers watch this journey. You take a seat when the next journey starts.');
   const changed = rules.timed(room);
   if (action === 'voice') {
     const speech = room.speeches?.find(m => m.audio?.id === body.voice);
@@ -87,7 +87,7 @@ async function execute(req, body) {
   if (action === 'speakVoice') need(body.match === room.match && body.round === room.round, 409, 'This recording belongs to an earlier turn.');
   else if (['letter', 'dismissLetters'].includes(action)) need(body.match === (room.match || 0), 409, 'A new journey has started. Open your letters again.');
   // Reactions, the shop and pins are not tied to a turn, so a phase change never rejects them.
-  else if (!['leave', 'kick', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
+  else if (!['leave', 'kick', 'ghostWhisper', 'bet', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
   const host = () => need(room.hostId === me.id, 403, 'Only the host can do that.');
   need(!room.paused || ['resume', 'leave', 'kick', 'dismissLetters', 'speakVoice', 'emote', 'buy', 'wear', 'throw'].includes(action), 409, 'The game is paused.');
   if (action === 'settings') {
@@ -98,7 +98,7 @@ async function execute(req, body) {
     const roles = body.roles === undefined ? room.settings.roles || null : body.roles === null ? null : rules.validateLoadout(present(room).length, body.roles);
     // A mix the host picks or shuffles is kept for the next journey, even with auto shuffle on.
     const mixPicked = roles !== null && (JSON.stringify(roles) !== JSON.stringify(room.settings.roles || null) || !!room.settings.mixPicked);
-    room.settings = { mixPicked, extra: body.extra, blocker: body.blocker, discussion: body.discussion, speakSeconds, roles, events: body.events === undefined ? room.settings.events !== false : !!body.events, observers: body.observers === undefined ? room.settings.observers !== false : !!body.observers, autoShuffle: body.autoShuffle === undefined ? !!room.settings.autoShuffle : !!body.autoShuffle, footsteps: body.footsteps === undefined ? room.settings.footsteps !== false : !!body.footsteps };
+    room.settings = { mixPicked, extra: body.extra, blocker: body.blocker, discussion: body.discussion, speakSeconds, roles, events: body.events === undefined ? room.settings.events !== false : !!body.events, observers: body.observers === undefined ? room.settings.observers !== false : !!body.observers, autoShuffle: body.autoShuffle === undefined ? !!room.settings.autoShuffle : !!body.autoShuffle, footsteps: body.footsteps === undefined ? room.settings.footsteps !== false : !!body.footsteps, quick: body.quick === undefined ? !!room.settings.quick : !!body.quick };
   }
   if (action === 'shuffleRoles') { host(); need(['lobby','finished'].includes(room.phase), 409, 'Shuffle roles before the journey starts.'); room.settings.roles = rules.randomLoadout(present(room).length); room.settings.mixPicked = true; }
   if (action === 'start') { host(); need(['lobby', 'finished'].includes(room.phase), 409, 'A game is already running.'); rules.start(room); }
@@ -129,6 +129,8 @@ async function execute(req, body) {
   if (action === 'sharpen') rules.sharpen(room, me);
   if (action === 'ghostClimb') rules.ghostClimb(room, me);
   if (action === 'ghostReveal') rules.ghostReveal(room, me, body.targetId);
+  if (action === 'ghostWhisper') rules.ghostWhisper(room, me, { targetId: String(body.targetId || ''), word: String(body.word || ''), aboutId: body.aboutId ? String(body.aboutId) : null });
+  if (action === 'bet') rules.bet(room, me, { targetId: body.targetId ? String(body.targetId) : null, stake: body.stake });
   if (action === 'restart') { host(); need(room.phase !== 'lobby', 409, 'There is no journey to restart.'); need(['lobby', 'deal'].includes(body.to), 400, 'Choose how to restart.'); rules.restart(room, body.to); }
   if (action === 'advance') {
     host(); need(['morning', 'voteResult'].includes(room.phase), 409, 'Everyone gets their full turn. Wait for this step to finish.'); rules.advance(room);

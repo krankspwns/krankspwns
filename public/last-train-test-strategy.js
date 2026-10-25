@@ -44,18 +44,39 @@
   // Bots sound different every turn: varied wording of the claim, an opener and an opinion about someone.
   // The randomness is seeded by bot, journey and round, so asking the same bot twice gives the same line.
   function seeded(seed) { let a = Math.imul(hash(seed) ^ 0x9e3779b9, 0x85ebca6b) >>> 0; const next = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; next(); next(); return next; }
-  const OPENERS = ['', '', '', 'Okay. ', 'Morning, everyone. ', 'Right, quick one. ', 'Listen. ', 'Alright. ', 'Honestly? ', 'So. '];
+  // Each bot keeps one personality for the whole room, picked from its seat: how it talks, whom it pins and how it votes.
+  const PERSONAS = {
+    nervous: { label: 'Nervous', emote: 'cry',
+      openers: ['Um, okay. ', 'Sorry, quick one. ', 'Oh no. Okay. ', 'Er… ', 'I hope this helps. '],
+      good: [n => 'I might be wrong, but ' + n + ' worries me a little.', n => 'Please don\'t vote me. I really think ' + n + ' is acting odd.', () => 'I\'m so nervous about this vote.', n => 'Can ' + n + ' explain last night? Sorry.'],
+      bad: [n => 'I don\'t want to point fingers, but ' + n + ' seems off?', n => 'Is it just me, or is ' + n + ' acting strange?', () => 'I\'m so nervous about this vote.'],
+      closers: [' Sorry, that was long.', ' Does that make sense?', '', ''] },
+    cocky: { label: 'Cocky', emote: 'cool',
+      openers: ['Easy. ', 'Listen up. ', 'I\'ve got this one. ', 'Obviously, '],
+      good: [n => n + ' is the Saboteur. I\'d bet my ticket on it.', n => 'Vote ' + n + '. Trust me.', n => 'I called it already: ' + n + '.'],
+      bad: [n => n + ' is the Saboteur. I\'d bet my ticket on it.', n => 'Vote ' + n + '. Trust me.', n => 'I called it already: ' + n + '.'],
+      closers: [' Next.', ' You\'re welcome.', ''] },
+    chill: { label: 'Chill', emote: 'steady',
+      openers: ['', '', 'Eh. ', 'Morning. ', 'No stress. '],
+      good: [n => n + ' seems fine to me.', () => 'Let\'s just see how the vote goes.', n => 'Not sure about ' + n + ', but no rush.', () => ''],
+      bad: [n => n + ' maybe? Who knows.', () => 'Let\'s take it easy and compare claims.', () => ''],
+      closers: ['', ' Anyway.', ''] },
+    sleuth: { label: 'Detective', emote: 'think',
+      openers: ['Let\'s be logical. ', 'Facts first. ', 'Here\'s what we know. '],
+      good: [n => 'Nobody has backed up ' + n + '\'s claim yet.', n => n + '\'s story doesn\'t match last night.', () => 'Every role claim has to add up. Let\'s count them.', n => 'I want ' + n + ' to explain their night.'],
+      bad: [n => n + '\'s timeline has a gap.', n => 'Count the claims: ' + n + '\'s doesn\'t fit.', () => 'Every role claim has to add up. Let\'s count them.'],
+      closers: ['', ' Think about it.'] },
+  };
+  const persona = (id, set) => PERSONAS[set] ? set : Object.keys(PERSONAS)[Math.floor(seeded('persona:' + (id || 'bot'))() * 4)];
   const CLAIMS = [r => 'I\'m ' + r + '.', r => 'My role is ' + r + '.', r => 'I\'ll be open: I\'m ' + r + '.', r => 'Cards on the table, I\'m ' + r + '.', r => 'For the record, I\'m ' + r + '.'];
   const PASSENGER_CLAIMS = ['I\'m a Passenger.', 'Just a Passenger here.', 'I\'m only a Passenger.', 'Cards on the table, I\'m a Passenger.'];
-  const GOOD_TAKES = [n => 'I\'m keeping an eye on ' + n + '.', n => n + ' has been very quiet.', n => 'I trust ' + n + ' for now.', n => 'Something about ' + n + '\'s story feels off.', n => 'I want to hear from ' + n + ' next.', n => 'Can ' + n + ' explain last night?', () => 'Let\'s not rush the vote.', () => 'Let\'s compare every claim before voting.', () => ''];
-  const BAD_TAKES = [n => n + ' seems nervous to me.', n => 'I don\'t buy ' + n + '\'s story.', n => 'We should look hard at ' + n + '.', n => n + ' is dodging questions.', n => 'Did anyone else notice ' + n + ' changing their story?', () => ''];
   function dress(bot, view, core) {
-    const r = seeded([bot.pid || view.meId, view.match, view.round].join(':')), pick = list => list[Math.floor(r() * list.length)];
+    const r = seeded([bot.pid || view.meId, view.match, view.round].join(':')), pick = list => list[Math.floor(r() * list.length)], style = PERSONAS[persona(bot.pid || view.meId, bot.persona)];
     const said = core.replace(/I'm (a |the )?(Passenger|Inspector|Medic|Witness|Brave Passenger|Careful Passenger|Speaker|Trainee)\./, (m, art, role) => role === 'Passenger' ? pick(PASSENGER_CLAIMS) : pick(CLAIMS)(role));
     const bad = view.me.group === 'saboteur', allies = new Set((view.me.allies || []).map(p => p.id));
     const others = view.players.filter(p => p.alive !== false && p.id !== view.meId && !(bad && allies.has(p.id)) && !core.includes(p.name));
-    const take = others.length ? pick(bad ? BAD_TAKES : GOOD_TAKES)(name(view, pick(others).id)) : '';
-    const line = pick(OPENERS) + said + (take ? ' ' + take : '');
+    const take = others.length ? pick(bad ? style.bad : style.good)(name(view, pick(others).id)) : '';
+    const line = pick(style.openers) + said + (take ? ' ' + take : '') + pick(style.closers);
     return line.length <= 280 ? line : said;
   }
   function statement(bot, view) { return dress(bot, view, claim(bot, view)); }
@@ -102,5 +123,5 @@
     if (me.role === 'signalman') return "I'm Signalman. My Signal Stop is " + (me.used?.signal ? 'already used.' : 'still available.');
     return "I'm a Passenger. I have no night power.";
   }
-  return { remember, statement };
+  return { remember, statement, persona, PERSONAS };
 });
