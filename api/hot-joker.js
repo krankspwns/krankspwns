@@ -4,7 +4,8 @@ const { pace } = require('../lib/bot-pace');
 const { createRoomApi, need, present, shuffle } = require('../lib/room-api');
 
 const TURN_OPTIONS = [20, 40, 60];
-const SET_SIZE = 4;
+const SIZE_OPTIONS = [2, 4]; // pairs (quick) or four of a kind (very long)
+const sizeOf = (room) => room.settings.setSize || 2;
 const randomIndex = (n) => crypto.randomInt(n);
 const setDeadline = (room) => { room.deadline = Date.now() + (room.settings.turnSeconds || 40) * 1000; };
 const place = (room, id) => { if (room.hands[id].length === 0 && !room.placed.includes(id)) room.placed.push(id); };
@@ -13,10 +14,10 @@ function start(room) {
   need(room.players.length >= 3, 409, 'Hot Joker needs at least 3 players.');
   const order = room.players.map((p) => p.id), hands = R.deal(order);
   room.order = order; room.match = (room.match || 0) + 1;
-  room.sets = []; room.placed = []; room.loser = null; room.last = {}; room.idle = 0; room.losses = room.losses || {};
+  room.sets = []; room.placed = []; room.loser = null; room.last = {}; room.losses = room.losses || {};
   for (const id of order) {
-    const laid = R.layDown(hands[id], SET_SIZE);
-    hands[id] = laid.hand; laid.ranks.forEach((rank) => room.sets.push({ id, rank }));
+    const laid = R.layDown(hands[id], sizeOf(room));
+    hands[id] = laid.hand; laid.sets.forEach((s) => room.sets.push({ id, ...s }));
   }
   room.hands = hands; room.turn = 0; room.taker = order[randomIndex(order.length)];
   room.log = [{ kind: 'deal', taker: room.taker }];
@@ -28,29 +29,31 @@ function finish(room) {
   room.losses[room.loser] = (room.losses[room.loser] || 0) + 1;
   room.phase = 'finished'; room.taker = null; room.deadline = null;
 }
-// When no set can ever form again, the remaining sets are swept to whoever holds most of each rank,
-// everyone but the Joker holder is safe, and the game ends.
+// Four-of-a-kind games can get stuck: when no set can ever form again, the remaining sets go to whoever
+// holds most of each rank, everyone but the Joker holder is safe, and the game ends. Pairs never get stuck.
 function sweep(room) {
   const holder = R.jokerHolder(room.order, room.hands), alive = R.alive(room.order, room.hands), byRank = {};
-  for (const id of alive) for (const card of room.hands[id]) if (!R.isJoker(card)) { const r = R.rankOf(card); byRank[r] = byRank[r] || {}; byRank[r][id] = (byRank[r][id] || 0) + 1; }
-  for (const [rank, owners] of Object.entries(byRank)) room.sets.push({ id: Object.entries(owners).sort((a, b) => b[1] - a[1])[0][0], rank });
+  for (const id of alive) for (const card of room.hands[id]) if (!R.isJoker(card)) { const r = R.rankOf(card); (byRank[r] ||= []).push({ id, card }); }
+  for (const [rank, items] of Object.entries(byRank)) {
+    const counts = {}; items.forEach((x) => { counts[x.id] = (counts[x.id] || 0) + 1; });
+    room.sets.push({ id: Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0], rank, cards: items.map((x) => x.card) });
+  }
   for (const id of alive) if (id !== holder) { room.hands[id] = []; place(room, id); }
   room.hands[holder] = [R.JOKER];
 }
 function advance(room, from) {
   if (R.alive(room.order, room.hands).length <= 1) { finish(room); return; }
   const next = R.nextTaker(room.order, room.hands, from);
-  // Stuck: no set is possible, or nobody has made one for three full rounds.
-  if (R.frozen(room.order, room.hands, next, SET_SIZE) || room.idle >= 3 * R.alive(room.order, room.hands).length) { sweep(room); finish(room); return; }
+  if (R.frozen(room.order, room.hands, next, sizeOf(room))) { sweep(room); finish(room); return; }
   room.taker = next; setDeadline(room);
 }
 function takeCard(room, index) {
   const taker = room.taker, source = R.sourceFor(room.order, room.hands, taker);
   const [card] = room.hands[source].splice(index, 1), hand = room.hands[taker];
   hand.splice(randomIndex(hand.length + 1), 0, card);
-  const laid = R.layDown(hand, SET_SIZE);
-  room.hands[taker] = laid.hand; laid.ranks.forEach((rank) => room.sets.push({ id: taker, rank }));
-  room.turn++; room.idle = laid.ranks.length ? 0 : (room.idle || 0) + 1;
+  const laid = R.layDown(hand, sizeOf(room));
+  room.hands[taker] = laid.hand; laid.sets.forEach((s) => room.sets.push({ id: taker, ...s }));
+  room.turn++;
   room.last = { [taker]: { kind: 'got', card, other: source, turn: room.turn }, [source]: { kind: 'lost', card, other: taker, turn: room.turn } };
   room.log = [...room.log, { kind: 'take', taker, source, sets: laid.ranks, turn: room.turn }].slice(-60);
   place(room, source); place(room, taker);
@@ -91,8 +94,14 @@ function view(room, me) {
 
 const api = createRoomApi({
   ns: 'hot-joker', min: 3, max: 10,
-  init(room) { room.settings = { turnSeconds: 40 }; room.losses = {}; },
-  settings(room, body) { need(TURN_OPTIONS.includes(body.turnSeconds), 400, 'Choose 20, 40 or 60 seconds.'); room.settings = { ...room.settings, turnSeconds: body.turnSeconds }; },
+  init(room) { room.settings = { turnSeconds: 40, setSize: 2 }; room.losses = {}; },
+  settings(room, body) {
+    const next = { ...room.settings };
+    need(body.turnSeconds !== undefined || body.setSize !== undefined, 400, 'Choose a setting.');
+    if (body.turnSeconds !== undefined) { need(TURN_OPTIONS.includes(body.turnSeconds), 400, 'Choose 20, 40 or 60 seconds.'); next.turnSeconds = body.turnSeconds; }
+    if (body.setSize !== undefined) { need(SIZE_OPTIONS.includes(body.setSize), 400, 'Choose pairs or four of a kind.'); next.setSize = body.setSize; }
+    room.settings = next;
+  },
   start,
   tick,
   actions: {
@@ -123,6 +132,8 @@ const api = createRoomApi({
   view,
 });
 module.exports = api.handler;
+
+
 
 
 

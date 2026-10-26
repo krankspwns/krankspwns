@@ -11,9 +11,13 @@ function rulesTests() {
     assert.equal(sizes.reduce((a, b) => a + b), 53); assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1);
     assert.equal(new Set(ids.flatMap((id) => hands[id])).size, 53);
   }
-  assert.deepEqual(R.layDown(['S7', 'H7', 'D7', 'C7', 'JK', 'S2']), { hand: ['JK', 'S2'], ranks: ['7'] });
-  assert.deepEqual(R.layDown(['S7', 'H7', 'D7', 'JK']).ranks, [], 'three of a kind stays in hand');
-  assert.deepEqual(R.layDown(['S10', 'H10', 'D10', 'C10', 'SK', 'HK', 'DK', 'CK']), { hand: [], ranks: ['10', 'K'] });
+  const lay = (hand, size) => { const r = R.layDown(hand, size); return { hand: r.hand, ranks: r.ranks }; };
+  assert.deepEqual(lay(['S7', 'H7', 'D7', 'C7', 'JK', 'S2'], 4), { hand: ['JK', 'S2'], ranks: ['7'] });
+  assert.deepEqual(lay(['S7', 'H7', 'D7', 'JK'], 4).ranks, [], 'three of a kind stays in hand for four-of-a-kind games');
+  assert.deepEqual(lay(['S10', 'H10', 'D10', 'C10', 'SK', 'HK', 'DK', 'CK'], 4), { hand: [], ranks: ['10', 'K'] });
+  assert.deepEqual(lay(['S7', 'H7', 'D7', 'JK', 'S2']), { hand: ['D7', 'JK', 'S2'], ranks: ['7'] }, 'pairs are the default; the odd card stays');
+  assert.deepEqual(R.layDown(['S7', 'H7', 'D7', 'C7', 'JK']).sets, [{ rank: '7', cards: ['S7', 'H7'] }, { rank: '7', cards: ['D7', 'C7'] }], 'each set lists its cards');
+  assert.deepEqual(lay(['JK', 'JK']).ranks, [], 'the Joker never pairs');
   // Clockwise order A > B > C: B takes from A, C from B, A from C; empty players are skipped.
   const order = ['A', 'B', 'C'], hands = { A: ['S2'], B: ['S3'], C: ['S4'] };
   assert.equal(R.sourceFor(order, hands, 'B'), 'A'); assert.equal(R.sourceFor(order, hands, 'C'), 'B'); assert.equal(R.sourceFor(order, hands, 'A'), 'C');
@@ -78,11 +82,12 @@ function rulesTests() {
           }
         }
         // Conservation: hands + laid-down sets always account for the whole deck.
-        const all = Object.values(r.hands).flat().length + r.sets.length * 4;
+        const all = Object.values(r.hands).flat().length + r.sets.reduce((n, s) => n + s.cards.length, 0);
         assert.equal(all, 53);
       }
       await assertPrivacy();
-      assert.equal(view.sets.length * 4 + Object.values(view.counts).reduce((a, b) => a + b, 0), 53);
+      assert.equal(view.sets.reduce((n, s) => n + s.cards.length, 0) + Object.values(view.counts).reduce((a, b) => a + b, 0), 53);
+      assert.ok(view.sets.every((s) => s.cards.length === 2 && s.cards.every((c) => c.slice(1) === s.rank)), 'every set is a pair of one rank');
       const jokerHolders = [];
       while (view.phase === 'playing') {
         assert.ok(++steps < 3000, 'game did not finish');
@@ -122,7 +127,10 @@ function rulesTests() {
       }
       assert.equal(view.phase, 'finished');
       const final = await raw(host.code);
-      assert.equal(final.sets.length, 13, 'all thirteen sets were laid down');
+      assert.equal(final.sets.length, 26, 'all twenty-six pairs were laid down, so the game never ends early');
+      assert.ok(view.turn >= 8, 'the game ran for many turns');
+      assert.ok(final.sets.every((s) => !final.hands[view.loser].some((c) => s.cards.includes(c))), 'laid-down cards leave the hand');
+      assert.ok(final.sets.every((s) => view.sets.some((v) => v.id === s.id && v.rank === s.rank)), 'everyone can see who laid down which sets');
       assert.equal(view.loser, final.loser);
       assert.deepEqual(final.hands[view.loser], ['JK'], 'the loser holds only the Joker');
       assert.equal(Object.values(final.hands).flat().length, 1);
@@ -154,7 +162,14 @@ function rulesTests() {
         assert.equal(back.s, 200); assert.equal((await get(leaver)).s, 401);
       }
     }
-    assert.equal(totalSets, 13 * 5);
+    assert.equal(totalSets, 26 * 5);
+    // The host can pick four of a kind; bad sizes are refused. Nobody's hand ever keeps a finished set.
+    {
+      const [h] = await room(3);
+      assert.equal((await post(h, 'settings', { setSize: 3 })).s, 400);
+      assert.equal((await post(h, 'settings', { setSize: 4 })).j.settings.setSize, 4);
+      assert.equal((await post(h, 'settings', { setSize: 2 })).j.settings.setSize, 2);
+    }
     // ---- Bots: one per button press, host only, and they take cards like a person ----
     process.env.BOT_FAST = '1';
     {
@@ -188,6 +203,11 @@ function rulesTests() {
     console.log('Hot Joker ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot, bots and recovery passed');
   } finally { if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
+
+
+
+
+
 
 
 
