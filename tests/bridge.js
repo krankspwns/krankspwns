@@ -39,6 +39,13 @@ function rulesTests() {
   // Trick rules.
   assert.deepEqual(R.legalCards(['SA', 'HK', 'H2'], 'H'), ['HK', 'H2']);
   assert.deepEqual(R.legalCards(['SA', 'D3'], 'H'), ['SA', 'D3']);
+  // Trumps cannot be led until one has been played, unless the hand holds nothing else.
+  assert.deepEqual(R.legalCards(['CA', 'C5', 'H2', 'DK'], null, { trump: 'C', broken: false }), ['H2', 'DK'], 'no trump lead before trumps are broken');
+  assert.deepEqual(R.legalCards(['CA', 'C5', 'H2', 'DK'], null, { trump: 'C', broken: true }), ['CA', 'C5', 'H2', 'DK'], 'any lead once broken');
+  assert.deepEqual(R.legalCards(['CA', 'C5'], null, { trump: 'C', broken: false }), ['CA', 'C5'], 'a hand of only trumps may lead them');
+  assert.deepEqual(R.legalCards(['CA', 'H2'], null, { trump: null, broken: false }), ['CA', 'H2'], 'no trump suit means no restriction');
+  assert.deepEqual(R.legalCards(['CA', 'H2'], 'H', { trump: 'C', broken: false }), ['H2'], 'following suit still comes first');
+  assert.deepEqual(R.legalCards(['CA', 'D2'], 'H', { trump: 'C', broken: false }), ['CA', 'D2'], 'a void player may trump in or discard');
   const t = [{ seat: 0, card: 'HK' }, { seat: 1, card: 'HA' }, { seat: 2, card: 'S2' }, { seat: 3, card: 'D9' }];
   assert.equal(R.trickWinner(t, 'S'), 2);
   assert.equal(R.trickWinner(t, null), 1);
@@ -132,6 +139,9 @@ function rulesTests() {
         if (d.trick.length) {
           const led = d.trick[0].card[0], room = await raw(host.code), hand = room.d.hands[d.turn], off = hand.find((x) => x[0] !== led);
           if (off && hand.some((x) => x[0] === led)) assert.equal((await post(actor, 'play', { card: off })).s, 400);
+        } else {
+          const room = await raw(host.code), hand = room.d.hands[d.turn], trump = room.d.contract.denom, held = hand.find((x) => x[0] === trump);
+          if (trump !== 'N' && !room.d.trumpBroken && held && hand.some((x) => x[0] !== trump)) assert.equal((await post(actor, 'play', { card: held })).s, 400, 'the server refuses a trump lead before trumps are broken');
         }
         assert.equal((await post(actor, 'play', { card: d.legal[crypto.randomInt(d.legal.length)] })).s, 200);
       }
@@ -154,6 +164,15 @@ function rulesTests() {
     staged.doCallCard(room, 'DA');
     assert.equal(room.phase, 'playing'); assert.equal(room.d.turn, 1, 'left of declarer leads');
     assert.equal(room.d.partner, 2); assert.equal(room.d.revealed, true, 'a level-7 partner must be announced at once');
+    // Trumps (clubs) are unbroken: a void player who discards does not open them, one who trumps does.
+    assert.equal(room.d.trumpBroken, false);
+    staged.doPlay(room, 'HA'); staged.doPlay(room, 'DA');
+    assert.equal(room.d.trumpBroken, false, 'discarding another suit does not break trumps');
+    staged.doPlay(room, 'CA');
+    assert.equal(room.d.trumpBroken, true, 'trumping in breaks trumps');
+    staged.doPlay(room, 'SA');
+    assert.equal(room.d.tricksBy[3], 1, 'the highest trump collects the trick');
+    assert.equal(room.d.turn, 3, 'the trick winner leads next');
 
     // Rematch resets individual scores.
     assert.equal((await post(host, 'settings', { deals: 4 })).j.settings.deals, 4);
@@ -235,6 +254,9 @@ function rulesTests() {
     console.log('Singaporean Bridge ' + (redis ? 'Redis' : 'memory') + ': scoring, auction, called card, hidden partner, full 2-deal match, privacy, replay safety, autopilot, bots and recovery passed');
   } finally { if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
+
+
+
 
 
 

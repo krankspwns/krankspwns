@@ -70,20 +70,36 @@
     return el('div', { class: 'score-strip four' }, [0, 1, 2, 3].map((s) => el('div', { class: 'score-team' + (state.mySeat === s ? ' mine' : '') }, text('span', 'eyebrow', NAMES[s] + (state.mySeat === s ? ' · YOU' : '')), text('small', 'muted', c.who(state.seats[s])), text('b', 'score-number', String(state.scores[s])))),
       d ? el('div', { class: 'score-mid' }, text('span', 'eyebrow', 'DEAL'), text('b', '', state.board + ' / ' + state.deals), text('small', 'muted', 'Dealer: ' + NAMES[d.dealer])) : null);
   }
+  // A stack of face-down cards: the tricks a player has collected this deal (each trick is one set of four cards).
+  const pileOf = (n) => el('span', { class: 'pile', 'aria-label': n + (n === 1 ? ' trick won' : ' tricks won') }, ...Array.from({ length: Math.min(n, 6) }, (_, i) => el('i', { style: '--i:' + i })), el('em', {}, String(n)));
+  function contractBar(c) {
+    const { state } = c, d = state.deal, k = d.contract;
+    if (!k) return el('div', { class: 'contract-bar' }, text('span', 'eyebrow', 'BIDDING'), text('small', 'muted', 'No contract yet'));
+    const known = d.partner !== null, solo = d.solo, side = d.tricksBy[k.declarer] + (known && d.partner !== k.declarer ? d.tricksBy[d.partner] : 0);
+    return el('div', { class: 'contract-bar' },
+      el('div', { class: 'contract-main' }, text('span', 'eyebrow', 'CONTRACT'), el('b', { class: 'contract' }, contractLabel(k)), text('small', 'muted', NAMES[k.declarer] + ' declares')),
+      el('div', { class: 'contract-facts' },
+        el('span', {}, 'Needs ', el('b', {}, k.target), ' of 13 tricks'),
+        el('span', {}, known ? 'Declarer side has ' : 'Declarer has ', el('b', {}, side), known ? '' : ' (+ partner)'),
+        el('span', {}, 'Defenders need ', el('b', {}, 14 - k.target)),
+        d.called ? el('span', {}, 'Called ', cardLabel(d.called, c), solo ? ' · playing alone' : known ? ' · ' + NAMES[d.partner] + ' is the partner' : ' · partner hidden') : null,
+        k.denom === 'N' ? el('span', {}, 'No trumps') : el('span', { class: d.trumpBroken ? 'ok' : '' }, 'Trumps ', suitSpan(k.denom), d.trumpBroken ? ' broken, can be led' : ' not broken yet, cannot be led')));
+  }
   function table(c) {
-    const { state } = c, d = state.deal, me = Math.max(0, state.mySeat), trickCards = d.trick.length ? d.trick : (d.lastTrick?.cards || []), lastWinner = d.trick.length ? null : d.lastTrick?.winner;
-    const rel = (k) => (me + k) % 4, order = [2, 1, 3, 0];
-    const pos = ['bottom', 'left', 'top', 'right'];
-    return el('div', { class: 'felt' }, ...order.map((k) => {
-      const seat = rel(k), played = trickCards.find((x) => x.seat === seat), id = state.seats[seat];
+    const { state } = c, d = state.deal, me = Math.max(0, state.mySeat), done = d.trick.length === 0 && d.lastTrick, trickCards = d.trick.length ? d.trick : (d.lastTrick?.cards || []), lastWinner = done ? d.lastTrick.winner : null;
+    const rel = (k) => (me + k) % 4, pos = ['bottom', 'left', 'top', 'right']; // clockwise from you
+    const seatEl = (k) => {
+      const seat = rel(k), id = state.seats[seat];
       const tags = [seat === d.dealer ? 'DEALER' : null, d.contract && seat === d.contract.declarer ? 'DECLARER' : null, d.partner === seat && d.contract && seat !== d.contract.declarer ? 'PARTNER' : null].filter(Boolean);
       return el('div', { class: 'felt-seat pos-' + pos[k] + (d.turn === seat ? ' turn' : '') + (lastWinner === seat ? ' winner' : '') },
-        el('div', { class: 'plate' }, c.avatar(id), el('div', {}, el('b', {}, c.who(id) + (seat === state.mySeat ? ' · You' : '')), text('small', 'muted', NAMES[seat] + (tags.length ? ' · ' + tags.join(' · ') : '') + ' · ' + d.counts[seat] + ' cards' + (d.contract ? ' · ' + d.tricksBy[seat] + ' won' : '')))),
-        el('div', { class: 'slot' }, played ? c.card(played.card, { label: NAMES[seat] + ' played' }) : null));
-    }), el('div', { class: 'felt-centre' }, d.contract ? [text('span', 'eyebrow', 'CONTRACT'), el('b', { class: 'contract' }, contractLabel(d.contract)), text('small', '', NAMES[d.contract.declarer] + ' declares · needs ' + d.contract.target + ' tricks'),
-      d.called ? el('small', { class: 'tricks' }, 'Called card: ', cardLabel(d.called, c)) : text('small', 'muted', 'Calling a partner…'),
-      d.called ? text('small', 'tricks', d.solo ? 'Playing alone' : d.partner !== null ? NAMES[d.partner] + ' is the partner' : 'Partner not yet revealed') : null] : [text('span', 'eyebrow', 'BIDDING'), text('small', 'muted', 'No contract yet')]));
+        el('div', { class: 'plate' }, c.avatar(id), el('b', {}, c.who(id) + (seat === state.mySeat ? ' · You' : '')), text('small', 'muted', [NAMES[seat], ...tags, d.counts[seat] + ' cards'].join(' · '))),
+        d.contract ? el('div', { class: 'collected' }, pileOf(d.tricksBy[seat]), text('small', 'muted', 'tricks')) : null);
+    };
+    const slots = [0, 1, 2, 3].map((k) => { const seat = rel(k), played = trickCards.find((x) => x.seat === seat); return el('div', { class: 'trick-slot pos-' + pos[k] + (lastWinner === seat ? ' winner' : '') }, played ? c.card(played.card, { label: NAMES[seat] + ' played' }) : null); });
+    const caption = d.trick.length ? '' : done ? c.who(state.seats[lastWinner]) + ' took the trick and collects it' : d.contract ? 'No cards played yet' : '';
+    return el('div', { class: 'felt' }, seatEl(2), el('div', { class: 'felt-mid' }, seatEl(1), el('div', { class: 'trick', role: 'group', 'aria-label': 'Cards played this trick' }, ...slots), seatEl(3)), text('div', 'trick-caption', caption), seatEl(0));
   }
+
   function bidBox(c) {
     const { state, send } = c, d = state.deal, legal = d.legalCalls;
     if (!legal) return null;
@@ -118,12 +134,19 @@
     if (d.iAmPartner) return 'You hold the called card: you are the declarer’s secret partner. Help take tricks. Show yourself by playing it, or hide until then.';
     return d.called ? 'You are a defender. Stop the contract, and work out who the partner is.' : null;
   }
+  // Explains why trump cards are greyed out when you are leading.
+  function leadHint(c) {
+    const { state } = c, d = state.deal, k = d.contract;
+    if (state.phase !== 'playing' || !k || k.denom === 'N' || d.turn !== state.mySeat || d.trick.length || d.trumpBroken) return '';
+    return d.myHand.some((x) => x[0] === k.denom) && d.legal && d.legal.length < d.myHand.length ? 'You cannot lead trumps (' + SUITS[k.denom] + ') until someone plays one. A player with none of the led suit can trump in to break them.' : '';
+  }
   function handPanel(c, extra) {
     const { state, send } = c, d = state.deal; if (state.mySeat < 0) return null;
     const legal = state.phase === 'playing' && d.turn === state.mySeat ? d.legal : null, play = (card) => send('play', { card });
     const note = role(c);
     return el('section', { class: 'tk-panel hand-panel mine' + (d.turn === state.mySeat ? ' active' : '') }, el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'YOUR HAND · ' + NAMES[state.mySeat].toUpperCase()), el('h3', {}, 'Your cards')), text('span', 'hcp', d.myPoints + ' points')),
       note ? text('p', 'role-note', note) : null,
+      leadHint(c) ? text('p', 'hint', leadHint(c)) : null,
       handRow(c, d.myHand, { legal, play, scroll: 'mine' }),
       legal && pick ? c.button('Play ' + c.rankLabel(pick.slice(1)) + c.SUIT[pick[0]], () => play(pick), 'primary', !legal.includes(pick), 'play-confirm') : legal ? text('p', 'muted small', 'Tap a card to choose it. Tap again to play. Grey cards cannot be played.') : null,
       extra || null);
@@ -151,7 +174,7 @@
     if (key !== pickKey) { pickKey = key; pick = ''; callPick = ''; }
     return el('div', { class: 'tk-scene' }, scoreStrip(c),
       el('div', { class: 'bridge-grid' },
-        el('div', { class: 'main-col' }, c.panel('table-panel', table(c), turnBanner(c)),
+        el('div', { class: 'main-col' }, c.panel('table-panel', contractBar(c), table(c), turnBanner(c)),
           state.phase === 'bidding' ? c.panel('bidding-panel', el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'BIDDING'), el('h3', {}, 'The auction'))), auction(c, d), bidBox(c)) : null,
           state.phase === 'calling' && d.callable ? c.panel('call-panel', el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'DECLARER'), el('h3', {}, 'Call your partner’s card'))), callBox(c)) : null,
           state.phase === 'reveal' ? reveal(c, state.history.at(-1), host) : null),

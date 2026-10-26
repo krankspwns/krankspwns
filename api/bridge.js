@@ -9,7 +9,7 @@ const sideTricks = (d) => d.tricksBy[d.declarer] + (d.partner !== d.declarer ? d
 
 function startDeal(room) {
   const board = room.board, hands = R.deal(), dealer = R.dealerFor(board);
-  room.d = { board, dealer, hands, original: hands.map((h) => h.slice()), calls: [], turn: dealer, contract: null, declarer: null, called: null, partner: null, revealed: false, trick: [], lastTrick: null, tricks: 0, tricksBy: [0, 0, 0, 0] };
+  room.d = { board, dealer, hands, original: hands.map((h) => h.slice()), calls: [], turn: dealer, contract: null, declarer: null, called: null, partner: null, revealed: false, trumpBroken: false, trick: [], lastTrick: null, tricks: 0, tricksBy: [0, 0, 0, 0] };
   room.phase = 'bidding';
 }
 function start(room) {
@@ -55,6 +55,7 @@ function doPlay(room, card) {
   d.hands[seat] = d.hands[seat].filter((c) => c !== card);
   d.trick.push({ seat, card });
   if (card === d.called) d.revealed = true;
+  if (R.suitOf(card) === trumpOf(d.contract)) d.trumpBroken = true; // a void player trumping in (or any trump played) opens trumps for leading
   if (d.trick.length < 4) { d.turn = R.left(seat); return; }
   const winner = R.trickWinner(d.trick, trumpOf(d.contract));
   d.tricksBy[winner]++; d.tricks++;
@@ -62,7 +63,7 @@ function doPlay(room, card) {
   checkAnnounce(room);
   if (d.tricks === 13) finishDeal(room);
 }
-const legalFor = (d) => R.legalCards(d.hands[d.turn], d.trick[0] && R.suitOf(d.trick[0].card));
+const legalFor = (d) => R.legalCards(d.hands[d.turn], d.trick[0] && R.suitOf(d.trick[0].card), { trump: d.contract && trumpOf(d.contract), broken: d.trumpBroken });
 function autoCard(d) {
   const mine = d.hands[d.turn];
   return R.deck().reverse().find((c) => !mine.includes(c) && R.rankOf(c) === 12) || R.deck().find((c) => !mine.includes(c));
@@ -106,7 +107,7 @@ function view(room, me) {
   const bidding = room.phase === 'bidding', calling = room.phase === 'calling', play = room.phase === 'playing';
   const deal = {
     board: d.board, dealer: d.dealer, calls: d.calls, contract: d.contract && { ...d.contract, name: R.contractName(d.contract), target: R.target(d.contract) },
-    called: d.called, turn: ['bidding', 'calling', 'playing'].includes(room.phase) ? d.turn : null, trick: d.trick, lastTrick: d.lastTrick, tricks: d.tricks, tricksBy: d.tricksBy,
+    called: d.called, turn: ['bidding', 'calling', 'playing'].includes(room.phase) ? d.turn : null, trick: d.trick, lastTrick: d.lastTrick, tricks: d.tricks, tricksBy: d.tricksBy, trumpBroken: d.trumpBroken,
     counts: d.hands.map((h) => h.length), myHand: mySeat >= 0 ? d.hands[mySeat] : [], myPoints: mySeat >= 0 ? R.points(d.original[mySeat]) : 0,
     partner: d.revealed || room.phase === 'reveal' ? d.partner : null,
     iAmPartner: mySeat >= 0 && !!d.called && d.original[mySeat].includes(d.called) && mySeat !== d.declarer,
@@ -154,7 +155,7 @@ const api = createRoomApi({
       const d = room.d, seat = room.seats.indexOf(me.id);
       need(seat >= 0 && d.turn === seat, 409, 'It is not your turn to play.');
       need(typeof body.card === 'string' && d.hands[seat].includes(body.card), 400, 'That card is not in the hand.');
-      need(legalFor(d).includes(body.card), 400, 'You must follow the suit that was led.');
+      need(legalFor(d).includes(body.card), 400, d.trick.length ? 'You must follow the suit that was led.' : 'Trumps cannot be led until a trump has been played.');
       doPlay(room, body.card);
     },
     next(room, me, body, { host }) {
@@ -166,6 +167,11 @@ const api = createRoomApi({
 });
 module.exports = api.handler;
 module.exports._rules = { start, startDeal, doCall, doCallCard, doPlay, finishDeal, view, botMove };
+
+
+
+
+
 
 
 
