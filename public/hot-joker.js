@@ -27,7 +27,7 @@
         el('li', {}, el('b', {}, 'Take a hidden card. '), 'Players take turns clockwise. On your turn, take one face-down card from the previous player who still has cards. If a set is made, it goes down.'),
         el('li', {}, el('b', {}, 'Keep your cards safe. '), 'You can shuffle your cards or move them around so nobody can guess where the Joker is.'),
         el('li', {}, el('b', {}, 'Get out. '), 'When you have no cards left you are safe. The game goes on until only one player still holds cards. That player is stuck with the Joker and loses!')),
-      el('p', { class: 'muted small' }, 'Nobody can see anyone’s cards, only how many they hold. If a player takes too long (40 seconds), the game takes a random card for them. If someone leaves, the game plays on for them.'),
+      el('p', { class: 'muted small' }, 'Nobody can see anyone’s cards, only how many they hold. If a player takes too long (40 seconds), the game takes a random card for them. If someone leaves, the game plays on for them. If nobody can make a set for three full rounds, the remaining sets are laid down and the player holding the Joker loses.'),
     ],
     screen: (c) => screen(c),
   });
@@ -116,4 +116,5 @@
       el('div', { class: 'joker-grid' }, el('div', { class: 'main-col' }, privateNote(c), takePanel(c), handPanel(c)), el('div', { class: 'side-col' }, setsPanel(c), logPanel(c), c.roster((p, s) => s.losses[p.id] ? 'JOKER ×' + s.losses[p.id] : null))));
   }
 })();
+
 

@@ -31,13 +31,15 @@ function rulesTests() {
   try {
     if (redis) { process.env.UPSTASH_REDIS_REST_URL = redis.url; process.env.UPSTASH_REDIS_REST_TOKEN = 'test'; }
     const handler = require('../api/hot-joker'), id = () => crypto.randomUUID();
-    const enter = (action, data) => call(handler, { action, requestId: id(), ...data });
+    let ip = 0; // each room joins from its own address so the create/join rate limit is not shared
+    const enter = (action, data) => call(handler, { action, requestId: id(), ...data }, {}, { 'x-forwarded-for': 'test-' + ip });
     const get = (seat) => call(handler, null, { code: seat.code, pid: seat.meId }, { 'x-tok': seat.tok });
     const post = async (seat, action, extra = {}) => { const cur = (await get(seat)).j; return call(handler, { action, requestId: id(), code: seat.code, pid: seat.meId, tok: seat.tok, match: cur.match, ...extra }); };
     const raw = async (code) => redis ? JSON.parse(await redis.client.get('hot-joker:room:' + code)) : structuredClone(globalThis.__roomStoreRooms['hot-joker'].get(code));
     const save = async (room) => redis ? redis.client.set('hot-joker:room:' + room.code, JSON.stringify(room)) : globalThis.__roomStoreRooms['hot-joker'].set(room.code, structuredClone(room));
 
     async function room(n) {
+      ip++;
       const host = (await enter('create', { name: 'P0' })).j, players = [host];
       for (let i = 1; i < n; i++) { const r = await enter('join', { code: host.code, name: 'P' + i }); assert.equal(r.s, 200); players.push(r.j); }
       return players;
@@ -156,6 +158,8 @@ function rulesTests() {
     console.log('Hot Joker ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot and recovery passed');
   } finally { if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
+
+
 
 
 
