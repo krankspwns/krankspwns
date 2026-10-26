@@ -5,16 +5,19 @@ const path = require('node:path');
 const handler = require('../api/game');
 const grandCon = require('../api/grand-con');
 const lastTrain = require('../api/last-train');
+const bridge = require('../api/bridge');
+const hotJoker = require('../api/hot-joker');
+const apis = { '/api/game': handler, '/api/grand-con': grandCon, '/api/last-train': lastTrain, '/api/bridge': bridge, '/api/hot-joker': hotJoker };
 const root = path.resolve(__dirname, '../public');
 const types = { '.woff2': 'font/woff2', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (['/api/game','/api/grand-con','/api/last-train','/api/bridge','/api/hot-joker'].includes(url.pathname)) {
+  if (apis[url.pathname]) {
     let body = ''; for await (const chunk of req) { body += chunk; if (body.length > (url.pathname === '/api/last-train' ? 360000 : 8000)) { res.writeHead(413); res.end(); return; } }
     req.body = body; req.query = Object.fromEntries(url.searchParams);
     res.status = (code) => { res.statusCode = code; return res; };
     res.json = (data) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); };
-    return (url.pathname === '/api/last-train' ? lastTrain : url.pathname === '/api/grand-con' ? grandCon : handler)(req, res);
+    return apis[url.pathname](req, res);
   }
   if (url.pathname === '/_vercel/insights/script.js') { res.writeHead(204); res.end(); return; }
   const file = path.resolve(root, '.' + decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname));

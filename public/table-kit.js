@@ -189,7 +189,7 @@
       for (const [key, left, top] of scrolls) { const n = root.querySelector('[data-scroll="' + key + '"]'); if (n) { n.scrollLeft = left; n.scrollTop = top; } }
       const restored = focus ? document.getElementById(focus) : focusKey ? [...root.querySelectorAll('[data-focus]')].find((n) => n.dataset.focus === focusKey) : null;
       if (restored && !restored.disabled) { restored.focus({ preventScroll: true }); if (typeof selection === 'number' && restored.type !== 'number') try { restored.setSelectionRange(selection, selectionEnd ?? selection); } catch {} }
-      const scene = [state?.code, state?.match, state?.phase, cfg.scene ? cfg.scene(state) : ''].join(':');
+      const scene = [state?.code, state?.match, state?.phase, cfg.scene && state ? cfg.scene(state) : ''].join(':');
       root.dataset.phase = state?.phase || 'home';
       if (scene !== renderedScene) { root.querySelector('.tk-scene, .lobby-grid, .tk-landing')?.classList.add('scene-enter'); renderedScene = scene; }
       tick();
@@ -204,6 +204,7 @@
   };
   window.TableKit.el = el; window.TableKit.text = text; window.TableKit.icon = icon; window.TableKit.card = card;
 })();
+
 
 
 
