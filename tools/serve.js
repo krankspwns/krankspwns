@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '../public');
 const types = { '.woff2': 'font/woff2', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (['/api/game','/api/grand-con','/api/last-train'].includes(url.pathname)) {
+  if (['/api/game','/api/grand-con','/api/last-train','/api/bridge','/api/hot-joker'].includes(url.pathname)) {
     let body = ''; for await (const chunk of req) { body += chunk; if (body.length > (url.pathname === '/api/last-train' ? 360000 : 8000)) { res.writeHead(413); res.end(); return; } }
     req.body = body; req.query = Object.fromEntries(url.searchParams);
     res.status = (code) => { res.statusCode = code; return res; };

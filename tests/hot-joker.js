@@ -1,0 +1,161 @@
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const { call, startRedis } = require('./helpers');
+const R = require('../lib/hot-joker-rules');
+
+function rulesTests() {
+  const deck = R.deck();
+  assert.equal(deck.length, 53); assert.equal(new Set(deck).size, 53); assert.ok(deck.includes('JK'));
+  for (const n of [3, 4, 5, 7, 10]) {
+    const ids = Array.from({ length: n }, (_, i) => 'p' + i), hands = R.deal(ids), sizes = ids.map((id) => hands[id].length);
+    assert.equal(sizes.reduce((a, b) => a + b), 53); assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1);
+    assert.equal(new Set(ids.flatMap((id) => hands[id])).size, 53);
+  }
+  assert.deepEqual(R.layDown(['S7', 'H7', 'D7', 'C7', 'JK', 'S2']), { hand: ['JK', 'S2'], ranks: ['7'] });
+  assert.deepEqual(R.layDown(['S7', 'H7', 'D7', 'JK']).ranks, [], 'three of a kind stays in hand');
+  assert.deepEqual(R.layDown(['S10', 'H10', 'D10', 'C10', 'SK', 'HK', 'DK', 'CK']), { hand: [], ranks: ['10', 'K'] });
+  // Clockwise order A > B > C: B takes from A, C from B, A from C; empty players are skipped.
+  const order = ['A', 'B', 'C'], hands = { A: ['S2'], B: ['S3'], C: ['S4'] };
+  assert.equal(R.sourceFor(order, hands, 'B'), 'A'); assert.equal(R.sourceFor(order, hands, 'C'), 'B'); assert.equal(R.sourceFor(order, hands, 'A'), 'C');
+  assert.equal(R.nextTaker(order, hands, 'B'), 'C');
+  hands.B = [];
+  assert.equal(R.sourceFor(order, hands, 'C'), 'A', 'C takes from A once B is out');
+  assert.equal(R.nextTaker(order, hands, 'A'), 'C', 'turn order skips players who are out');
+  hands.C = [];
+  assert.equal(R.nextTaker(order, hands, 'A'), null);
+}
+
+(async () => {
+  rulesTests();
+  const redis = process.argv.includes('--redis') ? await startRedis() : null;
+  try {
+    if (redis) { process.env.UPSTASH_REDIS_REST_URL = redis.url; process.env.UPSTASH_REDIS_REST_TOKEN = 'test'; }
+    const handler = require('../api/hot-joker'), id = () => crypto.randomUUID();
+    const enter = (action, data) => call(handler, { action, requestId: id(), ...data });
+    const get = (seat) => call(handler, null, { code: seat.code, pid: seat.meId }, { 'x-tok': seat.tok });
+    const post = async (seat, action, extra = {}) => { const cur = (await get(seat)).j; return call(handler, { action, requestId: id(), code: seat.code, pid: seat.meId, tok: seat.tok, match: cur.match, ...extra }); };
+    const raw = async (code) => redis ? JSON.parse(await redis.client.get('hot-joker:room:' + code)) : structuredClone(globalThis.__roomStoreRooms['hot-joker'].get(code));
+    const save = async (room) => redis ? redis.client.set('hot-joker:room:' + room.code, JSON.stringify(room)) : globalThis.__roomStoreRooms['hot-joker'].set(room.code, structuredClone(room));
+
+    async function room(n) {
+      const host = (await enter('create', { name: 'P0' })).j, players = [host];
+      for (let i = 1; i < n; i++) { const r = await enter('join', { code: host.code, name: 'P' + i }); assert.equal(r.s, 200); players.push(r.j); }
+      return players;
+    }
+    // Lobby rules.
+    const lobby = await room(2);
+    assert.equal((await post(lobby[0], 'start')).s, 409, 'needs three players');
+    assert.equal((await post(lobby[0], 'settings', {})).s, 400);
+    const third = await enter('join', { code: lobby[0].code, name: 'P2' }); lobby.push(third.j);
+    assert.equal((await post(lobby[1], 'start')).s, 403, 'only the host starts');
+    assert.equal((await post(lobby[1], 'shuffleSeats')).s, 403);
+    assert.equal((await post(lobby[0], 'take', { index: 0, turn: 0 })).s, 409);
+    const crowd = await room(10);
+    assert.equal((await enter('join', { code: crowd[0].code, name: 'P11' })).s, 409, 'ten players is the limit');
+
+    let totalSets = 0;
+    for (const n of [3, 4, 5, 6, 10]) {
+      const players = await room(n), host = players[0], by = Object.fromEntries(players.map((p) => [p.meId, p]));
+      assert.equal((await post(host, 'shuffleSeats')).s, 200);
+      const started = (await post(host, 'start')).j;
+      assert.equal(started.phase, 'playing'); assert.equal(started.order.length, n);
+      assert.equal((await enter('join', { code: host.code, name: 'Late' })).s, 409);
+      let steps = 0, view = (await get(host)).j;
+      const ownerView = async (p) => (await get(p)).j;
+      // No one can read another player's cards; only counts are public.
+      async function assertPrivacy() {
+        const r = await raw(host.code);
+        for (const p of players) {
+          const v = await ownerView(p), json = JSON.stringify(v);
+          assert.deepEqual(v.me.hand.slice().sort(), r.hands[p.meId].slice().sort());
+          assert.ok(!json.includes('tokenHash') && !('hands' in v) && !('priv' in v));
+          for (const other of players) {
+            assert.equal(v.counts[other.meId], r.hands[other.meId].length);
+            if (other === p) continue;
+            for (const card of r.hands[other.meId]) if (!v.me.hand.includes(card) && v.me.last?.card !== card) assert.ok(!json.includes('"' + card + '"'), 'leaked a hidden card');
+          }
+        }
+        // Conservation: hands + laid-down sets always account for the whole deck.
+        const all = Object.values(r.hands).flat().length + r.sets.length * 4;
+        assert.equal(all, 53);
+      }
+      await assertPrivacy();
+      assert.equal(view.sets.length * 4 + Object.values(view.counts).reduce((a, b) => a + b, 0), 53);
+      const jokerHolders = [];
+      while (view.phase === 'playing') {
+        assert.ok(++steps < 3000, 'game did not finish');
+        const taker = by[view.taker], v = await ownerView(taker);
+        assert.equal(v.taker, taker.meId);
+        const idx = v.order.indexOf(taker.meId), expectSource = v.order[(idx - 1 + n) % n];
+        if (view.counts[expectSource] > 0) assert.equal(v.source, expectSource, 'cards are taken from the previous player');
+        assert.ok(v.sourceCount > 0);
+        if (steps === 1) {
+          const outsider = players.find((p) => p.meId !== taker.meId);
+          assert.equal((await post(outsider, 'take', { index: 0, turn: v.turn })).s, 409, 'out of turn');
+          assert.equal((await post(taker, 'take', { index: v.sourceCount, turn: v.turn })).s, 400, 'index out of range');
+          assert.equal((await post(taker, 'take', { index: -1, turn: v.turn })).s, 400);
+          assert.equal((await post(taker, 'take', { index: 0, turn: v.turn + 1 })).s, 409, 'stale turn');
+          // Arranging cards never changes the multiset.
+          const before = (await ownerView(taker)).me.hand.slice().sort();
+          await post(taker, 'shuffle'); await post(taker, 'move', { from: 0, to: before.length - 1 });
+          assert.deepEqual((await ownerView(taker)).me.hand.slice().sort(), before);
+          assert.equal((await post(taker, 'move', { from: 0, to: 99 })).s, 400);
+          // The previous owner of a request id cannot apply it twice.
+          const rid = id(), body = { action: 'take', requestId: rid, code: taker.code, pid: taker.meId, tok: taker.tok, match: v.match, index: 0, turn: v.turn };
+          assert.equal((await call(handler, body)).s, 200); assert.equal((await call(handler, body)).s, 200);
+          assert.equal((await get(host)).j.turn, v.turn + 1, 'a retried take applies once');
+        } else {
+          const index = crypto.randomInt(v.sourceCount);
+          if (steps % 7 === 0) await assertPrivacy();
+          const res = await post(taker, 'take', { index, turn: v.turn });
+          assert.equal(res.s, 200);
+          // The victim privately learns what was taken; the public log does not name the card.
+          const victim = by[res.j.log.at(-1).source], vv = await ownerView(victim);
+          assert.equal(vv.me.last.kind, 'lost'); assert.equal(vv.me.last.turn, res.j.turn);
+          assert.ok(!JSON.stringify(res.j.log).includes(vv.me.last.card));
+        }
+        view = (await get(host)).j;
+        const r = await raw(host.code);
+        for (const [pid, hand] of Object.entries(r.hands)) { if (hand.includes('JK')) jokerHolders.push(pid); }
+      }
+      assert.equal(view.phase, 'finished');
+      const final = await raw(host.code);
+      assert.equal(final.sets.length, 13, 'all thirteen sets were laid down');
+      assert.equal(view.loser, final.loser);
+      assert.deepEqual(final.hands[view.loser], ['JK'], 'the loser holds only the Joker');
+      assert.equal(Object.values(final.hands).flat().length, 1);
+      assert.equal(view.placed.length, n - 1);
+      assert.equal(view.losses[view.loser], 1);
+      assert.ok(!view.placed.includes(view.loser));
+      assert.equal((await post(players[0], 'take', { index: 0, turn: view.turn })).s, 409, 'nothing to take after the end');
+      totalSets += final.sets.length;
+      if (n === 4) {
+        // Rematch keeps the Joker tally and deals fresh cards.
+        assert.equal((await post(host, 'start')).s, 200);
+        const next = (await get(host)).j;
+        assert.equal(next.match, 2); assert.equal(next.phase, 'playing'); assert.equal(next.losses[view.loser], 1);
+        // A turn that runs out of time is taken for the player.
+        const r = await raw(host.code); r.deadline = Date.now() - 1; await save(r);
+        const after = (await get(host)).j;
+        assert.equal(after.turn, next.turn + 1, 'the timer takes a random card');
+        assert.ok(after.deadline > Date.now());
+        // A player who leaves is skipped automatically, and can come back with the rejoin code.
+        const leaver = by[after.taker];
+        assert.equal((await post(leaver, 'leave')).s, 200);
+        const stayer = players.find((p) => p !== leaver);
+        const afterLeave = (await get(stayer)).j;
+        assert.ok(afterLeave.phase === 'finished' || afterLeave.taker !== leaver.meId, 'the departed player is auto-played');
+        assert.equal((await post(leaver, 'take', { index: 0, turn: afterLeave.turn })).s, 403);
+        const named = afterLeave.players.find((p) => p.id === leaver.meId).name;
+        assert.equal((await enter('join', { code: host.code, name: named })).s, 409);
+        const back = await enter('join', { code: host.code, name: named, recoveryCode: leaver.recoveryCode });
+        assert.equal(back.s, 200); assert.equal((await get(leaver)).s, 401);
+      }
+    }
+    assert.equal(totalSets, 13 * 5);
+    console.log('Hot Joker ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot and recovery passed');
+  } finally { if (redis) await redis.close(); }
+})().catch((e) => { console.error(e); process.exitCode = 1; });
+
+
+
