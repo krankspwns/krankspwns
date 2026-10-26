@@ -111,10 +111,12 @@
     const rel = (k) => (me + k) % 4, pos = ['bottom', 'left', 'top', 'right']; // clockwise from you
     const seatEl = (k) => {
       const seat = rel(k), id = state.seats[seat];
+      const isDeclarer = !!d.contract && seat === d.contract.declarer;
       const isPartner = !!d.contract && d.partner === seat && seat !== d.contract.declarer;
-      const tags = [seat === d.dealer ? 'DEALER' : null, d.contract && seat === d.contract.declarer ? 'DECLARER' : null, d.partner === seat && d.contract && seat !== d.contract.declarer ? 'PARTNER' : null].filter(Boolean);
+      const isDefender = !!d.contract && d.partner !== null && !isDeclarer && !isPartner;
+      const tags = [seat === d.dealer ? 'DEALER' : null].filter(Boolean);
       return el('div', { 'data-bridge-seat': seat, class: 'felt-seat pos-' + pos[k] + (d.turn === seat ? ' turn' : '') + (lastWinner === seat ? ' winner' : '') },
-        el('div', { class: 'plate' }, c.avatar(id, isPartner ? 'revealed-partner' : ''), el('b', {}, c.who(id) + (seat === state.mySeat ? ' · You' : '')), isPartner ? text('small','partner-tag','Partner') : null, text('small', 'muted', [...tags, d.counts[seat] + ' cards'].join(' · '))),
+        el('div', { class: 'plate' }, c.avatar(id, isDeclarer ? 'declarer-avatar' : isPartner ? 'revealed-partner' : isDefender ? 'defender-avatar' : ''), el('b', {}, c.who(id) + (seat === state.mySeat ? ' · You' : '')), isDeclarer ? text('small','declarer-tag','Declarer') : isPartner ? text('small','partner-tag','Partner') : isDefender ? text('small','defender-tag','Defender') : null, text('small', 'muted', [...tags, d.counts[seat] + ' cards'].join(' · '))),
         d.contract ? el('div', { class: 'collected' }, pileOf(d.tricksBy[seat]), text('small', 'muted', 'tricks')) : null);
     };
     const slots = [0, 1, 2, 3].map((k) => { const seat = rel(k), played = trickCards.find((x) => x.seat === seat); return el('div', { 'data-bridge-seat': seat, class: 'trick-slot pos-' + pos[k] + (lastWinner === seat ? ' winner' : '') }, played ? c.card(played.card, { label: c.who(state.seats[seat]) + ' played' }) : null); });

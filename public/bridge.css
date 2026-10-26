@@ -163,4 +163,10 @@ body { background:radial-gradient(ellipse at 8% 0,#49447655,transparent 55%),rad
 
 /* Public only after the called card exposes the partner; independent of turn gold. */
 .plate .tk-avatar.revealed-partner { border:3px solid #76e6ae; box-shadow:0 0 0 2px #103f2d,0 0 16px #36cc7b44; }
-.plate .partner-tag { display:inline-block; color:#9bf2bf; font-size:9px; font-weight:800; letter-spacing:.4px; line-height:1.4; }
+.plate .partner-tag,.plate .declarer-tag,.plate .defender-tag { display:inline-block; color:#9bf2bf; font-size:9px; font-weight:800; letter-spacing:.4px; line-height:1.4; }
+
+.plate .tk-avatar.declarer-avatar { border:3px solid #edcf8b; box-shadow:0 0 0 2px #4a3618,0 0 16px #edcf8b44; }
+.plate .declarer-tag { color:#ffe2a1; }
+
+.plate .tk-avatar.defender-avatar { border:3px solid #8fc4ff; box-shadow:0 0 0 2px #19354f,0 0 16px #8fc4ff44; }
+.plate .defender-tag { color:#b4d8ff; }
