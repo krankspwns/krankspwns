@@ -1,4 +1,6 @@
 const R = require('../lib/bridge-rules');
+const B = require('../lib/bridge-bot');
+const { pace } = require('../lib/bot-pace');
 const { createRoomApi, need, present, shuffle } = require('../lib/room-api');
 
 const DEAL_OPTIONS = [2, 4, 8];
@@ -65,10 +67,29 @@ function autoCard(d) {
   const mine = d.hands[d.turn];
   return R.deck().reverse().find((c) => !mine.includes(c) && R.rankOf(c) === 12) || R.deck().find((c) => !mine.includes(c));
 }
+function botMove(room) {
+  const d = room.d, seat = d.turn, hand = d.hands[seat];
+  if (room.phase === 'bidding') {
+    const call = B.bid(d.calls, hand);
+    doCall(room, R.isLegalCall(d.calls, call) ? call : 'P');
+  } else if (room.phase === 'calling') {
+    const card = B.callCard(hand, d.contract);
+    doCallCard(room, R.isCard(card) ? card : autoCard(d));
+  } else {
+    const legal = legalFor(d);
+    const card = B.play({ hand, legal, trick: d.trick, trump: trumpOf(d.contract), seat, declarer: d.declarer, called: d.called, iAmPartner: seat !== d.declarer && d.original[seat].includes(d.called), revealed: d.revealed, partner: d.revealed ? d.partner : null });
+    doPlay(room, legal.includes(card) ? card : legal[0]);
+  }
+}
 function autopilot(room) {
   let changed = false;
   for (let i = 0; i < 400 && ['bidding', 'calling', 'playing'].includes(room.phase); i++) {
     const d = room.d, actor = room.players.find((p) => p.id === room.seats[d.turn]);
+    if (actor?.bot) {
+      const wait = pace(room); changed ||= wait.changed;
+      if (!wait.act) break;
+      botMove(room); changed = true; continue;
+    }
     if (!actor?.departed) break;
     if (room.phase === 'bidding') doCall(room, 'P');
     else if (room.phase === 'calling') doCallCard(room, autoCard(d));
@@ -144,5 +165,8 @@ const api = createRoomApi({
   view,
 });
 module.exports = api.handler;
-module.exports._rules = { start, startDeal, doCall, doCallCard, doPlay, finishDeal, view };
+module.exports._rules = { start, startDeal, doCall, doCallCard, doPlay, finishDeal, view, botMove };
+
+
+
 

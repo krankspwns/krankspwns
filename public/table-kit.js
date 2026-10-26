@@ -158,15 +158,27 @@
     function roster(tagFor) {
       const present = state.players.filter((p) => !p.departed).length;
       return panel('table-roster', el('div', { class: 'panel-heading' }, el('h3', {}, 'Players'), text('span', 'roster-count', present + '/' + cfg.max + ' PLAYERS')),
-        el('div', { class: 'roster' }, state.players.map((p) => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (p.departed ? ' seat-away' : '') }, avatar(p.id), el('div', { class: 'seat-name' }, el('b', {}, p.name + (p.id === state.meId ? ' · You' : '')), text('small', 'muted', p.departed ? 'AWAY' : (tagFor && tagFor(p, state)) || (p.id === state.hostId ? 'HOST' : 'READY')))))));
+        el('div', { class: 'roster' }, state.players.map((p) => {
+          const own = tagFor && tagFor(p, state), tag = p.departed ? 'AWAY' : p.bot ? ['BOT', own].filter(Boolean).join(' · ') : own || (p.id === state.hostId ? 'HOST' : 'READY');
+          return el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (p.departed ? ' seat-away' : '') + (p.bot ? ' seat-bot' : '') }, avatar(p.id), el('div', { class: 'seat-name' }, el('b', {}, p.name + (p.id === state.meId ? ' · You' : '')), text('small', 'muted', tag)));
+        })));
+    }
+    // Host-only buttons: each press adds one computer player, or removes the most recent one.
+    function botControls() {
+      if (state.meId !== state.hostId || !['lobby', 'finished'].includes(state.phase)) return null;
+      const seated = state.players.filter((p) => !p.departed).length, bots = state.players.filter((p) => p.bot).length;
+      return el('div', { class: 'bot-controls' },
+        button('+ Add a bot', () => send('addBot'), 'secondary', seated >= cfg.max, 'add-bot'),
+        bots ? button('− Remove a bot', () => send('removeBot'), 'text-button', false, 'remove-bot') : null,
+        text('small', 'muted', bots ? bots + (bots === 1 ? ' bot' : ' bots') + ' at the table. Bots play like casual players.' : 'No friends nearby? A bot can take a seat.'));
     }
     function waitingRoom() {
       const host = state.meId === state.hostId, n = state.players.filter((p) => !p.departed).length, reason = cfg.startBlock(state, n);
       return el('div', { class: 'lobby-grid' }, panel('waiting-card', text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'), text('div', 'large-code', state.code),
-        el('div', { class: 'chips' }, cfg.waitingChips.map((c) => text('span', '', c))), cfg.waiting ? cfg.waiting(ctx()) : null,
+        el('div', { class: 'chips' }, cfg.waitingChips.map((c) => text('span', '', c))), cfg.waiting ? cfg.waiting(ctx()) : null, botControls(),
         host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason) : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to play', openRules, 'text-button')), roster(cfg.rosterTag));
     }
-    const ctx = () => ({ state, send, busy, error, el, text, button, icon, card, cardBack, who, avatar, render, panel, roster, fresh, announce, dialog, SUIT, rankLabel, countdown: () => text('span', 'countdown', ''), read, store });
+    const ctx = () => ({ state, send, busy, error, el, text, button, icon, card, cardBack, who, avatar, render, panel, roster, botControls, fresh, announce, dialog, SUIT, rankLabel, countdown: () => text('span', 'countdown', ''), read, store });
     function render() {
       const focus = document.activeElement?.id, focusKey = document.activeElement?.dataset?.focus, selection = document.activeElement?.selectionStart, selectionEnd = document.activeElement?.selectionEnd;
       const openDetails = [...root.querySelectorAll('details[open][data-details]')].map((n) => n.dataset.details);
@@ -192,4 +204,7 @@
   };
   window.TableKit.el = el; window.TableKit.text = text; window.TableKit.icon = icon; window.TableKit.card = card;
 })();
+
+
+
 

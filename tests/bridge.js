@@ -182,7 +182,62 @@ function rulesTests() {
     const rejoined = await enter('join', { code: host.code, name: named, recoveryCode: leaver.recoveryCode });
     assert.equal(rejoined.s, 200); assert.notEqual(rejoined.j.tok, leaver.tok);
     assert.equal((await get(leaver)).s, 401, 'the old device is signed out');
-    console.log('Singaporean Bridge ' + (redis ? 'Redis' : 'memory') + ': scoring, auction, called card, hidden partner, full 2-deal match, privacy, replay safety, autopilot and recovery passed');
+    // ---- Bots: one per button press, host only, and they play full games ----
+    process.env.BOT_FAST = '1';
+    {
+      const h = (await enter('create', { name: 'Zed' })).j, guest = (await enter('join', { code: h.code, name: 'Yan' })).j;
+      assert.equal((await post(guest, 'addBot')).s, 403, 'only the host adds bots');
+      assert.equal((await post(h, 'removeBot')).s, 409, 'nothing to remove yet');
+      assert.equal((await post(h, 'addBot')).j.players.filter((p) => p.bot).length, 1, 'one bot per press');
+      assert.equal((await post(h, 'addBot')).j.players.length, 4);
+      assert.equal((await post(h, 'addBot')).s, 409, 'the table is full');
+      assert.equal((await post(h, 'removeBot')).j.players.length, 3);
+      const full = (await post(h, 'addBot')).j;
+      assert.equal(new Set(full.players.map((p) => p.name.toLowerCase())).size, 4, 'bot names are unique');
+      assert.ok(full.players.filter((p) => p.bot).every((p) => !('tokenHash' in p) && !('tok' in p)));
+      assert.equal(full.hostId, h.meId);
+      assert.equal((await post(h, 'start')).j.phase, 'bidding');
+      assert.equal((await post(h, 'addBot')).s, 409, 'no new bots mid-game');
+      const humans = { [h.meId]: h, [guest.meId]: guest };
+      let guard = 0;
+      for (;;) {
+        v = (await get(h)).j;
+        if (v.phase === 'reveal') { assert.equal((await post(h, 'next')).s, 200); continue; }
+        if (v.phase === 'finished') break;
+        assert.ok(++guard < 400, 'bot game did not finish');
+        const who = humans[v.seats[v.deal.turn]]; assert.ok(who, 'bots finish their moves before a human is asked');
+        const mine = (await get(who)).j.deal;
+        if (v.phase === 'bidding') assert.equal((await post(who, 'call', { call: 'P' })).s, 200);
+        else if (v.phase === 'calling') assert.equal((await post(who, 'callCard', { card: 'SA' })).s, 200);
+        else assert.equal((await post(who, 'play', { card: mine.legal[0] })).s, 200);
+      }
+      assert.equal((await get(h)).j.history.length, 4, 'a default four-deal match with bots finishes');
+      // Bot-only deals: every move is legal and the bots bid sensibly (neither always nor never).
+      const rules = require('../api/bridge')._rules;
+      let contracts = 0, made = 0, solo = 0, levels = {};
+      for (let g = 0; g < 200; g++) {
+        const ids = ['a', 'b', 'c', 'd'], r = { phase: 'bidding', players: ids.map((x) => ({ id: x, name: x, bot: true })), seats: ids, settings: {}, history: [], scores: [0, 0, 0, 0], board: 1 + (g % 4) };
+        rules.startDeal(r);
+        for (let n = 0; ['bidding', 'calling', 'playing'].includes(r.phase); n++) {
+          assert.ok(n < 80, 'bot deal did not finish');
+          const d = r.d, seat = d.turn, hand = d.hands[seat].slice(), before = r.phase;
+          rules.botMove(r);
+          if (before === 'playing') assert.equal(r.d.hands[seat].length, hand.length - 1, 'the bot played exactly one card from its own hand');
+        }
+        const e = r.history[0];
+        if (e.contract) { contracts++; levels[e.contract.level] = (levels[e.contract.level] || 0) + 1; if (e.success) made++; if (e.partner === e.contract.declarer) solo++; assert.equal(e.tricksBy.reduce((a, b) => a + b, 0), 13); }
+      }
+      assert.ok(contracts > 100, 'bots bid on most deals (' + contracts + ')');
+      assert.ok(made / contracts > 0.25 && made / contracts < 0.95, 'bot contracts are made some of the time, not always (' + made + '/' + contracts + ')');
+      assert.ok((levels[6] || 0) + (levels[7] || 0) < contracts * 0.05, 'bots rarely bid slams');
+      assert.ok(solo < contracts * 0.2, 'bots rarely call their own card');
+    }
+    console.log('Singaporean Bridge ' + (redis ? 'Redis' : 'memory') + ': scoring, auction, called card, hidden partner, full 2-deal match, privacy, replay safety, autopilot, bots and recovery passed');
   } finally { if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
+
+
+
+
+
 

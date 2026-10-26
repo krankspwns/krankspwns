@@ -155,9 +155,41 @@ function rulesTests() {
       }
     }
     assert.equal(totalSets, 13 * 5);
-    console.log('Hot Joker ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot and recovery passed');
+    // ---- Bots: one per button press, host only, and they take cards like a person ----
+    process.env.BOT_FAST = '1';
+    {
+      const [h, guest] = await room(2);
+      assert.equal((await post(guest, 'addBot')).s, 403, 'only the host adds bots');
+      assert.equal((await post(h, 'removeBot')).s, 409, 'nothing to remove yet');
+      assert.equal((await post(h, 'addBot')).j.players.filter((p) => p.bot).length, 1, 'one bot per press');
+      assert.equal((await post(h, 'addBot')).j.players.filter((p) => p.bot).length, 2);
+      assert.equal((await post(h, 'removeBot')).j.players.filter((p) => p.bot).length, 1);
+      const withBots = (await post(h, 'addBot')).j;
+      assert.equal(new Set(withBots.players.map((p) => p.name.toLowerCase())).size, withBots.players.length, 'bot names are unique');
+      assert.equal(withBots.hostId, h.meId);
+      assert.equal((await post(h, 'start')).j.phase, 'playing');
+      assert.equal((await post(h, 'addBot')).s, 409, 'no new bots mid-game');
+      const humans = { [h.meId]: h, [guest.meId]: guest };
+      let guard = 0, view = (await get(h)).j;
+      while (view.phase === 'playing') {
+        assert.ok(++guard < 3000, 'bot game did not finish');
+        const who = humans[view.taker]; assert.ok(who, 'bots finish their moves before a human is asked');
+        const v = (await get(who)).j;
+        assert.equal((await post(who, 'take', { index: crypto.randomInt(v.sourceCount), turn: v.turn })).s, 200);
+        view = (await get(h)).j;
+      }
+      assert.equal(view.phase, 'finished');
+      assert.equal(view.placed.length, 3);
+      assert.equal(Object.values(view.losses).reduce((a, b) => a + b, 0), 1);
+      // Rematch keeps the bot at the table.
+      assert.equal((await post(h, 'start')).j.phase, 'playing');
+      assert.equal((await get(h)).j.players.filter((p) => p.bot).length, 2);
+    }
+    console.log('Hot Joker ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot, bots and recovery passed');
   } finally { if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
+
+
 
 
 

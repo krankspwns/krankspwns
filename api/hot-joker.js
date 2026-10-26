@@ -1,5 +1,6 @@
 const crypto = require('node:crypto');
 const R = require('../lib/hot-joker-rules');
+const { pace } = require('../lib/bot-pace');
 const { createRoomApi, need, present, shuffle } = require('../lib/room-api');
 
 const TURN_OPTIONS = [20, 40, 60];
@@ -55,13 +56,23 @@ function takeCard(room, index) {
   place(room, source); place(room, taker);
   advance(room, taker);
 }
-// Takes a random card for a player who left or ran out of time.
+// Takes a random card for a player who left or ran out of time. Bots play after a short, human-like wait.
+function botIndex(n) {
+  if (n > 2 && crypto.randomInt(100) < 30) return crypto.randomInt(2) ? 0 : n - 1; // people like the end cards
+  return randomIndex(n);
+}
 function tick(room) {
   let changed = false;
   for (let i = 0; i < 2000 && room.phase === 'playing'; i++) {
     const actor = room.players.find((p) => p.id === room.taker), expired = room.deadline && Date.now() > room.deadline;
+    const count = room.hands[R.sourceFor(room.order, room.hands, room.taker)].length;
+    if (actor?.bot && !actor.departed) {
+      const wait = pace(room); changed ||= wait.changed;
+      if (!wait.act) break;
+      takeCard(room, botIndex(count)); changed = true; continue;
+    }
     if (!actor?.departed && !expired) break;
-    takeCard(room, randomIndex(room.hands[R.sourceFor(room.order, room.hands, room.taker)].length));
+    takeCard(room, randomIndex(count));
     changed = true;
   }
   return changed;
@@ -112,6 +123,8 @@ const api = createRoomApi({
   view,
 });
 module.exports = api.handler;
+
+
 
 
 
