@@ -119,3 +119,44 @@ body { background: radial-gradient(ellipse at 15% 0,#28674e45,transparent 55%),r
 .trick-collecting .trick-slot .pcard { visibility:hidden; }
 .collecting-banner { background:#2c321c; color:#ffe3a1; border-color:#e4c27d88; }
 @media(max-width:520px) { .felt { padding:20px 7px; }.collected { min-width:50px; padding:4px 5px; }.collected small { font-size:8px; }.pile em { font-size:16px; margin-left:4px; }.contract-bar { padding:12px; }.contract-main small { font-size:10px; }.team-progress { padding:10px; }.team-progress .eyebrow { font-size:8px; }.team-total b { font-size:28px; }.bid-levels .bid { padding:10px 0; }.called-card .eyebrow { max-width:48px; font-size:8px; } }
+
+/* Midnight club: indigo surroundings, burgundy choices and champagne rewards. */
+:root { --bg:#101122; --bg2:#1b1d36; --line:#c9c8ed2b; --accent:#edcf8b; --accent-dark:#a77e3c; --accent-ink:#2b2008; }
+body { background:radial-gradient(ellipse at 8% 0,#49447655,transparent 55%),radial-gradient(ellipse at 100% 60%,#76334d25,transparent 55%),#101122; }
+.tk-panel { background:linear-gradient(145deg,#22233b,#17192c); }
+.room-bar,.match-scores { background:#17192d; border-color:#b8b5df30; }
+.partners .partner-card { background:#25263e; }
+.contract-bar { background:#171a30; border-color:#b7b6d63b; }
+.team-progress { background:#332741; border-color:#d8b2cf44; }
+.defender-progress { background:#1b304c; border-color:#8fc4ff44; }
+.my-tricks { background:#3b2e25; }
+.role-note { background:#30273e; border-color:#c4a3db55; }
+.hand-panel.active { border-color:#edcf8b99; box-shadow:0 0 0 1px #edcf8b33,0 14px 40px #0004; }
+.bid-box .bid { background:#262943; border-color:#b7b4dc44; }
+.bid-box .bid.selected { background:#edcf8b; color:#2b2008; border-color:#ffe7b0; }
+.bid-box > .secondary { background:#542b42; border-color:#bb829855; }
+.score-team { background:#26263e; }.score-team.mine { background:#393044; }
+.auction-head { display:grid; justify-items:center; align-content:start; gap:4px; font-size:10px; letter-spacing:0; min-width:0; }
+.auction-head .tk-avatar { width:30px; height:30px; }.auction-head b { max-width:100%; overflow-wrap:anywhere; font-size:11px; }.auction-head small { font-size:9px; color:#edcf8b; }
+.all-hands { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:18px 0; }
+.reveal-hand { margin:0; min-width:0; padding:14px 10px; border-radius:14px; background:#121525; border:1px solid #a8a4d22e; }
+.result-player { display:flex; align-items:center; gap:9px; margin-bottom:14px; min-width:0; }.result-player > div { min-width:0; flex:1; }.result-player b { display:block; font-size:14px; overflow-wrap:anywhere; }.result-player small { display:block; font-size:11px; }.result-player .tk-avatar { width:36px; height:36px; }.result-points { color:#ffe1a1; font-size:22px; }
+.result-card-rows { display:grid; gap:6px; }.result-card-row { display:flex; justify-content:center; gap:5px; }
+.result-summary { padding:12px 14px; border-radius:12px; background:#2c2741; font-size:12px; }
+.final-table { margin:20px 0; }.final-table > summary { margin-bottom:12px; color:#c5c0de; }
+.victory-banner { position:relative; isolation:isolate; overflow:hidden; text-align:center; padding:30px 20px; margin-bottom:20px; border:1px solid #edcf8b99; border-radius:24px; background:radial-gradient(ellipse at 50% 0,#986a4544,transparent 65%),linear-gradient(135deg,#362439,#1b1e3d 60%,#282136); box-shadow:0 16px 50px #0004,inset 0 1px #ffe4ac55; animation:victory-arrive 850ms cubic-bezier(.2,.8,.2,1) both; animation-delay:var(--victory-delay); }
+.victory-banner h1 { font-size:clamp(27px,5vw,44px); color:#ffe5b0; letter-spacing:-1px; margin:8px 0 22px; }.victory-crown { width:32px; height:32px; color:#edcf8b; margin:0 auto 8px; }.victory-banner .eyebrow { display:block; }
+.victory-players { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; position:relative; }.victory-player { display:grid; justify-items:center; gap:10px; min-width:0; max-width:140px; }.victory-player .tk-avatar { width:88px; height:88px; border:3px solid #edcf8b; box-shadow:0 0 30px #edcf8b33; }.victory-player b { color:#fff5df; font-size:16px; overflow-wrap:anywhere; max-width:100%; }.victory-subtitle { color:#d8c5c3; font-size:13px; margin:18px 0 0; }
+.victory-sparks { position:absolute; inset:0; z-index:-1; pointer-events:none; }.victory-sparks i { position:absolute; left:calc(8% + var(--spark) * 7.5%); top:12%; width:5px; height:10px; background:#edcf8b; transform:rotate(calc(var(--spark) * 29deg)); animation:victory-spark 1400ms ease-out both; animation-delay:var(--victory-delay); }.victory-sparks i:nth-child(3n) { background:#bda3ef; }.victory-sparks i:nth-child(3n + 1) { background:#f5a8bf; }
+.finale-panel { padding:0; border:0; background:transparent; box-shadow:none; }.finale-panel .score-strip { text-align:left; }
+@keyframes victory-arrive { from { opacity:0; transform:translateY(16px) scale(.96); } to { opacity:1; transform:none; } }
+@keyframes victory-spark { from { opacity:0; translate:0 -25px; } 20% { opacity:1; } to { opacity:0; translate:0 180px; rotate:150deg; } }
+@media(max-width:600px) { .all-hands { grid-template-columns:1fr; }.victory-banner { padding:24px 14px; }.victory-players { gap:18px; }.victory-player { max-width:105px; }.victory-player .tk-avatar { width:72px; height:72px; }.victory-player b { font-size:14px; } }
+@media(prefers-reduced-motion:reduce) { .victory-banner,.victory-sparks i { animation:none; }.victory-sparks { display:none; } }
+
+/* Keep two, three or four champions centred together on narrow phones. */
+.victory-players { display:grid; grid-template-columns:repeat(var(--winner-count),minmax(0,1fr)); width:min(100%,480px); margin:0 auto; gap:16px; justify-items:center; }
+.victory-player { width:100%; }.victory-player .tk-avatar { height:auto; max-width:100%; aspect-ratio:1; }
+@media(max-width:600px) { .victory-players { gap:10px; } }
+.partner-private { display:flex; align-items:center; gap:10px; margin:12px 0; padding:12px; background:#302742; border:1px solid #d0a8ed77; border-radius:12px; }.partner-private .tk-icon { flex:none; color:#dfbbff; }.partner-private b { display:block; font-size:14px; color:#efd6ff; }.partner-private small { display:block; font-size:11px; color:#d5c1e3; }.partner-pending { color:#d9c2ec; }
+.called-partner-card { outline:2px solid #c99eed; outline-offset:1px; }

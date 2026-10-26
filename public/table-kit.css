@@ -141,21 +141,23 @@ body[data-game] { --muted: #bbb9b1; --line: #d9bc7933; }
 .mini-fan i, .pile i { background:#1b1831 url('/game-art/card-back.svg') center/100% 100%; border-color:#d9bc79; }
 .pick-row .pcard.back.playable:hover:not(:disabled) { background:#1b1831 url('/game-art/card-back.svg') center/100% 100%; border-color:#fff0ba; }
 
-/* One readable, engraved deck for Bridge and Hot Joker. Indices are real text. */
-.pcard.ornate, .pcard.ornate.playable:hover:not(:disabled) { background:#f2e5c6 url('/game-art/card-frame.svg') center/100% 100%; color:#172a31; border-color:#c3a05c; }
+/* Clear ivory faces: labels have their own rows, away from complete artwork. */
+.pcard.ornate, .pcard.ornate.playable:hover:not(:disabled) { background:#fff8e9 url('/game-art/card-frame.svg') center/100% 100%; color:#172a31; border-color:#c3a05c; box-shadow:0 3px 8px #0005; }
 .pcard.ornate.red, .pcard.ornate.red.playable:hover:not(:disabled) { color:#a8192c; }
 .pcard.ornate::after { display:none; }
-.card-index { position:absolute; top:3px; left:3px; display:grid; justify-items:center; align-content:start; width:12px; padding:2px 0; z-index:2; border-radius:3px; background:transparent; line-height:1; }
-.card-index.bottom { top:auto; left:auto; bottom:3px; right:3px; transform:rotate(180deg); }
-.pcard .card-index .pcard-rank { position:static; font:800 15px/1 Georgia,serif; letter-spacing:-1px; }
-.pcard .card-index .pcard-suit { position:static; font:normal 12px/1.1 Georgia,serif; }
-.card-court { --cut:13px; --cut-height:27px; clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut-height)),calc(100% - var(--cut)) calc(100% - var(--cut-height)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut-height),var(--cut) var(--cut-height)); position:absolute; inset:7px 6px; background:#f2e5c6 url('/game-art/court-cards.webp') var(--court-x) var(--court-y)/400% 300% no-repeat; border-radius:2px; }
-.card-pips { position:absolute; inset:10px 17px; }
+.card-index { position:absolute; top:3px; left:4px; display:flex; align-items:center; gap:2px; padding:0; z-index:2; background:transparent; line-height:1; }
+.card-index.bottom { top:auto; left:auto; bottom:3px; right:4px; transform:rotate(180deg); }
+.pcard .card-index .pcard-rank { position:static; font:800 16px/1 Georgia,serif; letter-spacing:-.5px; }
+.pcard .card-index .pcard-suit { position:static; font:normal 13px/1 Georgia,serif; }
+.card-court { position:absolute; height:calc(100% - 38px); aspect-ratio:2 / 3; left:50%; top:50%; transform:translate(-50%,-50%); background:#f2e5c6 url('/game-art/court-cards.webp') var(--court-x) var(--court-y)/400% 300% no-repeat; border-radius:2px; }
+.card-pips { position:absolute; inset:21px 12px; }
 .card-pip { position:absolute; transform:translate(-50%,-50%); font:normal 10px/1 Georgia,serif; }
 .card-pip.inverted { transform:translate(-50%,-50%) rotate(180deg); }
-.card-ace { position:absolute; inset:17px 12px; display:grid; place-items:center; border:1px solid #b58b3f77; border-radius:45%; box-shadow:0 0 0 2px #b58b3f18; }
-.card-ace span { font:normal 30px/1 Georgia,serif; text-shadow:0 1px #fff8; }
-.pcard.small .card-index { width:10px; padding:1px 0; top:2px; left:2px; }.pcard.small .card-index.bottom { top:auto;left:auto;bottom:2px;right:2px; }
-.pcard.small .card-index .pcard-rank { font-size:11px; }.pcard.small .card-index .pcard-suit { font-size:9px; }
-.pcard.small .card-pips { inset:8px 12px; }.pcard.small .card-pip { font-size:7px; }.pcard.small .card-ace { inset:14px 10px; }.pcard.small .card-ace span { font-size:22px; }.pcard.small .card-court { --cut:10px; --cut-height:20px; inset:5px 4px; }
-@media(max-width:420px) { .pcard .card-index { width:12px; }.pcard .card-index .pcard-rank { font-size:14px; }.pcard .card-index .pcard-suit { font-size:10px; }.card-pips { inset:9px 14px; }.card-pip { font-size:8px; } }
+.card-ace { position:absolute; inset:22px 12px; display:grid; place-items:center; }
+.card-ace span { font:normal 30px/1 Georgia,serif; }
+.pcard.small .card-index { gap:1px; top:3px; left:3px; }.pcard.small .card-index.bottom { top:auto;left:auto;bottom:3px;right:3px; }
+.pcard.small .card-index .pcard-rank { font-size:12px; }.pcard.small .card-index .pcard-suit { font-size:10px; }
+.pcard.small .card-pips { inset:17px 9px; }.pcard.small .card-pip { font-size:7px; }.pcard.small .card-ace { inset:17px 8px; }.pcard.small .card-ace span { font-size:22px; }.pcard.small .card-court { height:calc(100% - 32px); }
+@media(max-width:420px) { .pcard .card-index .pcard-rank { font-size:15px; }.pcard .card-index .pcard-suit { font-size:12px; }.card-pips { inset:20px 10px; }.card-pip { font-size:8px; } }
+/* Hands stay spaced apart so neither corner label is covered by its neighbour. */
+body[data-game] .hand-row .pcard { margin-right:0; }

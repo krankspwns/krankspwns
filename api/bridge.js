@@ -20,13 +20,6 @@ function start(room) {
   room.match = (room.match || 0) + 1; room.board = 1; room.scores = [0, 0, 0, 0]; room.history = [];
   startDeal(room);
 }
-// The hidden partner announces themselves when the defenders are one trick from defeating the contract.
-function checkAnnounce(room) {
-  const d = room.d;
-  if (d.revealed) return;
-  const lost = d.tricks - sideTricks(d);
-  if (lost >= 13 - R.target(d.contract)) d.revealed = true;
-}
 function finishDeal(room) {
   const d = room.d, entry = { seats: room.seats.slice(), board: d.board, dealer: d.dealer, calls: d.calls.map((c) => ({ ...c })), hands: d.original, contract: null, called: null, partner: null, tricksBy: d.tricksBy.slice(), delta: [0, 0, 0, 0] };
   if (d.contract) {
@@ -54,7 +47,6 @@ function doCallCard(room, card) {
   d.called = card;
   d.partner = d.original.findIndex((h) => h.includes(card));
   d.turn = R.openingLeader(d.contract); room.phase = 'playing';
-  checkAnnounce(room);
 }
 function doPlay(room, card) {
   const d = room.d, seat = d.turn;
@@ -68,7 +60,6 @@ function doPlay(room, card) {
   d.lastTrick = { cards: d.trick, winner, number: d.tricks, at: Date.now() };
   d.collectUntil = d.lastTrick.at + COLLECT_MS;
   d.trick = []; d.turn = winner;
-  checkAnnounce(room);
   if (decided(d)) finishDeal(room);
 }
 const legalFor = (d) => R.legalCards(d.hands[d.turn], d.trick[0] && R.suitOf(d.trick[0].card), { trump: d.contract && trumpOf(d.contract), broken: d.trumpBroken });
@@ -93,7 +84,9 @@ function botMove(room) {
 function autopilot(room) {
   // Existing rooms may already have reached a target under the old 13-trick rule.
   if (room.phase === 'playing' && decided(room.d)) { finishDeal(room); return true; }
+  // Older rooms could expose the partner before the called card was played.
   let changed = false;
+  if (room.phase === 'playing' && room.d.revealed && room.d.hands.some(h => h.includes(room.d.called))) { room.d.revealed = false; changed = true; }
   for (let i = 0; i < 400 && ['bidding', 'calling', 'playing'].includes(room.phase); i++) {
     const d = room.d, actor = room.players.find((p) => p.id === room.seats[d.turn]);
     if (d.collectUntil > Date.now()) break;

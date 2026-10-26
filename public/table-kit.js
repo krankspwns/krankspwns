@@ -150,25 +150,25 @@
       rulesDialog.querySelector('h2').focus({ preventScroll: true });
     }
     function showRecovery() {
-      const d = dialog(el('h2', {}, 'Save your rejoin code'), el('p', {}, 'Save this code and keep it private. To play on another phone, enter the room code, your same name, and this code. The old phone will be signed out.'), el('input', { readOnly: true, value: state.recoveryCode, 'aria-label': 'Rejoin code', onclick: (e) => e.target.select() }), button('Close', () => d.close(), 'primary'));
+      const d = dialog(el('h2', {}, 'Save Your Rejoin Code'), el('p', {}, 'Save this code and keep it private. To play on another phone, enter the room code, your same name, and this code. The old phone will be signed out.'), el('input', { readOnly: true, value: state.recoveryCode, 'aria-label': 'Rejoin Code', onclick: (e) => e.target.select() }), button('Close', () => d.close(), 'primary'));
     }
-    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), button('How to play', openRules, 'text-button'));
+    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), button('How to Play', openRules, 'text-button'));
     function landing() {
       const L = cfg.landing;
       return el('div', { class: 'tk-landing' },
         el('section', { class: 'tk-intro' }, text('span', 'eyebrow', L.eyebrow), L.art ? L.art() : null, el('h1', {}, L.title[0], el('br'), el('em', {}, L.title[1])), el('p', {}, L.lead), el('div', { class: 'chips' }, L.chips.map((c) => text('span', '', c))),
           el('div', { class: 'quick-steps' }, L.steps.map(([i, t], n) => el('div', {}, icon(i), text('small', '', String(n + 1).padStart(2, '0')), text('b', '', t))))),
-        panel('entrance', el('div', { class: 'entrance-seal', 'aria-hidden': 'true' }, icon('lock')), text('span', 'eyebrow', 'PLAY WITH FRIENDS'), el('h2', {}, 'Ready to play?'),
-          el('label', { htmlFor: 'tk-name' }, 'Your name'), el('input', { id: 'tk-name', maxLength: 12, value: name, autocomplete: 'nickname', placeholder: 'Your name', oninput: (e) => { name = e.target.value; } }),
-          button('Create a room', () => enter('create'), 'primary'), text('div', 'or', 'or join your friends'),
-          el('label', { htmlFor: 'tk-code' }, 'Room code'), el('input', { id: 'tk-code', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', class: 'code-input', oninput: (e) => { code = e.target.value; } }),
-          button('Join room', () => enter('join'), 'secondary'),
-          el('details', {}, el('summary', {}, 'Rejoin on another phone'), el('p', {}, 'Use your same name and saved rejoin code.'), el('label', { htmlFor: 'tk-recovery' }, 'Rejoin code'), el('input', { id: 'tk-recovery', value: recover, autocomplete: 'off', oninput: (e) => { recover = e.target.value; } })),
+        panel('entrance', el('div', { class: 'entrance-seal', 'aria-hidden': 'true' }, icon('lock')), text('span', 'eyebrow', 'PLAY WITH FRIENDS'), el('h2', {}, 'Ready to Play?'),
+          el('label', { htmlFor: 'tk-name' }, 'Your Name'), el('input', { id: 'tk-name', maxLength: 12, value: name, autocomplete: 'nickname', placeholder: 'Your Name', oninput: (e) => { name = e.target.value; } }),
+          button('Create a Room', () => enter('create'), 'primary'), text('div', 'or', 'or join your friends'),
+          el('label', { htmlFor: 'tk-code' }, 'Room Code'), el('input', { id: 'tk-code', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', class: 'code-input', oninput: (e) => { code = e.target.value; } }),
+          button('Join Room', () => enter('join'), 'secondary'),
+          el('details', {}, el('summary', {}, 'Rejoin on Another Phone'), el('p', {}, 'Use your same name and saved rejoin code.'), el('label', { htmlFor: 'tk-recovery' }, 'Rejoin Code'), el('input', { id: 'tk-recovery', value: recover, autocomplete: 'off', oninput: (e) => { recover = e.target.value; } })),
           text('p', 'muted small', L.note)));
     }
     function roomBar() {
       return el('div', { class: 'room-bar' }, el('div', {}, text('span', 'eyebrow', 'PRIVATE ROOM'), el('b', { class: 'room-code' }, state.code)),
-        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, 'Copy link'), button('Rejoin code', showRecovery, 'text-button'), button('Leave', () => { if (confirm('Leave this room? Save your rejoin code so you can come back.')) send('leave'); }, 'text-button')));
+        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, 'Copy Link'), button('Rejoin Code', showRecovery, 'text-button'), button('Leave', () => { if (confirm('Leave this room? Save your rejoin code so you can come back.')) send('leave'); }, 'text-button')));
     }
     function roster(tagFor) {
       const present = state.players.filter((p) => !p.departed).length;
@@ -191,7 +191,7 @@
       const host = state.meId === state.hostId, n = state.players.filter((p) => !p.departed).length, reason = cfg.startBlock(state, n);
       return el('div', { class: 'lobby-grid' }, panel('waiting-card', cfg.landing.art ? el('div', { class: 'lobby-art' }, cfg.landing.art()) : null, text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'), text('div', 'large-code', state.code),
         el('div', { class: 'chips' }, cfg.waitingChips.map((c) => text('span', '', c))), cfg.waiting ? cfg.waiting(ctx()) : null, botControls(),
-        host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason) : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to play', openRules, 'text-button')), roster(cfg.rosterTag));
+        host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason) : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to Play', openRules, 'text-button')), roster(cfg.rosterTag));
     }
     const ctx = () => ({ state, send, busy, error, el, text, button, icon, card, cardBack, who, avatar, render, panel, roster, botControls, fresh, announce, dialog, SUIT, rankLabel, countdown: () => text('span', 'countdown', ''), read, store });
     // A screen that fails to draw must never leave the player staring at "Loading": offer a way out.
@@ -199,7 +199,7 @@
       try { return cfg.screen(ctx()); } catch (e) {
         console.error(e);
         return panel('', el('h2', {}, 'This screen did not load'), el('p', { class: 'muted' }, 'Your seat is saved. Reload to try again, or leave the room and rejoin with your code.'),
-          button('Reload', () => location.reload(), 'primary'), button('Leave room', () => { seat = null; state = null; store(cfg.seatKey, null); clearTimeout(pollTimer); render(); }, 'secondary'));
+          button('Reload', () => location.reload(), 'primary'), button('Leave Room', () => { seat = null; state = null; store(cfg.seatKey, null); clearTimeout(pollTimer); render(); }, 'secondary'));
       }
     }
     function render() {

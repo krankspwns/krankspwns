@@ -188,10 +188,24 @@ function rulesTests() {
       const f = { players: ['a','b','c','d'].map(id => ({id})), seats: ['a','b','c','d'], settings: {}, history: [], scores: [0,0,0,0], board: 1 };
       rules.startDeal(f); f.phase = 'playing';
       Object.assign(f.d, { contract:{level:1,denom:'N',declarer:0}, declarer:0, partner:2, called:'CA', revealed:false, tricks:3, tricksBy:[1,1,1,0] });
+      f.d.called = f.d.original[2][0];
+      for (let i=0;i<4;i++) { const v=rules.view(f,f.players[i]); assert.equal(v.deal.iAmPartner,i===2); assert.equal(v.deal.partner,null); }
       for (const seat of [0,1,3]) { const p = rules.view(f,f.players[seat]).deal.progress; assert.equal(p.declarer,null); assert.equal(p.defenders,null); }
       assert.equal(rules.view(f,f.players[2]).deal.progress.declarer,2,'partner privately knows their team total');
       f.d.revealed = true;
       for (const p of f.players) assert.deepEqual(rules.view(f,p).deal.progress,{declarer:2,defenders:1,target:7,defenderTarget:7,remaining:10});
+    }
+    // Getting close to defeat must not reveal a partner who has not played the called card.
+    {
+      const f = {players:['a','b','c','d'].map(id=>({id})), seats:['a','b','c','d'], settings:{}, history:[], scores:[0,0,0,0], board:1};
+      rules.startDeal(f); f.phase='playing';
+      Object.assign(f.d,{contract:{level:1,denom:'N',declarer:0},declarer:0,partner:2,called:'CA',revealed:false,turn:3,tricks:5,tricksBy:[0,5,0,0],trick:[{seat:0,card:'H2'},{seat:1,card:'HA'},{seat:2,card:'H3'}]});
+      f.d.hands[2]=['CA']; f.d.hands[3]=['H4'];
+      rules.doPlay(f,'H4');
+      assert.equal(f.phase,'playing'); assert.equal(f.d.tricksBy[1],6);
+      assert.equal(f.d.revealed,false,'one trick from defeat still keeps the partner hidden');
+      assert.equal(rules.view(f,f.players[0]).deal.partner,null);
+      assert.equal(rules.view(f,f.players[0]).deal.progress.defenders,null);
     }
     // A deciding API play is idempotent; the next deal waits for collection.
     {
@@ -210,7 +224,7 @@ function rulesTests() {
       await settled(host); assert.equal((await post(host,'next')).s,200);
     }
 
-    // Opening lead and forced partner reveal use a staged deal.
+    // The called card is the only reveal during play, including a level-7 contract.
     const staged = require('../api/bridge')._rules;
     const room = { phase: 'bidding', players: [], seats: [], settings: {}, history: [], scores: [0, 0, 0, 0], board: 1 };
     staged.startDeal(room);
@@ -220,10 +234,11 @@ function rulesTests() {
     assert.equal(room.phase, 'calling'); assert.equal(room.d.turn, 0);
     staged.doCallCard(room, 'DA');
     assert.equal(room.phase, 'playing'); assert.equal(room.d.turn, 1, 'left of declarer leads');
-    assert.equal(room.d.partner, 2); assert.equal(room.d.revealed, true, 'a level-7 partner must be announced at once');
+    assert.equal(room.d.partner, 2); assert.equal(room.d.revealed, false, 'even a level-7 partner stays hidden until the called card is played');
     // Trumps (clubs) are unbroken: a void player who discards does not open them, one who trumps does.
     assert.equal(room.d.trumpBroken, false);
-    staged.doPlay(room, 'HA'); staged.doPlay(room, 'DA');
+    staged.doPlay(room, 'HA'); assert.equal(room.d.revealed, false); staged.doPlay(room, 'DA');
+    assert.equal(room.d.revealed, true, 'playing the called card reveals its holder immediately');
     assert.equal(room.d.trumpBroken, false, 'discarding another suit does not break trumps');
     staged.doPlay(room, 'CA');
     assert.equal(room.d.trumpBroken, true, 'trumping in breaks trumps');
