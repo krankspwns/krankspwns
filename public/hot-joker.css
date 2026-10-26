@@ -1,4 +1,4 @@
-:root { --bg: #1a0a24; --bg2: #331046; --accent: #ffb347; --accent-dark: #e0561f; --accent-ink: #2a0d02; --line: #f0cfff2a; --back1: #6a1fb0; --back2: #4a1380; --hot: #ff4f8b; }
+:root { --bg: #1b101f; --bg2: #322039; --accent: #efd08c; --accent-dark: #aa7937; --accent-ink: #2a0d02; --line: #f0cfff2a; --back1: #6a1fb0; --back2: #4a1380; --hot: #ff4f8b; }
 body { background: radial-gradient(ellipse at 85% -10%, #ff4f8b33, transparent 55%), radial-gradient(ellipse at 0 30%, #7a35d040, transparent 50%), linear-gradient(165deg, #331046, #1a0a24 70%); background-attachment: fixed; }
 .joker-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 16px; }
 .main-col, .side-col { display: grid; gap: 16px; min-width: 0; }
@@ -48,3 +48,19 @@ body { background: radial-gradient(ellipse at 85% -10%, #ff4f8b33, transparent 5
 
 
 
+
+/* A plum velvet salon, with clear clockwise seating and private cards below. */
+body { background: radial-gradient(ellipse at 95% 0,#812d5540,transparent 55%),radial-gradient(ellipse at 0 60%,#55448533,transparent 55%),#140e1b; }
+.table-panel { background: linear-gradient(145deg,#3f2837,#1c1426); border: 1px solid #b7936266; padding: 26px 18px; box-shadow: inset 0 0 0 5px #1a1022,0 18px 50px #0005; }
+.circle { background: linear-gradient(#1a0b2710,#1a0b2710),url('/game-art/joker-table.webp') center/100% 100%,#25172e; border-radius: 50%; border: 2px solid #b9955c70; box-shadow: inset 0 0 0 5px #130c1c,inset 0 0 0 7px #b9955c33,inset 0 0 50px #0006; }
+.circle-centre { border: 1px solid #bd995452; background: radial-gradient(ellipse,#58354c,#2b1b36); box-shadow: 0 0 0 4px #b9955c0d; }
+.circle-centre::before { content: ''; display: block; width: 40px; height: 34px; margin: 0 auto 6px; background: url('/game-art/hot-joker.webp') 50% 40%/95px auto; border-radius: 50%; }
+.tile { background: #251a2cee; border-color: #c7aa7055; box-shadow: 0 6px 16px #0005; }
+.tile .tk-avatar { width: 45px; height: 45px; }
+.tile.taker { background: #443425; box-shadow: 0 0 0 2px #efd08c,0 0 25px #efd08c22; }
+.tile.source { background: #421f3b; }
+.circle.dense .tile .tk-avatar { width: 34px; height: 34px; }
+.turn-banner.mine { background: linear-gradient(115deg,#d6ac59,#f4df9b); animation: none; }
+.take-panel.active { border-color: #e3be78a6; box-shadow: inset 0 2px #e3be78,0 12px 40px #0004; }
+.private-note { background: #2d1e32; }
+@media(max-width:420px) { .table-panel { padding: 24px 12px; }.circle { aspect-ratio: 1/1.08; }.circle .tile { width: 70px; padding: 7px 3px; }.circle .tile .tk-avatar { width: 32px; height: 32px; }.circle .tile b { font-size: 10px; }.circle.dense { aspect-ratio: 1/1.3; }.circle.dense .tile { width: 50px; padding: 5px 2px; }.circle.dense .tile .tk-avatar { display: inline-grid; width: 27px; height: 27px; }.circle.dense .tile b { font-size: 8px; }.circle.dense .tile .count { font-size: 8px; }.circle.dense .badge { letter-spacing: 0; font-size: 6px; padding: 2px 4px; }.circle-centre { inset: 34% 31%; }.circle-centre::before { width: 26px; height: 24px; background-size: 70px auto; }.circle-centre .eyebrow { font-size: 7px; letter-spacing: 1px; }.circle-centre small { font-size: 9px; }.circle-centre b { font-size: 17px; } }

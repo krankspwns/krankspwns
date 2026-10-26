@@ -84,3 +84,59 @@ details { margin-top: 14px; } summary { cursor: pointer; font-size: 12px; font-w
 }
 @media (max-width: 420px) { .quick-steps { grid-template-columns: 1fr; } .pcard { width: 48px; height: 70px; } .pcard .pcard-pip { font-size: 24px; } .pcard .pcard-rank { font-size: 15px; } .large-code { letter-spacing: 8px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Shared card-club finish: illustration stays separate from decision controls. */
+body[data-game] { --muted: #bbb9b1; --line: #d9bc7933; }
+.tk-shell { padding-top: 24px; }
+.tk-header { border-bottom: 1px solid var(--line); margin-bottom: 28px; padding-bottom: 20px; }
+.tk-wordmark b { font-size: 12px; letter-spacing: 1.2px; }
+.tk-wordmark .tk-icon { background: linear-gradient(140deg,#e9c47725,#e9c47705); box-shadow: inset 0 0 14px #e5bf6d13; }
+.tk-panel { background: linear-gradient(145deg, color-mix(in srgb,var(--bg2) 97%,#fff),var(--bg) 120%); border-color: var(--line); box-shadow: 0 16px 44px #0005,inset 0 1px #fff1; }
+.tk-landing { gap: 42px; }
+.tk-landing > *, .lobby-grid > * { min-width: 0; }
+.tk-intro { padding: 0; }
+.tk-intro > .eyebrow { display: block; margin: 0 0 15px; }
+.tk-intro h1 { margin-top: 24px; font-size: clamp(36px,4.2vw,54px); letter-spacing: -1.7px; }
+.tk-intro > p { max-width: 540px; line-height: 1.8; }
+.club-art { position: relative; aspect-ratio: 3/2; overflow: hidden; border-radius: 22px; background: var(--bg2); border: 1px solid #d6b57670; box-shadow: 0 18px 44px #0005; }
+.club-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.club-art::after { content: ''; position: absolute; inset: 7px; border: 1px solid #edcf8b44; border-radius: 16px; pointer-events: none; }
+.tk-landing .entrance { margin-top: 28px; padding: 30px; }
+.entrance-seal { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); margin-bottom: 14px; background: #dcb86d12; }
+.quick-steps { gap: 0; border-top: 1px solid var(--line); padding-top: 20px; }
+.quick-steps > div { border: 0; border-radius: 0; background: none; padding: 0 12px; border-left: 1px solid var(--line); }
+.quick-steps > div:first-child { border-left: 0; padding-left: 0; }
+.quick-steps .tk-icon { color: var(--accent); }
+.quick-steps small { font-size: 10px; margin: 10px 0 6px; }
+.quick-steps b { font-size: 12px; }
+.primary { background: linear-gradient(115deg,#aa772a,#f8df97 42%,#d1aa58 80%,#edd18c); border-color: #f2cf8380; color: #2c1e09; box-shadow: inset 0 1px #fff7,0 5px 16px #0003; }
+.primary:hover:not(:disabled) { background: linear-gradient(115deg,#c8933c,#ffe9b3 42%,#e4bd6c); }
+.host-button.start-ticket { position: relative; min-height: 55px; border-radius: 8px; border: 1px solid #e8c77e; outline: 1px solid #9c732c; outline-offset: -5px; box-shadow: inset 0 1px #fff9,0 6px 25px #b0863020; }
+.secondary { border-color: #d6ba753b; background: #e2c78209; }
+.portrait { flex: none; display: inline-grid; width: 38px; height: 38px; border-radius: 50%; background: #182127 url('/game-art/guests.webp') var(--portrait-x) var(--portrait-y)/400% 300% no-repeat; border: 2px solid #dec284a6; box-shadow: 0 3px 12px #0005; }
+.seat { background: #ffffff04; border-color: #d6ba751a; padding: 11px 12px; }
+.seat .tk-avatar { width: 45px; height: 45px; }
+.room-bar { background: #090f13b8; border-color: #cba55c30; }
+.room-code { color: var(--accent); }
+.lobby-art { margin: -22px -22px 24px; }
+.lobby-art .club-art { border-radius: 21px 21px 0 0; border: 0; border-bottom: 1px solid var(--line); max-height: 230px; aspect-ratio: 2.2; box-shadow: none; }
+.pcard { background: linear-gradient(145deg,#fffef5,#eee2c4); border-color: #d3ba85; box-shadow: 0 5px 12px #0006,inset 0 0 0 3px #fff8,inset 0 0 0 4px #b69c6140; }
+.pcard::after { content: ''; position: absolute; inset: 5px; border: 1px solid #b69c6133; border-radius: 4px; pointer-events: none; }
+.pcard .pcard-pip { text-shadow: 0 1px #fff; }
+.pcard.back, .pcard.back.playable:hover:not(:disabled) { background: #1b1831 url('/game-art/card-back.svg') center/100% 100%; border: 2px solid #f1dfb4; }
+.pcard.back::after { border-color: transparent; }
+.pcard.joker { background: #341132 url('/game-art/hot-joker.webp') 50% 42%/auto 115%; color: #ffdf91; }
+.pcard.joker .pcard-joker { visibility: hidden; }
+.pcard.joker small { background: #221021ee; padding: 3px 0; bottom: 4px; margin: 0 3px; border-radius: 3px; }
+.pcard.selected { box-shadow: 0 0 0 2px var(--bg),0 0 0 4px var(--accent),0 12px 24px #0008; }
+.club-trophy { display: block; width: 150px; height: 150px; object-fit: contain; margin: 0 auto 12px; filter: drop-shadow(0 6px 18px #d5ae5630); }
+.club-winners { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; margin: 24px 0; }
+.club-winners > div { display: grid; justify-items: center; gap: 10px; }
+.club-winners .tk-avatar { width: 96px; height: 96px; border-width: 3px; box-shadow: 0 0 36px #e2be7025; }
+.finale-panel { background: radial-gradient(ellipse at 50% 0,#dcb86d15,transparent 65%),var(--bg2); padding-top: 30px; }
+@media(max-width:800px) { .tk-shell { padding-top: 16px; }.tk-landing { gap: 26px; }.tk-landing .entrance { margin-top: 0; }.club-art { max-height: 310px; }.tk-header { gap: 8px; margin-bottom: 20px; }.tk-wordmark b { font-size: 10px; letter-spacing: .4px; }.tk-wordmark .tk-icon { width: 30px; height: 30px; }.tk-header .text-button,.back-link { font-size: 11px; } }
+@media(max-width:420px) { .tk-header .tk-wordmark small { font-size: 7px; letter-spacing: .6px; }.tk-header .tk-wordmark { gap: 5px; }.tk-header .text-button { max-width: 66px; }.tk-wordmark span { min-width: 0; }.tk-intro h1 { margin-top: 20px; }.tk-intro > .eyebrow { font-size: 9px; letter-spacing: 1.6px; }.tk-landing .entrance { padding: 22px; }.quick-steps { grid-template-columns: repeat(3,minmax(0,1fr)); }.quick-steps b { font-size: 11px; }.quick-steps > div { padding: 0 9px; }.quick-steps .tk-icon { width: 20px; height: 20px; }.club-art { border-radius: 18px; }.club-winners .tk-avatar { width: 76px; height: 76px; } }
+
+.tk-footer { text-align:center; color:var(--muted); font-size:11px; margin-top:30px; }
+.mini-fan i, .pile i { background:#1b1831 url('/game-art/card-back.svg') center/100% 100%; border-color:#d9bc79; }
+.pick-row .pcard.back.playable:hover:not(:disabled) { background:#1b1831 url('/game-art/card-back.svg') center/100% 100%; border-color:#fff0ba; }

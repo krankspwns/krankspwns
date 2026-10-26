@@ -48,6 +48,7 @@
 
   window.TableKit = function TableKit(cfg) {
     const root = document.getElementById('tk-app');
+    document.body.dataset.game = cfg.game;
     const read = (key) => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
     const store = (key, value) => { try { value ? localStorage.setItem(key, JSON.stringify(value)) : localStorage.removeItem(key); } catch {} };
     const invitation = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
@@ -62,8 +63,8 @@
     const button = (label, click, kind = '', disabled = false, focus) => el('button', { type: 'button', class: kind, 'data-focus': focus || (typeof label === 'string' ? label : ''), onclick: click, disabled: busy || disabled }, label);
     const panel = (cls, ...children) => el('section', { class: 'tk-panel ' + cls }, ...children);
     function avatar(id, cls = '') {
-      const i = Math.max(0, state?.players.findIndex((p) => p.id === id) ?? 0), p = state?.players[i];
-      return el('span', { class: 'tk-avatar ' + cls, style: '--tone:' + ((i * 47 + 12) % 360), 'aria-hidden': 'true' }, Array.from(p?.name || '?')[0].toUpperCase());
+      const i = Math.max(0, state?.players.findIndex((p) => p.id === id) ?? 0);
+      return el('span', { class: 'tk-avatar portrait ' + cls, style: '--portrait-x:' + ((i % 4) * 100 / 3) + '%;--portrait-y:' + (Math.floor(i / 4) * 50) + '%', 'aria-hidden': 'true' });
     }
     // True only the first time a key is shown, so entrance animations do not replay on every poll.
     const fresh = (key) => { if (seen.has(key)) return false; seen.add(key); return true; };
@@ -174,7 +175,7 @@
     }
     function waitingRoom() {
       const host = state.meId === state.hostId, n = state.players.filter((p) => !p.departed).length, reason = cfg.startBlock(state, n);
-      return el('div', { class: 'lobby-grid' }, panel('waiting-card', text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'), text('div', 'large-code', state.code),
+      return el('div', { class: 'lobby-grid' }, panel('waiting-card', cfg.landing.art ? el('div', { class: 'lobby-art' }, cfg.landing.art()) : null, text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'), text('div', 'large-code', state.code),
         el('div', { class: 'chips' }, cfg.waitingChips.map((c) => text('span', '', c))), cfg.waiting ? cfg.waiting(ctx()) : null, botControls(),
         host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason) : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to play', openRules, 'text-button')), roster(cfg.rosterTag));
     }

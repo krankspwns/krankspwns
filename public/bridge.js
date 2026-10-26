@@ -16,6 +16,7 @@
     announce: { bidding: 'The bidding has begun.', calling: 'The declarer is calling a partner card.', playing: 'Play the cards.', reveal: 'The deal is over.', finished: 'The match has ended.' },
     scene: (s) => (s.deal ? s.deal.board : ''),
     landing: {
+      art: () => el('div', { class: 'club-art', 'aria-hidden': 'true' }, el('img', { src: '/game-art/bridge.webp', alt: '', width: 1200, height: 800, fetchPriority: 'high' })),
       eyebrow: 'FLOATING BRIDGE', title: ['Singaporean Bridge', 'for four.'], lead: 'Bid for a contract, then call a card. Whoever holds it is your secret partner, and nobody knows who until the cards show it.',
       chips: ['4 players', 'Hidden partners', '2, 4 or 8 deals'], steps: [['hand', 'Bid your hand'], ['cards', 'Call a partner card'], ['trophy', 'Score as an individual']],
       note: 'You need exactly 4 players, each with their own phone. New to the game? Open How to play.',
@@ -163,7 +164,7 @@
   }
   function finale(c) {
     const { state, send } = c, host = state.hostId === state.meId, w = state.finalWinners || [], mine = state.mySeat >= 0 && w.includes(state.mySeat);
-    return c.panel('finale-panel', c.icon('trophy', 'big-trophy'), text('span', 'eyebrow', 'MATCH OVER'), el('h1', {}, w.length > 1 ? 'It’s a tie!' : c.who(state.seats[w[0]]) + ' wins!'), el('p', { class: 'muted' }, mine ? 'Well played!' : 'Better luck next match.'), scoreStrip(c),
+    return c.panel('finale-panel', el('img', { class: 'club-trophy', src: '/grand-con/trophy.webp', alt: '', width: 160, height: 160 }), text('span', 'eyebrow', 'MATCH OVER'), el('h1', {}, w.length > 1 ? 'It’s a tie!' : c.who(state.seats[w[0]]) + ' wins!'), el('div', { class: 'club-winners' }, w.map(i => el('div', {}, c.avatar(state.seats[i]), text('b', '', c.who(state.seats[i]))))), el('p', { class: 'muted' }, mine ? 'Well played!' : 'Better luck next match.'), scoreStrip(c),
       el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: c.busy || !host, onclick: () => send('settings', { deals: n }) }, n + ' deals')))),
       host ? [c.botControls(), c.button('PLAY AGAIN', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 4), c.button('Shuffle seats', () => send('shuffleSeats'), 'secondary')] : text('p', 'waiting', 'Waiting for the host to start a new match.'));
   }

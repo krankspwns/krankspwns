@@ -14,6 +14,7 @@
     announce: { playing: 'The cards are dealt. Match pairs and get rid of the Joker.', finished: 'The game is over.' },
     scene: (s) => s.phase,
     landing: {
+      art: () => el('div', { class: 'club-art', 'aria-hidden': 'true' }, el('img', { src: '/game-art/hot-joker.webp', alt: '', width: 1200, height: 800, fetchPriority: 'high' })),
       eyebrow: 'TAKE. MATCH. PASS THE JOKER.', title: ['Hot', 'Joker.'], lead: 'Everyone holds hidden cards. Take one from the player before you, lay down matching pairs, and make sure you are not the last one holding the Joker.',
       chips: ['3–10 players', 'Hidden cards', 'One Joker loses'], steps: [['hand', 'Take a hidden card'], ['cards', 'Lay down pairs'], ['eye', 'Dodge the Joker']],
       note: 'Everyone uses their own phone. Sit around the table in the order shown in the room.',
