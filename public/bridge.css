@@ -160,3 +160,7 @@ body { background:radial-gradient(ellipse at 8% 0,#49447655,transparent 55%),rad
 @media(max-width:600px) { .victory-players { gap:10px; } }
 .partner-private { display:flex; align-items:center; gap:10px; margin:12px 0; padding:12px; background:#302742; border:1px solid #d0a8ed77; border-radius:12px; }.partner-private .tk-icon { flex:none; color:#dfbbff; }.partner-private b { display:block; font-size:14px; color:#efd6ff; }.partner-private small { display:block; font-size:11px; color:#d5c1e3; }.partner-pending { color:#d9c2ec; }
 .called-partner-card { outline:2px solid #c99eed; outline-offset:1px; }
+
+/* Public only after the called card exposes the partner; independent of turn gold. */
+.plate .tk-avatar.revealed-partner { border:3px solid #76e6ae; box-shadow:0 0 0 2px #103f2d,0 0 16px #36cc7b44; }
+.plate .partner-tag { display:inline-block; color:#9bf2bf; font-size:9px; font-weight:800; letter-spacing:.4px; line-height:1.4; }

@@ -18,6 +18,8 @@
     footer: 'Singaporean Bridge · Bid. Call a card. Find your hidden partner.',
     announce: { bidding: 'The bidding has begun.', calling: 'The declarer is calling a partner card.', playing: 'Play the cards.', reveal: 'The deal is over.', finished: 'The match has ended.' },
     scene: (s) => (s.deal ? s.deal.board : ''),
+    // Playability changes when collection expires, without a stored room mutation.
+    viewKey: s => JSON.stringify(s.deal?.legal || null),
     landing: {
       art: () => el('div', { class: 'club-art', 'aria-hidden': 'true' }, el('img', { src: '/game-art/bridge.webp', alt: '', width: 1200, height: 800, fetchPriority: 'high' })),
       eyebrow: 'FLOATING BRIDGE', title: ['Singaporean Bridge', 'for four.'], lead: 'Bid for a contract, then call a card. Whoever holds it is your secret partner, and nobody knows who until the cards show it.',
@@ -109,9 +111,10 @@
     const rel = (k) => (me + k) % 4, pos = ['bottom', 'left', 'top', 'right']; // clockwise from you
     const seatEl = (k) => {
       const seat = rel(k), id = state.seats[seat];
+      const isPartner = !!d.contract && d.partner === seat && seat !== d.contract.declarer;
       const tags = [seat === d.dealer ? 'DEALER' : null, d.contract && seat === d.contract.declarer ? 'DECLARER' : null, d.partner === seat && d.contract && seat !== d.contract.declarer ? 'PARTNER' : null].filter(Boolean);
       return el('div', { 'data-bridge-seat': seat, class: 'felt-seat pos-' + pos[k] + (d.turn === seat ? ' turn' : '') + (lastWinner === seat ? ' winner' : '') },
-        el('div', { class: 'plate' }, c.avatar(id), el('b', {}, c.who(id) + (seat === state.mySeat ? ' · You' : '')), text('small', 'muted', [...tags, d.counts[seat] + ' cards'].join(' · '))),
+        el('div', { class: 'plate' }, c.avatar(id, isPartner ? 'revealed-partner' : ''), el('b', {}, c.who(id) + (seat === state.mySeat ? ' · You' : '')), isPartner ? text('small','partner-tag','Partner') : null, text('small', 'muted', [...tags, d.counts[seat] + ' cards'].join(' · '))),
         d.contract ? el('div', { class: 'collected' }, pileOf(d.tricksBy[seat]), text('small', 'muted', 'tricks')) : null);
     };
     const slots = [0, 1, 2, 3].map((k) => { const seat = rel(k), played = trickCards.find((x) => x.seat === seat); return el('div', { 'data-bridge-seat': seat, class: 'trick-slot pos-' + pos[k] + (lastWinner === seat ? ' winner' : '') }, played ? c.card(played.card, { label: c.who(state.seats[seat]) + ' played' }) : null); });
@@ -151,7 +154,7 @@
     else if (state.phase === 'calling') { mine = d.turn === state.mySeat; msg = mine ? 'You are the declarer. Call a partner card.' : c.who(state.seats[d.turn]) + ' is calling a partner card…'; }
     else if (state.phase === 'playing') {
       mine = d.turn === state.mySeat;
-      msg = mine ? (d.trick.length ? 'Your turn. Follow suit if you can.' : 'Your turn. Lead a card.') : c.who(state.seats[d.turn]) + ' is playing…';
+      msg = mine ? (!d.legal ? 'Getting your cards ready…' : d.trick.length ? 'Your turn. Follow suit if you can.' : 'Your turn. Lead a card.') : c.who(state.seats[d.turn]) + ' is playing…';
     }
     return msg ? el('div', { class: 'turn-banner' + (mine ? ' mine' : ''), role: 'status' }, mine ? c.icon('spark') : null, msg) : null;
   }

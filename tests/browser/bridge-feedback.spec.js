@@ -113,12 +113,14 @@ test('Only the called-card holder sees the secret-partner badge before playing i
   await expect(page.locator('.partner-pending')).toContainText('Partner Hidden');
   await expect(page.locator('.partner-private')).toHaveCount(0);
   await expect(page.locator('.team-privacy')).toContainText('Team totals stay hidden');
+  await expect(page.locator('.revealed-partner,.partner-tag')).toHaveCount(0);
   const partner=guests[1];
   await page.evaluate(s=>localStorage.setItem('br-seat',JSON.stringify(s)),{code:partner.code,pid:partner.meId,tok:partner.tok});
   await page.reload();
   await expect(page.locator('.partner-private')).toContainText('You’re the Secret Partner');
   await expect(page.locator('.partner-private')).toContainText('Only You Can See This');
   await expect(page.locator('.called-partner-card')).toHaveCount(1);
+  await expect(page.locator('.revealed-partner,.partner-tag')).toHaveCount(0);
   await page.screenshot({path:testInfo.outputPath('private-partner.png'),fullPage:true});
   const live=globalThis.__roomStoreRooms.bridge.get(room.code);
   live.d.turn=2;
@@ -129,4 +131,32 @@ test('Only the called-card holder sees the secret-partner badge before playing i
   await page.reload();
   await expect(page.locator('.partner-pending')).toHaveCount(0);
   await expect(page.locator('.team-privacy')).toContainText('Cy is the partner.');
+  await expect(page.locator('.revealed-partner')).toHaveCount(1);
+  await expect(page.locator('[data-bridge-seat="2"] .revealed-partner')).toHaveCSS('border-top-color','rgb(118, 230, 174)');
+  await expect(page.locator('[data-bridge-seat="2"] .partner-tag')).toBeVisible();
 });
+
+for (const reducedMotion of ['reduce','no-preference']) {
+  test('Winning a trick unlocks the next lead without a room version change, ' + reducedMotion,async({page})=>{
+    await page.emulateMedia({reducedMotion});
+    await page.setViewportSize({width:390,height:844});
+    const {room}=await fixture(page,true);
+    await expect(page.locator('.contract-bar')).toBeVisible();
+    const live=globalThis.__roomStoreRooms.bridge.get(room.code);
+    Object.assign(live.d,{revealed:false,tricks:0,tricksBy:[0,0,0,0],turn:3,trick:[{seat:0,card:'HA'},{seat:1,card:'H2'},{seat:2,card:'H3'}]});
+    live.d.hands[0]=['C2','S2']; live.d.hands[3]=['H4'];
+    handler._rules.doPlay(live,'H4');
+    const version=live.version;
+    await page.reload();
+    await expect(page.locator('.collecting-banner')).toBeVisible();
+    await expect(page.locator('.hand-row button.pcard')).toHaveCount(0);
+    await expect(page.locator('.turn-banner')).toContainText('Your turn. Lead a card.');
+    const card=page.locator('[data-focus="card-C2"]');
+    await expect(card).toBeEnabled();
+    expect(globalThis.__roomStoreRooms.bridge.get(room.code).version).toBe(version);
+    await card.click();
+    await expect(page.locator('[data-focus="play-confirm"]')).toBeEnabled();
+    await page.locator('[data-focus="play-confirm"]').click();
+    await expect.poll(()=>globalThis.__roomStoreRooms.bridge.get(room.code).d.trick).toEqual([{seat:0,card:'C2'}]);
+  });
+}

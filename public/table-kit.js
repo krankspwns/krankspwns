@@ -110,7 +110,7 @@
         const response = await fetch(cfg.api + '?code=' + owner.code + '&pid=' + owner.pid, { headers: { 'x-tok': owner.tok }, signal: controller.signal });
         const data = await response.json(); if (seat !== owner) return;
         if (!response.ok) { if ([401, 404].includes(response.status)) { seat = null; state = null; store(cfg.seatKey, null); } throw Error(data.error); }
-        const changed = !state || state.version !== data.version || !connected; adopt(data); connected = true; if (changed) render(); else tick();
+        const changed = !state || state.version !== data.version || !connected || (cfg.viewKey && cfg.viewKey(state) !== cfg.viewKey(data)); adopt(data); connected = true; if (changed) render(); else tick();
       } catch (e) { if (seat !== owner && seat) return; connected = false; error = e.name === 'AbortError' ? 'No connection. Trying again…' : e.message; render(); }
       finally { clearTimeout(timeout); if (seat === owner) schedulePoll(); }
     }
