@@ -43,6 +43,10 @@ for (const [label, size, bots] of [['desktop', { width: 1200, height: 900 }, 4],
     await expect(page.locator('.sets-panel .set-chip').first()).toBeVisible();
     const ranks = await page.locator('.hand-row .pcard').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label').split(' of ')[0]).filter((r) => r !== 'Joker'));
     expect(new Set(ranks).size, 'a hand never keeps two cards of one rank').toBe(ranks.length);
+    await page.reload();
+    await expect(page.locator('.circle')).toBeVisible();
+    await expect(page.getByText('Loading your game…')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 }
+

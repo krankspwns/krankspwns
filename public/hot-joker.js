@@ -117,7 +117,7 @@
     return c.panel('sets-panel', el('div', { class: 'panel-heading' }, el('h3', {}, 'Sets laid down'), text('span', 'roster-count', state.sets.length + ' / ' + total)),
       rows.length ? el('div', { class: 'set-rows' }, rows.map((r) => el('div', { class: 'set-row' + (r.id === state.meId ? ' mine' : '') },
         el('div', { class: 'set-owner' }, c.avatar(r.id), el('b', {}, c.who(r.id) + (r.id === state.meId ? ' · You' : '')), text('small', 'muted', r.sets.length + (r.sets.length === 1 ? ' set' : ' sets'))),
-        el('div', { class: 'sets' }, r.sets.map((s, i) => el('span', { class: 'set-chip' + (c.fresh('hj-set-' + state.match + ':' + r.id + ':' + i) ? ' pop' : ''), 'aria-label': setName(s.rank, size) }, s.cards.map((code) => mini(code, c)))))))
+        el('div', { class: 'sets' }, r.sets.map((s, i) => el('span', { class: 'set-chip' + (c.fresh('hj-set-' + state.match + ':' + r.id + ':' + i) ? ' pop' : ''), 'aria-label': setName(s.rank, size) }, (s.cards || []).map((code) => mini(code, c)))))))
       ) : text('p', 'muted small', size === 4 ? 'No sets yet. Collect all four cards of one number to lay them down.' : 'No pairs yet. Match two cards with the same number to lay them down.'));
   }
   function logPanel(c) {
@@ -139,6 +139,8 @@
       el('div', { class: 'joker-grid' }, el('div', { class: 'main-col' }, privateNote(c), takePanel(c), handPanel(c)), el('div', { class: 'side-col' }, setsPanel(c), logPanel(c), c.roster((p, s) => s.losses[p.id] ? 'JOKER ×' + s.losses[p.id] : null))));
   }
 })();
+
+
 
 
 

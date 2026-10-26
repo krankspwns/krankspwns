@@ -179,11 +179,19 @@
         host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason) : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to play', openRules, 'text-button')), roster(cfg.rosterTag));
     }
     const ctx = () => ({ state, send, busy, error, el, text, button, icon, card, cardBack, who, avatar, render, panel, roster, botControls, fresh, announce, dialog, SUIT, rankLabel, countdown: () => text('span', 'countdown', ''), read, store });
+    // A screen that fails to draw must never leave the player staring at "Loading": offer a way out.
+    function safeScreen() {
+      try { return cfg.screen(ctx()); } catch (e) {
+        console.error(e);
+        return panel('', el('h2', {}, 'This screen did not load'), el('p', { class: 'muted' }, 'Your seat is saved. Reload to try again, or leave the room and rejoin with your code.'),
+          button('Reload', () => location.reload(), 'primary'), button('Leave room', () => { seat = null; state = null; store(cfg.seatKey, null); clearTimeout(pollTimer); render(); }, 'secondary'));
+      }
+    }
     function render() {
       const focus = document.activeElement?.id, focusKey = document.activeElement?.dataset?.focus, selection = document.activeElement?.selectionStart, selectionEnd = document.activeElement?.selectionEnd;
       const openDetails = [...root.querySelectorAll('details[open][data-details]')].map((n) => n.dataset.details);
       const scrolls = [...root.querySelectorAll('[data-scroll]')].map((n) => [n.dataset.scroll, n.scrollLeft, n.scrollTop]);
-      const content = !seat ? landing() : !state ? panel('', el('h2', {}, 'Loading your game…'), el('p', { class: 'muted' }, 'Getting your room ready.'), button('Try again', poll, 'secondary')) : state.phase === 'lobby' ? waitingRoom() : cfg.screen(ctx());
+      const content = !seat ? landing() : !state ? panel('', el('h2', {}, 'Loading your game…'), el('p', { class: 'muted' }, 'Getting your room ready.'), button('Try again', poll, 'secondary')) : state.phase === 'lobby' ? waitingRoom() : safeScreen();
       root.replaceChildren(...[header(), error ? el('div', { class: 'error-banner', role: 'alert' }, error, button('Close', () => { error = ''; render(); }, 'text-button')) : null, seat && !connected ? text('div', 'connection-banner', 'Reconnecting… Your place is saved.') : null, state && seat ? roomBar() : null, state?.notice ? text('p', 'connection-banner', state.notice) : null, content, el('footer', { class: 'tk-footer' }, cfg.footer)].filter(Boolean));
       for (const n of root.querySelectorAll('details[data-details]')) if (openDetails.includes(n.dataset.details)) n.open = true;
       for (const [key, left, top] of scrolls) { const n = root.querySelector('[data-scroll="' + key + '"]'); if (n) { n.scrollLeft = left; n.scrollTop = top; } }
@@ -204,6 +212,8 @@
   };
   window.TableKit.el = el; window.TableKit.text = text; window.TableKit.icon = icon; window.TableKit.card = card;
 })();
+
+
 
 
 

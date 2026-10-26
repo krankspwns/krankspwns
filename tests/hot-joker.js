@@ -169,6 +169,9 @@ function rulesTests() {
       assert.equal((await post(h, 'settings', { setSize: 3 })).s, 400);
       assert.equal((await post(h, 'settings', { setSize: 4 })).j.settings.setSize, 4);
       assert.equal((await post(h, 'settings', { setSize: 2 })).j.settings.setSize, 2);
+      // A room saved by an older version (sets without card lists) must still load.
+      const old = await raw(h.code); old.sets = [{ id: h.meId, rank: '7' }]; await save(old);
+      assert.deepEqual((await get(h)).j.sets, [{ id: h.meId, rank: '7', cards: [] }], 'older rooms still load');
     }
     // ---- Bots: one per button press, host only, and they take cards like a person ----
     process.env.BOT_FAST = '1';
@@ -203,6 +206,7 @@ function rulesTests() {
     console.log('Hot Joker ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot, bots and recovery passed');
   } finally { if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
+
 
 
 

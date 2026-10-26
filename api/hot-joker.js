@@ -87,7 +87,7 @@ function view(room, me) {
   return {
     order, taker: playing ? room.taker : null, source, sourceCount: source ? hands[source].length : 0, turn: room.turn || 0,
     counts: Object.fromEntries(order.map((id) => [id, (hands[id] || []).length])),
-    sets: room.sets || [], placed: room.placed || [], loser: room.loser || null, losses: room.losses || {}, log: room.log || [],
+    sets: (room.sets || []).map((s) => ({ ...s, cards: s.cards || [] })), placed: room.placed || [], loser: room.loser || null, losses: room.losses || {}, log: room.log || [],
     me: { hand, last: room.last?.[me.id] || null, out: room.phase !== 'lobby' && hand.length === 0, place: (room.placed || []).indexOf(me.id) + 1 },
   };
 }
@@ -132,6 +132,7 @@ const api = createRoomApi({
   view,
 });
 module.exports = api.handler;
+
 
 
 
