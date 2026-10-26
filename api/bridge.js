@@ -4,8 +4,10 @@ const { pace } = require('../lib/bot-pace');
 const { createRoomApi, need, present, shuffle } = require('../lib/room-api');
 
 const DEAL_OPTIONS = [2, 4, 8];
+const COLLECT_MS = 1600;
 const trumpOf = (contract) => (contract.denom === 'N' ? null : contract.denom);
-const sideTricks = (d) => d.tricksBy[d.declarer] + (d.partner !== d.declarer ? d.tricksBy[d.partner] : 0);
+const sideTricks = (d) => d.tricksBy[d.declarer] + (Number.isInteger(d.partner) && d.partner !== d.declarer ? d.tricksBy[d.partner] : 0);
+const decided = d => !!d.contract && (sideTricks(d) >= R.target(d.contract) || d.tricks - sideTricks(d) >= 14 - R.target(d.contract));
 
 function startDeal(room) {
   const board = room.board, hands = R.deal(), dealer = R.dealerFor(board);
@@ -28,9 +30,13 @@ function checkAnnounce(room) {
 function finishDeal(room) {
   const d = room.d, entry = { seats: room.seats.slice(), board: d.board, dealer: d.dealer, calls: d.calls.map((c) => ({ ...c })), hands: d.original, contract: null, called: null, partner: null, tricksBy: d.tricksBy.slice(), delta: [0, 0, 0, 0] };
   if (d.contract) {
-    const tricks = sideTricks(d), result = R.scoreDeal(d.contract, d.partner, tricks);
+    const tricks = sideTricks(d), remaining = 13 - d.tricks;
+    // Stopping early leaves unplayed cards. Only score the defeat already
+    // guaranteed, rather than counting those unplayed tricks as losses too.
+    const scoredTricks = tricks >= R.target(d.contract) ? tricks : tricks + remaining;
+    const result = R.scoreDeal(d.contract, d.partner, scoredTricks);
     result.delta.forEach((n, s) => { room.scores[s] += n; });
-    Object.assign(entry, { contract: { ...d.contract, name: R.contractName(d.contract) }, called: d.called, partner: d.partner, made: tricks, target: R.target(d.contract), result: tricks - R.target(d.contract), success: result.made, delta: result.delta });
+    Object.assign(entry, { contract: { ...d.contract, name: R.contractName(d.contract) }, called: d.called, partner: d.partner, made: tricks, scoredTricks, remaining, endedEarly: remaining > 0, target: R.target(d.contract), result: scoredTricks - R.target(d.contract), success: result.made, delta: result.delta });
   }
   room.history.push(entry);
   room.phase = 'reveal';
@@ -59,9 +65,11 @@ function doPlay(room, card) {
   if (d.trick.length < 4) { d.turn = R.left(seat); return; }
   const winner = R.trickWinner(d.trick, trumpOf(d.contract));
   d.tricksBy[winner]++; d.tricks++;
-  d.lastTrick = { cards: d.trick, winner }; d.trick = []; d.turn = winner;
+  d.lastTrick = { cards: d.trick, winner, number: d.tricks, at: Date.now() };
+  d.collectUntil = d.lastTrick.at + COLLECT_MS;
+  d.trick = []; d.turn = winner;
   checkAnnounce(room);
-  if (d.tricks === 13) finishDeal(room);
+  if (decided(d)) finishDeal(room);
 }
 const legalFor = (d) => R.legalCards(d.hands[d.turn], d.trick[0] && R.suitOf(d.trick[0].card), { trump: d.contract && trumpOf(d.contract), broken: d.trumpBroken });
 function autoCard(d) {
@@ -83,9 +91,12 @@ function botMove(room) {
   }
 }
 function autopilot(room) {
+  // Existing rooms may already have reached a target under the old 13-trick rule.
+  if (room.phase === 'playing' && decided(room.d)) { finishDeal(room); return true; }
   let changed = false;
   for (let i = 0; i < 400 && ['bidding', 'calling', 'playing'].includes(room.phase); i++) {
     const d = room.d, actor = room.players.find((p) => p.id === room.seats[d.turn]);
+    if (d.collectUntil > Date.now()) break;
     if (actor?.bot) {
       const wait = pace(room); changed ||= wait.changed;
       if (!wait.act) break;
@@ -107,15 +118,22 @@ function view(room, me) {
   const bidding = room.phase === 'bidding', calling = room.phase === 'calling', play = room.phase === 'playing';
   const deal = {
     board: d.board, dealer: d.dealer, calls: d.calls, contract: d.contract && { ...d.contract, name: R.contractName(d.contract), target: R.target(d.contract) },
-    called: d.called, turn: ['bidding', 'calling', 'playing'].includes(room.phase) ? d.turn : null, trick: d.trick, lastTrick: d.lastTrick, tricks: d.tricks, tricksBy: d.tricksBy, trumpBroken: d.trumpBroken,
+    called: d.called, turn: ['bidding', 'calling', 'playing'].includes(room.phase) ? d.turn : null, trick: d.trick, lastTrick: d.lastTrick, collectUntil: d.collectUntil || null, tricks: d.tricks, tricksBy: d.tricksBy, trumpBroken: d.trumpBroken,
     counts: d.hands.map((h) => h.length), myHand: mySeat >= 0 ? d.hands[mySeat] : [], myPoints: mySeat >= 0 ? R.points(d.original[mySeat]) : 0,
     partner: d.revealed || room.phase === 'reveal' ? d.partner : null,
     iAmPartner: mySeat >= 0 && !!d.called && d.original[mySeat].includes(d.called) && mySeat !== d.declarer,
     solo: !!d.called && d.partner === d.declarer && (d.revealed || room.phase === 'reveal'),
   };
+  if (d.contract) {
+    // Exact totals can identify the partner by subtraction. Only disclose them
+    // after the public reveal, or privately to the player who holds that card.
+    const known = d.revealed || ['reveal', 'finished'].includes(room.phase) || mySeat === d.partner;
+    const won = sideTricks(d);
+    deal.progress = { declarer: known ? won : null, defenders: known ? d.tricks - won : null, target: R.target(d.contract), defenderTarget: 14 - R.target(d.contract), remaining: 13 - d.tricks };
+  }
   if (bidding && mySeat === d.turn) deal.legalCalls = R.legalCalls(d.calls);
   if (calling && mySeat === d.turn) deal.callable = true;
-  if (play && mySeat === d.turn) deal.legal = legalFor(d);
+  if (play && mySeat === d.turn && !(d.collectUntil > Date.now())) deal.legal = legalFor(d);
   out.deal = deal;
   if (room.phase === 'finished') {
     const top = Math.max(...room.scores);
@@ -153,6 +171,7 @@ const api = createRoomApi({
     play(room, me, body) {
       need(room.phase === 'playing', 409, 'No card can be played now.');
       const d = room.d, seat = room.seats.indexOf(me.id);
+      need(!(d.collectUntil > Date.now()), 409, 'The winner is collecting this trick.');
       need(seat >= 0 && d.turn === seat, 409, 'It is not your turn to play.');
       need(typeof body.card === 'string' && d.hands[seat].includes(body.card), 400, 'That card is not in the hand.');
       need(legalFor(d).includes(body.card), 400, d.trick.length ? 'You must follow the suit that was led.' : 'Trumps cannot be led until a trump has been played.');
@@ -160,6 +179,7 @@ const api = createRoomApi({
     },
     next(room, me, body, { host }) {
       host(); need(room.phase === 'reveal', 409, 'This deal has not ended yet.');
+      need(!(room.d.collectUntil > Date.now()), 409, 'The winner is collecting this trick.');
       if (room.board >= (room.settings.deals || 4)) room.phase = 'finished'; else { room.board++; startDeal(room); }
     },
   },

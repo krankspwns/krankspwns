@@ -54,6 +54,8 @@ function rulesTests() {
 (async () => {
   rulesTests();
   const redis = process.argv.includes('--redis') ? await startRedis() : null;
+  const realNow = Date.now; let clockOffset = 0;
+  Date.now = () => realNow() + clockOffset;
   try {
     if (redis) { process.env.UPSTASH_REDIS_REST_URL = redis.url; process.env.UPSTASH_REDIS_REST_TOKEN = 'test'; }
     const handler = require('../api/bridge'), id = () => crypto.randomUUID();
@@ -75,7 +77,20 @@ function rulesTests() {
     assert.equal((await enter('join', { code: host.code, name: 'Late' })).s, 409);
 
     const by = Object.fromEntries(players.map((p) => [p.meId, p]));
-    const view = async () => (await get(host)).j;
+    // Advance only the presentation hold, without sleeping through every trick.
+    const settled = async seat => {
+      let v = (await get(seat)).j;
+      if (v.deal?.collectUntil > Date.now()) { clockOffset += v.deal.collectUntil - Date.now() + 1; v = (await get(seat)).j; }
+      return v;
+    };
+    const view = () => settled(host);
+    const assertDecided = e => {
+      const played = e.tricksBy.reduce((a, b) => a + b, 0);
+      const won = e.tricksBy[e.contract.declarer] + (e.partner === e.contract.declarer ? 0 : e.tricksBy[e.partner]);
+      assert.equal(e.remaining, 13 - played);
+      assert.ok(e.success ? won >= R.target(e.contract) : played - won >= 14 - R.target(e.contract), 'a side reached its target');
+      assert.deepEqual(e.delta, R.scoreDeal(e.contract, e.partner, e.scoredTricks).delta);
+    };
     const actorOf = (v) => by[v.seats[v.deal.turn]];
     // Privacy: nobody sees another hand, and the partner stays secret until revealed.
     async function assertPrivacy() {
@@ -111,9 +126,9 @@ function rulesTests() {
         assert.equal(e.hands.flat().length, 52);
         if (e.contract) {
           contracts++;
-          assert.equal(e.tricksBy.reduce((a, b) => a + b, 0), 13);
+          assertDecided(e);
           assert.ok(e.hands[e.partner].includes(e.called), 'the partner holds the called card');
-          assert.deepEqual(e.delta, R.scoreDeal(e.contract, e.partner, e.made).delta);
+          assert.deepEqual(e.delta, R.scoreDeal(e.contract, e.partner, e.scoredTricks).delta);
         } else { passedOut++; assert.deepEqual(e.delta, [0, 0, 0, 0]); }
         assert.equal((await post(joined[0], 'next')).s, 403);
         assert.equal((await post(host, 'next')).s, 200);
@@ -153,6 +168,48 @@ function rulesTests() {
     assert.ok(done.history.every((e, i) => e.board === i + 1 && e.seats.length === 4));
     assert.equal(contracts + passedOut, 2);
 
+    // Every contract level, either winning side, and a solo declarer all stop
+    // on the deciding trick. Unplayed tricks never inflate a defender's reward.
+    const rules = handler._rules;
+    for (let level = 1; level <= 7; level++) for (const solo of [false, true]) for (const made of [false, true]) {
+      const f = { players: ['a','b','c','d'].map(id => ({id})), seats: ['a','b','c','d'], settings: {}, history: [], scores: [0,0,0,0], board: 1 };
+      rules.startDeal(f); f.phase = 'playing';
+      const d = f.d, target = 6 + level, needed = made ? target : 14 - target;
+      Object.assign(d, { contract: { level, denom: 'N', declarer: 0 }, declarer: 0, partner: solo ? 0 : 2, called: 'CA', turn: 3, tricks: needed - 1, tricksBy: made ? [needed - 1,0,0,0] : [0,needed - 1,0,0], trick: [{seat:0,card:made?'HA':'H2'},{seat:1,card:made?'H2':'HA'},{seat:2,card:'H3'}] });
+      d.hands[3] = ['H4','C2'];
+      rules.doPlay(f, 'H4');
+      assert.equal(f.phase, 'reveal', 'target ends the deal at level ' + level);
+      assert.equal(f.history.length, 1); assert.equal(f.history[0].success, made); assertDecided(f.history[0]);
+      assert.ok(f.d.collectUntil > Date.now(), 'the final trick still has its collection window');
+      if (!made) assert.ok(f.history[0].delta.every(n => n === 0 || n === 1), 'no unplayed undertrick penalties');
+    }
+    // Totals must not give away which seat is the hidden partner.
+    {
+      const f = { players: ['a','b','c','d'].map(id => ({id})), seats: ['a','b','c','d'], settings: {}, history: [], scores: [0,0,0,0], board: 1 };
+      rules.startDeal(f); f.phase = 'playing';
+      Object.assign(f.d, { contract:{level:1,denom:'N',declarer:0}, declarer:0, partner:2, called:'CA', revealed:false, tricks:3, tricksBy:[1,1,1,0] });
+      for (const seat of [0,1,3]) { const p = rules.view(f,f.players[seat]).deal.progress; assert.equal(p.declarer,null); assert.equal(p.defenders,null); }
+      assert.equal(rules.view(f,f.players[2]).deal.progress.declarer,2,'partner privately knows their team total');
+      f.d.revealed = true;
+      for (const p of f.players) assert.deepEqual(rules.view(f,p).deal.progress,{declarer:2,defenders:1,target:7,defenderTarget:7,remaining:10});
+    }
+    // A deciding API play is idempotent; the next deal waits for collection.
+    {
+      const f = await raw(host.code); f.phase = 'playing'; f.history = []; f.scores = [0,0,0,0];
+      rules.startDeal(f); f.phase = 'playing'; const d = f.d;
+      Object.assign(d,{contract:{level:1,denom:'N',declarer:0},declarer:0,partner:2,called:'CA',revealed:true,turn:3,tricks:6,tricksBy:[6,0,0,0],trick:[{seat:0,card:'HA'},{seat:1,card:'H2'},{seat:2,card:'H3'}]});
+      d.hands[3] = ['H4','C2'];
+      const save = async room => redis ? redis.client.set('bridge:room:'+room.code,JSON.stringify(room)) : globalThis.__roomStoreRooms.bridge.set(room.code,structuredClone(room));
+      await save(f);
+      const finisher = players.find(p=>p.meId===f.seats[3]);
+      const request = {action:'play',requestId:id(),code:f.code,pid:finisher.meId,tok:finisher.tok,match:f.match,card:'H4'};
+      assert.equal((await call(handler,request)).j.phase,'reveal');
+      assert.equal((await call(handler,request)).j.history.length,1,'winning replay scores only once');
+      assert.equal((await post(finisher,'play',{card:'C2'})).s,409,'no extra play after the target');
+      assert.equal((await post(host,'next')).s,409,'let the winner collect first');
+      await settled(host); assert.equal((await post(host,'next')).s,200);
+    }
+
     // Opening lead and forced partner reveal use a staged deal.
     const staged = require('../api/bridge')._rules;
     const room = { phase: 'bidding', players: [], seats: [], settings: {}, history: [], scores: [0, 0, 0, 0], board: 1 };
@@ -187,7 +244,7 @@ function rulesTests() {
     assert.equal((await get(leaver)).s, 200, 'a departed player can still read state');
     assert.equal((await post(leaver, 'call', { call: 'P' })).s, 403);
     for (let i = 0; i < 60; i++) {
-      v = (await get(stayer)).j;
+      v = await settled(stayer);
       if (!['bidding', 'calling', 'playing'].includes(v.phase)) break;
       assert.notEqual(v.deal.turn, leaverSeat, 'the game skips the departed seat automatically');
       const a = by[v.seats[v.deal.turn]], mine = (await get(a)).j;
@@ -220,7 +277,7 @@ function rulesTests() {
       const humans = { [h.meId]: h, [guest.meId]: guest };
       let guard = 0;
       for (;;) {
-        v = (await get(h)).j;
+        v = await settled(h);
         if (v.phase === 'reveal') { assert.equal((await post(h, 'next')).s, 200); continue; }
         if (v.phase === 'finished') break;
         assert.ok(++guard < 400, 'bot game did not finish');
@@ -244,7 +301,7 @@ function rulesTests() {
           if (before === 'playing') assert.equal(r.d.hands[seat].length, hand.length - 1, 'the bot played exactly one card from its own hand');
         }
         const e = r.history[0];
-        if (e.contract) { contracts++; levels[e.contract.level] = (levels[e.contract.level] || 0) + 1; if (e.success) made++; if (e.partner === e.contract.declarer) solo++; assert.equal(e.tricksBy.reduce((a, b) => a + b, 0), 13); }
+        if (e.contract) { contracts++; levels[e.contract.level] = (levels[e.contract.level] || 0) + 1; if (e.success) made++; if (e.partner === e.contract.declarer) solo++; assertDecided(e); }
       }
       assert.ok(contracts > 100, 'bots bid on most deals (' + contracts + ')');
       assert.ok(made / contracts > 0.25 && made / contracts < 0.95, 'bot contracts are made some of the time, not always (' + made + '/' + contracts + ')');
@@ -252,7 +309,7 @@ function rulesTests() {
       assert.ok(solo < contracts * 0.2, 'bots rarely call their own card');
     }
     console.log('Singaporean Bridge ' + (redis ? 'Redis' : 'memory') + ': scoring, auction, called card, hidden partner, full 2-deal match, privacy, replay safety, autopilot, bots and recovery passed');
-  } finally { if (redis) await redis.close(); }
+  } finally { Date.now = realNow; if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
 
 

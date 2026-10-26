@@ -216,6 +216,7 @@
       root.dataset.phase = state?.phase || 'home';
       if (scene !== renderedScene) { root.querySelector('.tk-scene, .lobby-grid, .tk-landing')?.classList.add('scene-enter'); renderedScene = scene; }
       tick();
+      cfg.afterRender?.(ctx());
     }
     function tick() {
       if (!state?.deadline) return;

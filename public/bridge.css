@@ -88,3 +88,34 @@ body { background: radial-gradient(ellipse at 15% 0,#28674e45,transparent 55%),r
 .turn-banner.mine { background: linear-gradient(115deg,#d6ac59,#f4df9b); animation: none; box-shadow: 0 2px 16px #d6ac5918; }
 .contract-bar { background: #071f1b; border-color: #ddc58f3b; }
 @media(max-width:520px) { .table-panel { padding: 12px; }.felt { padding: 14px 0; }.plate .tk-avatar { width: 36px; height: 36px; }.felt-seat { max-width: 100%; }.plate { width: 100%; padding: 6px 4px; }.plate b { max-width: 100%; white-space: normal; overflow-wrap: anywhere; font-size: 10px; }.felt-mid { grid-template-columns: minmax(0,1fr) 140px minmax(0,1fr); }.score-strip.four .score-team { padding: 10px; } }
+
+/* Deal progress is separate from match points and never sits on busy artwork. */
+.match-scores { margin:0 0 14px; padding:10px 14px; border:1px solid var(--line); border-radius:12px; background:#071f1b; }
+.match-scores summary { color:#e2c98f; }
+.match-scores .score-strip { margin:14px 0 0; }
+.contract-bar { display:grid; gap:12px; padding:16px; border:1px solid #ddc58f3b; background:#071d18; }
+.contract-heading { display:flex; justify-content:space-between; gap:16px; align-items:center; }
+.contract-main { gap:4px; min-width:0; }.contract-main small { overflow-wrap:anywhere; }
+.called-card { display:flex; gap:10px; align-items:center; }.called-card .eyebrow { max-width:65px; font-size:9px; }
+.team-progress-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.team-progress { display:grid; gap:5px; padding:12px; border-radius:12px; border:1px solid #e4c27d33; background:#12352a; }
+.defender-progress { background:#172d3e; border-color:#8fc4ff44; }
+.team-progress .eyebrow { font-size:9px; letter-spacing:1px; }.defender-progress .eyebrow { color:#b1d6ff; }
+.team-total { display:flex; gap:7px; align-items:baseline; color:#fff3d0; }.team-total b { font-size:32px; line-height:1; font-variant-numeric:tabular-nums; }.team-total span { font-size:18px; color:#cbd6d0; }
+.team-progress small { font-size:10px; line-height:1.4; }
+.team-progress progress { width:100%; height:6px; accent-color:#e4c27d; }.defender-progress progress { accent-color:#8fc4ff; }
+.deal-status { display:flex; gap:8px 14px; align-items:center; flex-wrap:wrap; font-size:11px; color:#cbd6d0; }
+.my-tricks { display:inline-block; padding:6px 10px; border:1px solid #e4c27d66; border-radius:8px; background:#2f321e; color:#ffe3a1; font-size:14px; }
+.team-privacy { margin:0; font-size:10px; line-height:1.5; }
+.table-panel { position:relative; }
+.felt { border-radius:14px; padding:24px 12px; box-shadow:none; }
+.collected { display:flex; justify-content:center; gap:5px; min-width:62px; padding:4px 7px; border:1px solid #c9ad6e66; border-radius:9px; background:#071713; color:#fff2cc; box-shadow:0 2px 8px #0006; }
+.collected small { display:inline; font-size:10px; color:#eadbb6; }.pile { padding-right:0; min-width:0; height:24px; gap:0; }.pile em { position:static; margin-left:7px; font-size:18px; line-height:1; color:#ffe5a5; }
+.trick-caption { display:table; max-width:100%; padding:5px 10px; border-radius:8px; background:#071713ee; color:#ffe5a5; font-size:11px; line-height:1.4; text-align:center; min-height:0; }.trick-caption:empty { padding:0; }
+.bid-picker { margin:14px 0 0; padding:0; border:0; min-width:0; }.bid-picker legend { font-size:12px; font-weight:750; color:#eadbb6; margin-bottom:8px; }
+.bid-levels { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }.bid-suits { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }.bid-suits .bid { font-size:22px; }.bid-suits .bid:last-child { font-size:16px; }.bid-suits .bid.selected .suit-sym.red { color:#a8192c; }
+.bid-explanation { margin:12px 0 0; font-size:12px; color:#e4c27d; }.current-bid { font-size:12px; }
+.collection-layer { position:absolute; inset:0; z-index:20; pointer-events:none; }.collection-card { position:absolute; display:block; will-change:transform; }.collection-card .pcard { animation:none; }
+.trick-collecting .trick-slot .pcard { visibility:hidden; }
+.collecting-banner { background:#2c321c; color:#ffe3a1; border-color:#e4c27d88; }
+@media(max-width:520px) { .felt { padding:20px 7px; }.collected { min-width:50px; padding:4px 5px; }.collected small { font-size:8px; }.pile em { font-size:16px; margin-left:4px; }.contract-bar { padding:12px; }.contract-main small { font-size:10px; }.team-progress { padding:10px; }.team-progress .eyebrow { font-size:8px; }.team-total b { font-size:28px; }.bid-levels .bid { padding:10px 0; }.called-card .eyebrow { max-width:48px; font-size:8px; } }
