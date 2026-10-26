@@ -32,7 +32,7 @@ body { background: radial-gradient(ellipse at 85% -10%, #ff4f8b33, transparent 5
 .pop { animation: pop .5s cubic-bezier(.2, 1.4, .4, 1) both; } @keyframes pop { from { transform: scale(.7) rotate(-4deg); opacity: 0; } }
 @keyframes shake { 25% { transform: translateX(-5px) rotate(-2deg); } 75% { transform: translateX(5px) rotate(2deg); } }
 .sets { display: flex; flex-wrap: wrap; gap: 6px; } .set-chip { display: inline-flex; gap: 2px; border: 1px solid var(--line); border-radius: 10px; padding: 3px 5px; background: #ffffff0a; }
-.mini-card { display: inline-grid; place-items: center; min-width: 30px; height: 36px; padding: 0 3px; border-radius: 6px; background: linear-gradient(160deg, #fffdf6, #efe6d0); color: #1a1f2e; font-weight: 800; font-size: 13px; letter-spacing: -.5px; box-shadow: 0 1px 3px #0005; } .mini-card.red { color: #c3202e; }
+.set-chip .pcard.small { width: 38px; height: 55px; }
 .set-rows { display: grid; gap: 10px; margin-top: 8px; } .set-row { display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 14px; background: #ffffff06; } .set-row.mine { border-color: #ffb34766; }
 .set-owner { display: flex; align-items: center; gap: 8px; } .set-owner b { font-size: 13px; overflow-wrap: anywhere; } .set-owner small { margin-left: auto; font-weight: 700; letter-spacing: .8px; font-size: 10px; }
 .log { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; } .log li { padding: 6px 10px; border-radius: 10px; background: #ffffff08; } .log li.big { background: #ffb34720; font-weight: 700; }

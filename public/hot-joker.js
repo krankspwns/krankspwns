@@ -3,7 +3,6 @@
   const el = TableKit.el, text = TableKit.text;
   const RANK_NAME = { A: 'Aces', K: 'Kings', Q: 'Queens', J: 'Jacks' };
   const rankName = (r) => RANK_NAME[r] || r + 's';
-  const SUITS = { S: '♠', H: '♥', D: '♦', C: '♣' };
   const sizeOf = (s) => s.settings?.setSize || 2;
   const setName = (r, size) => (size === 4 ? 'four ' + rankName(r) : 'a pair of ' + rankName(r));
   let pick = -1, sel = -1, pickKey = '';
@@ -55,7 +54,7 @@
     return el('div', { class: 'private-note ' + last.kind + (fresh ? ' pop' : ''), role: 'status' }, c.card(last.card, { small: true }), el('div', {}, text('small', 'eyebrow', 'ONLY YOU CAN SEE THIS'),
       el('b', {}, last.kind === 'got' ? 'You took this card from ' + c.who(last.other) : c.who(last.other) + ' took this card from you')));
   }
-  const mini = (code, c) => el('span', { class: 'mini-card' + (code[0] === 'H' || code[0] === 'D' ? ' red' : '') }, c.rankLabel(code.slice(1)) + SUITS[code[0]]);
+  const mini = (code, c) => c.card(code, { small: true });
   // Players sit in a circle in clockwise order with you at the bottom. The arrow shows who is taking from whom.
   function circle(c) {
     const { state } = c, order = state.order, n = order.length, me = Math.max(0, order.indexOf(state.meId)), size = sizeOf(state), total = 52 / size;

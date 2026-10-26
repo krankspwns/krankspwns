@@ -16,6 +16,15 @@
   };
   const SUIT = { S: '♠', H: '♥', D: '♦', C: '♣' };
   const rankLabel = (r) => (r === 'T' ? '10' : r);
+  const pipRows = (ys) => ys.flatMap(y => [[22, y], [78, y]]);
+  const PIPS = {
+    2: [[50, 14], [50, 86]], 3: [[50, 14], [50, 50], [50, 86]],
+    4: pipRows([14, 86]), 5: [...pipRows([14, 86]), [50, 50]],
+    6: pipRows([14, 50, 86]), 7: [...pipRows([14, 50, 86]), [50, 32]],
+    8: [...pipRows([14, 50, 86]), [50, 32], [50, 68]],
+    9: [...pipRows([12, 37, 63, 88]), [50, 50]],
+    10: [...pipRows([12, 37, 63, 88]), [50, 25], [50, 75]],
+  };
   function el(tag, props = {}, ...children) {
     const n = document.createElement(tag);
     for (const [k, v] of Object.entries(props)) {
@@ -38,8 +47,13 @@
   function card(code, opts = {}) {
     const { onclick, disabled, selected, small, label } = opts;
     const joker = code === 'JK', suit = joker ? '' : code[0], rank = joker ? '' : rankLabel(code.slice(1));
-    const cls = 'pcard' + (joker ? ' joker' : ' suit-' + suit + (suit === 'H' || suit === 'D' ? ' red' : '')) + (small ? ' small' : '') + (selected ? ' selected' : '') + (onclick ? ' playable' : '');
-    const face = joker ? [text('b', 'pcard-joker', '★'), text('small', '', 'JOKER')] : [text('b', 'pcard-rank', rank), text('i', 'pcard-suit', SUIT[suit]), text('span', 'pcard-pip', SUIT[suit])];
+    const court = ['K', 'Q', 'J'].includes(rank);
+    const cls = 'pcard' + (joker ? ' joker' : ' ornate suit-' + suit + (suit === 'H' || suit === 'D' ? ' red' : '') + (court ? ' court' : rank === 'A' ? ' ace' : ' number')) + (small ? ' small' : '') + (selected ? ' selected' : '') + (onclick ? ' playable' : '');
+    const corner = (bottom = false) => el('span', { class: 'card-index' + (bottom ? ' bottom' : ''), 'aria-hidden': 'true' }, text('b', 'pcard-rank', rank), text('i', 'pcard-suit', SUIT[suit]));
+    const artwork = court ? el('span', { class: 'card-court', 'aria-hidden': 'true', style: '--court-x:' + (['S', 'H', 'D', 'C'].indexOf(suit) * 100 / 3) + '%;--court-y:' + (['K', 'Q', 'J'].indexOf(rank) * 50) + '%' })
+      : rank === 'A' ? el('span', { class: 'card-ace', 'aria-hidden': 'true' }, text('span', '', SUIT[suit]))
+      : el('span', { class: 'card-pips', 'aria-hidden': 'true' }, (PIPS[Number(rank)] || []).map(([x, y]) => el('i', { class: 'card-pip' + (y > 50 ? ' inverted' : ''), style: 'left:' + x + '%;top:' + y + '%' }, SUIT[suit])));
+    const face = joker ? [text('b', 'pcard-joker', '★'), text('small', '', 'JOKER')] : [artwork, corner(), corner(true)];
     const name = joker ? 'Joker' : rank + ' of ' + { S: 'spades', H: 'hearts', D: 'diamonds', C: 'clubs' }[suit];
     if (!onclick) return el('span', { class: cls, role: 'img', 'aria-label': label || name }, face);
     return el('button', { type: 'button', class: cls, 'data-focus': 'card-' + code, 'aria-label': label || name, 'aria-pressed': selected ? 'true' : undefined, disabled: !!disabled, onclick }, face);
