@@ -45,3 +45,29 @@ body.pf-lock{overflow:hidden}
 .pf-item small{opacity:.7}.pf-item button{width:100%}.pf-pre{min-height:56px;display:grid;place-items:center}
 @media (prefers-reduced-motion:reduce){.pf-float,.pf-fly{animation-duration:.01s}}
 
+
+/* account chip with avatar */
+#pf-chip:not(.guest){padding:5px 14px 5px 6px}
+#pf-chip .pf-cn{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left}
+#pf-chip .pf-cn b{color:#fff;font-size:13px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pf-chip .pf-cn small{opacity:1;color:#ffd23f;font-weight:700;font-size:12px}
+/* account page */
+.pf-hero{display:flex;gap:16px;align-items:center;padding:16px;border-radius:16px;background:linear-gradient(135deg,#2a2166,#1a1d3d 70%);border:1px solid rgba(255,255,255,.14)}
+.pf-who{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}.pf-name{font-size:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pf-who small{opacity:.7}
+.pf-who .pf-row{margin-top:6px}.pf-box .pf-small{min-height:44px;padding:0 14px}
+.pf-wpcard{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:rgba(255,210,63,.08);border:1px solid rgba(255,210,63,.28)}
+.pf-wpcard small{opacity:.7;letter-spacing:.08em;font-size:11px;font-weight:700}.pf-big{display:block;font-size:34px;line-height:1.15;color:#ffd23f}
+.pf-meter{position:relative;height:22px;border-radius:11px;background:rgba(255,255,255,.1);overflow:hidden}
+.pf-meter i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ffb347,#ffd23f);border-radius:11px}
+.pf-meter small{position:relative;display:block;text-align:center;line-height:22px;letter-spacing:0;font-size:12px;opacity:1;color:#fff;mix-blend-mode:normal;text-shadow:0 1px 2px #000}
+.pf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pf-stats div{display:flex;flex-direction:column;align-items:center;padding:10px 4px;border-radius:12px;background:rgba(255,255,255,.06)}.pf-stats b{font-size:20px}.pf-stats small{opacity:.7;font-size:11px}
+.pf-cta button{width:100%;min-height:52px!important;font-size:16px}
+.pf-card{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px}
+.pf-card h3{margin:0;font-size:14px;opacity:.8}.pf-card summary{cursor:pointer;font-weight:700}
+.pf-switch{display:flex;justify-content:space-between;align-items:center;gap:12px}.pf-switch span{display:flex;flex-direction:column}.pf-switch small{opacity:.65}
+.pf-switch input{appearance:none;width:48px;height:28px;border-radius:14px;background:#454b73;position:relative;cursor:pointer;flex:none;transition:background .2s}
+.pf-switch input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}
+.pf-switch input:checked{background:#7c5cff}.pf-switch input:checked::after{transform:translateX(20px)}
+.pf-signout button{flex:1}
+

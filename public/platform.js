@@ -100,29 +100,46 @@
 
   // ---------- account ----------
   function openAccount() {
-    const nick = el('input', { type: 'text', maxlength: 12, value: account.nick || '', placeholder: 'Nickname (optional)', 'aria-label': 'Nickname' });
-    const a = window.GameAudio, p = a?.prefs() || {};
-    const toggle = (label, on, fn) => el('label', { class: 'pf-check' }, el('input', { type: 'checkbox', checked: on ? true : undefined, onchange: (e) => fn(e.target.checked) }), el('span', { text: label }));
+    const eq = account.eq || {}, a = window.GameAudio, prefs = a?.prefs() || {};
     const run = (fn) => async () => { try { await fn(); } catch (e) { toast(e.message, '⚠️'); } };
+    const nick = el('input', { type: 'text', maxlength: 12, value: account.nick || '', placeholder: 'Pick a nickname', 'aria-label': 'Nickname', onkeydown: (e) => { if (e.key === 'Enter') save.click(); } });
+    const save = el('button', { type: 'button', class: 'pf-small', text: 'Save', onclick: run(async () => { account = (await api({ action: 'nick', nick: nick.value })).account; renderChip(); toast('Nickname saved.', '✅'); }) });
+    const count = (o) => Object.values(o).reduce((n, v) => n + v.length, 0);
+    const gifts = Object.values(account.gifts || {}).reduce((n, v) => n + Math.max(0, v), 0);
+    const cap = config.dailyCap || 400, got = Math.min(cap, account.earnedToday || 0);
+    const toggle = (label, hint, on, fn) => el('label', { class: 'pf-switch' }, el('span', {}, el('b', { text: label }), el('small', { text: hint })), el('input', { type: 'checkbox', checked: on ? true : undefined, onchange: (e) => fn(e.target.checked) }));
+    const provider = account.provider === 'apple' ? ' Apple' : 'Google';
     modal('Your account',
-      el('p', { class: 'pf-wp' }, '🏆 ', el('b', { text: String(account.pts) }), ' WP'),
-      el('p', { class: 'pf-note', text: `Win games with other people to earn WP (up to ${config.dailyCap || 400} a day). Use WP in the shop in any game.` }),
-      el('div', { class: 'pf-row' }, nick, el('button', { type: 'button', text: 'Save', onclick: run(async () => { account = (await api({ action: 'nick', nick: nick.value })).account; toast('Saved.'); }) })),
-      a ? [toggle('Sound effects', p.sfx, (v) => a.setSfx(v)), a.game ? toggle('Background music', p.music, (v) => a.setMusic(v)) : null] : null,
-      el('button', { type: 'button', text: 'Open the shop', onclick: () => openShop() }),
-      el('div', { class: 'pf-sub', text: 'Your data' }),
-      el('div', { class: 'pf-row wrap' },
-        el('button', { type: 'button', class: 'pf-ghost', text: 'Download my data', onclick: run(async () => {
-          const j = await api({ action: 'export' }), url = URL.createObjectURL(new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' }));
-          el('a', { href: url, download: 'krankspwns-my-data.json' }).click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
-        }) }),
-        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', onclick: run(async () => { await api({ action: 'logout' }); account = null; close(); renderChip(); toast('Signed out.'); }) }),
-        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', onclick: run(async () => { await api({ action: 'logoutAll' }); account = null; close(); renderChip(); toast('Signed out on every device.'); }) })),
-      el('button', { type: 'button', class: 'pf-danger', text: 'Delete my account', onclick: run(async () => {
-        if (prompt('This permanently deletes your account, WP and items. Type DELETE to confirm.') !== 'DELETE') return;
-        await api({ action: 'delete', confirm: 'DELETE' }); account = null; close(); renderChip(); toast('Your account and data were deleted.');
-      }) }),
-      el('p', { class: 'pf-fine' }, el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' · consent version ', account.consent?.version || ''));
+      el('section', { class: 'pf-hero' }, avatar(eq.av || 'cat', eq.bd, eq.acc, 84),
+        el('div', { class: 'pf-who' }, el('b', { class: 'pf-name', text: account.nick || 'Player' }), el('small', { text: 'Signed in with ' + provider }),
+          el('div', { class: 'pf-row' }, nick, save))),
+      el('section', { class: 'pf-wpcard' }, el('div', {}, el('small', { text: 'YOUR WP' }), el('b', { class: 'pf-big', text: '🏆 ' + account.pts.toLocaleString() })),
+        el('div', { class: 'pf-meter', role: 'img', 'aria-label': got + ' of ' + cap + ' WP earned today' }, el('i', { style: 'width:' + Math.round(got / cap * 100) + '%' }), el('small', { text: 'Earned today ' + got + ' / ' + cap }))),
+      el('div', { class: 'pf-stats' },
+        el('div', {}, el('b', { text: String(count({ a: account.owned.av }) + 20) }), el('small', { text: 'Avatars' })),
+        el('div', {}, el('b', { text: String(account.owned.bd.length) }), el('small', { text: 'Borders' })),
+        el('div', {}, el('b', { text: String(account.owned.acc.length) }), el('small', { text: 'Accessories' })),
+        el('div', {}, el('b', { text: gifts > 9999 ? '9999+' : String(gifts) }), el('small', { text: 'Gifts' }))),
+      el('div', { class: 'pf-cta' }, el('button', { type: 'button', text: '🛍️  Shop & change look', onclick: () => openShop() })),
+      el('p', { class: 'pf-note', text: 'Win games with other people to earn WP. Use them in the shop in any game.' }),
+      a ? el('section', { class: 'pf-card' }, el('h3', { text: 'Sound' }),
+        toggle('Sound effects', 'Taps, cards and reactions', prefs.sfx, (v) => a.setSfx(v)),
+        a.game ? toggle('Background music', a.themeName() + ' theme', prefs.music, (v) => a.setMusic(v)) : null) : null,
+      el('details', { class: 'pf-card' }, el('summary', { text: 'Privacy & data' }),
+        el('p', { class: 'pf-note', text: 'We keep your nickname, WP, items and consent record. No name, email or photo from ' + provider.trim() + '.' }),
+        el('div', { class: 'pf-row wrap' },
+          el('button', { type: 'button', class: 'pf-ghost', text: 'Download my data', onclick: run(async () => {
+            const j = await api({ action: 'export' }), url = URL.createObjectURL(new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' }));
+            el('a', { href: url, download: 'krankspwns-my-data.json' }).click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+          }) }),
+          el('button', { type: 'button', class: 'pf-danger', text: 'Delete my account', onclick: run(async () => {
+            if (prompt('This permanently deletes your account, WP and items. Type DELETE to confirm.') !== 'DELETE') return;
+            await api({ action: 'delete', confirm: 'DELETE' }); account = null; close(); renderChip(); toast('Your account and data were deleted.', '🗑️');
+          }) })),
+        el('p', { class: 'pf-fine' }, el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' · consent version ', account.consent?.version || '')),
+      el('div', { class: 'pf-row wrap pf-signout' },
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', onclick: run(async () => { await api({ action: 'logout' }); account = null; close(); renderChip(); toast('Signed out.', '👋'); }) }),
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', onclick: run(async () => { await api({ action: 'logoutAll' }); account = null; close(); renderChip(); toast('Signed out on every device.', '👋'); }) })));
   }
 
   // ---------- shop ----------
@@ -226,6 +243,7 @@
     const prev = st; seat = { api: path, code: j.code, pid: j.meId, tok };
     if (prev && prev.code !== j.code) { seenFeed = null; seenAward = null; }
     st = j;
+    if (account && j.social.wallet.account) { const w = j.social.wallet; Object.assign(account, { pts: w.pts, owned: w.owned, gifts: w.gifts, eq: w.eq }); }
     const feed = j.social.feed || [];
     if (seenFeed === null) seenFeed = j.social.n; else {
       for (const it of feed) if (it.n > seenFeed) { if (it.t === 'e') floatEmote(it); else if (it.t === 'g') flyGift(it); }
@@ -247,7 +265,7 @@
   function renderChip() {
     const w = wallet();
     const next = account
-      ? el('button', { id: 'pf-chip', type: 'button', onclick: openAccount, title: 'Your account' }, el('span', { text: '👤 ' + (account.nick || 'Account') }), el('b', { text: '🏆 ' + account.pts }))
+      ? el('button', { id: 'pf-chip', type: 'button', onclick: openAccount, title: 'Your account' }, avatar(account.eq?.av || 'cat', account.eq?.bd, account.eq?.acc, 30), el('span', { class: 'pf-cn' }, el('b', { text: account.nick || 'My account' }), el('small', { text: '🏆 ' + account.pts.toLocaleString() })))
       : el('button', { id: 'pf-chip', type: 'button', class: 'guest', onclick: openLogin, title: 'Sign in with Google or Apple' }, el('span', { text: seat && w ? 'Guest · 🏆 ' + w.pts : 'Sign in' }), seat ? null : el('small', { text: 'or play as guest' }));
     chip ? chip.replaceWith(next) : document.body.append(next); chip = next;
   }

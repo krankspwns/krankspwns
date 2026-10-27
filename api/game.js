@@ -144,7 +144,7 @@ async function linkAccount(room, p, uid) {   // a player took a seat while signe
   const user = uid && await P.getUser(uid);
   if (!user) return;
   (room.acct ||= {})[p.id] = uid;
-  if (user.eq.av) p.avatar = user.eq.av;
+  p.avatar = P.eqOf(user).av;
   p.bd = user.eq.bd || ''; p.acc = user.eq.acc || '';
   await hydrate(room, p.id);
 }
