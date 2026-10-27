@@ -1,0 +1,262 @@
+// Shared client for every game: Google / Apple sign-in, the account and WP wallet, the shop (avatars, borders, accessories,
+// consumables), reactions and gifts, and the sound controls. It watches the game's own server replies, so each game
+// only needs to load this one script.
+(() => {
+  'use strict';
+  const API = '/api/platform';
+  const GAME_API = /^\/api\/(bridge|hot-joker|grand-con)$/;
+  const PAGE = { '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con', '/last-train.html': 'last-train' }[location.pathname] || 'reckoning';
+  const OWN_TABLE_UI = PAGE === 'reckoning' || PAGE === 'last-train';   // these two already draw their own reactions, shop and gifts
+  const FREE = { cat: '🐱', dog: '🐶', fox: '🦊', bear: '🐻', panda: '🐼', rabbit: '🐰', frog: '🐸', lion: '🦁', pig: '🐷', koala: '🐨', owl: '🦉', tiger: '🐯', penguin: '🐧', monkey: '🐵', elephant: '🐘', mouse: '🐭', chicken: '🐔', cow: '🐮', dino: '🦖', unicorn: '🦄' };
+  const PREM = { dragon: '🐲', robot: '🤖', alien: '👽', ghost: '👻', wizard: '🧙', ninja: '🥷' };
+  const LEGEND = new Set(['phoenix', 'shadowphoenix', 'moonwolf', 'samurai', 'thundertiger', 'goldlion', 'reaper']);
+  const ACC = { hat: '🎩', shades: '🕶️', mustache: '🧔', flower: '🌸', headphones: '🎧', horns: '😈', crown: '👑', halo: '😇' };
+  const GIFT = { tomato: '🍅', rose: '🌹', snowball: '❄️', popper: '🎉', balloon: '🎈', kiss: '💋', pie: '🥧', ghost: '👻', rocket: '🚀', bomb: '💣', zap: '⚡', fireworks: '🎆', disco: '🪩', cash: '💸' };
+  const EMO = { laugh: '😂', wow: '😮', cry: '😢', cool: '😎', fire: '🔥', rip: '🪦', angry: '😠', think: '🤔', heart: '❤️', trophy: '🏆' };
+  const TAG = { gg: 'GG', ez: 'EZ', gl: 'GL', wp: 'WP', oof: 'OOF', faster: 'FASTER LEH', aiyo: 'AIYO!', steady: 'STEADY' };
+  const CLIPS = new Set(['gg', 'ez', 'gl', 'wp', 'oof', 'faster', 'aiyo', 'steady']);
+  const KIND_NAME = { av: 'Avatars', bd: 'Borders', acc: 'Accessories', gift: 'Gifts' };
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/([a-z])([A-Z])/g, '$1 $2');
+
+  let account = null, config = null, seat = null, st = null, seenFeed = null, seenAward = null, busy = false;
+  const real = window.fetch.bind(window);
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : String(Math.random()).slice(2) + Date.now());
+
+  function el(tag, props = {}, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) { if (v === undefined || v === null || v === false) continue; if (k === 'class') n.className = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else if (k === 'text') n.textContent = v; else n.setAttribute(k, v === true ? '' : v); }
+    for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) n.append(c);
+    return n;
+  }
+  async function api(body) {
+    const r = await real(API, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'x-kp': '1' }, body: JSON.stringify({ requestId: uid(), ...body }) });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(Error(j.error || 'Please try again.'), { status: r.status, needConsent: j.needConsent }); return j;
+  }
+  const sfx = (n) => window.GameAudio?.sfx(n);
+
+  // ---------- small art ----------
+  function avatar(key, bd = '', acc = '', size = 40) {
+    const inner = LEGEND.has(key) ? el('img', { src: '/avatars/' + key + '.webp', alt: '', width: size, height: size, loading: 'lazy' }) : el('span', { class: 'pf-face', text: FREE[key] || PREM[key] || '🙂' });
+    const w = el('span', { class: 'pf-av' + (bd ? ' pf-bd pf-bd-' + bd : ''), style: `--s:${size}px`, 'aria-hidden': 'true' }, inner);
+    if (acc && ACC[acc]) w.append(el('i', { class: 'pf-acc', text: ACC[acc] })); return w;
+  }
+  const emoteArt = (k) => (TAG[k] ? el('b', { class: 'pf-tag', text: TAG[k] }) : el('span', { class: 'pf-emo', text: EMO[k] || '🙂' }));
+  function toast(text, icon) {
+    let lane = document.getElementById('pf-toasts'); if (!lane) { lane = el('div', { id: 'pf-toasts', role: 'status', 'aria-live': 'polite' }); document.body.append(lane); }
+    while (lane.children.length > 3) lane.firstChild.remove();
+    const t = el('div', { class: 'pf-toast' }, icon || null, el('span', { text })); lane.append(t); setTimeout(() => t.remove(), 4200);
+  }
+  const wallet = () => (st?.social ? st.social.wallet : account ? { pts: account.pts, owned: account.owned, gifts: account.gifts, eq: account.eq, account: true } : null);
+  const catalog = () => st?.social?.prices || config?.catalog;
+
+  // ---------- sign-in ----------
+  let overlay = null;
+  const close = () => { overlay?.remove(); overlay = null; document.body.classList.remove('pf-lock'); };
+  function modal(title, ...body) {
+    close();
+    overlay = el('div', { class: 'pf-ov', onclick: (e) => { if (e.target === overlay) close(); } }, el('div', { class: 'pf-box', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+      el('div', { class: 'pf-head' }, el('h2', { text: title }), el('button', { type: 'button', class: 'pf-x', 'aria-label': 'Close', onclick: close, text: '✕' })), ...body));
+    document.body.append(overlay); document.body.classList.add('pf-lock'); return overlay;
+  }
+  const script = (src) => new Promise((ok, bad) => { if ([...document.scripts].some((s) => s.src === src)) return ok(); const s = el('script', { src, async: true }); s.onload = ok; s.onerror = bad; document.head.append(s); });
+  async function finishLogin(provider, idToken, nonce, ui) {
+    try {
+      const j = await api({ action: 'login', provider, idToken, nonce, consent: { accepted: true, age: true, version: config.consentVersion } });
+      account = j.account; sfx('good'); close(); renderChip();
+      toast(j.created ? `Welcome! You start with ${config.startWp} WP.` : 'Signed in.', '👋');
+      if (seat) toast('Create or rejoin a room now to bank your WP to this account.', 'ℹ️');
+    } catch (e) { ui.error.textContent = e.message; ui.error.hidden = false; sfx('error'); await prepare(ui); }
+  }
+  async function prepare(ui) {   // a fresh one-time code for each attempt (stops a captured sign-in being replayed)
+    ui.nonce = (await api({ action: 'nonce' })).nonce;
+    if (config.google && window.google?.accounts?.id) {
+      google.accounts.id.initialize({ client_id: config.google, nonce: ui.nonce, callback: (r) => finishLogin('google', r.credential, ui.nonce, ui), ux_mode: 'popup' });
+      ui.gbox.replaceChildren(); google.accounts.id.renderButton(ui.gbox, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: 280 });
+    }
+  }
+  async function openLogin() {
+    if (!config?.enabled) return toast('Sign-in is not switched on yet.', '⚠️');
+    const ui = { error: el('p', { class: 'pf-err', role: 'alert', hidden: true }), gbox: el('div', { class: 'pf-gbox' }), nonce: '' };
+    const a = el('input', { type: 'checkbox', id: 'pf-c1' }), b = el('input', { type: 'checkbox', id: 'pf-c2' });
+    const buttons = el('div', { class: 'pf-providers', 'aria-disabled': 'true' });
+    const sync = () => buttons.classList.toggle('off', !(a.checked && b.checked));
+    a.onchange = b.onchange = sync;
+    if (config.google) buttons.append(ui.gbox);
+    if (config.apple) buttons.append(el('button', { type: 'button', class: 'pf-apple', onclick: async () => {
+      if (!a.checked || !b.checked) return;
+      try { await script('https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js');
+        AppleID.auth.init({ clientId: config.apple, scope: '', redirectURI: location.origin + '/', state: 'kp', nonce: ui.nonce, usePopup: true });
+        const r = await AppleID.auth.signIn(); await finishLogin('apple', r.authorization.id_token, ui.nonce, ui);
+      } catch (e) { if (e && e.error !== 'popup_closed_by_user') { ui.error.textContent = 'Apple sign-in did not finish.'; ui.error.hidden = false; } }
+    }, text: ' Continue with Apple' }));
+    modal('Sign in', el('p', { class: 'pf-note', text: 'Sign in to keep your WP, avatars, borders and gifts in every game. You can also play as a guest: guests earn WP in a room, but it is gone when they leave the room or switch game.' }),
+      el('label', { class: 'pf-check', for: 'pf-c1' }, a, el('span', {}, 'I have read the ', el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' and agree that my data is collected and used as it describes.')),
+      el('label', { class: 'pf-check', for: 'pf-c2' }, b, el('span', { text: 'I am 13 or older, or a parent or guardian has agreed for me.' })),
+      buttons, ui.error, el('p', { class: 'pf-fine', text: 'We keep no name, email address or photo from Google or Apple. You can download or delete your data any time from your account.' }),
+      el('button', { type: 'button', class: 'pf-ghost', onclick: close, text: 'Keep playing as a guest' }));
+    sync();
+    try { if (config.google) await script('https://accounts.google.com/gsi/client'); await prepare(ui); } catch { ui.error.textContent = 'Could not reach the sign-in service. Check your connection.'; ui.error.hidden = false; }
+  }
+
+  // ---------- account ----------
+  function openAccount() {
+    const nick = el('input', { type: 'text', maxlength: 12, value: account.nick || '', placeholder: 'Nickname (optional)', 'aria-label': 'Nickname' });
+    const a = window.GameAudio, p = a?.prefs() || {};
+    const toggle = (label, on, fn) => el('label', { class: 'pf-check' }, el('input', { type: 'checkbox', checked: on ? true : undefined, onchange: (e) => fn(e.target.checked) }), el('span', { text: label }));
+    const run = (fn) => async () => { try { await fn(); } catch (e) { toast(e.message, '⚠️'); } };
+    modal('Your account',
+      el('p', { class: 'pf-wp' }, '🏆 ', el('b', { text: String(account.pts) }), ' WP'),
+      el('p', { class: 'pf-note', text: `Win games with other people to earn WP (up to ${config.dailyCap || 400} a day). Use WP in the shop in any game.` }),
+      el('div', { class: 'pf-row' }, nick, el('button', { type: 'button', text: 'Save', onclick: run(async () => { account = (await api({ action: 'nick', nick: nick.value })).account; toast('Saved.'); }) })),
+      a ? [toggle('Sound effects', p.sfx, (v) => a.setSfx(v)), a.game ? toggle('Background music', p.music, (v) => a.setMusic(v)) : null] : null,
+      el('button', { type: 'button', text: 'Open the shop', onclick: () => openShop() }),
+      el('div', { class: 'pf-sub', text: 'Your data' }),
+      el('div', { class: 'pf-row wrap' },
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Download my data', onclick: run(async () => {
+          const j = await api({ action: 'export' }), url = URL.createObjectURL(new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' }));
+          el('a', { href: url, download: 'krankspwns-my-data.json' }).click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }) }),
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', onclick: run(async () => { await api({ action: 'logout' }); account = null; close(); renderChip(); toast('Signed out.'); }) }),
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', onclick: run(async () => { await api({ action: 'logoutAll' }); account = null; close(); renderChip(); toast('Signed out on every device.'); }) })),
+      el('button', { type: 'button', class: 'pf-danger', text: 'Delete my account', onclick: run(async () => {
+        if (prompt('This permanently deletes your account, WP and items. Type DELETE to confirm.') !== 'DELETE') return;
+        await api({ action: 'delete', confirm: 'DELETE' }); account = null; close(); renderChip(); toast('Your account and data were deleted.');
+      }) }),
+      el('p', { class: 'pf-fine' }, el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' · consent version ', account.consent?.version || ''));
+  }
+
+  // ---------- shop ----------
+  let shopTab = 'av';
+  async function shopAct(action, extra) {
+    if (busy) return; busy = true;
+    try {
+      if (st?.social && seat) { const r = await roomAct(action, extra); if (!r) throw Error('Please try again.'); }
+      else if (account) account = (await api({ action, ...extra })).account;
+      else throw Error('Join a room or sign in first.');
+      sfx(action === 'buy' ? 'coin' : 'pop'); renderChip(); if (overlay?.dataset.shop) openShop(true);
+    } catch (e) { toast(e.message, '⚠️'); sfx('error'); } finally { busy = false; }
+  }
+  function openShop(keep) {
+    const w = wallet(), c = catalog();
+    if (!w || !c) return toast(account ? 'The shop opens inside a room, or after you sign in.' : 'Sign in, or join a room as a guest, to use the shop.', '🛍️');
+    const scroll = overlay?.querySelector('.pf-grid')?.scrollTop || 0;
+    const tabs = el('div', { class: 'pf-tabs', role: 'tablist' }, ...Object.keys(KIND_NAME).map((k) => el('button', { type: 'button', role: 'tab', class: k === shopTab ? 'on' : '', 'aria-selected': String(k === shopTab), onclick: () => { shopTab = k; openShop(true); }, text: KIND_NAME[k] })));
+    const items = [];
+    const card = (pre, name, sub, btn) => el('div', { class: 'pf-item' }, el('div', { class: 'pf-pre' }, pre), el('b', { text: name }), el('small', { text: sub }), btn);
+    const eq = w.eq || {};
+    if (shopTab === 'av') {
+      for (const k of c.avatars || Object.keys(FREE)) items.push(card(avatar(k, eq.bd, '', 48), cap(k), 'Free', el('button', { type: 'button', disabled: eq.av === k || undefined, onclick: () => shopAct('equip', { kind: 'av', key: k }), text: eq.av === k ? 'In use' : 'Use' })));
+      for (const [k, price] of Object.entries(c.av).sort((x, y) => x[1] - y[1])) { const own = w.owned.av.includes(k);
+        items.push(card(avatar(k, eq.bd, '', 48), cap(k), own ? 'Owned' : price + ' WP', own ? el('button', { type: 'button', disabled: eq.av === k || undefined, onclick: () => shopAct('equip', { kind: 'av', key: k }), text: eq.av === k ? 'In use' : 'Use' }) : el('button', { type: 'button', disabled: w.pts < price || undefined, onclick: () => shopAct('buy', { kind: 'av', key: k }), text: 'Buy · ' + price }))); }
+    } else if (shopTab === 'bd' || shopTab === 'acc') {
+      const kind = shopTab, cur = eq[kind];
+      for (const [k, price] of Object.entries(c[kind]).sort((x, y) => x[1] - y[1])) { const own = w.owned[kind].includes(k);
+        const pre = kind === 'bd' ? avatar(eq.av || 'cat', k, eq.acc, 48) : avatar(eq.av || 'cat', eq.bd, k, 48);
+        items.push(card(pre, cap(k), own ? (cur === k ? 'Wearing' : 'Owned') : price + ' WP', own ? el('button', { type: 'button', class: 'pf-ghost', onclick: () => shopAct('equip', { kind, key: cur === k ? '' : k }), text: cur === k ? 'Take off' : 'Wear' }) : el('button', { type: 'button', disabled: w.pts < price || undefined, onclick: () => shopAct('buy', { kind, key: k }), text: 'Buy · ' + price }))); }
+    } else {
+      for (const [k, price] of Object.entries(c.gift).sort((x, y) => x[1] - y[1])) { const left = w.gifts[k] || 0;
+        items.push(card(el('span', { class: 'pf-gift', text: GIFT[k] }), cap(k), left ? `${left} left` : `Pack of ${c.uses}`, el('button', { type: 'button', disabled: w.pts < price || undefined, onclick: () => shopAct('buy', { kind: 'gift', key: k }), text: 'Buy · ' + price }))); }
+    }
+    const ov = modal('Shop', el('p', { class: 'pf-wp' }, '🏆 ', el('b', { text: String(w.pts) }), ' WP', st?.social && !w.account ? el('small', { text: ' · guest WP stay in this room only' }) : null), tabs, el('div', { class: 'pf-grid' }, ...items));
+    ov.dataset.shop = '1'; const g = ov.querySelector('.pf-grid'); if (keep) g.scrollTop = scroll;
+  }
+
+  // ---------- table: reactions, gifts, players ----------
+  async function roomAct(action, extra = {}) {
+    if (!seat || !st) return null;
+    const r = await real(seat.api, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...extra, code: seat.code, pid: seat.pid, tok: seat.tok, match: st.match, requestId: uid() }) });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(Error(j.error || 'Please try again.'), { status: r.status });
+    observe(seat.api, { action, pid: seat.pid, tok: seat.tok }, j); return j;
+  }
+  let tray = null, dock = null;
+  const closeTray = () => { tray?.remove(); tray = null; };
+  function openTray(kind) {
+    const was = tray?.dataset.kind; closeTray(); if (was === kind) return;
+    tray = el('div', { class: 'pf-tray', 'data-kind': kind, role: 'menu' });
+    if (kind === 'emote') tray.append(...st.social.emotes.map((k) => el('button', { type: 'button', role: 'menuitem', 'aria-label': k, onclick: async () => { closeTray(); try { await roomAct('emote', { e: k }); } catch (e) { toast(e.message, '⚠️'); } } }, emoteArt(k))));
+    if (kind === 'gift') {
+      const mine = Object.entries(st.social.wallet.gifts || {}).filter(([, n]) => n > 0);
+      if (!mine.length) tray.append(el('p', { class: 'pf-note', text: 'No gifts yet. Buy some in the shop.' }), el('button', { type: 'button', text: 'Open the shop', onclick: () => { closeTray(); shopTab = 'gift'; openShop(); } }));
+      else tray.append(...mine.map(([k, n]) => el('button', { type: 'button', role: 'menuitem', onclick: () => pickTarget(k) }, el('span', { class: 'pf-gift', text: GIFT[k] }), el('small', { text: '×' + n }))));
+    }
+    if (kind === 'players') tray.append(...playerRows());
+    document.body.append(tray);
+  }
+  function playerRows() {
+    return st.players.filter((p) => !p.bot && !p.departed).map((p) => { const c = st.social.cos[p.id] || {};
+      return el('div', { class: 'pf-prow' }, avatar(c.av || 'cat', c.bd, c.acc, 34), el('span', { class: 'pf-pname' }, p.name + (p.id === st.meId ? ' (you)' : ''), c.member ? el('i', { title: 'Signed-in player', text: ' ✔' }) : null)); });
+  }
+  function pickTarget(item) {
+    closeTray(); tray = el('div', { class: 'pf-tray', 'data-kind': 'target' }, el('p', { class: 'pf-note', text: 'Throw ' + cap(item) + ' at…' }),
+      ...st.players.filter((p) => !p.bot && !p.departed && p.id !== st.meId).map((p) => { const c = st.social.cos[p.id] || {};
+        return el('button', { type: 'button', onclick: async () => { closeTray(); try { await roomAct('throw', { item, target: p.id }); } catch (e) { toast(e.message, '⚠️'); sfx('error'); } } }, avatar(c.av || 'cat', c.bd, c.acc, 34), el('small', { text: p.name })); }));
+    document.body.append(tray);
+  }
+  function renderDock() {
+    const show = !!(st?.social && seat) && !OWN_TABLE_UI;
+    if (!show) { dock?.remove(); dock = null; closeTray(); return; }
+    const w = st.social.wallet;
+    const btn = (label, text, fn) => el('button', { type: 'button', 'aria-label': label, title: label, onclick: fn, text });
+    const next = el('div', { id: 'pf-dock' }, btn('Reactions', '😀', () => openTray('emote')), btn('Throw a gift', '🎁', () => openTray('gift')), btn('Players', '👥', () => openTray('players')),
+      el('button', { type: 'button', class: 'pf-wpchip', 'aria-label': 'Shop', onclick: () => openShop(), text: '🏆 ' + w.pts }));
+    dock ? dock.replaceWith(next) : document.body.append(next); dock = next;
+  }
+  function floatEmote(item) {
+    if (document.hidden) return;
+    const p = st.players.find((q) => q.id === item.id), c = st.social.cos[item.id] || {};
+    const f = el('div', { class: 'pf-float', style: `--x:${10 + Math.random() * 70}%` }, avatar(c.av || 'cat', c.bd, c.acc, 30), el('small', { text: p?.name || '' }), emoteArt(item.k));
+    document.body.append(f); setTimeout(() => f.remove(), 2800);
+    if (window.GameAudio && window.GameAudio.prefs().sfx && CLIPS.has(item.k)) { try { const a = new Audio('/audio/' + item.k + '.mp3'); a.volume = 0.8; a.play().catch(() => sfx('pop')); } catch { sfx('pop'); } } else sfx('pop');
+  }
+  function flyGift(item) {
+    if (document.hidden) return;
+    const from = st.players.find((q) => q.id === item.id), to = st.players.find((q) => q.id === item.to);
+    const f = el('div', { class: 'pf-fly' }, el('span', { class: 'pf-gift', text: GIFT[item.k] || '🎁' }), el('small', { text: `${from?.name || '?'} → ${to?.name || '?'}` }));
+    document.body.append(f); setTimeout(() => f.remove(), 2200); sfx('whoosh'); if (item.to === st.meId) setTimeout(() => sfx('bad'), 500);
+  }
+  // game reply -> platform state
+  const PHASE_SFX = { playing: 'deal', bidding: 'deal', forging: 'deal', discussion: 'turn', voting: 'turn', reveal: 'reveal', finished: 'win' };
+  function observe(url, init, j) {
+    if (!j || !j.social || !j.meId || !j.code) return;
+    let body = {}; try { body = typeof init?.body === 'string' ? JSON.parse(init.body) : {}; } catch {}
+    if (body.action === 'leave') { seat = null; st = null; seenFeed = null; renderDock(); return; }
+    const path = new URL(url, location.href).pathname, hdr = init?.headers?.['x-tok'] || (init?.headers instanceof Headers ? init.headers.get('x-tok') : '');
+    const tok = j.tok || body.tok || hdr || (seat && seat.code === j.code && seat.pid === j.meId ? seat.tok : '');
+    if (!tok) return;
+    const prev = st; seat = { api: path, code: j.code, pid: j.meId, tok };
+    if (prev && prev.code !== j.code) { seenFeed = null; seenAward = null; }
+    st = j;
+    const feed = j.social.feed || [];
+    if (seenFeed === null) seenFeed = j.social.n; else {
+      for (const it of feed) if (it.n > seenFeed) { if (it.t === 'e') floatEmote(it); else if (it.t === 'g') flyGift(it); }
+      seenFeed = Math.max(seenFeed, j.social.n);
+    }
+    const aw = j.social.awards;
+    if (aw && seenAward !== aw.match) { if (seenAward !== null || prev) { const n = aw.wp[j.meId]; if (n) { toast(`+${n} WP${j.social.wallet.account ? ' added to your account' : ' (guest: kept for this room only)'}`, '🏆'); sfx('win'); } else if (aw.note === 'solo') toast('No WP for games with bots only. Play with another person to earn WP.', 'ℹ️'); } seenAward = aw.match; }
+    if (prev && prev.phase !== j.phase && PHASE_SFX[j.phase] && window.GameAudio?.game) sfx(PHASE_SFX[j.phase]);
+    if (!prev || prev.social.wallet.pts !== j.social.wallet.pts || prev.social.n !== j.social.n || prev.meId !== j.meId) { renderDock(); renderChip(); }
+  }
+  window.fetch = async function (input, init) {
+    const res = await real(input, init);
+    try { const u = new URL(typeof input === 'string' ? input : input.url, location.href); if (u.origin === location.origin && GAME_API.test(u.pathname)) res.clone().json().then((j) => observe(u.href, init, j)).catch(() => {}); } catch {}
+    return res;
+  };
+
+  // ---------- the account chip ----------
+  let chip = null;
+  function renderChip() {
+    const w = wallet();
+    const next = account
+      ? el('button', { id: 'pf-chip', type: 'button', onclick: openAccount, title: 'Your account' }, el('span', { text: '👤 ' + (account.nick || 'Account') }), el('b', { text: '🏆 ' + account.pts }))
+      : el('button', { id: 'pf-chip', type: 'button', class: 'guest', onclick: openLogin, title: 'Sign in with Google or Apple' }, el('span', { text: seat && w ? 'Guest · 🏆 ' + w.pts : 'Sign in' }), seat ? null : el('small', { text: 'or play as guest' }));
+    chip ? chip.replaceWith(next) : document.body.append(next); chip = next;
+  }
+  window.Platform = { openLogin, openShop, account: () => account, avatar, toast };
+  (async () => {
+    try { const j = await (await real(API, { credentials: 'same-origin' })).json(); config = { ...j.config, catalog: j.catalog, dailyCap: j.dailyCap }; account = j.account; } catch { config = { enabled: false }; }
+    renderChip();
+  })();
+  document.addEventListener('click', (e) => { if (tray && !e.target.closest('.pf-tray, #pf-dock')) closeTray(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTray(); close(); } });
+})();
+

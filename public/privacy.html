@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy Notice · The Game Room</title><link rel="icon" href="/icon.svg">
+<style>body{font:16px/1.6 system-ui,sans-serif;max-width:760px;margin:0 auto;padding:20px;background:#0f1124;color:#eef0ff}a{color:#9bc1ff}h1,h2{line-height:1.25}th,td{border:1px solid #3a3f66;padding:6px 8px;text-align:left;vertical-align:top}table{border-collapse:collapse;width:100%;font-size:14px}.todo{background:#3b2f00;padding:2px 6px;border-radius:6px}</style></head><body>
+<p><a href="/">← Back to the games</a></p>
+<h1>Privacy Notice</h1>
+<p>Version 2026-10-28. This notice explains how The Game Room handles personal data under Singapore's Personal Data Protection Act 2012 (PDPA). Playing as a guest needs no account and collects no sign-in data.</p>
+<p><b>Organisation:</b> <span class="todo">[organisation name: to be added before launch]</span><br><b>Data Protection Officer contact:</b> <span class="todo">[DPO email: to be added before launch]</span></p>
+<h2>What we collect, and why</h2>
+<table><tr><th>Data</th><th>Purpose</th><th>When</th></tr>
+<tr><td>A keyed hash of your Google or Apple user ID (we cannot read the original ID, and we do not store your name, email or photo)</td><td>To recognise your account when you sign in</td><td>Only if you sign in</td></tr>
+<tr><td>Nickname you type (optional), WP balance, items you own, what you wear, WP earned today</td><td>To run your account and the shop in every game</td><td>Only if you sign in</td></tr>
+<tr><td>Record of the consent you gave (version and time)</td><td>To show that you agreed, as the PDPA requires</td><td>Only if you sign in</td></tr>
+<tr><td>A random session code kept in a secure cookie (HttpOnly, SameSite=Strict, Secure)</td><td>To keep you signed in. It is not used for advertising or tracking</td><td>Only if you sign in</td></tr>
+<tr><td>Room data: the name you type, your moves, chat and reactions</td><td>To run the game. Rooms are deleted automatically after 12 hours</td><td>When you play, as guest or signed in</td></tr>
+<tr><td>IP address (as a one-way hash, and briefly)</td><td>To limit abuse such as repeated sign-in attempts</td><td>When you use the service</td></tr></table>
+<h2>Consent and age</h2>
+<p>We create an account only after you tick the boxes to accept this notice and confirm you are 13 or older (or a parent or guardian agrees for you). You may withdraw consent at any time by deleting your account.</p>
+<h2>Your rights</h2>
+<p>From <b>Account</b> in the game you can download everything we hold about you, correct your nickname, sign out of all devices, or permanently delete your account. Deleting removes your account, WP and items, and cannot be undone. You can also write to our Data Protection Officer to ask for access, correction or withdrawal of consent.</p>
+<h2>Who else handles data (transfers outside Singapore)</h2>
+<p>Google or Apple verifies your identity when you sign in. Our host (Vercel) and database (Upstash Redis) store the data above and may be located outside Singapore. We use them under terms that protect personal data to a standard comparable to the PDPA. Optional realtime delivery is provided by Ably, which only sees room codes and version numbers.</p>
+<h2>Protection and retention</h2>
+<p>Provider IDs are hashed with a secret key; sessions are random 256-bit codes stored only as hashes and expire after 14 idle days or 30 days; sign-in codes can be used once; WP earned from play is capped per day. Accounts inactive for 12 months are scheduled for deletion. If a breach is likely to cause significant harm we will notify affected people and the PDPC as the law requires.</p>
+<h2>Guests</h2>
+<p>Guests can play and earn WP inside a room. Guest WP and purchases are kept only in that room and disappear when the guest leaves or the room expires.</p>
+<h2>Changes</h2>
+<p>If this notice changes in a way that matters, we will ask you again before continuing to use your data.</p>
+</body></html>
+

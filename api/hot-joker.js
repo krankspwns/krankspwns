@@ -104,6 +104,8 @@ const api = createRoomApi({
   },
   start,
   tick,
+  // the first player out of cards wins; the one left holding the Joker earns nothing
+  results: (room) => (room.placed || []).map((id, i) => ({ id, place: i + 1 })),
   actions: {
     shuffleSeats(room, me, body, { host }) {
       host(); need(['lobby', 'finished'].includes(room.phase), 409, 'Change seats before the next game.');

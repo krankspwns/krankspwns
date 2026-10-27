@@ -3,11 +3,12 @@
 // instance sees the same room. Without Redis env vars it falls back to
 // in-memory storage, which is only suitable for local testing.
 const crypto = require('crypto');
+const P = require('../lib/platform');
+const { AVATARS, ACC_PRICE, PREMIUM, GIFTS, BORDER_PRICE, EMOTES, GIFT_USES, START_WP, placeWpFor, predWpFor } = require('../lib/catalog');
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const TTL_SECONDS = 60 * 60 * 12;
-const AVATARS = ['cat', 'dog', 'fox', 'bear', 'panda', 'rabbit', 'frog', 'lion', 'pig', 'koala', 'owl', 'tiger', 'penguin', 'monkey', 'elephant', 'mouse', 'chicken', 'cow', 'dino', 'unicorn'];
 // a chosen animal is kept (friends may pick the same one); with no choice the player gets a random animal nobody has yet
 function pickAvatar(want, taken = []) {
   if (AVATARS.includes(want)) return want;
@@ -20,25 +21,19 @@ function pickAvatar(want, taken = []) {
 const WP_PER_WIN = 10;   // what a round win was worth before the rewards scaled with the table (rooms older than wpv 2 still count it)
 // the top three of a round earn WP, more at a bigger table: 1st gets 10 at up to 3 players and 5 more for every 3 players after that
 // (4-6: 15 / 10 / 5, 7-9: 20 / 15 / 10, 10-12: 25 / 20 / 15); 2nd and 3rd get 5 and 10 less
-const placeWpFor = (n) => { const first = 5 + 5 * Math.ceil(Math.max(n, 1) / 3); return [first, first - 5, first - 10].map((v) => Math.max(v, 0)); };
-const predWpFor = (n) => Math.max(n, 2);   // a correct call is worth one WP per player at the table
-const ACC_PRICE = { hat: 10, shades: 20, mustache: 20, flower: 20, headphones: 30, horns: 30, crown: 40, halo: 50 };
-const PREMIUM = { dragon: 30, robot: 30, alien: 30, ghost: 30, wizard: 40, ninja: 40, phoenix: 150, shadowphoenix: 200, moonwolf: 150, samurai: 150, thundertiger: 150, goldlion: 200, reaper: 200 };   // the last six are the legendary ones
-const GIFTS = { tomato: 10, rose: 10, snowball: 10, popper: 10, balloon: 10, kiss: 10, pie: 15, ghost: 15, rocket: 20, bomb: 20, zap: 20, fireworks: 25, disco: 25, cash: 25 };
-const BORDER_PRICE = { silver: 15, gold: 20, emerald: 20, ice: 25, neon: 30, royal: 30, fire: 40, rainbow: 50 };
-const GIFT_USES = 3;   // one purchase = three throws
 // the tester (a player called Benny) gets 1000 WP to try the shop, and may throw gifts at themselves
 // a player called Benny gets the test points; set the TESTER_NAME environment variable to another name, or to "off", to change or disable it
 const testerEnv = process.env.TESTER_NAME === undefined ? 'benny' : String(process.env.TESTER_NAME).trim().toLowerCase();
 const TESTER_NAME = testerEnv === 'off' ? '' : testerEnv, TESTER_WP = 1000;
 const isTester = (p) => !!TESTER_NAME && !!p && String(p.name || '').trim().toLowerCase() === TESTER_NAME;
 const PRED_PENALTY = 1;   // points lost for a wrong call (the guessing time is a room setting)
-const START_WP = 25;   // every player starts with a little to spend in the shop
 const startWp = () => (globalThis.__startWp ?? START_WP);   // the tests of the shop start from zero
-const balanceOf = (room, pid) => startWp() + (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + (room.wpv === 2 ? 0 : ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN) + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
+const netOf = (room, pid) => (room.wpv === 2 ? 0 : ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN) + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
+const acctOf = (room, pid) => (room.acct && room.acct[pid]) || null;   // the account id behind a seat, never sent to players
+const legacyBalanceOf = (room, pid) => startWp() + (isTester(room.players.find((q) => q.id === pid)) ? TESTER_WP : 0) + (room.wpv === 2 ? 0 : ((room.wins && room.wins[pid]) || 0) * WP_PER_WIN) + ((room.bonus && room.bonus[pid]) || 0) - ((room.spent && room.spent[pid]) || 0);
+const balanceOf = (room, pid) => (acctOf(room, pid) && room.snap && room.snap[pid] !== undefined ? room.snap[pid] + netOf(room, pid) - ((room.sync && room.sync[pid]) || 0) : legacyBalanceOf(room, pid));
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const inventoryOf = (p) => { p.owned = p.owned || { acc: [], av: [], bd: [] }; p.owned.bd = p.owned.bd || []; p.gifts = p.gifts || {}; return p; };
-const EMOTES = ['laugh', 'wow', 'cry', 'cool', 'fire', 'gg', 'ez', 'gl', 'wp', 'rip', 'angry', 'think', 'heart', 'trophy', 'oof', 'faster', 'aiyo', 'steady'];
 const MAX_PLAYERS = 12;
 const HAND_SIZE = 7;
 const ROW_SIZES = [1, 1, 2, 3];
@@ -136,7 +131,37 @@ end
 redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[3])
 return 1`;
 
+// ---- signed-in players: WP and shop items live in their account (lib/platform.js) and follow them to every game ----
+async function hydrate(room, pid) {   // bring the account's wallet into the room before anything reads it
+  const uid = acctOf(room, pid), p = room.players.find((q) => q.id === pid);
+  if (!uid || !p) return;
+  const user = await P.getUser(uid);
+  if (!user) return;
+  (room.snap ||= {})[pid] = user.pts;
+  p.owned = { acc: [...user.owned.acc], av: [...user.owned.av], bd: [...user.owned.bd] }; p.gifts = { ...user.gifts };
+}
+async function linkAccount(room, p, uid) {   // a player took a seat while signed in
+  const user = uid && await P.getUser(uid);
+  if (!user) return;
+  (room.acct ||= {})[p.id] = uid;
+  if (user.eq.av) p.avatar = user.eq.av;
+  p.bd = user.eq.bd || ''; p.acc = user.eq.acc || '';
+  await hydrate(room, p.id);
+}
+async function commitAccounts(room) {   // bank what a signed-in player earned (or lost) here, exactly once per change
+  for (const [pid, uid] of Object.entries(room.acct || {})) {
+    const net = netOf(room, pid), done = (room.sync && room.sync[pid]) || 0;
+    if (net === done) continue;
+    const n = ((room.syncN ||= {})[pid] || 0) + 1, key = `reckoning:${room.code}:${pid}:${n}`;
+    try {
+      const user = net > done ? await P.earn(uid, net - done, key) : await P.credit(uid, net - done, key);
+      (room.snap ||= {})[pid] = user.pts; (room.sync ||= {})[pid] = net; room.syncN[pid] = n;
+    } catch (e) { if (e.status !== 404) throw e; delete room.acct[pid]; }
+  }
+}
+
 async function saveRoom(room) {
+  await commitAccounts(room);
   const expected = room.version || 0;
   room.version = expected + 1;
   if (!REDIS_URL) {
@@ -598,7 +623,7 @@ function view(room, pid, seen, cn) {
     drunk: room.drunk || {},   // drink mode: who has finished their drinks, row by row
     gifts: (room.gifts || []).filter((x) => Date.now() - x.at < 10000),
     giftN: room.giftN || 0,
-    wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts }; })(),
+    wallet: (() => { const m = inventoryOf(me); return { pts: balanceOf(room, me.id), owned: m.owned, gifts: m.gifts, account: !!acctOf(room, me.id), dailyCap: P.DAILY_EARN_CAP }; })(),
     prices: { wp: placeWpFor(activeOf(room).length)[0], place: placeWpFor(activeOf(room).length), acc: ACC_PRICE, av: PREMIUM, bd: BORDER_PRICE, gift: GIFTS, uses: GIFT_USES, test: isTester(me) },
     chatN: room.chatN || 0,
     chatR: room.chatR || {},
@@ -628,6 +653,7 @@ function view(room, pid, seen, cn) {
         acc: p.acc || '',
         bd: p.bd || '',
         wp: balanceOf(room, p.id),
+        member: !!acctOf(room, p.id),
         inv: (() => { const q = inventoryOf(p); return { acc: q.owned.acc, av: q.owned.av, bd: q.owned.bd, gifts: Object.fromEntries(Object.entries(q.gifts).filter(([, n]) => n > 0)) }; })(),   // what everyone owns is public (normal animals aside)
         wins: (room.wins && room.wins[p.id]) || 0,
         nextReady: !!(room.nextReady && room.nextReady[p.id]),
@@ -667,6 +693,7 @@ async function handle(action, b, query, ctx = {}) {
     const host = { id: crypto.randomUUID(), name, avatar: pickAvatar(b.avatar), hand: [], board: Array(SLOTS).fill(null), ready: false };
     const tok = issueToken(host);
     const room = { code, hostId: host.id, phase: 'lobby', round: 0, players: [host], version: 0, wpv: 2 };
+    await linkAccount(room, host, ctx.uid);
     await saveRoom(room);
     await touchPresence(code, host.id);
     return { ...(await viewFor(room, host.id)), tok };
@@ -704,6 +731,7 @@ async function handle(action, b, query, ctx = {}) {
       const tok = replayTok || issueToken(same);
       same.tkh = hashToken(tok);   // the old token stops working
       same.recoveryReceipt = b.requestId ? { id: b.requestId, at: Date.now() } : null;
+      if (ctx.uid) await linkAccount(room, same, ctx.uid);
       await saveRoom(room);
       seenThrottle.delete(code + ':' + same.id);
       await touchPresence(code, same.id);
@@ -724,6 +752,7 @@ async function handle(action, b, query, ctx = {}) {
     }
     const tok = issueToken(p);
     room.players.push(p);
+    if (ctx.uid) await linkAccount(room, p, ctx.uid);
     sysChat(room, { k: 'join', fn: name });
     await saveRoom(room);
     await touchPresence(code, p.id);
@@ -743,6 +772,7 @@ async function handle(action, b, query, ctx = {}) {
     me = room.players.find((p) => p.id === pid);
   }
   need(me && tokenOk(me, ctx.tok), 404, 'You are not in this room');
+  if (acctOf(room, pid)) await hydrate(room, pid);
   if (b.requestId) {
     const prior = (room.requests && room.requests[pid] || []).find((r) => r.id === b.requestId);
     if (prior) {
@@ -974,10 +1004,12 @@ async function handle(action, b, query, ctx = {}) {
         need(b.acc === '' || inventoryOf(me).owned.acc.includes(b.acc), 403, 'Buy that in the shop first');
         me.acc = b.acc;
       }
+      if (acctOf(room, pid)) for (const [k, v] of [['av', b.avatar], ['bd', b.bd], ['acc', b.acc]]) if (v !== undefined) await P.equip(acctOf(room, pid), k, v, b.requestId && b.requestId + ':' + k);   // the look follows the account to other games
       break;
 
     case 'buy': {
       inventoryOf(me);
+      const buyer = acctOf(room, pid);
       const kind = String(b.kind), key = String(b.key);
       const table = kind === 'acc' ? ACC_PRICE : kind === 'av' ? PREMIUM : kind === 'bd' ? BORDER_PRICE : kind === 'gift' ? GIFTS : null;
       const price = table && own(table, key) ? table[key] : undefined;
@@ -987,6 +1019,11 @@ async function handle(action, b, query, ctx = {}) {
       if (kind === 'bd') need(!me.owned.bd.includes(key), 409, 'You already own that');
       if (kind === 'gift') need((me.gifts[key] || 0) + GIFT_USES <= 99, 409, 'That is plenty already');
       need(balanceOf(room, pid) >= price, 402, 'Not enough win points');
+      if (buyer) {   // the account is the wallet: it checks the price again and never charges one request twice
+        const user = await P.buy(buyer, kind, key, b.requestId);
+        me.owned = { acc: [...user.owned.acc], av: [...user.owned.av], bd: [...user.owned.bd] }; me.gifts = { ...user.gifts }; (room.snap ||= {})[pid] = user.pts;
+        break;
+      }
       room.spent = room.spent || {};
       room.spent[pid] = (room.spent[pid] || 0) + price;   // the win count itself is untouched
       if (kind === 'acc') me.owned.acc.push(key);
@@ -1009,6 +1046,7 @@ async function handle(action, b, query, ctx = {}) {
       room.giftAt = room.giftAt || {};
       if (now - (room.giftAt[pid] || 0) < 1500) return viewFor(room, pid, cnOf);   // one throw at a time
       room.giftAt[pid] = now;
+      if (acctOf(room, pid)) for (let i = 0; i < (all ? GIFT_USES : 1); i++) await P.useGift(acctOf(room, pid), key, b.requestId && b.requestId + ':' + i);
       me.gifts[key] -= all ? GIFT_USES : 1;
       room.giftN = (room.giftN || 0) + 1;
       room.gifts = [...(room.gifts || []).filter((x) => now - x.at < 10000), { n: room.giftN, from: pid, to: all ? 'all' : target.id, item: key, at: now }].slice(-10);
@@ -1074,6 +1112,7 @@ async function handle(action, b, query, ctx = {}) {
       if (room.requests) delete room.requests[pid];
       if (leaver && room.players.length) sysChat(room, { k: 'leave', fn: leaver.name });
       if (!room.players.length) {
+        await commitAccounts(room);
         if (!REDIS_URL) mem.delete(code);
         else await redis(['DEL', `room:${code}`]);
         return { left: true };
@@ -1110,10 +1149,11 @@ module.exports = async (req, res) => {
     if (body.requestId !== undefined) need(typeof body.requestId === 'string' && /^[a-zA-Z0-9_-]{16,80}$/.test(body.requestId), 400, 'Bad request ID');
     const h = req.headers || {};
     const tok = String(h['x-tok'] || body.tok || '').slice(0, 100);
+    const uid = await P.identify(req);
     let result;
     for (let attempt = 0; ; attempt++) {
       try {
-        result = await handle(action, body, query, { ip, tok });
+        result = await handle(action, body, query, { ip, tok, uid });
         break;
       } catch (e) {
         if (!(e instanceof Conflict) || attempt >= 10) throw e;

@@ -1,0 +1,84 @@
+// Sound for the games that have none of their own (Bridge, Hot Joker, Grand Con): small synthesised effects and a looping
+// background tune per game. Nothing is downloaded. Audio starts only after a tap (browser rule) and can be turned off.
+(() => {
+  'use strict';
+  const KEY = 'kp-audio';
+  const THEMES = {
+    bridge: { name: 'Bridge', wave: 'triangle', lead: 'sine', root: 196, scale: [0, 2, 4, 5, 7, 9, 11], bpm: 84, bass: [0, -5, -3, -7],
+      tune: [[4, 1], [2, 1], [0, 2], [2, 1], [4, 1], [7, 2], [5, 1], [4, 1], [2, 2], [0, 1], [2, 1], [4, 2]] },
+    'hot-joker': { name: 'Hot Joker', wave: 'square', lead: 'square', root: 220, scale: [0, 2, 4, 7, 9], bpm: 128, bass: [0, 0, 7, 5],
+      tune: [[0, 0.5], [2, 0.5], [4, 0.5], [2, 0.5], [7, 1], [4, 1], [9, 0.5], [7, 0.5], [4, 0.5], [2, 0.5], [0, 1], [4, 1]] },
+    'grand-con': { name: 'Grand Con', wave: 'sawtooth', lead: 'triangle', root: 164.81, scale: [0, 2, 3, 5, 7, 8, 10], bpm: 72, bass: [0, 0, -4, -2],
+      tune: [[0, 2], [2, 1], [3, 1], [4, 2], [2, 1], [0, 1], [-2, 2], [0, 1], [2, 1], [3, 3]] },
+  };
+  const game = ({ '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con' })[location.pathname] || null;
+  let prefs = { sfx: true, music: true }; try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch {} };
+  let ctx = null, master = null, musicGain = null, timer = null, step = 0, nextAt = 0, playing = false;
+  const theme = () => THEMES[game] || THEMES.bridge;
+  const hz = (degree, octave = 0) => { const t = theme(), n = t.scale.length, d = ((degree % n) + n) % n, o = Math.floor(degree / n); return t.root * Math.pow(2, (t.scale[d] + 12 * (o + octave)) / 12); };
+  function boot() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+    ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination);
+    musicGain = ctx.createGain(); musicGain.gain.value = 0.16; musicGain.connect(master); return true;
+  }
+  function tone(freq, start, dur, { type = 'sine', gain = 0.2, to = null, dest = master } = {}) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, start); if (to) o.frequency.exponentialRampToValueAtTime(to, start + dur);
+    g.gain.setValueAtTime(0.0001, start); g.gain.exponentialRampToValueAtTime(gain, start + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(g); g.connect(dest); o.start(start); o.stop(start + dur + 0.05);
+  }
+  function noise(start, dur, gain = 0.15, hp = 1200) {
+    const len = Math.max(1, Math.floor(ctx.sampleRate * dur)), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = buf; f.type = 'highpass'; f.frequency.value = hp; g.gain.value = gain; s.connect(f); f.connect(g); g.connect(master); s.start(start);
+  }
+  // effect name -> notes. Each game plays them in its own voice (waveform and key).
+  const SFX = {
+    tap: (t, w) => tone(hz(4, 1), t, 0.06, { type: w, gain: 0.08 }),
+    deal: (t) => { noise(t, 0.05, 0.2, 2500); noise(t + 0.07, 0.05, 0.14, 2500); },
+    turn: (t, w) => { tone(hz(0, 1), t, 0.18, { type: w, gain: 0.12 }); tone(hz(4, 1), t + 0.1, 0.25, { type: w, gain: 0.1 }); },
+    play: (t, w) => { noise(t, 0.04, 0.16, 1800); tone(hz(2, 0), t, 0.1, { type: w, gain: 0.1, to: hz(0, 0) }); },
+    good: (t, w) => [0, 2, 4].forEach((d, i) => tone(hz(d, 1), t + i * 0.08, 0.2, { type: w, gain: 0.13 })),
+    bad: (t, w) => { tone(hz(2, 0), t, 0.25, { type: w, gain: 0.12, to: hz(-3, 0) }); },
+    win: (t, w) => [0, 2, 4, 7, 9].forEach((d, i) => tone(hz(d, 1), t + i * 0.1, 0.35, { type: w, gain: 0.14 })),
+    lose: (t, w) => [4, 2, 0, -3].forEach((d, i) => tone(hz(d, 0), t + i * 0.16, 0.4, { type: w, gain: 0.12 })),
+    reveal: (t, w) => { tone(hz(-2, 0), t, 0.6, { type: w, gain: 0.1, to: hz(5, 1) }); noise(t + 0.5, 0.2, 0.1, 3000); },
+    coin: (t) => { tone(1318, t, 0.08, { type: 'square', gain: 0.07 }); tone(1760, t + 0.07, 0.22, { type: 'square', gain: 0.07 }); },
+    pop: (t) => tone(520, t, 0.12, { type: 'sine', gain: 0.18, to: 1040 }),
+    whoosh: (t) => { noise(t, 0.35, 0.18, 700); tone(300, t, 0.3, { type: 'sine', gain: 0.08, to: 80 }); },
+    error: (t) => { tone(160, t, 0.18, { type: 'sawtooth', gain: 0.08 }); },
+  };
+  function sfx(name) {
+    if (!prefs.sfx || !boot() || !SFX[name]) return;
+    const t = ctx.currentTime + 0.01; SFX[name](t, theme().wave);
+  }
+  // background music: a looping tune with a bass line, scheduled a little ahead of time
+  function schedule() {
+    const t = theme(), beat = 60 / t.bpm;
+    while (nextAt < ctx.currentTime + 0.3) {
+      const [deg, len] = t.tune[step % t.tune.length];
+      tone(hz(deg, 1), nextAt, len * beat * 0.9, { type: t.lead, gain: 0.5, dest: musicGain });
+      if (step % 2 === 0) tone(hz(t.bass[(step / 2 | 0) % t.bass.length] , -1), nextAt, len * beat * 1.8, { type: t.wave, gain: 0.45, dest: musicGain });
+      nextAt += len * beat; step++;
+    }
+  }
+  function startMusic() {
+    if (!game || !prefs.music || playing || document.hidden || !boot()) return;
+    playing = true; nextAt = ctx.currentTime + 0.1; step = 0; musicGain.gain.cancelScheduledValues(0); musicGain.gain.setTargetAtTime(0.16, ctx.currentTime, 0.3);
+    timer = setInterval(schedule, 120); schedule();
+  }
+  function stopMusic() { if (!playing) return; playing = false; clearInterval(timer); if (ctx) musicGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.15); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopMusic(); else startMusic(); });
+  // browsers only allow sound after a tap: the first one starts the music, and every button gives a click
+  document.addEventListener('pointerdown', (e) => { startMusic(); if (e.target.closest?.('button, [role=button], a')) sfx('tap'); }, true);
+  window.GameAudio = {
+    game, prefs: () => ({ ...prefs }), sfx,
+    setSfx(on) { prefs.sfx = !!on; save(); if (on) sfx('coin'); },
+    setMusic(on) { prefs.music = !!on; save(); if (on) startMusic(); else stopMusic(); },
+    themeName: () => (game ? theme().name : ''),
+  };
+})();
+

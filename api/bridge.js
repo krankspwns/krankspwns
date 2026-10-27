@@ -141,6 +141,11 @@ const api = createRoomApi({
   settings(room, body) { need(DEAL_OPTIONS.includes(body.deals), 400, 'Choose 2, 4 or 8 deals.'); room.settings = { ...room.settings, deals: body.deals }; },
   start,
   tick: (room) => autopilot(room),
+  // seats ranked by total score; equal scores share a place
+  results(room) {
+    let place = 0, prev = null;
+    return (room.seats || []).map((id, i) => ({ id, score: room.scores[i] })).sort((a, b) => b.score - a.score).map((r, i) => { if (r.score !== prev) { place = i + 1; prev = r.score; } return { id: r.id, place }; });
+  },
   onLeave(room) { if (room.phase === 'lobby') delete room.seats; },
   actions: {
     shuffleSeats(room, me, body, { host }) {

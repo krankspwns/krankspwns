@@ -1,6 +1,8 @@
 const crypto = require('node:crypto');
 const store = require('../lib/grand-con-store');
 const CASES = require('../lib/grand-con-cases');
+const P = require('../lib/platform');
+const social = require('../lib/table-social');
 const need=(ok,status,message)=>{if(!ok)throw Object.assign(Error(message),{status});};
 const hash=value=>crypto.createHash('sha256').update(String(value)).digest('hex');
 const secret=()=>crypto.randomBytes(24).toString('base64url');
@@ -70,14 +72,15 @@ function view(room,me){
     history:room.history||[],required:room.phase==='voting'?Math.floor(room.electorate.length/2)+1:null,
     winningTeam:room.score?.house===3?'house':room.score?.ring===3?'ring':null};
 }
+const respond=async(room,me,extra)=>({...view(room,me),...(await social.view(room,me)),...extra});
 async function execute(req,body) {
   const action=req.method==='GET'?'state':body.action;
-  need(['state','create','join','start','advance','extend','forge','vote','next','leave','claim','audit','settings'].includes(action),400,'Unknown action.');
+  need(['state','create','join','start','advance','extend','forge','vote','next','leave','claim','audit','settings',...social.ACTIONS].includes(action),400,'Unknown action.');
   if(action==='create'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
     let code;for(let i=0;i<10;i++){code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ'[crypto.randomInt(24)]).join('');if(!await store.load(code))break;code=null;}
     need(code,503,'Please try creating the room again.');
-    const {p,tok}=player(name),room={code,version:0,hostId:p.id,rulesVersion:2,phase:'lobby',settings:{discussionSeconds:0},players:[p],lot:0,history:[]};await store.save(room);return {...view(room,p),tok};
+    const {p,tok}=player(name),room={code,version:0,hostId:p.id,rulesVersion:2,phase:'lobby',settings:{discussionSeconds:0},players:[p],lot:0,history:[]};await social.link(room,p,await P.identify(req));await store.save(room);return respond(room,p,{tok});
   }
   const code=String(body.code||'').toUpperCase();need(/^[A-Z]{4}$/.test(code),400,'Enter a four-letter room code.');
   const room=await store.load(code);need(room,404,'Room not found.');
@@ -87,7 +90,7 @@ async function execute(req,body) {
     let p=room.players.find(p=>p.name.toLowerCase()===name.toLowerCase());let tok;
     if(p){
       const replay=body.requestId&&body.recoveryCode?crypto.createHmac('sha256',String(body.recoveryCode).trim()).update('gc:'+code+':'+p.id+':'+body.requestId).digest('base64url'):null;
-      if(p.recoveryReceipt===body.requestId&&replay&&equal(p.tokenHash,hash(replay)))return {...view(room,p),tok:replay};
+      if(p.recoveryReceipt===body.requestId&&replay&&equal(p.tokenHash,hash(replay)))return respond(room,p,{tok:replay});
       need(body.recoveryCode&&equal(recovery(room,p),String(body.recoveryCode).trim()),409,'That name is already in this room. Enter its rejoin code.');
       tok=replay||secret();p.tokenHash=hash(tok);p.departed=false;p.recoveryReceipt=body.requestId||null;
       if(!room.players.some(q=>q.id===room.hostId&&!q.departed))room.hostId=p.id;
@@ -96,15 +99,16 @@ async function execute(req,body) {
       const created=player(name);p=created.p;tok=created.tok;room.players.push(p);
     }
     if(!room.hostId)room.hostId=p.id;
-    await store.save(room);return {...view(room,p),tok};
+    await social.link(room,p,await P.identify(req));
+    await store.save(room);return respond(room,p,{tok});
   }
   const me=room.players.find(p=>p.id===body.pid);need(me&&body.tok&&equal(me.tokenHash,hash(body.tok)),401,'We could not load your place. Use your rejoin code to come back.');
   need(!me.departed||action==='state',403,'Use your rejoin code to come back.');
   const fingerprint=hash(JSON.stringify([action,body.match,body.lotNumber,body.targetId,body.choice,body.text,body.discussionSeconds]));
   const receipt=(room.receipts||[]).find(r=>r.pid===me.id&&r.id===body.requestId);
-  if(action!=='state'&&receipt){need(receipt.fingerprint===fingerprint,409,'That request was already used. Please refresh and try again.');return view(room,me);}
+  if(action!=='state'&&receipt){need(receipt.fingerprint===fingerprint,409,'That request was already used. Please refresh and try again.');return respond(room,me);}
   let changed=timed(room)||migrated;
-  if(action==='state'){if(changed)await store.save(room);return view(room,me);}
+  if(action==='state'){if(changed)await store.save(room);return respond(room,me);}
   if(['forge','vote','advance','extend','next','claim','audit'].includes(action))need(body.match===room.match&&body.lotNumber===room.lot+1,409,'The round has changed. Check the new round.');
   const host=()=>need(room.hostId===me.id,403,'Only the host can do that.');
   if(action==='settings'){
@@ -131,6 +135,7 @@ async function execute(req,body) {
     need(doc,400,'Choose another player at the table.');
     me.auditUsed=true;me.auditReport={round:room.lot+1,targetId:target.id,source:doc.source,text:doc.text};
   }
+  if(social.ACTIONS.includes(action))await social.act(room,me,body);
   if(action==='start'){host();need(['lobby','finished'].includes(room.phase),409,'The game has already started.');start(room);}
   if(action==='advance'){host();need(room.phase==='discussion',409,'Talking time has ended.');advance(room);}
   if(action==='extend'){
@@ -159,9 +164,12 @@ async function execute(req,body) {
       const editor=present(room).find(p=>p.team==='ring');if(editor)room.forgerId=editor.id;else {room.forgerId=null;if(!room.tamper)sealForgery(room);}
     }
     // A departing voter keeps their sealed vote; an uncast vote stays in the fixed electorate.
+    social.forget(room,me);
   }
+  // the winning team shares the prize once, when the game ends
+  if(room.phase==='finished'){const win=room.score?.house===3?'house':room.score?.ring===3?'ring':null;await social.settle(room,'grand-con',room.players.filter(p=>win&&p.team===win).map(p=>({id:p.id,place:1})));}
   room.receipts=[...(room.receipts||[]),{pid:me.id,id:body.requestId,fingerprint}].slice(-100);
-  await store.save(room);return view(room,me);
+  await store.save(room);return respond(room,me);
 }
 module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');

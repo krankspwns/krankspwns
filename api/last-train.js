@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const store = require('../lib/last-train-store');
 const rules = require('../lib/last-train-rules');
 const voice = require('../lib/last-train-voice');
+const P = require('../lib/platform');
 const { need, present } = rules;
 const hash = value => crypto.createHash('sha256').update(String(value)).digest('hex');
 const secret = () => crypto.randomBytes(24).toString('base64url');
@@ -12,6 +13,23 @@ const cleanName = value => Array.from(String(value || '').normalize('NFC').repla
 const recovery = (room, p) => crypto.createHmac('sha256', p.tokenHash).update('last-train:' + room.code + ':' + p.id).digest('base64url').slice(0, 24);
 function player(name) { const tok = secret(); return { p: { id: crypto.randomUUID(), name, tokenHash: hash(tok) }, tok }; }
 function view(room, me) { const result = rules.view(room, me); result.me.recoveryCode = recovery(room, me); return result; }
+// signed-in players: WP lives in their account; frames they own there are available here too
+async function hydrate(room, p) {
+  const uid = room.acct?.[p.id]; if (!uid) return;
+  const user = await P.getUser(uid); if (!user) return;
+  (room.snap ||= {})[p.id] = user.pts;
+  const w = rules.wallet(room, p.id); for (const f of user.owned.bd) if (!w.frames.includes(f)) w.frames.push(f);
+}
+async function link(room, p, uid) { if (uid && await P.getUser(uid)) { (room.acct ||= {})[p.id] = uid; await hydrate(room, p); } }
+async function commit(room) {
+  for (const [pid, uid] of Object.entries(room.acct || {})) {
+    const net = rules.netOf(room, pid), done = room.sync?.[pid] || 0; if (net === done) continue;
+    const n = ((room.syncN ||= {})[pid] || 0) + 1, key = 'last-train:' + room.code + ':' + pid + ':' + n;
+    try { const user = net > done ? await P.earn(uid, net - done, key) : await P.credit(uid, net - done, key); (room.snap ||= {})[pid] = user.pts; (room.sync ||= {})[pid] = net; room.syncN[pid] = n; }
+    catch (e) { if (e.status !== 404) throw e; delete room.acct[pid]; }
+  }
+}
+const save = async (room) => { await commit(room); await store.save(room); };
 async function execute(req, body) {
   const action = req.method === 'GET' ? (body.voice ? 'voice' : 'state') : body.action;
   need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick', 'ghostWhisper', 'bet'].includes(action), 400, 'Unknown choice. Please reload.');
@@ -26,7 +44,7 @@ async function execute(req, body) {
     need(code, 503, 'Please try creating the room again.');
     const { p, tok } = player(name); p.avatarIndex = crypto.randomInt(12);
     const room = { code, version: 0, hostId: p.id, phase: 'lobby', rulesVersion: 2, settings: { extra: 'brave', blocker: true, discussion: 'chat', speakSeconds: 45, autoShuffle: process.env.LAST_TRAIN_AUTO_SHUFFLE !== 'off' }, players: [p], history: [], step: 0 };
-    await store.save(room); return { ...view(room, p), tok };
+    await link(room, p, await P.identify(req)); await save(room); return { ...view(room, p), tok };
   }
   const code = String(body.code || '').toUpperCase(); need(/^[A-Z]{4}$/.test(code), 400, 'Enter a four-letter room code.');
   // A room that was just written can briefly read as missing from the database; look once more before saying it is gone.
@@ -62,7 +80,7 @@ async function execute(req, body) {
       if (watching) { me.observer = true; me.alive = false; room.observers.push(me); } else room.players.push(me);
     }
     if (!room.players.some(p => p.id === room.hostId && !p.departed)) room.hostId = me.id;
-    await store.save(room); return { ...view(room, me), tok };
+    await link(room, me, await P.identify(req)); await save(room); return { ...view(room, me), tok };
   }
   // A phone the host removed hears so plainly instead of a generic sign-in error.
   need(!(room.kicked || []).includes(body.pid), 410, 'The host removed you from this room.');
@@ -72,6 +90,7 @@ async function execute(req, body) {
   const receipt = (room.receipts || []).find(r => r.pid === me.id && r.id === body.requestId);
   if (action !== 'state' && receipt) { need(receipt.fingerprint === fingerprint, 409, 'That request was already used. Reload the game.'); return view(room, me); }
   need(!me.kicked, 410, 'The host removed you from this room.');
+  await hydrate(room, me);
   need(!me.departed || ['state', 'voice', 'dismissLetters', 'wear', 'buy'].includes(action), 403, 'Use your rejoin code to come back.');
   need(!me.observer || ['state', 'voice', 'emote', 'leave', 'bet'].includes(action), 403, 'Observers watch this journey. You take a seat when the next journey starts.');
   const changed = rules.timed(room);
@@ -82,7 +101,7 @@ async function execute(req, body) {
     const clip = await store.loadVoice(code, room.match, body.voice); need(clip, 404, 'This recording has expired.');
     if (changed || upgraded) await store.save(room); return clip;
   }
-  if (action === 'state') { if (changed || upgraded) await store.save(room); return view(room, me); }
+  if (action === 'state') { if (changed || upgraded) await save(room); return view(room, me); }
   // Versioned phase fences stop delayed choices applying to a different night or phase.
   if (action === 'speakVoice') need(body.match === room.match && body.round === room.round, 409, 'This recording belongs to an earlier turn.');
   else if (['letter', 'dismissLetters'].includes(action)) need(body.match === (room.match || 0), 409, 'A new journey has started. Open your letters again.');
@@ -163,7 +182,7 @@ async function execute(req, body) {
     // Departure never changes alive/group counts or committed actions. Timed phases handle missing input.
   }
   room.receipts = [...(room.receipts || []), { pid: me.id, id: body.requestId, fingerprint }].slice(-200);
-  await store.save(room); return view(room, me);
+  await save(room); return view(room, me);
 }
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
