@@ -423,7 +423,7 @@
     const card = (icon, title, tag, ...kids) => el('section', { class: 'set-card' }, el('header', {}, txt('span', 'set-chip', icon), el('h3', {}, title), tag ? txt('em', '', tag) : null), ...kids.filter(Boolean));
     const draw = () => {
       const inRoom = !!(state && seat), host = inRoom && state.hostId === state.meId, editable = host && ['lobby', 'finished'].includes(state.phase), st = state?.settings || {};
-      const change = async patch => { if (!editable) return; await setting(patch); draw(); };
+      const change = patch => { if (!editable) return; const done = setting(patch); draw(); return done; };
       body.replaceChildren(...[
         inRoom ? card('🚂', 'Room Rules', host ? (editable ? 'HOST' : 'BETWEEN JOURNEYS') : 'HOST ONLY',
           !editable ? txt('p', 'set-note', host ? 'You can change these on the platform or after the journey ends.' : 'Only the host can change these. Everyone sees the same rules.') : null,
@@ -529,7 +529,21 @@
   function roster() {
     return el('section', { class: 'panel roster-panel' }, el('div', { class: 'panel-heading' }, el('h3', {}, 'Your Fellow Travellers'), txt('small', 'muted', state.players.filter(p => !p.departed).length + '/12 IN ROOM')), el('div', { class: 'roster' }, ...state.players.map(p => el('div', { class: 'seat' + (p.id === state.meId ? ' mine' : '') + (!p.alive ? ' out' : '') }, avatar(p, 'avatar'), el('div', { class: 'seat-label' }, txt('b', '', p.name + (p.id === state.meId ? ' · You' : '')), txt('small', '', p.role ? role(p.role).name + ' · ' + (p.alive ? groupName(p.group) : 'OUT') : p.departed ? 'AWAY' : p.id === state.hostId ? 'HOST' : 'READY TO BOARD'))))));
   }
-  function setting(extra = {}) { return send('settings', { ...state.settings, ...extra }); }
+  // Lobby settings change on screen at once and save in the background (no greyed-out buttons while waiting for the server)
+  let settingSeq = 0;
+  async function setting(extra = {}) {
+    if (!seat || !state) return;
+    const owner = seat, mine = ++settingSeq;
+    state.settings = { ...state.settings, ...extra };
+    if (extra.speakSeconds !== undefined) state.speakSeconds = extra.speakSeconds;
+    if (extra.quick && state.speakSeconds > 20) state.speakSeconds = 20;
+    error = ''; render();
+    try {
+      const data = await request('settings', { ...state.settings }, owner);
+      if (seat === owner && mine === settingSeq) { adopt(data); connected = true; }
+    } catch (e) { error = e.name === 'AbortError' ? 'Connection stopped. We are checking whether your choice was saved.' : e.message; await poll(); }
+    finally { if (mine === settingSeq) render(); }
+  }
   function startJourneyButton(disabled, replay = false) {
     const n = btn(replay ? 'PLAY AGAIN' : 'START JOURNEY', () => send('start'), 'host departure-button', disabled);
     n.setAttribute('aria-label', replay ? 'PLAY AGAIN' : 'START JOURNEY');

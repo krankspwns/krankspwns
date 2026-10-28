@@ -255,7 +255,7 @@
   function finale(c) {
     const { state, send } = c, host = state.hostId === state.meId, w = state.finalWinners || [], mine = state.mySeat >= 0 && w.includes(state.mySeat);
     return c.panel('finale-panel', victory(c, w, w.length > 1 ? 'Joint Champions!' : c.who(state.seats[w[0]]) + ' Wins!', mine ? 'Well Played · Match Complete' : 'Match Complete · Until Next Time', [state.code,state.match,'match'].join(':')), scoreStrip(c),
-      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: c.busy || !host, onclick: () => send('settings', { deals: n }) }, n + ' deals')))),
+      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: !host, onclick: () => { if (c.busy || state.deals === n) return; state.deals = n; send('settings', { deals: n }); } }, n + ' deals')))),
       host ? [c.botControls(), c.button('Play Again', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 4), c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary')] : text('p', 'waiting', 'Waiting for the host to start a new match.'));
   }
   function screen(c) {
