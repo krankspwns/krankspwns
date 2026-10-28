@@ -74,11 +74,40 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopMusic(); else startMusic(); });
   // browsers only allow sound after a tap: the first one starts the music, and every button gives a click
   document.addEventListener('pointerdown', (e) => { startMusic(); if (e.target.closest?.('button, [role=button], a')) sfx('tap'); }, true);
+  // one shared header dropdown (same look as Row of Reckoning's sound control). A single element is reused, so it survives the games' re-renders.
+  let menuHost = null;
+  const MODES = [['🔇', 'Sound off'], ['🔊', 'Effects'], ['🎵', 'Effects + music']];
+  const mode = () => (!prefs.sfx ? 0 : prefs.music ? 2 : 1);
+  function setMode(m) { prefs.sfx = m > 0; prefs.music = m > 1; save(); if (m > 1) startMusic(); else stopMusic(); if (m > 0) sfx('coin'); drawMenu(); }
+  function drawMenu() {
+    if (!menuHost) return;
+    const h = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
+    const cur = mode(), open = menuHost.classList.contains('open');
+    const btn = h('button', 'pf-ddbtn'); btn.type = 'button'; btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', 'Sound: ' + MODES[cur][1]); btn.title = 'Sound: ' + MODES[cur][1];
+    btn.append(h('span', '', MODES[cur][0]), h('i', 'pf-ddcaret', '▾'));
+    btn.onclick = (e) => { e.stopPropagation(); menuHost.classList.toggle('open'); btn.setAttribute('aria-expanded', String(menuHost.classList.contains('open'))); };
+    const list = h('div', 'pf-ddmenu'); list.setAttribute('role', 'menu');
+    MODES.forEach(([ic, label], m) => {
+      const b = h('button', m === cur ? 'on' : ''); b.type = 'button'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(m === cur));
+      b.append(h('span', '', ic), h('span', '', label)); b.onclick = (e) => { e.stopPropagation(); menuHost.classList.remove('open'); setMode(m); };
+      list.append(b);
+    });
+    menuHost.replaceChildren(btn, list);
+  }
+  function soundMenu() {
+    if (!menuHost) {
+      menuHost = document.createElement('div'); menuHost.className = 'pf-dd'; drawMenu();
+      document.addEventListener('click', () => { if (menuHost.classList.contains('open')) { menuHost.classList.remove('open'); drawMenu(); } });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuHost.classList.contains('open')) { menuHost.classList.remove('open'); drawMenu(); } });
+    }
+    return menuHost;
+  }
   window.GameAudio = {
-    game, prefs: () => ({ ...prefs }), sfx,
-    setSfx(on) { prefs.sfx = !!on; save(); if (on) sfx('coin'); },
-    setMusic(on) { prefs.music = !!on; save(); if (on) startMusic(); else stopMusic(); },
+    game, prefs: () => ({ ...prefs }), sfx, soundMenu,
+    setSfx(on) { prefs.sfx = !!on; save(); if (on) sfx('coin'); drawMenu(); },
+    setMusic(on) { prefs.music = !!on; save(); if (on) startMusic(); else stopMusic(); drawMenu(); },
     themeName: () => (game ? theme().name : ''),
   };
 })();
+
 

@@ -93,3 +93,14 @@ body.pf-lock{overflow:hidden}
 .pf-spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#ffd23f;animation:pf-spin .8s linear infinite}
 @keyframes pf-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pf-spin{animation-duration:2s}}
+
+/* shared header tools + sound dropdown (matches Row of Reckoning's header) */
+.header-tools{display:flex;align-items:center;gap:6px;flex:none}
+.pf-dd{position:relative}
+.pf-ddbtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 11px;border-radius:99px;font-size:15px;line-height:1;background:rgba(255,255,255,.06);color:#f4f5ff;border:1px solid rgba(255,255,255,.2);cursor:pointer}
+.pf-ddbtn:hover{background:rgba(255,255,255,.12)}
+.pf-ddcaret{font-style:normal;font-size:10px;opacity:.7;transition:transform .15s}.pf-dd.open .pf-ddcaret{transform:rotate(180deg)}
+.pf-ddmenu{position:absolute;top:calc(100% + 8px);right:0;z-index:120;min-width:180px;display:none;padding:6px;border-radius:16px;background:#1b1e3a;border:1px solid rgba(255,255,255,.22);box-shadow:0 16px 40px rgba(0,0,0,.55)}
+.pf-dd.open .pf-ddmenu{display:grid;gap:2px}
+.pf-ddmenu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:11px;font:600 14px system-ui,sans-serif;text-align:left;background:transparent;color:#f4f5ff;border:0;cursor:pointer;white-space:nowrap}
+.pf-ddmenu button:hover{background:rgba(255,255,255,.1)}.pf-ddmenu button.on{background:rgba(255,210,63,.2);color:#ffd23f}
