@@ -18,6 +18,17 @@
     const a = n.animate([{ transform: at(from, 0.6), opacity: 0.9 }, { transform: at(from, 1.1), opacity: 1, offset: 0.2 }, { transform: at(to, scaleTo), opacity: 1 }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
     const end = () => { n.remove(); done?.(); }; a.onfinish = end; a.oncancel = end;
   }
+  // the pick panel fades out gently instead of vanishing, with the picked card lifted out of it
+  function leaveGhost(i) {
+    const panel = document.querySelector('.take-panel'); if (!panel || calm()) return;
+    const r = panel.getBoundingClientRect(), g = panel.cloneNode(true);
+    g.classList.add('hj-ghost-panel'); g.style.cssText += ';position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;margin:0;z-index:1500;pointer-events:none';
+    const cards = g.querySelectorAll('.pick-row .pcard'); if (cards[i]) cards[i].style.visibility = 'hidden';
+    g.querySelectorAll('button').forEach((b) => { b.disabled = true; b.removeAttribute('data-focus'); });
+    document.body.append(g);
+    const a = g.animate([{ opacity: 1, transform: 'none' }, { opacity: 1, transform: 'none', offset: 0.45 }, { opacity: 0, transform: 'translateY(-10px) scale(.98)' }], { duration: 1100, easing: 'ease-out', fill: 'forwards' });
+    a.onfinish = () => g.remove(); a.oncancel = () => g.remove(); setTimeout(() => g.remove(), 2500);
+  }
   // the card I picked turns over where it lay, then travels into my hand
   function flipFly(c, code, from, to, done) {
     if (!from || !to || calm()) { done?.(); return; }
@@ -28,8 +39,8 @@
     inner.append(back, face); wrap.append(inner); document.body.append(wrap);
     const at = (r, k) => 'translate(' + (r.left + r.width / 2 - w / 2) + 'px,' + (r.top + r.height / 2 - h / 2) + 'px) scale(' + k + ')';
     const k2 = Math.min(1.4, to.width / w || 1);
-    const a = wrap.animate([{ transform: at(from, 1), offset: 0 }, { transform: at(from, 1.18), offset: 0.3 }, { transform: at(from, 1.18), offset: 0.45 }, { transform: at(to, k2), offset: 1 }], { duration: 1150, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
-    inner.animate([{ transform: 'rotateY(0deg)', offset: 0 }, { transform: 'rotateY(180deg)', offset: 0.35 }, { transform: 'rotateY(180deg)', offset: 1 }], { duration: 1150, easing: 'ease-in-out', fill: 'forwards' });
+    const a = wrap.animate([{ transform: at(from, 1), offset: 0 }, { transform: at(from, 1.18), offset: 0.3 }, { transform: at(from, 1.18), offset: 0.45 }, { transform: at(to, k2), offset: 1 }], { duration: 1400, easing: 'cubic-bezier(.4,.1,.2,1)', fill: 'forwards' });
+    inner.animate([{ transform: 'rotateY(0deg)', offset: 0 }, { transform: 'rotateY(180deg)', offset: 0.35 }, { transform: 'rotateY(180deg)', offset: 1 }], { duration: 1400, easing: 'ease-in-out', fill: 'forwards' });
     const end = () => { wrap.remove(); done?.(); }; a.onfinish = end; a.oncancel = end;
   }
   function burst(node, label) {
@@ -211,7 +222,7 @@
     return c.panel('take-panel active', text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
       el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + ' hidden card' + (state.sourceCount === 1 ? '' : 's') + '. One of them might be the Joker. Tap a card to choose it, then confirm.'),
       el('div', { class: 'pick-row', 'data-scroll': 'pick' }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable' + (pick === i ? ' selected' : ''), 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, 'aria-pressed': pick === i, disabled: c.busy, onclick: () => { pick = i; c.render(); } }))),
-      c.button(pick >= 0 ? 'Take card ' + (pick + 1) : 'Choose a card', async () => { const i = pick; const pr = document.querySelectorAll('.pick-row .pcard')[i]?.getBoundingClientRect(); if (pr) pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now() }; if (await send('take', { index: i, turn: state.turn })) pick = -1; }, 'primary', pick < 0, 'take-confirm', 'hand:ink'));
+      c.button(pick >= 0 ? 'Take card ' + (pick + 1) : 'Choose a card', async () => { const i = pick; const pr = document.querySelectorAll('.pick-row .pcard')[i]?.getBoundingClientRect(); if (pr) { pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now() }; leaveGhost(i); } if (await send('take', { index: i, turn: state.turn })) pick = -1; }, 'primary', pick < 0, 'take-confirm', 'hand:ink'));
   }
   function handPanel(c) {
     const { state, send } = c, hand = state.me.hand, playing = state.phase === 'playing';
