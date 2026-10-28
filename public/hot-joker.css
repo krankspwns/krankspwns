@@ -80,3 +80,11 @@ body { background: radial-gradient(ellipse at 95% 0,#812d5540,transparent 55%),r
 .hj-burst { position: fixed; z-index: 2100; transform: translate(-50%, 0); pointer-events: none; font-weight: 900; font-size: 1.1rem; color: #ffe08a; text-shadow: 0 2px 8px rgba(0,0,0,.7); animation: hj-burst 1.3s ease-out forwards; }
 @keyframes hj-burst { from { opacity: 0; transform: translate(-50%, 10px) scale(.7); } 20% { opacity: 1; transform: translate(-50%, -6px) scale(1.15); } to { opacity: 0; transform: translate(-50%, -46px) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .tile.lost, .tile.got { animation: none; } }
+/* a laid-down set is a little stack of cards, each peeking out from under the next */
+.set-chip { gap: 0; padding: 5px 6px 5px 8px; }
+.set-chip .pcard.small { margin-left: -27px; box-shadow: -3px 1px 6px rgba(0,0,0,.45); transition: transform .2s; }
+.set-chip .pcard.small:first-child { margin-left: 0; }
+.set-chip .pcard.small:nth-child(2) { transform: translateY(-1px) rotate(2deg); }
+.set-chip .pcard.small:nth-child(3) { transform: translateY(1px) rotate(-1.5deg); }
+.set-chip .pcard.small:nth-child(4) { transform: translateY(-1px) rotate(3deg); }
+.set-chip:hover .pcard.small { transform: none; margin-left: -12px; } .set-chip:hover .pcard.small:first-child { margin-left: 0; }
