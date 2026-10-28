@@ -35,8 +35,8 @@ body.pf-lock{overflow:hidden}
 .pf-box input[type=text]{flex:1;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:#0d0f22;color:#fff}
 .pf-note,.pf-fine{margin:0;opacity:.85}.pf-fine{font-size:12px;opacity:.65}.pf-fine a,.pf-note a,.pf-check a{color:#9bc1ff}
 .pf-check{display:flex;gap:10px;align-items:flex-start}.pf-check input{width:22px;height:22px;flex:none;margin-top:1px}
-.pf-providers{display:flex;flex-direction:column;gap:10px;align-items:center}.pf-providers.off{opacity:.35;pointer-events:none}
-.pf-apple{width:280px;height:44px;border-radius:22px;border:1px solid #fff;background:#000;color:#fff;font:600 15px system-ui,sans-serif;cursor:pointer}
+.pf-providers{display:flex;flex-direction:column;gap:10px;align-items:center;width:100%}.pf-providers.off{opacity:.35;pointer-events:none}
+.pf-apple{width:100%;max-width:400px;height:44px;border-radius:22px;border:1px solid #fff;background:#000;color:#fff;font:600 15px system-ui,sans-serif;cursor:pointer}
 .pf-err{margin:0;color:#ff9a94}.pf-wp{margin:0;font-size:20px}.pf-wp small{font-size:12px;opacity:.7}.pf-wp b{color:#ffd23f}
 .pf-row{display:flex;gap:8px}.pf-row.wrap{flex-wrap:wrap}.pf-sub{font-weight:700;opacity:.8;margin-top:4px}
 .pf-tabs{display:flex;gap:6px;flex-wrap:wrap}.pf-box .pf-tabs button{background:rgba(255,255,255,.1)}.pf-box .pf-tabs button.on{background:#7c5cff}
@@ -85,5 +85,5 @@ body.pf-lock{overflow:hidden}
 .pf-providers{min-height:44px;transition:opacity .2s}.pf-hint{margin:-4px 0 0;text-align:center;font-size:13px;color:#ffd23f}
 .pf-or{display:flex;align-items:center;gap:10px;opacity:.6;font-size:13px}.pf-or::before,.pf-or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.25)}
 .pf-guest{width:100%}.pf-box .pf-fine{text-align:center}
-.pf-gbox{width:280px;height:44px;min-height:0;display:flex;align-items:center;justify-content:center;overflow:visible;background:transparent;color-scheme:light;box-shadow:none;line-height:0}
+.pf-gbox{width:100%;max-width:400px;height:44px;min-height:0;display:flex;align-items:center;justify-content:center;overflow:visible;background:transparent;color-scheme:light;box-shadow:none;line-height:0}
 .pf-gbox>div,.pf-gbox iframe{box-shadow:none!important;margin:0!important;background:transparent!important;color-scheme:light}
