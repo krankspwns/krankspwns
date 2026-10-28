@@ -236,7 +236,7 @@
     if (!show) { dock?.remove(); dock = null; closeTray(); return; }
     const w = st.social.wallet;
     const btn = (label, text, fn) => el('button', { type: 'button', 'aria-label': label, title: label, onclick: fn, text });
-    const next = el('div', { id: 'pf-dock' }, btn('Reactions', '😀', () => openTray('emote')), btn('Throw a gift', '🎁', () => openTray('gift')), btn('Players', '👥', () => openTray('players')),
+    const next = el('div', { id: 'pf-dock' }, btn('Reactions', '😀', () => openTray('emote')), ...(st.players.some((p) => !p.bot && !p.departed && p.id !== st.meId) ? [btn('Throw a gift', '🎁', () => openTray('gift'))] : []), btn('Players', '👥', () => openTray('players')),
       el('button', { type: 'button', class: 'pf-wpchip', 'aria-label': 'Shop', onclick: () => openShop(), text: '🏆 ' + w.pts }));
     dock ? dock.replaceWith(next) : document.body.append(next); dock = next;
   }
