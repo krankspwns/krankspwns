@@ -108,7 +108,7 @@
       const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 8000);
       try {
         const response = await fetch(cfg.api + '?code=' + owner.code + '&pid=' + owner.pid, { headers: { 'x-tok': owner.tok }, signal: controller.signal });
-        const data = await response.json(); if (seat !== owner) return;
+        const data = await response.json(); if (seat !== owner || busy) return;
         if (!response.ok) { if ([401, 404].includes(response.status)) { seat = null; state = null; store(cfg.seatKey, null); } throw Error(data.error); }
         const changed = !state || state.version !== data.version || !connected || (cfg.viewKey && cfg.viewKey(state) !== cfg.viewKey(data)); adopt(data); connected = true; if (changed) render(); else tick();
       } catch (e) { if (seat !== owner && seat) return; connected = false; error = e.name === 'AbortError' ? 'No connection. Trying again…' : e.message; render(); }
@@ -184,8 +184,9 @@
       if (state.meId !== state.hostId || !['lobby', 'finished'].includes(state.phase)) return null;
       const seated = state.players.filter((p) => !p.departed).length, bots = state.players.filter((p) => p.bot).length;
       return el('div', { class: 'bot-controls' },
-        button('+ Add a bot', () => send('addBot'), 'secondary', seated >= cfg.max, 'add-bot'),
-        bots ? button('− Remove a bot', () => send('removeBot'), 'text-button', false, 'remove-bot') : null,
+        el('div', { class: 'bot-row' },
+          button('+ Add a bot', () => send('addBot'), 'bot-btn add', seated >= cfg.max, 'add-bot'),
+          bots ? button('− Remove a bot', () => send('removeBot'), 'bot-btn remove', false, 'remove-bot') : null),
         text('small', 'muted', bots ? bots + (bots === 1 ? ' bot' : ' bots') + ' at the table. Bots play like casual players.' : 'No friends nearby? A bot can take a seat.'));
     }
     function waitingRoom() {

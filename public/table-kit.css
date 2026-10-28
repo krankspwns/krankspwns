@@ -161,3 +161,12 @@ body[data-game] { --muted: #bbb9b1; --line: #d9bc7933; }
 @media(max-width:420px) { .pcard .card-index .pcard-rank { font-size:15px; }.pcard .card-index .pcard-suit { font-size:12px; }.card-pips { inset:20px 10px; }.card-pip { font-size:8px; } }
 /* Hands stay spaced apart so neither corner label is covered by its neighbour. */
 body[data-game] .hand-row .pcard { margin-right:0; }
+.bot-controls { justify-items: stretch; gap: 10px; }
+.bot-row { display: flex; gap: 8px; }
+.bot-row .bot-btn { flex: 1; min-height: 46px; margin: 0; width: auto; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; font-size: 14px; font-weight: 750; letter-spacing: .2px; white-space: nowrap; }
+.bot-btn.add { color: var(--accent); border-color: var(--accent-dark); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.bot-btn.add:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 24%, transparent); border-color: var(--accent); }
+.bot-btn.remove { color: var(--muted); border-color: #b7cff02e; background: #ffffff08; }
+.bot-btn.remove:hover:not(:disabled) { color: var(--ink); background: #ffffff14; }
+.bot-btn:disabled { opacity: .4; cursor: not-allowed; }
+.bot-controls small { text-align: center; }
