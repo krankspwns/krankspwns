@@ -64,6 +64,7 @@
     screen: (c) => screen(c),
     afterRender: (c) => {
       collectTrick(c);
+      try { flair(c); } catch {}
       const banner = document.querySelector('.victory-banner');
       const key = c.state && [c.state.code,c.state.match,c.state.phase,c.state.board,'victory-scroll'].join(':');
       if (banner && c.fresh(key)) banner.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',block:'start'});
@@ -275,6 +276,49 @@
   }
   // Keep the same overlay nodes across polls. Coordinates belong to the table,
   // so scrolling moves the flying cards and their destination together.
+  // ---- extra animation: dealing, cards flying to the table, bid bubbles, reveals ----
+  let fx = null;
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const plateOf = (seat) => document.querySelector('.felt-seat[data-bridge-seat="' + seat + '"] .plate');
+  function bubble(node, label, cls) {
+    if (!node || calm()) return;
+    const r = node.getBoundingClientRect(), b = el('div', { class: 'br-bubble ' + (cls || '') }, label);
+    b.style.left = r.left + r.width / 2 + 'px'; b.style.top = r.top + 'px'; document.body.append(b); setTimeout(() => b.remove(), 1500);
+  }
+  function flyCard(c, code, from, slotCard) {
+    const to = slotCard.getBoundingClientRect();
+    if (calm() || !from || !to.width) return;
+    slotCard.style.opacity = 0;
+    const n = c.card(code); n.classList.add('br-fly'); n.style.width = to.width + 'px'; n.style.height = to.height + 'px'; document.body.append(n);
+    const at = (r, k) => 'translate(' + (r.left + r.width / 2 - to.width / 2) + 'px,' + (r.top + r.height / 2 - to.height / 2) + 'px) scale(' + k + ')';
+    const end = () => { n.remove(); slotCard.style.opacity = ''; };
+    const a = n.animate([{ transform: at(from, from.width > to.width ? 1 : 0.55) }, { transform: at(to, 1) }], { duration: 420, easing: 'cubic-bezier(.25,.8,.3,1)', fill: 'forwards' });
+    a.onfinish = end; a.oncancel = end;
+  }
+  function flair(c) {
+    const st = c.state, d = st?.deal; if (!st || !d || !['bidding', 'calling', 'playing', 'reveal'].includes(st.phase)) { fx = null; return; }
+    const deal = st.match + ':' + st.board, hand = [...document.querySelectorAll('.hand-panel .hand-row .pcard')];
+    const rects = new Map(); hand.forEach((n, i) => { if (d.myHand?.[i]) rects.set(d.myHand[i], n.getBoundingClientRect()); });
+    const trick = (d.trick.length ? d.trick : collecting(st) ? (d.lastTrick?.cards || []) : []);
+    const now = { deal, cards: new Set(trick.map((x) => deal + ':' + x.card)), calls: d.calls.length, contract: !!d.contract, partner: d.partner, broken: !!d.trumpBroken, trickNo: d.lastTrick?.number || 0, rects };
+    const was = fx && fx.deal === deal ? fx : null;
+    if (!fx || fx.deal !== deal) {
+      // a fresh deal: the cards are dealt out to the hand one by one
+      if (fx && !calm()) hand.forEach((n, i) => n.animate([{ opacity: 0, transform: 'translateY(-60px) scale(.6) rotate(-8deg)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: i * 55, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+    } else if (!document.hidden) {
+      const fresh = trick.filter((x) => !was.cards.has(deal + ':' + x.card));
+      fresh.forEach((x) => {
+        const slot = document.querySelector('.trick-slot[data-bridge-seat="' + x.seat + '"] .pcard'); if (!slot) return;
+        flyCard(c, x.card, x.seat === st.mySeat ? was.rects.get(x.card) || plateOf(x.seat)?.getBoundingClientRect() : plateOf(x.seat)?.getBoundingClientRect(), slot);
+      });
+      if (now.calls > was.calls) { const call = d.calls[d.calls.length - 1]; if (call) { bubble(plateOf(call.seat), call.call === 'P' ? 'Pass' : call.call[0] + ' ' + SUITS[call.call[1]], call.call === 'P' ? 'pass' : 'bid'); [...document.querySelectorAll('.auction-cell.call')].at(-1)?.classList.add('br-pop'); } }
+      if (now.contract && !was.contract) { bubble(plateOf(d.contract.declarer), 'Contract ' + d.contract.level + ' ' + SUITS[d.contract.denom], 'bid'); document.querySelector('.contract-bar')?.classList.add('br-pop'); }
+      if (now.partner !== null && now.partner !== undefined && (was.partner === null || was.partner === undefined)) { bubble(plateOf(d.partner), '🤝 Partner revealed!', 'reveal'); document.querySelector('.called-card')?.classList.add('br-pop'); }
+      if (now.broken && !was.broken) bubble(document.querySelector('.trick'), '♦ Trumps are open!', 'reveal');
+      if (now.trickNo > was.trickNo && d.lastTrick) bubble(plateOf(d.lastTrick.winner), 'Wins the trick!', 'win');
+    }
+    fx = now;
+  }
   function collectTrick(c) {
     const s = c.state, panel = document.querySelector('.table-panel');
     const clear = () => { if (collection) { clearTimeout(collection.timer); collection.node?.remove(); collection = null; } };
