@@ -210,7 +210,7 @@
   function openTray(kind) {
     const was = tray?.dataset.kind; closeTray(); if (was === kind) return;
     tray = el('div', { class: 'pf-tray', 'data-kind': kind, role: 'menu' });
-    if (kind === 'emote') tray.append(...st.social.emotes.map((k) => el('button', { type: 'button', role: 'menuitem', 'aria-label': k, onclick: async () => { closeTray(); try { await roomAct('emote', { e: k }); } catch (e) { toast(e.message, '⚠️'); } } }, emoteArt(k))));
+    if (kind === 'emote') tray.append(...st.social.emotes.map((k) => el('button', { type: 'button', role: 'menuitem', 'aria-label': k, onclick: async () => { closeTray(); const p = mine('e', k); floatEmote({ n: 0, t: 'e', id: st.meId, k }); try { await roomAct('emote', { e: k }); } catch (e) { drop(p); toast(e.message, '⚠️'); } } }, emoteArt(k))));
     if (kind === 'gift') {
       const mine = Object.entries(st.social.wallet.gifts || {}).filter(([, n]) => n > 0);
       if (!mine.length) tray.append(el('p', { class: 'pf-note', text: 'No gifts yet. Buy some in the shop.' }), el('button', { type: 'button', text: 'Open the shop', onclick: () => { closeTray(); shopTab = 'gift'; openShop(); } }));
@@ -226,7 +226,7 @@
   function pickTarget(item) {
     closeTray(); tray = el('div', { class: 'pf-tray', 'data-kind': 'target' }, el('p', { class: 'pf-note', text: 'Throw ' + cap(item) + ' at…' }),
       ...st.players.filter((p) => !p.bot && !p.departed && p.id !== st.meId).map((p) => { const c = st.social.cos[p.id] || {};
-        return el('button', { type: 'button', onclick: async () => { closeTray(); try { await roomAct('throw', { item, target: p.id }); } catch (e) { toast(e.message, '⚠️'); sfx('error'); } } }, avatar(c.av || 'cat', c.bd, c.acc, 34), el('small', { text: p.name })); }));
+        return el('button', { type: 'button', onclick: async () => { closeTray(); const q = mine('g', item); flyGift({ n: 0, t: 'g', id: st.meId, to: p.id, k: item }); try { await roomAct('throw', { item, target: p.id }); } catch (e) { drop(q); toast(e.message, '⚠️'); sfx('error'); } } }, avatar(c.av || 'cat', c.bd, c.acc, 34), el('small', { text: p.name })); }));
     document.body.append(tray);
   }
   function renderDock() {
@@ -238,12 +238,22 @@
       el('button', { type: 'button', class: 'pf-wpchip', 'aria-label': 'Shop', onclick: () => openShop(), text: '🏆 ' + w.pts }));
     dock ? dock.replaceWith(next) : document.body.append(next); dock = next;
   }
+  // my own emote / gift is shown the moment I tap it; when the server's copy comes back in the feed it is skipped once
+  const pending = [];
+  const mine = (t, k) => { const p = { t, k, at: Date.now() }; pending.push(p); return p; };
+  const drop = (p) => { const i = pending.indexOf(p); if (i >= 0) pending.splice(i, 1); };
+  const isEcho = (it) => { const now = Date.now(); for (let i = pending.length - 1; i >= 0; i--) if (now - pending[i].at > 15000) pending.splice(i, 1);
+    if (!st || it.id !== st.meId) return false; const i = pending.findIndex((p) => p.t === it.t && p.k === it.k); if (i < 0) return false; pending.splice(i, 1); return true; };
+  // voice clips are fetched once and reused, so there is no network wait when someone reacts
+  const clips = {};
+  const clip = (k) => (clips[k] ||= Object.assign(new Audio('/audio/' + k + '.mp3'), { preload: 'auto' }));
+  const warmClips = () => { if (!warmClips.done && window.GameAudio?.prefs().sfx) { warmClips.done = true; CLIPS.forEach((k) => { try { clip(k).load(); } catch {} }); } };
   function floatEmote(item) {
     if (document.hidden) return;
     const p = st.players.find((q) => q.id === item.id), c = st.social.cos[item.id] || {};
     const f = el('div', { class: 'pf-float', style: `--x:${10 + Math.random() * 70}%` }, avatar(c.av || 'cat', c.bd, c.acc, 30), el('small', { text: p?.name || '' }), emoteArt(item.k));
     document.body.append(f); setTimeout(() => f.remove(), 2800);
-    if (window.GameAudio && window.GameAudio.prefs().sfx && CLIPS.has(item.k)) { try { const a = new Audio('/audio/' + item.k + '.mp3'); a.volume = 0.8; a.play().catch(() => sfx('pop')); } catch { sfx('pop'); } } else sfx('pop');
+    if (window.GameAudio && window.GameAudio.prefs().sfx && CLIPS.has(item.k)) { try { const a = clip(item.k).cloneNode(); a.volume = 0.8; a.play().catch(() => sfx('pop')); } catch { sfx('pop'); } } else sfx('pop');
   }
   function flyGift(item) {
     if (document.hidden) return;
@@ -262,11 +272,11 @@
     if (!tok) return;
     const prev = st; seat = { api: path, code: j.code, pid: j.meId, tok };
     if (prev && prev.code !== j.code) { seenFeed = null; seenAward = null; }
-    st = j;
+    st = j; warmClips();
     if (account && j.social.wallet.account) { const w = j.social.wallet; Object.assign(account, { pts: w.pts, owned: w.owned, gifts: w.gifts, eq: w.eq }); }
     const feed = j.social.feed || [];
     if (seenFeed === null) seenFeed = j.social.n; else {
-      for (const it of feed) if (it.n > seenFeed) { if (it.t === 'e') floatEmote(it); else if (it.t === 'g') flyGift(it); }
+      for (const it of feed) if (it.n > seenFeed && !isEcho(it)) { if (it.t === 'e') floatEmote(it); else if (it.t === 'g') flyGift(it); }
       seenFeed = Math.max(seenFeed, j.social.n);
     }
     const aw = j.social.awards;
