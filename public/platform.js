@@ -68,11 +68,13 @@
     setBusy(true); ui.error.hidden = true;
     try {
       const j = await api({ action: 'login', provider, idToken, nonce, consent: { accepted: true, age: true, version: config.consentVersion } });
-      account = j.account; sfx('good'); close(); renderChip();
+      account = j.account; sfx('good'); close(); renderChip(); relink();
       toast(j.created ? `Welcome! You start with ${config.startWp} WP.` : 'Signed in.', '👋');
-      if (seat) toast('Create or rejoin a room now to bank your WP to this account.', 'ℹ️');
+      if (seat) toast('This seat now plays on your account, so WP you earn here is banked to it.', 'ℹ️');
     } catch (e) { ui.error.textContent = e.message; ui.error.hidden = false; sfx('error'); setBusy(false); await prepare(ui); }
   }
+  // the room keeps its own record of whose seat this is: tell it when the player signs in or out
+  const relink = async () => { if (seat && st?.social) { try { await roomAct('relink'); } catch {} renderDock(); renderChip(); } };
   async function prepare(ui) {   // a fresh one-time code for each attempt (stops a captured sign-in being replayed)
     ui.nonce = (await api({ action: 'nonce' })).nonce;
     if (config.google && window.google?.accounts?.id) {
@@ -158,8 +160,8 @@
           }) })),
         el('p', { class: 'pf-fine' }, el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' · consent version ', account.consent?.version || '')),
       el('div', { class: 'pf-row wrap pf-signout' },
-        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', onclick: run(async () => { await api({ action: 'logout' }); account = null; close(); renderChip(); toast('Signed out.', '👋'); }) }),
-        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', onclick: run(async () => { await api({ action: 'logoutAll' }); account = null; close(); renderChip(); toast('Signed out on every device.', '👋'); }) })));
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', onclick: run(async () => { await api({ action: 'logout' }); account = null; close(); renderChip(); await relink(); toast('Signed out.', '👋'); }) }),
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', onclick: run(async () => { await api({ action: 'logoutAll' }); account = null; close(); renderChip(); await relink(); toast('Signed out on every device.', '👋'); }) })));
   }
 
   // ---------- shop ----------
