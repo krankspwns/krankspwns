@@ -7,14 +7,14 @@
   const GAME_API = /^\/api\/(bridge|hot-joker|grand-con)$/;
   const PAGE = { '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con', '/last-train.html': 'last-train', '/reckoning.html':'reckoning' }[location.pathname] || 'arcade';
   const OWN_TABLE_UI = PAGE === 'reckoning' || PAGE === 'last-train';   // these two already draw their own reactions, shop and gifts
-  const GIFT = { tomato: '🍅', rose: '🌹', snowball: '❄️', popper: '🎉', balloon: '🎈', kiss: '💋', pie: '🥧', ghost: '👻', rocket: '🚀', bomb: '💣', zap: '⚡', fireworks: '🎆', disco: '🪩', cash: '💸' };
+
   const EMO = { laugh: '😂', wow: '😮', cry: '😢', cool: '😎', fire: '🔥', rip: '🪦', angry: '😠', think: '🤔', heart: '❤️', trophy: '🏆' };
   const TAG = { gg: 'GG', ez: 'EZ', gl: 'GL', wp: 'WP', oof: 'OOF', faster: 'FASTER LEH', aiyo: 'AIYO!', steady: 'STEADY' };
   const CLIPS = new Set(['gg', 'ez', 'gl', 'wp', 'oof', 'faster', 'aiyo', 'steady']);
   const KIND_NAME = { av: 'Avatars', bd: 'Borders', acc: 'Accessories', gift: 'Gifts' };
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/([a-z])([A-Z])/g, '$1 $2');
 
-  let accountSeat = false;
+  let accountSeat = false, roomClosed = false;
   let account = null, config = null, seat = null, st = null, seenFeed = null, seenAward = null, busy = false;
   const real = window.fetch.bind(window);
   const uid = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : String(Math.random()).slice(2) + Date.now());
@@ -249,7 +249,7 @@
         items.push(card(pre, cap(k), own ? (cur === k ? 'Wearing' : 'Owned') : price + ' WP', own ? el('button', { type: 'button', class: 'pf-ghost', onclick: () => shopAct('equip', { kind, key: cur === k ? '' : k }), text: cur === k ? 'Take off' : 'Wear' }) : el('button', { type: 'button', disabled: w.pts < price || undefined, onclick: () => shopAct('buy', { kind, key: k }), text: 'Buy · ' + price }))); }
     } else {
       for (const [k, price] of Object.entries(c.gift).sort((x, y) => x[1] - y[1])) { const left = w.gifts[k] || 0;
-        items.push(card(el('span', { class: 'pf-gift', text: GIFT[k] }), cap(k), left ? `${left} left` : `Pack of ${c.uses}`, el('button', { type: 'button', disabled: w.pts < price || undefined, onclick: () => shopAct('buy', { kind: 'gift', key: k }), text: 'Buy · ' + price }))); }
+        items.push(card(window.AvatarArt.gift(k,48), cap(k), left ? `${left} left` : `Pack of ${c.uses}`, el('button', { type: 'button', disabled: w.pts < price || undefined, onclick: () => shopAct('buy', { kind: 'gift', key: k }), text: 'Buy · ' + price }))); }
     }
     const ov = modal('Shop', el('p', { class: 'pf-wp' }, '🏆 ', el('b', { text: String(w.pts) }), ' WP', st?.social && !w.account ? el('small', { text: ' · guest WP stay in this room only' }) : null), tabs, el('div', { class: 'pf-grid' }, ...items));
     ov.dataset.shop = '1'; const g = ov.querySelector('.pf-grid'); if (keep) g.scrollTop = scroll;
@@ -271,7 +271,7 @@
     if (kind === 'gift') {
       const mine = Object.entries(st.social.wallet.gifts || {}).filter(([, n]) => n > 0);
       if (!mine.length) tray.append(el('p', { class: 'pf-note', text: 'No gifts yet. Buy some in the shop.' }), el('button', { type: 'button', text: 'Open the shop', onclick: () => { closeTray(); shopTab = 'gift'; openShop(); } }));
-      else tray.append(...mine.map(([k, n]) => el('button', { type: 'button', role: 'menuitem', onclick: () => pickTarget(k) }, el('span', { class: 'pf-gift', text: GIFT[k] }), el('small', { text: '×' + n }))));
+      else tray.append(...mine.map(([k, n]) => el('button', { type: 'button', role: 'menuitem', 'aria-label':cap(k), onclick: () => pickTarget(k) }, window.AvatarArt.gift(k,40), el('small', { text: '×' + n }))));
     }
     if (kind === 'players') tray.append(...playerRows());
     document.body.append(tray);
@@ -388,6 +388,11 @@
     // Native Row and Last Train keep their own room-wallet updates.
     document.querySelectorAll('.pf-header-shop:not([data-native-wallet])').forEach(b=>b.replaceWith(shopButton()));
   }
+  function clearRoom() {
+    roomClosed=true;
+    if(!seat && !st)return;
+    seat=null;st=null;accountSeat=false;seenFeed=null;seenAward=null;closeTray();renderChip();
+  }
   function renderDock() {
     const inRoom = !!(st?.social && seat), w = wallet();
     const hasOtherPlayers = inRoom && st.players.some(p=>!p.bot && !p.departed && p.id!==st.meId);
@@ -430,7 +435,7 @@
   function flyGift(item) {
     if (document.hidden) return;
     const from = st.players.find((q) => q.id === item.id), to = st.players.find((q) => q.id === item.to);
-    const f = el('div', { class: 'pf-fly' }, el('span', { class: 'pf-gift', text: GIFT[item.k] || '🎁' }), el('small', { text: `${from?.name || '?'} → ${to?.name || '?'}` }));
+    const f = el('div', { class: 'pf-fly' }, window.AvatarArt.gift(item.k,72), el('small', { text: `${from?.name || '?'} → ${to?.name || '?'}` }));
     document.body.append(f); setTimeout(() => f.remove(), 2200); sfx('whoosh'); if (item.to === st.meId) setTimeout(() => sfx('bad'), 500);
   }
   // game reply -> platform state
@@ -438,6 +443,8 @@
   function observe(url, init, j) {
     if (!j || !j.social || !j.meId || !j.code) return;
     let body = {}; try { body = typeof init?.body === 'string' ? JSON.parse(init.body) : {}; } catch {}
+    if(roomClosed && !['create','join'].includes(body.action))return;
+    roomClosed=false;
     if (body.action === 'leave') { seat = null; st = null; seenFeed = null; renderDock(); return; }
     const path = new URL(url, location.href).pathname, hdr = init?.headers?.['x-tok'] || (init?.headers instanceof Headers ? init.headers.get('x-tok') : '');
     const tok = j.tok || body.tok || hdr || (seat && seat.code === j.code && seat.pid === j.meId ? seat.tok : '');
@@ -473,7 +480,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, roomBar, roomSeats, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

@@ -214,6 +214,7 @@
       }
     }
     function render() {
+    if(!seat)window.Platform?.clearRoom();
       state?.players.forEach(p=>window.GameI18n?.protectName(p.name));
       const focus = document.activeElement?.id, focusKey = document.activeElement?.dataset?.focus, selection = document.activeElement?.selectionStart, selectionEnd = document.activeElement?.selectionEnd;
       const openDetails = [...root.querySelectorAll('details[open][data-details]')].map((n) => n.dataset.details);

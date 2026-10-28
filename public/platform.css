@@ -293,3 +293,5 @@ html.pf-page-lock{overflow:hidden;overscroll-behavior:none}
 .pf-box .pf-account-confirm .pf-confirm-go:not(.pf-danger){background:linear-gradient(115deg,#c89c4a,#f7e2a1 55%,#d8b56c);color:#302107}
 .pf-box .pf-account-confirm button.pf-ghost{background:#ffffff12;color:#f4f5ff}
 .pf-box .pf-account-confirm .pf-confirm-go.pf-danger{background:#572737;color:#ffd3dc;border:1px solid #bb637d66}
+.pf-gift.pf-art{display:inline-block;flex:none;line-height:0;vertical-align:middle}
+.pf-gift.pf-art svg{display:block;width:100%;height:100%}
