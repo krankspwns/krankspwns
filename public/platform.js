@@ -71,7 +71,7 @@
     ui.nonce = (await api({ action: 'nonce' })).nonce;
     if (config.google && window.google?.accounts?.id) {
       google.accounts.id.initialize({ client_id: config.google, nonce: ui.nonce, callback: (r) => finishLogin('google', r.credential, ui.nonce, ui), ux_mode: 'popup' });
-      ui.gbox.replaceChildren(); google.accounts.id.renderButton(ui.gbox, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: 280 });
+      ui.gbox.replaceChildren(); google.accounts.id.renderButton(ui.gbox, { theme: 'filled_black', size: 'large', text: 'continue_with', shape: 'pill', width: 280, logo_alignment: 'center' });
     }
   }
   async function openLogin() {
