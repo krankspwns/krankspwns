@@ -316,7 +316,7 @@
     try { const j = await (await real(API, { credentials: 'same-origin' })).json(); config = { ...j.config, catalog: j.catalog, dailyCap: j.dailyCap }; account = j.account; } catch { config = { enabled: false }; }
     renderChip();
   })();
-  document.addEventListener('click', (e) => { if (tray && !e.target.closest('.pf-tray, #pf-dock')) closeTray(); });
+  document.addEventListener('click', (e) => { if (tray && !e.composedPath().some((n) => n.matches?.('.pf-tray, #pf-dock'))) closeTray(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTray(); close(); } });
 })();
 

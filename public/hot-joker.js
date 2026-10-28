@@ -55,7 +55,7 @@
     return el('div', { class: 'seat-order' }, text('span', 'eyebrow', 'CLOCKWISE ORDER'),
       el('ol', { class: 'order-list' }, state.order.map((id) => el('li', {}, c.avatar(id), el('b', {}, c.who(id) + (id === state.meId ? ' · You' : ''))))),
       text('p', 'muted small', 'Each player takes cards from the one before them in this list. Sit in this order around the table.'),
-      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Sets to lay down'), el('div', { class: 'pace-options' }, [[2, 'Pairs (quick)'], [4, 'Four of a kind (long)']].map(([n, label]) => el('button', { type: 'button', class: size === n ? 'selected' : '', 'aria-pressed': size === n, disabled: c.busy || !host, onclick: () => c.send('settings', { setSize: n }) }, label)))),
+      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Sets to lay down'), el('div', { class: 'pace-options' }, [[2, 'Pairs (quick)'], [4, 'Four of a kind (long)']].map(([n, label]) => el('button', { type: 'button', class: size === n ? 'selected' : '', 'aria-pressed': size === n, disabled: !host, onclick: () => { if (c.busy || size === n) return; c.state.settings = { ...c.state.settings, setSize: n }; c.send('settings', { setSize: n }); } }, label)))),
       host ? c.button('Shuffle seats', () => c.send('shuffleSeats'), 'secondary', state.order.length < 2) : null);
   }
   function logLine(c, e) {

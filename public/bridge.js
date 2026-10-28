@@ -74,7 +74,7 @@
     const { state, send, busy } = c;
     const host = state.hostId === state.meId;
     return el('div', { class: 'seat-preview' },
-      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: busy || !host, onclick: () => send('settings', { deals: n }) }, n + ' deals')))),
+      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: !host, onclick: () => { if (busy || state.deals === n) return; state.deals = n; send('settings', { deals: n }); } }, n + ' deals')))),
       el('div', { class: 'partners' }, [0, 1, 2, 3].map((i) => el('div', { class: 'partner-card' }, text('b', '', state.seats[i] ? seatLabel(i) + ' · ' + c.who(state.seats[i]) : seatLabel(i) + ' · Waiting…')))),
       host ? c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary', state.players.length < 2) : null,
       text('p', 'muted small', 'Choose a seat and sit in this clockwise order. Your name follows you through bidding and play.'));
