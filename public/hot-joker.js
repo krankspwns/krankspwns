@@ -36,7 +36,21 @@
       fresh.forEach((e, k) => setTimeout(() => {
         const me = st.meId, last = st.me?.last, src = tileOf(e.source), dst = tileOf(e.taker);
         src?.classList.add('lost'); dst?.classList.add('got'); setTimeout(() => { src?.classList.remove('lost'); dst?.classList.remove('got'); }, 900);
-        const pair = () => { if (e.sets?.length) burst(tileOf(e.taker), '✨ ' + (e.sets.length > 1 ? 'DOUBLE PAIR!' : 'PAIR!')); };
+        // the cards of a laid-down set travel from the taker into the "Sets laid down" panel
+        const chips = (e.sets || []).map((rank) => { const mineSets = st.sets.filter((x) => x.id === e.taker), at = mineSets.map((x) => x.rank).lastIndexOf(rank);
+          const chip = document.querySelector('.set-row[data-id="' + e.taker + '"] .sets')?.children[at]; if (chip) chip.style.opacity = 0; return { chip, set: mineSets[at] }; });
+        const showChips = () => chips.forEach(({ chip }) => { if (chip) chip.style.opacity = ''; });
+        setTimeout(showChips, 3500 + k * 700);
+        const pair = () => {
+          if (!e.sets?.length) return;
+          burst(tileOf(e.taker), '✨ ' + (e.sets.length > 1 ? 'DOUBLE PAIR!' : 'PAIR!'));
+          const origin = e.taker === me ? document.querySelector('.hand-row')?.getBoundingClientRect() || tileOf(e.taker)?.getBoundingClientRect() : tileOf(e.taker)?.getBoundingClientRect();
+          chips.forEach(({ chip, set }, j) => {
+            const cardsOf = set?.cards || [], to = chip?.getBoundingClientRect();
+            if (!to || !cardsOf.length) { if (chip) chip.style.opacity = ''; return; }
+            cardsOf.forEach((code, i) => setTimeout(() => fly(c, code, origin, to, 0.7, i === cardsOf.length - 1 ? () => { chip.style.opacity = ''; chip.classList.add('pop'); } : null), j * 300 + i * 140));
+          });
+        };
         if (e.taker === me && last?.card) {
           const idx = hand.indexOf(last.card), tgt = idx >= 0 ? cards[idx] : null;
           if (tgt) { tgt.style.opacity = 0; handled.add(last.card); }
@@ -201,7 +215,7 @@
     const { state } = c, size = sizeOf(state), total = 52 / size;
     const rows = state.order.map((id) => ({ id, sets: state.sets.filter((s) => s.id === id) })).filter((r) => r.sets.length);
     return c.panel('sets-panel', el('div', { class: 'panel-heading' }, el('h3', {}, 'Sets laid down'), text('span', 'roster-count', state.sets.length + ' / ' + total)),
-      rows.length ? el('div', { class: 'set-rows' }, rows.map((r) => el('div', { class: 'set-row' + (r.id === state.meId ? ' mine' : '') },
+      rows.length ? el('div', { class: 'set-rows' }, rows.map((r) => el('div', { class: 'set-row' + (r.id === state.meId ? ' mine' : ''), 'data-id': r.id },
         el('div', { class: 'set-owner' }, c.avatar(r.id), el('b', {}, c.who(r.id) + (r.id === state.meId ? ' · You' : '')), text('small', 'muted', r.sets.length + (r.sets.length === 1 ? ' set' : ' sets'))),
         el('div', { class: 'sets' }, r.sets.map((s, i) => el('span', { class: 'set-chip' + (c.fresh('hj-set-' + state.match + ':' + r.id + ':' + i) ? ' pop' : ''), 'aria-label': setName(s.rank, size) }, (s.cards || []).map((code) => mini(code, c)))))))
       ) : text('p', 'muted small', size === 4 ? 'No sets yet. Collect all four cards of one number to lay them down.' : 'No pairs yet. Match two cards with the same number to lay them down.'));
