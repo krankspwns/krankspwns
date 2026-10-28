@@ -40,7 +40,8 @@
     const w = el('span', { class: 'pf-av' + (bd ? ' pf-bd pf-bd-' + bd : ''), style: `--s:${size}px`, 'aria-hidden': 'true' }, inner);
     if (acc && ACC[acc]) w.append(el('i', { class: 'pf-acc', text: ACC[acc] })); return w;
   }
-  const emoteArt = (k) => (TAG[k] ? el('b', { class: 'pf-tag', text: TAG[k] }) : el('span', { class: 'pf-emo', text: EMO[k] || '🙂' }));
+  if (!window.EmoteArt) { const s = document.createElement('script'); s.src = '/emote-art.js'; document.head.append(s); }
+  const emoteArt = (k) => (window.EmoteArt?.has(k) ? window.EmoteArt.el(k, 36) : TAG[k] ? el('b', { class: 'pf-tag', text: TAG[k] }) : el('span', { class: 'pf-emo', text: EMO[k] || '🙂' }));
   function toast(text, icon) {
     let lane = document.getElementById('pf-toasts'); if (!lane) { lane = el('div', { id: 'pf-toasts', role: 'status', 'aria-live': 'polite' }); document.body.append(lane); }
     while (lane.children.length > 3) lane.firstChild.remove();
