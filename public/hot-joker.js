@@ -73,7 +73,7 @@
   const finish = async (ev) => {
     const d = drag; drag = null; if (!d || !d.on) return;
     d.ghost.remove(); mark(-1, -1); justDragged = true; setTimeout(() => { justDragged = false; }, 50);
-    if (ev.type === 'pointerup' && d.to >= 0 && d.to !== d.from && cur && !cur.busy) { sel = -1; await cur.send('move', { from: d.from, to: d.to }); }
+    if (ev.type === 'pointerup' && d.to >= 0 && d.to !== d.from && cur && !cur.busy) { sel = -1; const h = cur.state.me.hand.slice(); h.splice(d.to, 0, h.splice(d.from, 1)[0]); cur.state.me.hand = h; cur.render(); await cur.send('move', { from: d.from, to: d.to }); }
   };
   document.addEventListener('pointerup', finish); document.addEventListener('pointercancel', finish);
   document.addEventListener('click', (ev) => { if (justDragged) { ev.stopPropagation(); ev.preventDefault(); } }, true);
