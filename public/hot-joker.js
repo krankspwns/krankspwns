@@ -5,7 +5,78 @@
   const rankName = (r) => RANK_NAME[r] || r + 's';
   const sizeOf = (s) => s.settings?.setSize || 2;
   const setName = (r, size) => (size === 4 ? 'four ' + rankName(r) : 'a pair of ' + rankName(r));
-  let pick = -1, sel = -1, pickKey = '';
+  let pick = -1, sel = -1, pickKey = '', cur = null, seen = null, prev = { hand: [], rects: new Map() };
+  const calm = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- animation: cards flying between players, hand reordering ----
+  const tileOf = (id) => document.querySelector('.circle-seat[data-id="' + id + '"] .tile');
+  function fly(c, code, from, to, scaleTo, done) {
+    if (!from || !to || calm()) { done?.(); return; }
+    const w = 54, h = 76, n = code ? c.card(code) : c.cardBack();
+    n.classList.add('hj-fly'); n.style.width = w + 'px'; n.style.height = h + 'px'; document.body.append(n);
+    const at = (r, k) => 'translate(' + (r.left + r.width / 2 - w / 2) + 'px,' + (r.top + r.height / 2 - h / 2) + 'px) scale(' + k + ')';
+    const a = n.animate([{ transform: at(from, 0.6), opacity: 0.9 }, { transform: at(from, 1.1), opacity: 1, offset: 0.2 }, { transform: at(to, scaleTo), opacity: 1 }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+    const end = () => { n.remove(); done?.(); }; a.onfinish = end; a.oncancel = end;
+  }
+  function burst(node, label) {
+    if (!node || calm()) return;
+    const r = node.getBoundingClientRect(), b = document.createElement('div');
+    b.className = 'hj-burst'; b.textContent = label; b.style.left = r.left + r.width / 2 + 'px'; b.style.top = r.top + 'px';
+    document.body.append(b); setTimeout(() => b.remove(), 1400);
+  }
+  function after(c) {
+    const st = c.state; if (!st || st.phase === 'lobby' || cur !== c) return;
+    const row = document.querySelector('.hand-row'), cards = row ? [...row.children] : [], hand = st.me?.hand || [];
+    const rects = new Map(); cards.forEach((n, i) => { if (hand[i]) rects.set(hand[i], n.getBoundingClientRect()); });
+    const takes = (st.log || []).filter((e) => e.kind === 'take'), top = takes.reduce((m, e) => Math.max(m, e.turn || 0), 0);
+    let handled = new Set();
+    if (!seen || seen.match !== st.match) seen = { match: st.match, turn: top };
+    else if (top > seen.turn && !document.hidden) {
+      const fresh = takes.filter((e) => e.turn > seen.turn).slice(-2); seen.turn = top;
+      fresh.forEach((e, k) => setTimeout(() => {
+        const me = st.meId, last = st.me?.last, src = tileOf(e.source), dst = tileOf(e.taker);
+        src?.classList.add('lost'); dst?.classList.add('got'); setTimeout(() => { src?.classList.remove('lost'); dst?.classList.remove('got'); }, 900);
+        const pair = () => { if (e.sets?.length) burst(tileOf(e.taker), '✨ ' + (e.sets.length > 1 ? 'DOUBLE PAIR!' : 'PAIR!')); };
+        if (e.taker === me && last?.card) {
+          const idx = hand.indexOf(last.card), tgt = idx >= 0 ? cards[idx] : null;
+          if (tgt) { tgt.style.opacity = 0; handled.add(last.card); }
+          fly(c, last.card, src?.getBoundingClientRect(), tgt ? tgt.getBoundingClientRect() : dst?.getBoundingClientRect(), tgt ? 1 : 0.5, () => { if (tgt) tgt.style.opacity = ''; pair(); });
+        } else if (e.source === me && last?.card) {
+          fly(c, last.card, prev.rects.get(last.card) || row?.getBoundingClientRect(), dst?.getBoundingClientRect(), 0.5, pair);
+        } else fly(c, null, src?.getBoundingClientRect(), dst?.getBoundingClientRect(), 0.5, pair);
+      }, k * 700));
+    }
+    // reordering my own hand slides the cards to their new places
+    if (!calm() && hand.length === prev.hand.length) cards.forEach((n, i) => { const was = prev.rects.get(hand[i]), now = rects.get(hand[i]); if (!was || !now || handled.has(hand[i])) return;
+      const dx = was.left - now.left, dy = was.top - now.top; if (Math.abs(dx) + Math.abs(dy) > 2) n.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' }); });
+    prev = { hand: hand.slice(), rects };
+  }
+
+  // ---- drag and drop to reorder my own cards ----
+  let drag = null, justDragged = false;
+  const nearest = (x, y) => { const row = document.querySelector('.hand-row'); if (!row) return -1; let best = -1, d = 1e9;
+    [...row.children].forEach((n, i) => { const r = n.getBoundingClientRect(), dd = Math.hypot(x - (r.left + r.width / 2), (y - (r.top + r.height / 2)) * 1.6); if (dd < d) { d = dd; best = i; } }); return best; };
+  const mark = (from, to) => { const row = document.querySelector('.hand-row'); if (!row) return; [...row.children].forEach((n, i) => { n.classList.toggle('hj-drag-src', i === from); n.classList.toggle('hj-drop', i === to && to !== from); }); };
+  document.addEventListener('pointerdown', (ev) => {
+    const node = ev.target.closest?.('.hand-row .pcard'); if (!node || (ev.button && ev.button !== 0) || !cur || cur.busy || cur.state?.phase !== 'playing') return;
+    const row = node.parentElement, from = [...row.children].indexOf(node); if (from < 0 || row.children.length < 2) return;
+    drag = { from, to: from, x: ev.clientX, y: ev.clientY, on: false, ghost: null, w: node.offsetWidth, h: node.offsetHeight };
+  });
+  document.addEventListener('pointermove', (ev) => {
+    if (!drag) return;
+    if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 8) return;
+      const src = document.querySelector('.hand-row')?.children[drag.from]; if (!src) { drag = null; return; }
+      drag.on = true; drag.ghost = src.cloneNode(true); drag.ghost.classList.add('hj-ghost'); drag.ghost.style.width = drag.w + 'px'; drag.ghost.style.height = drag.h + 'px'; document.body.append(drag.ghost); }
+    ev.preventDefault(); drag.ghost.style.transform = 'translate(' + (ev.clientX - drag.w / 2) + 'px,' + (ev.clientY - drag.h / 2) + 'px) rotate(-5deg) scale(1.08)';
+    drag.to = nearest(ev.clientX, ev.clientY); mark(drag.from, drag.to);
+  }, { passive: false });
+  const finish = async (ev) => {
+    const d = drag; drag = null; if (!d || !d.on) return;
+    d.ghost.remove(); mark(-1, -1); justDragged = true; setTimeout(() => { justDragged = false; }, 50);
+    if (ev.type === 'pointerup' && d.to >= 0 && d.to !== d.from && cur && !cur.busy) { sel = -1; await cur.send('move', { from: d.from, to: d.to }); }
+  };
+  document.addEventListener('pointerup', finish); document.addEventListener('pointercancel', finish);
+  document.addEventListener('click', (ev) => { if (justDragged) { ev.stopPropagation(); ev.preventDefault(); } }, true);
 
   TableKit({
     game: 'hot-joker', api: '/api/hot-joker', page: '/hot-joker.html', seatKey: 'hj-seat', nameKey: 'hj-name', title: 'Hot Joker', icon: 'cards', min: 3, max: 10,
@@ -88,7 +159,7 @@
       order.map((id) => {
         const out = state.counts[id] === 0, taker = state.taker === id, source = state.source === id, place = state.placed.indexOf(id) + 1, p = spot(id);
         const sets = state.sets.filter((s) => s.id === id).length;
-        return el('div', { class: 'circle-seat', role: 'listitem', style: 'left:' + p.x + '%;top:' + p.y + '%' },
+        return el('div', { class: 'circle-seat', role: 'listitem', 'data-id': id, style: 'left:' + p.x + '%;top:' + p.y + '%' },
           el('div', { class: 'tile' + (out ? ' out' : '') + (taker ? ' taker' : '') + (source ? ' source' : '') + (id === state.meId ? ' mine' : '') + (state.loser === id ? ' loser' : '') },
             c.avatar(id), el('b', {}, c.who(id) + (id === state.meId ? ' · You' : '')),
             el('div', { class: 'mini-fan', 'aria-hidden': 'true' }, ...Array.from({ length: Math.min(state.counts[id], 7) }, (_, k) => el('i', { style: '--k:' + k }))),
@@ -123,7 +194,7 @@
         c.button('← Left', async () => { const from = sel; if (from > 0 && await send('move', { from, to: from - 1 })) sel = from - 1; }, 'secondary', sel <= 0, 'move-left'),
         c.button('Shuffle', async () => { await send('shuffle'); sel = -1; }, 'secondary', false, 'shuffle'),
         c.button('Right →', async () => { const from = sel; if (from >= 0 && from < hand.length - 1 && await send('move', { from, to: from + 1 })) sel = from + 1; }, 'secondary', sel < 0 || sel >= hand.length - 1, 'move-right')) : null,
-      arrange ? text('p', 'muted small', 'Tap a card, then move it. Shuffle mixes them all.') : null);
+      arrange ? text('p', 'muted small', 'Drag a card to a new spot, or tap it and use the arrows. Shuffle mixes them all.') : null);
   }
   // Every set that has been laid down, grouped by who laid it.
   function setsPanel(c) {
@@ -148,7 +219,7 @@
       host ? [c.botControls(), c.button('PLAY AGAIN', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 3), c.button('Shuffle seats', () => send('shuffleSeats'), 'secondary')] : text('p', 'waiting', 'Waiting for the host to start another game.'));
   }
   function screen(c) {
-    const { state } = c;
+    const { state } = c; cur = c; requestAnimationFrame(() => after(c));
     return el('div', { class: 'tk-scene' }, state.phase === 'finished' ? finale(c) : null,
       c.panel('table-panel', circle(c), turnBanner(c)),
       el('div', { class: 'joker-grid' }, el('div', { class: 'main-col' }, privateNote(c), takePanel(c), handPanel(c)), el('div', { class: 'side-col' }, setsPanel(c), logPanel(c), c.roster((p, s) => s.losses[p.id] ? 'JOKER ×' + s.losses[p.id] : null))));
