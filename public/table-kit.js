@@ -145,6 +145,7 @@
       d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal(); return d;
     }
     function openRules() {
+      if (cfg.guide && window.GameGuide) return GameGuide.open({ title: cfg.title + ' · How to play', pages: cfg.guide(GameGuide.B) });
       if (rulesDialog?.isConnected) return;
       rulesDialog = dialog(text('span', 'eyebrow', cfg.rulesEyebrow || 'HOW TO PLAY'), el('h2', { tabIndex: -1 }, cfg.rulesTitle), ...cfg.rules(), button('Let’s play', () => rulesDialog.close(), 'primary'));
       rulesDialog.querySelector('h2').focus({ preventScroll: true });
@@ -152,7 +153,7 @@
     function showRecovery() {
       const d = dialog(el('h2', {}, 'Save Your Rejoin Code'), el('p', {}, 'Save this code and keep it private. To play on another phone, enter the room code, your same name, and this code. The old phone will be signed out.'), el('input', { readOnly: true, value: state.recoveryCode, 'aria-label': 'Rejoin Code', onclick: (e) => e.target.select() }), button('Close', () => d.close(), 'primary'));
     }
-    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), el('div', { class: 'header-tools' }, button('How to Play', openRules, 'text-button'), window.GameAudio?.soundMenu?.() || null));
+    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), el('div', { class: 'header-tools' }, cfg.guide && window.GameGuide ? GameGuide.button(openRules) : button('How to Play', openRules, 'text-button'), window.GameAudio?.soundMenu?.() || null));
     function landing() {
       const L = cfg.landing;
       return el('div', { class: 'tk-landing' },

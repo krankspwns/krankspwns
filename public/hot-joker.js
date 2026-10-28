@@ -22,6 +22,21 @@
     startBlock: (s, n) => (n < 3 ? `Waiting for ${3 - n} more player${3 - n === 1 ? '' : 's'}. You need at least 3.` : ''),
     rosterTag: (p, s) => { const n = s.losses?.[p.id]; return p.id === s.hostId ? 'HOST' + (n ? ' · JOKER ×' + n : '') : n ? 'JOKER ×' + n : null; },
     waiting: (c) => seating(c),
+    guide: (B) => [
+      () => [B.h('Don’t get stuck with the Joker'), B.p('A deck of 52 cards plus one Joker is dealt to everyone. Your cards are hidden from the other players. Get rid of every card. The last player still holding cards has the Joker, and loses.'),
+        B.chips(['3–10 players', 'Hidden cards', 'One Joker loses']),
+        B.cards([B.back(), B.back(), B.card('★'), B.back(), B.back()], 'fan'),
+        B.note('Somewhere in that fan is the Joker. Nobody knows where.')],
+      () => [B.h('Pairs go down'), B.p('Whenever you hold two cards with the same number or face, they are put down automatically as a pair for everyone to see.'),
+        B.row([B.example('Pair!', B.cards([B.card('7', '♥'), B.card('7', '♣')]), 'Laid down', 'good'), B.example('No pair', B.cards([B.card('9', '♠'), B.card('K', '♦')]), 'Keep both', 'bad')]),
+        B.dim('The host can switch to four of a kind instead of pairs. That game takes much longer.')],
+      () => [B.h('Your turn'), B.steps([['👈', 'Take a hidden card', 'Take one face-down card from the previous player who still has cards.'], ['✨', 'Match it', 'If it makes a pair with a card you hold, the pair goes down.'], ['🔀', 'Shuffle your hand', 'Move your cards around so nobody can guess where the Joker is.']]),
+        B.dim('Players take turns clockwise around the circle.')],
+      () => [B.h('Get out, or get stuck'), B.p('When you have no cards left you are safe. The game goes on until only one player still holds cards. That player is stuck with the Joker.'),
+        B.row([B.example('Safe', B.el('div', { style: 'font-size:34px;line-height:60px' }, '🎉'), 'No cards left', 'good'), B.example('Stuck!', B.cards([B.card('★')]), 'Holding the Joker', 'bad')])],
+      () => [B.h('Good to know'), B.list(['Nobody can see anyone’s hand, only how many cards they hold.', 'Pairs that have been laid down are shown under each player.', 'If a player takes too long, the game takes a random card for them.', 'If someone leaves, the game plays on for them.', 'Sit around the table in the order shown in the room.'])],
+    ],
+
     rulesTitle: 'Don’t get stuck with the Joker.',
     rules: () => [
       el('p', {}, 'A deck of 52 cards plus one Joker is dealt out to everyone. Your cards are hidden from the other players.'),

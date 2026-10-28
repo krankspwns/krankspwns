@@ -70,33 +70,24 @@
     finally{busy=false;render();}
   }
   function openRules(){
-    if(rulesDialog?.isConnected)return;
-    rulesDialog=el('dialog',{class:'gc-rules'},text('span','eyebrow','REAL OR FAKE?'),el('h2',{tabIndex:-1},'Read. Talk. Vote.'),
-      el('p',{},'Play in the same room. Everyone needs their own phone. Nobody is out during the game.'),
-      el('div',{class:'rule-teams'},
-        el('div',{class:'rule-team house'},icon('shield'),el('b',{},'Truth Team'),el('p',{},'Help the group pick the correct answer.')),
-        el('div',{class:'rule-team ring'},icon('mask'),el('b',{},'Lie Team'),el('p',{},'You know the answer. Make the group pick the wrong one.'))),
-      el('ol',{},
-        el('li',{},el('b',{},'Read your secret card. '),'It shows your team. Everyone gets a different clue. The Lie Team changes one clue. The other clues are true.'),
-        el('li',{},el('b',{},'Talk together. '),'Compare clues. Talk aloud or write a claim for everyone to read. You can lie. Once per game, privately check another player’s original clue.'),
-        el('li',{},el('b',{},'Vote REAL or FAKE. '),'Does the item match what the seller says? Pick one answer, then press Confirm.')),
-      el('div',{class:'rule-example'},el('b',{},'Example'),el('p',{},'The seller says a painting was made in 1906. Your clue says its paint was first made in 1935.'),el('p',{},'Those dates do not match. Ask other players what their clues say. Your clue might be the one that was changed.')),
-      el('p',{class:'rule-win'},'Group answer correct → Truth Team +1. Group answer wrong → Lie Team +1. First team to 3 points wins!'),
-      el('details',{},el('summary',{},'More rules, if you need them'),
-        el('p',{},'The Lie Team knows who is on its team. The Truth Team does not. Your team stays the same until the game ends.'),
-        el('p',{},'Before each round, one Lie Team player has 30 seconds to pick a clue to change. They can pick anyone, including themselves. The game writes the changed clue. If they do not pick, the game chooses one.'),
-        el('p',{},'A REAL group answer needs more than half of the players to vote REAL. For example, 4 out of 6. A tie counts as FAKE. A missed vote adds no REAL vote. Leaving does not change how many REAL votes are needed.'),
-        el('p',{},'You cannot change a confirmed vote. Votes stay hidden until everyone votes or the 30-second timer ends.'),
-        el('p',{},'The host chooses Auto, 60, 90 or 120 seconds to talk. Auto gives larger tables more time. Anyone can add 30 seconds once per round. The host can start voting early.'),
-        el('p',{},'After voting, everyone sees the answer, the votes, and the changed clue. Teams stay secret until one team gets 3 points.'),
-        el('p',{},'Lie Team has 1 player in a group of 4–5, 2 in a group of 6–8, 3 in a group of 9–11, and 4 in a group of 12. Other players are on the Truth Team. Any round can be real or fake.')),
-      button('Let’s play',()=>rulesDialog.close(),'primary'));
-    rulesDialog.addEventListener('close',()=>rulesDialog.remove());document.body.append(rulesDialog);rulesDialog.showModal();
-    rulesDialog.querySelector('h2').focus({preventScroll:true});rulesDialog.scrollTop=0;
+    const G=window.GameGuide;if(!G)return;
+    G.open({title:'The Grand Con · How to play',pages:[
+      ()=>[G.B.h('Read. Talk. Vote.'),G.B.p('Play in the same room. Everyone needs their own phone. Nobody is out during the game. Every round, the group decides if an item is REAL or FAKE.'),
+        G.B.teams(['🛡️','Truth Team','Help the group pick the correct answer.','truth'],['🎭','Lie Team','You know the answer. Make the group pick the wrong one.','lie']),
+        G.B.chips(['4–12 players','Secret teams','First to 3 points'])],
+      ()=>[G.B.h('Each round'),G.B.steps([['🔒','Read your secret card','It shows your team. Everyone gets a different clue. The Lie Team changes one clue. The other clues are true.'],['💬','Talk together','Compare clues. Talk aloud or write a claim for everyone to read. You can lie. Once per game, privately check another player’s original clue.'],['🗳️','Vote REAL or FAKE','Does the item match what the seller says? Pick one answer, then press Confirm.']])],
+      ()=>[G.B.h('Spot the changed clue'),G.B.p('The seller says a painting was made in 1906. Your clue says its paint was first made in 1935.'),
+        G.B.row([G.B.example('Seller says','1906','Painting made in 1906'),G.B.example('Your clue says','1935','Paint first made in 1935','bad')]),
+        G.B.note('Those dates do not match. Ask other players what their clues say. Your clue might be the one that was changed.')],
+      ()=>[G.B.h('Scoring'),G.B.table([['Group answer is correct','Truth Team +1'],['Group answer is wrong','Lie Team +1']],['RESULT','POINT']),G.B.p('First team to 3 points wins. Teams stay secret until the game ends.'),
+        G.B.table([['4–5 players','1 on the Lie Team'],['6–8 players','2 on the Lie Team'],['9–11 players','3 on the Lie Team'],['12 players','4 on the Lie Team']],['GROUP SIZE','LIE TEAM'])],
+      ()=>[G.B.h('Good to know'),G.B.list(['The Lie Team knows who is on its team. The Truth Team does not. Your team stays the same until the game ends.','Before each round, one Lie Team player has 30 seconds to pick a clue to change. They can pick anyone, including themselves.','A REAL group answer needs more than half of the players to vote REAL. A tie counts as FAKE. A missed vote adds no REAL vote.','You cannot change a confirmed vote. Votes stay hidden until everyone votes or the 30-second timer ends.','The host chooses Auto, 60, 90 or 120 seconds to talk. Anyone can add 30 seconds once per round.','After voting, everyone sees the answer, the votes, and the changed clue.'])],
+    ]});
   }
+
   function showRecovery(){const dialog=el('dialog',{class:'gc-rules'},el('h2',{},'Save your rejoin code'),el('p',{},'Save this code and keep it private. To play on another phone, enter the room code, your same name, and this code. The old phone will be signed out.'),el('input',{readOnly:true,value:state.me.recoveryCode,'aria-label':'Rejoin code',onclick:e=>e.target.select()}),button('Close',()=>dialog.close(),'primary'));dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();}
   async function copyInvite(){try{await navigator.clipboard.writeText(location.origin+'/grand-con.html?room='+state.code);announce('Link copied');document.querySelector('[data-copy]').textContent='Copied!';}catch{error='Copy this link: '+location.origin+'/grand-con.html?room='+state.code;render();}}
-  function header(){return el('header',{class:'gc-header'},el('a',{href:'/?games=1',class:'back-link'},'← All games'),el('a',{href:'/grand-con.html',class:'gc-wordmark'},icon('mask'),el('span',{},text('small','','THE GAME ROOM'),text('b','','THE GRAND CON'))),el('div',{class:'header-tools'},button('How to play',openRules,'text-button'),window.GameAudio?.soundMenu?.()||null));}
+  function header(){return el('header',{class:'gc-header'},el('a',{href:'/?games=1',class:'back-link'},'← All games'),el('a',{href:'/grand-con.html',class:'gc-wordmark'},icon('mask'),el('span',{},text('small','','THE GAME ROOM'),text('b','','THE GRAND CON'))),el('div',{class:'header-tools'},window.GameGuide?GameGuide.button(openRules):button('How to play',openRules,'text-button'),window.GameAudio?.soundMenu?.()||null));}
   function lobby(){return el('div',{class:'gc-landing'},el('section',{class:'gc-intro'},text('span','eyebrow','READ CLUES. TALK TOGETHER. VOTE.'),fan(),el('h1',{},'Real',el('br'),el('em',{},'or fake?')),el('p',{},'Some players know the answer. One clue has been changed. Can the group find the truth?'),el('div',{class:'chips'},text('span','','4–12 players'),text('span','','Secret teams'),text('span','','Nobody is out')),
       el('div',{class:'quick-steps'},...[[ 'document','Read your clue'],['chat','Talk together'],['check','Vote real or fake']].map(([i,t],n)=>el('div',{},icon(i),text('small','',String(n+1).padStart(2,'0')),text('b','',t))))),
       el('section',{class:'gc-panel entrance'},el('div',{class:'entrance-seal','aria-hidden':'true'},icon('lock')),text('span','eyebrow','PLAY WITH FRIENDS'),el('h2',{},'Ready to play?'),el('label',{htmlFor:'gc-name'},'Your name'),el('input',{id:'gc-name',maxLength:12,value:name,autocomplete:'nickname',placeholder:'Your name',oninput:e=>name=e.target.value}),button('Create a room',()=>enter('create'),'primary'),text('div','or','or join your friends'),el('label',{htmlFor:'gc-code'},'Room code'),el('input',{id:'gc-code',maxLength:4,value:code,placeholder:'ABCD',autocomplete:'off',class:'code-input',oninput:e=>code=e.target.value}),button('Join room',()=>enter('join'),'secondary'),el('details',{},el('summary',{},'Rejoin on another phone'),el('p',{},'Use your same name and saved rejoin code.'),el('label',{htmlFor:'gc-recovery'},'Rejoin code'),el('input',{id:'gc-recovery',value:recover,autocomplete:'off',oninput:e=>recover=e.target.value})),el('p',{class:'muted small'},'Best with 6–8 friends. Everyone uses their own phone.')));}
