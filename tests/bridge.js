@@ -72,6 +72,8 @@ function rulesTests() {
     const players = [host, ...joined];
     assert.equal((await post(joined[0], 'start')).s, 403);
     assert.equal((await post(host, 'settings', { deals: 3 })).s, 400);
+    assert.equal((await post(host, 'settings', { deals: 6 })).j.settings.deals, 6);
+    assert.equal((await get(host)).j.deals,6,'six-deal choice persists');
     assert.equal((await post(host, 'settings', { deals: 2 })).j.settings.deals, 2);
     assert.equal((await post(host, 'start')).j.phase, 'bidding');
     assert.equal((await enter('join', { code: host.code, name: 'Late' })).s, 409);

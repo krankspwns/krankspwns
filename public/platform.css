@@ -295,3 +295,9 @@ html.pf-page-lock{overflow:hidden;overscroll-behavior:none}
 .pf-box .pf-account-confirm .pf-confirm-go.pf-danger{background:#572737;color:#ffd3dc;border:1px solid #bb637d66}
 .pf-gift.pf-art{display:inline-block;flex:none;line-height:0;vertical-align:middle}
 .pf-gift.pf-art svg{display:block;width:100%;height:100%}
+/* Compact deal count: four equal circular choices in every Bridge settings view. */
+.pf-deal-options{display:grid;grid-template-columns:repeat(4,48px);justify-content:center;gap:12px;width:max-content;max-width:100%;margin:0 auto}
+.pf-deal-options .pf-deal-choice,.pf-box .pf-deal-options .pf-deal-choice{box-sizing:border-box;display:grid;place-items:center;width:48px;height:48px;min-height:48px;padding:0;border-radius:50%;border:1px solid #ffffff30;background:#ffffff0a;color:#f4ead2;font:700 16px/1 Inter,system-ui,sans-serif;letter-spacing:0;box-shadow:none;cursor:pointer}
+.pf-deal-options .pf-deal-choice[aria-pressed=true],.pf-box .pf-deal-options .pf-deal-choice[aria-pressed=true]{background:linear-gradient(180deg,#e8d3a2,#c9a96a);border-color:#e8d3a2;color:#1a1407}
+.pf-deal-options .pf-deal-choice:disabled{cursor:default;opacity:.6}
+.pf-deal-options .pf-deal-choice:focus-visible{outline:2px solid #e8d3a2;outline-offset:3px}

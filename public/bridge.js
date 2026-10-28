@@ -14,16 +14,16 @@
   const ranksAsc = '23456789TJQKA';
 
   TableKit({
-    game: 'bridge', api: '/api/bridge', page: '/bridge.html', seatKey: 'br-seat', nameKey: 'br-name', title: 'Singaporean Bridge', icon: 'crown', min: 4, max: 4,
-    footer: 'Singaporean Bridge · Bid. Call a card. Find your hidden partner.',
+    game: 'bridge', api: '/api/bridge', page: '/bridge.html', seatKey: 'br-seat', nameKey: 'br-name', title: 'Hidden Alliance', icon: 'crown', min: 4, max: 4,
+    footer: 'Hidden Alliance · Bid. Call a card. Find your hidden partner.',
     announce: { bidding: 'The bidding has begun.', calling: 'The declarer is calling a partner card.', playing: 'Play the cards.', reveal: 'The deal is over.', finished: 'The match has ended.' },
     scene: (s) => (s.deal ? s.deal.board : ''),
     // Playability changes when collection expires, without a stored room mutation.
     viewKey: s => JSON.stringify(s.deal?.legal || null),
     landing: {
       art: () => el('div', { class: 'club-art', 'aria-hidden': 'true' }, el('img', { src: '/game-art/bridge.webp', alt: '', width: 1200, height: 800, fetchPriority: 'high' })),
-      eyebrow: 'FLOATING BRIDGE', title: ['Singaporean Bridge', 'for four.'], lead: 'Bid for a contract, then call a card. Whoever holds it is your secret partner, and nobody knows who until the cards show it.',
-      chips: ['4 players', 'Hidden Partners', '2, 4 or 8 deals'], steps: [['hand', 'Bid Your Hand'], ['cards', 'Call a Partner Card'], ['trophy', 'Score as an Individual']],
+      eyebrow: 'SINGAPOREAN BRIDGE', title: ['Hidden', 'Alliance'], lead: 'Bid for a contract, then call a card. Whoever holds it is your secret partner, and nobody knows who until the cards show it.',
+      chips: ['4 players', 'Hidden Partners', '2, 4, 6 or 8 deals'], steps: [['hand', 'Bid Your Hand'], ['cards', 'Call a Partner Card'], ['trophy', 'Score as an Individual']],
       note: 'You need exactly 4 players, each with their own phone. New to the game? Open How to Play.',
     },
     waitingChips: ['4 players', 'Partners are secret', 'Individual Scores'],
@@ -48,7 +48,7 @@
       () => [B.h('Scoring'), B.p('The deal stops as soon as either side reaches its trick target. Unplayed tricks never count as extra losses.'),
         B.table([['7 tricks', '1 point'], ['8 tricks', '2 points'], ['9 tricks', '4 points'], ['10 tricks', '8 points'], ['11 tricks', '16 points'], ['12 tricks', '32 points'], ['13 tricks', '64 points']], ['CONTRACT MADE', 'EACH DECLARER-SIDE PLAYER']),
         B.p('If the defenders reach their target first, each defender scores 1 point.')],
-      () => [B.h('Good to know'), B.list(['A hand needs 4 points to be playable: A = 4, K = 3, Q = 2, J = 1, plus 1 for each card after the fourth in a suit. A weaker hand is thrown in and dealt again.', 'The host picks 2, 4 or 8 deals. The player with the most points at the end wins.', 'Your scores are your own. Partners change every deal.', 'Sit in the clockwise order shown in the room.'])],
+      () => [B.h('Good to know'), B.list(['A hand needs 4 points to be playable: A = 4, K = 3, Q = 2, J = 1, plus 1 for each card after the fourth in a suit. A weaker hand is thrown in and dealt again.', 'The host picks 2, 4, 6 or 8 deals. The player with the most points at the end wins.', 'Your scores are your own. Partners change every deal.', 'Sit in the clockwise order shown in the room.'])],
     ],
 
     rulesTitle: 'Bid. Call a Card. Find Your Partner.',
@@ -71,11 +71,17 @@
     },
   });
 
+  function dealPicker(c) {
+    const {state}=c;
+    return el('fieldset',{class:'pace-settings'},el('legend',{},'Number of Deals'),Platform.dealOptions(state.deals,state.hostId!==state.meId || c.busy,n=>{
+      if(c.busy || state.deals===n)return;state.deals=n;c.send('settings',{deals:n});
+    }));
+  }
   function seatPreview(c) {
     const { state, send, busy } = c;
     const host = state.hostId === state.meId;
     return el('div', { class: 'seat-preview' },
-      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: !host, onclick: () => { if (busy || state.deals === n) return; state.deals = n; send('settings', { deals: n }); } }, n + ' deals')))),
+      dealPicker(c),
       el('div', { class: 'partners' }, [0, 1, 2, 3].map((i) => el('div', { class: 'partner-card' }, text('b', '', state.seats[i] ? seatLabel(i) + ' · ' + c.who(state.seats[i]) : seatLabel(i) + ' · Waiting…')))),
       host ? c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary', state.players.length < 2, undefined, 'shuffle:blue') : null,
       text('p', 'muted small', 'Choose a seat and sit in this clockwise order. Your name follows you through bidding and play.'));
@@ -256,7 +262,7 @@
   function finale(c) {
     const { state, send } = c, host = state.hostId === state.meId, w = state.finalWinners || [], mine = state.mySeat >= 0 && w.includes(state.mySeat);
     return c.panel('finale-panel', victory(c, w, w.length > 1 ? 'Joint Champions!' : c.who(state.seats[w[0]]) + ' Wins!', mine ? 'Well Played · Match Complete' : 'Match Complete · Until Next Time', [state.code,state.match,'match'].join(':')), scoreStrip(c),
-      el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: !host, onclick: () => { if (c.busy || state.deals === n) return; state.deals = n; send('settings', { deals: n }); } }, n + ' deals')))),
+      dealPicker(c),
       host ? [c.botControls(), c.button('Play Again', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 4, undefined, 'refresh:ink'), c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary')] : text('p', 'waiting', 'Waiting for the host to start a new match.'));
   }
   function screen(c) {

@@ -4,7 +4,7 @@
   'use strict';
   const KEY = 'kp-audio';
   const THEMES = {
-    bridge: { name: 'Bridge', wave: 'triangle', lead: 'sine', root: 196, scale: [0, 2, 4, 5, 7, 9, 11], bpm: 84, bass: [0, -5, -3, -7],
+    bridge: { name: 'Hidden Alliance', wave: 'triangle', lead: 'sine', root: 196, scale: [0, 2, 4, 5, 7, 9, 11], bpm: 84, bass: [0, -5, -3, -7],
       tune: [[4, 1], [2, 1], [0, 2], [2, 1], [4, 1], [7, 2], [5, 1], [4, 1], [2, 2], [0, 1], [2, 1], [4, 2]] },
     'hot-joker': { name: 'Hot Joker', wave: 'square', lead: 'triangle', mwave: 'sine', vol: 0.07, root: 220, scale: [0, 2, 4, 7, 9], bpm: 92, bass: [0, 0, 7, 5],
       tune: [[0, 0.5], [2, 0.5], [4, 0.5], [2, 0.5], [7, 1], [4, 1], [9, 0.5], [7, 0.5], [4, 0.5], [2, 0.5], [0, 1], [4, 1]] },

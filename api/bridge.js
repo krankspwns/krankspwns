@@ -3,7 +3,7 @@ const B = require('../lib/bridge-bot');
 const { pace } = require('../lib/bot-pace');
 const { createRoomApi, need, present, shuffle } = require('../lib/room-api');
 
-const DEAL_OPTIONS = [2, 4, 8];
+const DEAL_OPTIONS = [2, 4, 6, 8];
 const COLLECT_MS = 1600;
 const trumpOf = (contract) => (contract.denom === 'N' ? null : contract.denom);
 const sideTricks = (d) => d.tricksBy[d.declarer] + (Number.isInteger(d.partner) && d.partner !== d.declarer ? d.tricksBy[d.partner] : 0);
@@ -138,7 +138,7 @@ function view(room, me) {
 const api = createRoomApi({
   ns: 'bridge', min: 4, max: 4,
   init(room) { room.settings = { deals: 4 }; },
-  settings(room, body) { need(DEAL_OPTIONS.includes(body.deals), 400, 'Choose 2, 4 or 8 deals.'); room.settings = { ...room.settings, deals: body.deals }; },
+  settings(room, body) { need(DEAL_OPTIONS.includes(body.deals), 400, 'Choose 2, 4, 6 or 8 deals.'); room.settings = { ...room.settings, deals: body.deals }; },
   start,
   tick: (room) => autopilot(room),
   // seats ranked by total score; equal scores share a place

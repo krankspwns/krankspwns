@@ -359,20 +359,23 @@
   function settingsButton() {
     return el('button',{type:'button',class:'pf-settings-btn','aria-label':'Settings',title:'Settings',onclick:openSettings},window.AvatarArt.tool('settings'));
   }
+  function dealOptions(value,disabled,onChange) {
+    return el('div',{class:'pf-deal-options'},...[2,4,6,8].map(n=>el('button',{type:'button',class:'pf-deal-choice','aria-label':n+' deals','aria-pressed':String(n===value),disabled:disabled || undefined,onclick:()=>onChange(n)},String(n))));
+  }
   function openSettings() {
     const a=window.GameAudio, prefs=a?.prefs() || {};
     const toggle=(label,on,change)=>el('label',{class:'pf-switch'},el('b',{text:label}),el('input',{type:'checkbox',checked:on || undefined,onchange:e=>change(e.target.checked)}));
     const content=[];
     if(a) content.push(el('section',{class:'pf-card'},el('h3',{text:'Sound'}),toggle('Sound effects',prefs.sfx,v=>a.setSfx(v)),toggle('Background music',prefs.music,v=>a.setMusic(v))));
-    const rules={bridge:['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[8,'8 deals']]],'hot-joker':['Turn Timer','turnSeconds',[[20,'20 sec'],[40,'40 sec'],[60,'60 sec']]],'grand-con':['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]}[PAGE];
+    const rules={bridge:['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[6,'6 deals'],[8,'8 deals']]],'hot-joker':['Turn Timer','turnSeconds',[[20,'20 sec'],[40,'40 sec'],[60,'60 sec']]],'grand-con':['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]}[PAGE];
     if(st && seat && rules) {
       const [label,key,choices]=rules, editable=st.hostId===st.meId && ['lobby','finished'].includes(st.phase);
       const current=key==='deals'?st.deals:st.settings?.[key] ?? 0;
-      const group=el('div',{class:'pf-settings-options'});
-      choices.forEach(([value,text])=>group.append(el('button',{type:'button',text,'aria-pressed':String(value===current),disabled:!editable || undefined,onclick:async()=>{
+      const choose=async value=>{
         group.querySelectorAll('button').forEach(b=>b.disabled=true);
         try {await roomAct('settings',{[key]:value});openSettings();} catch(e) {toast(e.message,'⚠️');group.querySelectorAll('button').forEach(b=>b.disabled=!editable);}
-      }})));
+      };
+      const group=PAGE==='bridge'?dealOptions(current,!editable,choose):el('div',{class:'pf-settings-options'},...choices.map(([value,text])=>el('button',{type:'button',text,'aria-pressed':String(value===current),disabled:!editable || undefined,onclick:()=>choose(value)})));
       content.push(el('section',{class:'pf-card'},el('h3',{text:label}),group));
     }
     modal('Settings',...content);
@@ -480,7 +483,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {
