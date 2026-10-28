@@ -87,11 +87,12 @@ async function execute(req,body) {
   const migrated=migrate(room);
   if(action==='join'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
-    let p=room.players.find(p=>p.name.toLowerCase()===name.toLowerCase());let tok;
+    const uid=await P.identify(req),owned=uid&&room.players.find(p=>!p.bot&&social.accountOf(room,p.id)===uid);
+    let p=owned||room.players.find(p=>p.name.toLowerCase()===name.toLowerCase());let tok;
     if(p){
-      const replay=body.requestId&&body.recoveryCode?crypto.createHmac('sha256',String(body.recoveryCode).trim()).update('gc:'+code+':'+p.id+':'+body.requestId).digest('base64url'):null;
+      const replay=owned?P.seatToken(uid,'gc:'+code,p.id,body.requestId):body.requestId&&body.recoveryCode?crypto.createHmac('sha256',String(body.recoveryCode).trim()).update('gc:'+code+':'+p.id+':'+body.requestId).digest('base64url'):null;
       if(p.recoveryReceipt===body.requestId&&replay&&equal(p.tokenHash,hash(replay)))return respond(room,p,{tok:replay});
-      need(body.recoveryCode&&equal(recovery(room,p),String(body.recoveryCode).trim()),409,'That name is already in this room. Enter its rejoin code.');
+      need(owned||body.recoveryCode&&equal(recovery(room,p),String(body.recoveryCode).trim()),409,'That name is already in this room. Enter its rejoin code.');
       tok=replay||secret();p.tokenHash=hash(tok);p.departed=false;p.recoveryReceipt=body.requestId||null;
       if(!room.players.some(q=>q.id===room.hostId&&!q.departed))room.hostId=p.id;
     }else{
@@ -99,7 +100,7 @@ async function execute(req,body) {
       const created=player(name);p=created.p;tok=created.tok;room.players.push(p);
     }
     if(!room.hostId)room.hostId=p.id;
-    await social.link(room,p,await P.identify(req));
+    await social.link(room,p,uid);
     await store.save(room);return respond(room,p,{tok});
   }
   const me=room.players.find(p=>p.id===body.pid);need(me&&body.tok&&equal(me.tokenHash,hash(body.tok)),401,'We could not load your place. Use your rejoin code to come back.');

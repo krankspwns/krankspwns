@@ -164,7 +164,7 @@
     function showRecovery() {
       const d = dialog(el('h2', {}, 'Save Your Rejoin Code'), el('p', {}, 'Save this code and keep it private. To play on another phone, enter the room code, your same name, and this code. The old phone will be signed out.'), el('input', { readOnly: true, value: state.recoveryCode, 'aria-label': 'Rejoin Code', onclick: (e) => e.target.select() }), button('Close', () => d.close(), 'primary'));
     }
-    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), el('div', { class: 'header-tools' }, cfg.guide && window.GameGuide ? GameGuide.button(openRules) : button('How to Play', openRules, 'text-button'), window.GameAudio?.soundMenu?.() || null, window.GameI18n?.menu() || null, window.Platform?.shopButton() || null));
+    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), el('div', {class:'header-controls'}, el('div',{class:'header-left'}, cfg.guide && window.GameGuide ? GameGuide.button(openRules) : button('How to Play', openRules, 'text-button'), window.Platform?.settingsButton() || null), el('div',{class:'header-tools'}, window.GameAudio?.soundMenu?.() || null, window.GameI18n?.menu() || null, window.Platform?.shopButton() || null)));
     function landing() {
       const L = cfg.landing;
       return el('div', { class: 'tk-landing' },
@@ -175,12 +175,12 @@
           button('Create a Room', () => enter('create'), 'primary', false, undefined, 'plus:ink'), text('div', 'or', 'or join your friends'),
           el('label', { htmlFor: 'tk-code' }, 'Room Code'), el('input', { id: 'tk-code', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', class: 'code-input', oninput: (e) => { code = e.target.value; } }),
           button('Join Room', () => enter('join'), 'secondary', false, undefined, 'login:blue'),
-          el('details', {}, el('summary', {}, 'Rejoin on Another Phone'), el('p', {}, 'Use your same name and saved rejoin code.'), el('label', { htmlFor: 'tk-recovery' }, 'Rejoin Code'), el('input', { id: 'tk-recovery', value: recover, autocomplete: 'off', oninput: (e) => { recover = e.target.value; } })),
+          el('details', {'data-guest-only':'landing'}, el('summary', {}, 'Rejoin on Another Phone'), el('p', {}, 'Use your same name and saved rejoin code.'), el('label', { htmlFor: 'tk-recovery' }, 'Rejoin Code'), el('input', { id: 'tk-recovery', value: recover, autocomplete: 'off', oninput: (e) => { recover = e.target.value; } })),
           text('p', 'muted small', L.note)));
     }
     function roomBar() {
       return el('div', { class: 'room-bar' }, el('div', {}, text('span', 'eyebrow', 'PRIVATE ROOM'), el('b', { class: 'room-code' }, state.code)),
-        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, icon('link', 'btn-ico ic-blue'), 'Copy Link'), button('Rejoin Code', showRecovery, 'text-button', false, undefined, 'key:gold'), button('Leave', async () => { if (window.GameGuide ? await GameGuide.leaveRoom(state.recoveryCode) : confirm('Leave this room?')) send('leave'); }, 'text-button', false, undefined, 'exit:red')));
+        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, icon('link', 'btn-ico ic-blue'), 'Copy Link'), Platform.guestOnly(button('Rejoin Code', showRecovery, 'text-button', false, undefined, 'key:gold'),true), button('Leave', async () => { if (window.GameGuide ? await GameGuide.leaveRoom(state.recoveryCode) : confirm('Leave this room?')) send('leave'); }, 'text-button', false, undefined, 'exit:red')));
     }
     function roster(tagFor) {
       const present = state.players.filter((p) => !p.departed).length;

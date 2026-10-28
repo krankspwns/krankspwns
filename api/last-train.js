@@ -61,12 +61,13 @@ async function execute(req, body) {
   if (action === 'join') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     room.observers ||= [];
-    let me = [...room.players, ...room.observers].find(p => p.name.toLowerCase() === name.toLowerCase()), tok;
+    const uid=await P.identify(req), owned=uid && [...room.players,...room.observers].find(p=>!p.bot && room.acct?.[p.id]===uid);
+    let me = owned || [...room.players, ...room.observers].find(p => p.name.toLowerCase() === name.toLowerCase()), tok;
     if (me) {
-      const replay = body.recoveryCode ? crypto.createHmac('sha256', String(body.recoveryCode).trim()).update('lt:' + code + ':' + me.id + ':' + body.requestId).digest('base64url') : null;
-      if (me.recoveryReceipt === body.requestId && replay && equal(me.tokenHash, hash(replay))) return { ...view(room, me), tok: replay };
+      const replay = owned ? P.seatToken(uid,'lt:'+code,me.id,body.requestId) : body.recoveryCode ? crypto.createHmac('sha256', String(body.recoveryCode).trim()).update('lt:' + code + ':' + me.id + ':' + body.requestId).digest('base64url') : null;
       need(!me.kicked, 403, 'The host removed you from this room.');
-      need(body.recoveryCode && equal(recovery(room, me), String(body.recoveryCode).trim()), 409, 'That name is already here. Enter its private rejoin code.');
+      if (me.recoveryReceipt === body.requestId && replay && equal(me.tokenHash, hash(replay))) return { ...view(room, me), tok: replay };
+      need(owned || body.recoveryCode && equal(recovery(room, me), String(body.recoveryCode).trim()), 409, 'That name is already here. Enter its private rejoin code.');
       tok = replay; me.tokenHash = hash(tok); me.departed = false; me.recoveryReceipt = body.requestId;
     } else {
       // Mid-journey arrivals watch as Observers and take a seat when the next journey starts.
@@ -80,7 +81,7 @@ async function execute(req, body) {
       if (watching) { me.observer = true; me.alive = false; room.observers.push(me); } else room.players.push(me);
     }
     if (!room.players.some(p => p.id === room.hostId && !p.departed)) room.hostId = me.id;
-    await link(room, me, await P.identify(req)); await save(room); return { ...view(room, me), tok };
+    await link(room, me, uid); await save(room); return { ...view(room, me), tok };
   }
   // A phone the host removed hears so plainly instead of a generic sign-in error.
   need(!(room.kicked || []).includes(body.pid), 410, 'The host removed you from this room.');

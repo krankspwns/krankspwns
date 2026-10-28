@@ -115,3 +115,70 @@ for(const game of ['bridge','hot-joker','grand-con','last-train']) {
     await page.screenshot({path:testInfo.outputPath('header.png')});
   });
 }
+
+for(const [game,field,value,label] of [['bridge','deals',8,'8 deals'],['hot-joker','setSize',4,'Four of a kind (long)'],['grand-con','discussionSeconds',120,'120 sec']]) {
+  test(game+': help/settings stay left and host settings save',async({page})=>{
+    await page.setViewportSize({width:320,height:844});
+    await page.goto('/'+game+'.html');
+    const left=page.locator('.header-left');
+    await expect(left.getByRole('button',{name:'How to Play',exact:true})).toBeVisible();
+    await expect(left.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+    const bounds=await page.locator('.header-controls').evaluate(e=>({left:e.querySelector('.header-left').getBoundingClientRect().right,right:e.querySelector('.header-tools').getBoundingClientRect().left}));
+    expect(bounds.left).toBeLessThan(bounds.right);
+    await left.getByRole('button',{name:'Settings',exact:true}).click();
+    const dialog=page.getByRole('dialog',{name:'Settings',exact:true});
+    const effects=dialog.getByRole('checkbox',{name:'Sound effects',exact:true});
+    await effects.uncheck();expect(await page.evaluate(()=>GameAudio.prefs().sfx)).toBe(false);
+    await effects.check();expect(await page.evaluate(()=>GameAudio.prefs().sfx)).toBe(true);
+    await page.locator('.pf-x').click();
+    await page.fill(game==='grand-con'?'#gc-name':'#tk-name','Host');
+    await page.getByRole('button',{name:/Create a (Room|room)/,exact:true}).click();
+    await expect(page.locator('.large-code')).toBeVisible();
+    await left.getByRole('button',{name:'Settings',exact:true}).click();
+    const response=page.waitForResponse(r=>r.url().includes('/api/'+game) && r.request().method()==='POST');
+    await dialog.getByRole('button',{name:label,exact:true}).click();
+    const data=await (await response).json();expect(data.settings?.[field] ?? data[field]).toBe(value);
+    await expect(dialog.getByRole('button',{name:label,exact:true})).toHaveAttribute('aria-pressed','true');
+    await page.locator('.pf-x').click();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+  });
+}
+
+// UI-only account fixtures; real account ownership/recovery is covered by account-rejoin.js.
+for(const game of ['bridge','hot-joker','grand-con','last-train','reckoning']) {
+  test(game+': recovery controls are guest-only',async({page})=>{
+    let account={id:'recovery-ui',nick:'Owner',provider:'google',pts:1000,earnedToday:0,eq:{av:'panda'},owned:{av:[],bd:[],acc:[]},gifts:{}};
+    await page.route('**/api/platform',route=>{
+      const action=route.request().method()==='POST'?route.request().postDataJSON().action:null;
+      if(action==='logout')account=null;
+      return route.fulfill({json:{config:{enabled:false},catalog,dailyCap:400,account}});
+    });
+    const api=game==='reckoning'?'game':game;
+    await page.route('**/api/'+api+'*',async route=>{
+      const response=await route.fetch(),data=await response.json();
+      const wallet=data.social?.wallet || data.wallet || data.me?.wallet;
+      if(wallet)wallet.account=!!account;
+      await route.fulfill({response,json:data});
+    });
+    await page.goto('/'+game+'.html');
+    await expect(page.locator('body')).toHaveClass(/pf-signed-in/);
+    const entrance=page.locator('[data-guest-only=landing]');
+    await expect(entrance).toHaveCount(1);await expect(entrance).toBeHidden();
+    await page.fill(game==='reckoning'?'#player-name':game==='last-train'?'#lt-name':game==='grand-con'?'#gc-name':'#tk-name','Owner');
+    await page.getByRole('button',{name:/^Create (a Room|a room|A Room|a new room)$/}).click();
+    await expect(page.locator('body')).toHaveClass(/pf-account-seat/);
+    if(game==='last-train')await page.getByRole('button',{name:'Invite ▾',exact:true}).click();
+    if(game==='reckoning')await page.locator('#setBtn').click();
+    const recovery=page.locator('[data-guest-only=room]');
+    await expect(recovery).toHaveCount(1);await expect(recovery).toBeHidden();
+    if(game==='reckoning')await page.keyboard.press('Escape');
+    if(game==='last-train')await page.keyboard.press('Escape');
+    // Signing out brings guest code controls back without a page reload.
+    await page.locator('#pf-dock').getByRole('button',{name:'Profile',exact:true}).click();
+    await page.getByRole('button',{name:'Sign out',exact:true}).click();
+    await expect(page.locator('body')).not.toHaveClass(/pf-signed-in/);
+    if(game==='last-train')await page.getByRole('button',{name:'Invite ▾',exact:true}).click();
+    if(game==='reckoning')await page.locator('#setBtn').click();
+    await expect(page.locator('[data-guest-only=room]')).toBeVisible();
+  });
+}

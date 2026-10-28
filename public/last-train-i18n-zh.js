@@ -4,6 +4,8 @@
   const exact = {};
   const add = o => Object.assign(exact, o);
 
+  add({'Sign in to the same account and enter the room code to return.':'登录同一个账号，并输入房间代码即可返回。'});
+
   // Header, entrance and room
   add({
     'Last Train · The Game Room': '末班列车 · 游戏室', 'Last Train · Every cabin hides a secret.': '末班列车 · 每个包厢都藏着秘密。',

@@ -238,3 +238,17 @@ html[lang^=zh] .tk-shell,html[lang^=zh] .gc-shell{font-family:Inter,'PingFang SC
 .pf-header-shop:hover{filter:brightness(1.12);transform:none}
 .pf-header-shop:focus-visible{outline:2px solid #edcf8b;outline-offset:3px}
 .lt-header .lt-topbar .lt-pill{border-radius:99px;background:rgba(255,255,255,.06);border:1px solid #ffffff1a;box-shadow:none}
+/* Help/settings on the left; sound/language/wallet on the right. */
+.tk-header,.gc-header{flex-wrap:wrap}
+.header-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-basis:100%;min-width:0;padding-top:4px}
+.header-left{display:flex;align-items:center;gap:6px;flex:none}
+.header-left .pfg-label{display:none}
+.header-left .pfg-btn,.pf-settings-btn{display:grid;place-items:center;box-sizing:border-box;flex:none;width:36px;height:36px;min-width:36px;padding:4px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid #ffffff1a;box-shadow:none;cursor:pointer;line-height:0}
+.header-left .pfg-btn b{display:block;width:26px;height:26px;background:none}
+.header-left .pfg-btn .pf-art,.header-left .pfg-btn svg,.pf-settings-btn .pf-art,.pf-settings-btn svg{display:block;width:26px;height:26px}
+.pf-settings-btn:focus-visible{outline:2px solid #edcf8b;outline-offset:3px}
+.pf-settings-options{display:flex;flex-wrap:wrap;gap:8px}
+.pf-settings-options button{flex:1;min-width:72px}
+.pf-settings-options button[aria-pressed=true]{border-color:#edcf8b;background:#d9b55f33;color:#ffe9a8}
+/* Guests keep code recovery; account-linked players rejoin with their login. */
+body.pf-signed-in [data-guest-only=landing],body.pf-signed-in.pf-account-seat [data-guest-only=room]{display:none!important}

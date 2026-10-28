@@ -8,6 +8,7 @@ module.exports = function buildSharedArt(root) {
   const start = source.indexOf('const eyes ='), end = source.indexOf('const GIFT_ART =');
   const fit = source.match(/^const AV_FIT = .*$/m)?.[0];
   const settings = read('src/settings.js');
+  const settingsArt = settings.match(/const SET_ICON = ('[^\n]*');/)?.[1];
   const guide = settings.match(/const GUIDE_ICON = ('[^\n]*');/)?.[1];
   const icons = read('src/icons.js').split('const COLOR_ICONS =')[0];
   const lineIcons = ['volume-x','volume-2','music','caret'].map(key=>{
@@ -18,9 +19,9 @@ module.exports = function buildSharedArt(root) {
   const shop = settings.match(/const SHOP_ICON = ('[^\n]*');/)?.[1];
   const gift = settings.match(/GIFT_ICON = ('[^\n]*');/)?.[1];
   const users = read('src/icons.js').split('const COLOR_ICONS =')[1].match(/  users: ('[^\n]*'),/)?.[1];
-  if (start < 0 || end <= start || !fit || !shop || !gift || !users || !guide) throw Error('Shared artwork sources changed; update build-shared-art.js.');
+  if (start < 0 || end <= start || !fit || !shop || !gift || !users || !guide || !settingsArt) throw Error('Shared artwork sources changed; update build-shared-art.js.');
   const out = `// Generated from src/avatars.js, src/icons.js and src/settings.js. Do not edit.\n(() => {\n'use strict';\n${source.slice(start,end)}\n${fit}\nconst LINE_ICONS = {${lineIcons}};
-const TOOLS = {guide:${guide},shop:${shop}, gift:${gift}, players:${users}, profile:'<circle cx="16" cy="10" r="6" fill="#8fd3ff"/><path d="M4 29v-3a12 12 0 0124 0v3z" fill="#6b8cff"/><path d="M11 8q1-3 5-3" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'};
+const TOOLS = {settings:${settingsArt},guide:${guide},shop:${shop}, gift:${gift}, players:${users}, profile:'<circle cx="16" cy="10" r="6" fill="#8fd3ff"/><path d="M4 29v-3a12 12 0 0124 0v3z" fill="#6b8cff"/><path d="M11 8q1-3 5-3" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'};
 let uid=0;
 function unique(html) {
   const suffix='shared-av-'+(++uid);

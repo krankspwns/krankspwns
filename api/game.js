@@ -717,16 +717,17 @@ async function handle(action, b, query, ctx = {}) {
   if (action === 'join') {
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
-    // A matching name identifies a seat, but its private recovery code proves ownership.
-    const same = room.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
+    // Account ownership restores its seat; guests prove ownership with a private code.
+    const owned = ctx.uid && room.players.find(p=>acctOf(room,p.id)===ctx.uid);
+    const same = owned || room.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
     if (same) {
       const receipt = same.recoveryReceipt;
-      const replayTok = b.requestId && b.recoveryCode ? recoveredToken(room, same, b.recoveryCode, b.requestId) : null;
+      const replayTok = owned ? P.seatToken(ctx.uid,'reckoning:'+code,same.id,b.requestId) : b.requestId && b.recoveryCode ? recoveredToken(room, same, b.recoveryCode, b.requestId) : null;
       // Recover the response to a committed recovery without rotating the token twice.
       if (receipt && receipt.id === b.requestId && Date.now() - receipt.at < REQUEST_TTL_MS && tokenOk(same, replayTok)) {
         return { ...(await viewFor(room, same.id)), tok: replayTok };
       }
-      need(recoveryOk(room, same, b.recoveryCode), 409, 'Recovery code required for this name');
+      need(owned || recoveryOk(room, same, b.recoveryCode), 409, 'Recovery code required for this name');
       delete same.released;
       const tok = replayTok || issueToken(same);
       same.tkh = hashToken(tok);   // the old token stops working

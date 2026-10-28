@@ -89,7 +89,7 @@
       document.body.append(ov); document.addEventListener('keydown', key, true); (code ? copy : el('i')).focus?.({ preventScroll: true }); if (!code) go.focus({ preventScroll: true });
     });
   }
-  const leaveRoom = (code) => ask({ title: 'Leave this room?', body: 'You can come back later with the room code, your name and your rejoin code.', ok: 'Leave room', cancel: 'Stay', danger: true, code });
+  const leaveRoom = (code) => { const guest=window.Platform?.needsRecovery() !== false;return ask({ title: 'Leave this room?', body: guest ? 'You can come back later with the room code, your name and your rejoin code.' : 'Sign in to the same account and enter the room code to return.', ok: 'Leave room', cancel: 'Stay', danger: true, code:guest?code:null });};
 
   window.GameGuide = { open, close, button, B, ask, leaveRoom };
 })();

@@ -14,6 +14,7 @@
   const KIND_NAME = { av: 'Avatars', bd: 'Borders', acc: 'Accessories', gift: 'Gifts' };
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/([a-z])([A-Z])/g, '$1 $2');
 
+  let accountSeat = false;
   let account = null, config = null, seat = null, st = null, seenFeed = null, seenAward = null, busy = false;
   const real = window.fetch.bind(window);
   const uid = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : String(Math.random()).slice(2) + Date.now());
@@ -248,6 +249,27 @@
       el('button', {type:'button',onclick:()=>openShop(),disabled:!w || undefined,text:'Open Shop'}),
       el('button', {type:'button',class:'pf-ghost',onclick:openLogin,text:'Sign In with Google or Apple'}));
   }
+  function settingsButton() {
+    return el('button',{type:'button',class:'pf-settings-btn','aria-label':'Settings',title:'Settings',onclick:openSettings},window.AvatarArt.tool('settings'));
+  }
+  function openSettings() {
+    const a=window.GameAudio, prefs=a?.prefs() || {};
+    const toggle=(label,on,change)=>el('label',{class:'pf-switch'},el('b',{text:label}),el('input',{type:'checkbox',checked:on || undefined,onchange:e=>change(e.target.checked)}));
+    const content=[];
+    if(a) content.push(el('section',{class:'pf-card'},el('h3',{text:'Sound'}),toggle('Sound effects',prefs.sfx,v=>a.setSfx(v)),toggle('Background music',prefs.music,v=>a.setMusic(v))));
+    const rules={bridge:['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[8,'8 deals']]],'hot-joker':['Sets to lay down','setSize',[[2,'Pairs (quick)'],[4,'Four of a kind (long)']]],'grand-con':['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]}[PAGE];
+    if(st && seat && rules) {
+      const [label,key,choices]=rules, editable=st.hostId===st.meId && ['lobby','finished'].includes(st.phase);
+      const current=key==='deals'?st.deals:st.settings?.[key] ?? (key==='setSize'?2:0);
+      const group=el('div',{class:'pf-settings-options'});
+      choices.forEach(([value,text])=>group.append(el('button',{type:'button',text,'aria-pressed':String(value===current),disabled:!editable || undefined,onclick:async()=>{
+        group.querySelectorAll('button').forEach(b=>b.disabled=true);
+        try {await roomAct('settings',{[key]:value});openSettings();} catch(e) {toast(e.message,'⚠️');group.querySelectorAll('button').forEach(b=>b.disabled=!editable);}
+      }})));
+      content.push(el('section',{class:'pf-card'},el('h3',{text:label}),group));
+    }
+    modal('Settings',...content);
+  }
   function shopButton(options = {}) {
     const w = wallet(), points = options.points ?? w?.pts;
     const b = el('button', {type:'button',class:'pf-header-shop', 'aria-label':points == null ? 'Shop' : 'Shop · '+points+' WP', title:points == null ? 'Shop' : 'Shop · '+points+' WP', onclick:options.open || (()=>{closeTray();openShop();})}, window.AvatarArt.tool('shop'));
@@ -312,7 +334,7 @@
     if (!tok) return;
     const prev = st; seat = { api: path, code: j.code, pid: j.meId, tok };
     if (prev && prev.code !== j.code) { seenFeed = null; seenAward = null; }
-    st = j; warmClips();
+    st = j; accountSeat = !!j.social.wallet.account; updateRecoveryVisibility(); warmClips();
     if (account && j.social.wallet.account) { const w = j.social.wallet; Object.assign(account, { pts: w.pts, owned: w.owned, gifts: w.gifts, eq: w.eq }); }
     const feed = j.social.feed || [];
     if (seenFeed === null) seenFeed = j.social.n; else {
@@ -326,13 +348,22 @@
   }
   window.fetch = async function (input, init) {
     const res = await real(input, init);
-    try { const u = new URL(typeof input === 'string' ? input : input.url, location.href); if (u.origin === location.origin && GAME_API.test(u.pathname)) res.clone().json().then((j) => observe(u.href, init, j)).catch(() => {}); } catch {}
+    try { const u = new URL(typeof input === 'string' ? input : input.url, location.href); if (u.origin === location.origin && (GAME_API.test(u.pathname) || /^\/api\/(game|last-train)$/.test(u.pathname))) res.clone().json().then(j=>{
+      if(GAME_API.test(u.pathname)) observe(u.href,init,j);
+      else if(j.meId && (j.wallet || j.me?.wallet)) {accountSeat=!!(j.wallet || j.me.wallet).account;updateRecoveryVisibility();}
+    }).catch(()=>{}); } catch {}
     return res;
   };
 
   // Keep this entry point for wallet/sign-in updates; there is no second chip.
-  function renderChip() { document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, account: () => account, avatar, toast };
+  function updateRecoveryVisibility() {
+    document.body.classList.toggle('pf-signed-in',!!account);
+    document.body.classList.toggle('pf-account-seat',accountSeat);
+  }
+  function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
+  const needsRecovery = () => !account || !accountSeat;
+  function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

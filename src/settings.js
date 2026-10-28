@@ -65,11 +65,11 @@ function renderSettings() {
     row(t('setVoice'), t('setVoiceHint'), sw(!!ui.voice, (v) => setUi('voice', v)))));
   if (inRoom && st.recoveryCode) {
     const copy = el('button', { type: 'button', class: 'ghost recovery-copy', onclick: () => copyText(st.recoveryCode, copy) }, icon('copy', 16), t('recoveryCopy'));
-    sections.push(card('recovery', 'lock', t('recoveryTitle'), '',
+    sections.push(Platform.guestOnly(card('recovery', 'lock', t('recoveryTitle'), '',
       el('div', { class: 'recovery-body' },
         el('p', { class: 'setnote' }, t('recoveryHint')),
         el('div', { class: 'recovery-controls' },
-          el('input', { readOnly: true, type: 'password', value: st.recoveryCode, 'aria-label': t('recoveryLabel'), onclick: (e) => { e.target.type = 'text'; e.target.select(); } }), copy))));
+          el('input', { readOnly: true, type: 'password', value: st.recoveryCode, 'aria-label': t('recoveryLabel'), onclick: (e) => { e.target.type = 'text'; e.target.select(); } }), copy))),true));
   }
   if (inRoom) sections.push(el('button', { type: 'button', class: 'ghost setsync', onclick: () => { resync(); toast(t('setSynced'), 'low'); } }, icon('swap', 16), t('setSync')));
   // nothing in the panel changed (a poll or push rebuilt the screen behind it): leave it alone so touch scrolling is never interrupted
