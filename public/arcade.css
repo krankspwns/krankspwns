@@ -19,3 +19,30 @@
 .arcade-header .wordmark{gap:12px;line-height:1.2}
 .arcade-header .brand-mark{box-sizing:border-box;display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:1px solid #c9a96a70;border-radius:13px;background:linear-gradient(145deg,#c9a96a12,#0e142666);font-size:0;line-height:0}
 .arcade-header .brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+/* A bright collection page, with each game keeping its own visual identity. */
+html{color-scheme:light;background:#fff}
+body{background:#fff;color:#1e2538}
+.arcade-header .wordmark{color:#1e2538}
+.arcade-header .brand-mark{background:#0e1426;border-color:#c9a96a99}
+.live-note,.arcade-footer{color:#636d7d}
+.live-note i{background:#397e5a;box-shadow:0 0 10px #397e5a26}
+.arcade-intro>.eyebrow{color:#80642f}
+h1 em{color:#896324}
+.arcade-intro p{color:#5d6574}
+.game-card{--card-ink:#f4ead8;--card-muted:#acb4c6;--card-tag:#bfae8d;--card-accent:#e4c88f;--card-line:#ffffff12;--chip-ink:#bec6d5;--chip-bg:#ffffff06;--chip-line:#ffffff14;color:var(--card-ink);box-shadow:0 10px 30px #19213a18}
+/* Row of Reckoning retains its existing navy and gold card. */
+.reckoning-card{background:linear-gradient(145deg,#1f2635,#101622)}
+.train-card{background:linear-gradient(145deg,#173f35,#0d2722);border-color:#41755c66;--card-muted:#c3d8cc;--card-tag:#a6d7b8;--card-accent:#e9d39e;--card-line:#b0dbc62e;--chip-ink:#d4e6dc;--chip-bg:#a6d7b80c;--chip-line:#a6d7b82e}
+.bridge-card{background:linear-gradient(145deg,#303361,#1c1e40);border-color:#777db066;--card-muted:#d1d2e8;--card-tag:#c0c2f2;--card-accent:#e4d5a8;--card-line:#bfc5f72e;--chip-ink:#dedff4;--chip-bg:#bfc5f70c;--chip-line:#bfc5f72e}
+.joker-card{background:linear-gradient(145deg,#5b2945,#351a2f);border-color:#b76b9266;--card-muted:#e8cddb;--card-tag:#f2b5cf;--card-accent:#f5d397;--card-line:#edb9d02e;--chip-ink:#f2dce7;--chip-bg:#edb9d00c;--chip-line:#edb9d02e}
+.con-card{background:linear-gradient(145deg,#5b3c29,#32251e);border-color:#b4865266;--card-muted:#e4d3bf;--card-tag:#ebc18d;--card-accent:#f4d9a5;--card-line:#e8c99c2e;--chip-ink:#f0e0cb;--chip-bg:#e8c99c0c;--chip-line:#e8c99c2e}
+.game-card .game-tag{color:var(--card-tag)}
+.game-card p{color:var(--card-muted)}
+.game-card .game-facts span{color:var(--chip-ink);background:var(--chip-bg);border-color:var(--chip-line)}
+.game-card .game-cta{color:var(--card-accent);border-top-color:var(--card-line)}
+.game-card:hover{border-color:var(--card-accent);box-shadow:0 16px 36px #19213a24}
+.joker-card .new-tag{background:#f0b6ce;color:#471e34}
+.bridge-card .new-tag{background:#c9cdf4;color:#292d56}
+.con-card .new-tag{background:#e9c18e;color:#503522}
+.pf-ov,.pf-tray,#pf-dock{color-scheme:dark}
+.arcade a:focus-visible{outline-color:#896324}

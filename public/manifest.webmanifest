@@ -4,8 +4,8 @@
   "description": "Games for your table: Row of Reckoning, Last Train, Hidden Alliance, Hot Joker and The Grand Con.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0e1426",
-  "theme_color": "#18213b",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/icon-192.png",
