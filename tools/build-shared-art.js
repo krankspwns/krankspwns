@@ -11,7 +11,7 @@ module.exports = function buildSharedArt(root) {
   const settingsArt = settings.match(/const SET_ICON = ('[^\n]*');/)?.[1];
   const guide = settings.match(/const GUIDE_ICON = ('[^\n]*');/)?.[1];
   const icons = read('src/icons.js').split('const COLOR_ICONS =')[0];
-  const lineIcons = ['volume-x','volume-2','music','caret'].map(key=>{
+  const lineIcons = ['volume-x','volume-2','music','caret','link','copy','qr','logout','lock'].map(key=>{
     const row=icons.split('\n').find(line=>line.startsWith("  '"+key+"':") || line.startsWith('  '+key+':'));
     if(!row)throw Error('Missing header icon: '+key);
     return JSON.stringify(key)+':'+row.slice(row.indexOf(':')+1).trim().replace(/,$/,'');

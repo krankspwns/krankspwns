@@ -1,0 +1,40 @@
+const {test,expect}=require('@playwright/test');
+for(const game of ['bridge','hot-joker','grand-con']) {
+  test(game+': Row room code and Invite actions work on a small phone',async({page},testInfo)=>{
+    await page.setViewportSize({width:320,height:844});
+    await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{value:{writeText:async value=>{window.copiedInvite=value;}}}));
+    await page.goto('/'+game+'.html');
+    await page.fill(game==='grand-con'?'#gc-name':'#tk-name','Host');
+    await page.getByRole('button',{name:/^Create a (Room|room)$/}).click();
+    const room=page.locator('.pf-room-bar');
+    await expect(room).toHaveClass(/pf-room-waiting/);
+    const code=(await room.locator('.room-code').textContent()).trim();
+    const invite=room.getByRole('button',{name:'Invite',exact:true});
+    await invite.click();
+    await room.getByRole('menuitem',{name:'Copy Room Code',exact:true}).click();
+    expect(await page.evaluate(()=>copiedInvite)).toBe(code);
+    await expect(invite).toHaveAttribute('aria-expanded','false');
+    await invite.click();
+    await room.getByRole('menuitem',{name:'Copy Invite Link',exact:true}).click();
+    expect(await page.evaluate(()=>copiedInvite)).toBe('http://127.0.0.1:3000/'+game+'.html?room='+code);
+    await invite.click();
+    await room.getByRole('menuitem',{name:'QR Code',exact:true}).click();
+    await expect(page.locator('.pf-room-qr svg')).toBeVisible();
+    await expect(page.locator('.pf-qr-code')).toHaveText(code);
+    await page.locator('.pf-x').click();
+    await invite.click();
+    await room.getByRole('menuitem',{name:'Rejoin Code',exact:true}).click();
+    await expect(page.getByRole('textbox',{name:/Rejoin [Cc]ode/})).not.toBeEmpty();
+    await page.keyboard.press('Escape');
+    await invite.click();await page.keyboard.press('Escape');
+    await expect(invite).toHaveAttribute('aria-expanded','false');
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+    await page.evaluate(()=>scrollTo(0,0));
+    await page.screenshot({path:testInfo.outputPath('room-phone.png')});
+    await page.setViewportSize({width:1100,height:844});
+    await page.screenshot({path:testInfo.outputPath('room-desktop.png')});
+    await room.getByRole('button',{name:'Leave Room',exact:true}).click();
+    await page.getByRole('button',{name:'Stay',exact:true}).click();
+    await expect(room).toBeVisible();
+  });
+}

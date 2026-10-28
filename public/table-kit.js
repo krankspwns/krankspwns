@@ -146,11 +146,6 @@
       finally { busy = false; render(); }
       return ok;
     }
-    const link = () => location.origin + cfg.page + '?room=' + state.code;
-    async function copyInvite() {
-      try { await navigator.clipboard.writeText(link()); announce('Link copied'); document.querySelector('[data-copy]').textContent = 'Copied!'; }
-      catch { error = 'Copy this link: ' + link(); render(); }
-    }
     function dialog(...children) {
       const d = el('dialog', { class: 'tk-dialog' }, ...children);
       d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal(); return d;
@@ -179,8 +174,9 @@
           text('p', 'muted small', L.note)));
     }
     function roomBar() {
-      return el('div', { class: 'room-bar' }, el('div', {}, text('span', 'eyebrow', 'PRIVATE ROOM'), el('b', { class: 'room-code' }, state.code)),
-        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, icon('link', 'btn-ico ic-blue'), 'Copy Link'), Platform.guestOnly(button('Rejoin Code', showRecovery, 'text-button', false, undefined, 'key:gold'),true), button('Leave', async () => { if (window.GameGuide ? await GameGuide.leaveRoom(state.recoveryCode) : confirm('Leave this room?')) send('leave'); }, 'text-button', false, undefined, 'exit:red')));
+      return Platform.roomBar({code:state.code,page:cfg.page,phase:state.phase,onRecovery:showRecovery,onLeave:async()=>{
+        if(await GameGuide.leaveRoom(state.recoveryCode))send('leave');
+      }});
     }
     function roster(tagFor) {
       const present = state.players.filter((p) => !p.departed).length;
@@ -202,7 +198,7 @@
     }
     function waitingRoom() {
       const host = state.meId === state.hostId, n = state.players.filter((p) => !p.departed).length, reason = cfg.startBlock(state, n);
-      return el('div', { class: 'lobby-grid' }, panel('waiting-card', cfg.landing.art ? el('div', { class: 'lobby-art' }, cfg.landing.art()) : null, text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'), text('div', 'large-code', state.code),
+      return el('div', { class: 'lobby-grid' }, panel('waiting-card', cfg.landing.art ? el('div', { class: 'lobby-art' }, cfg.landing.art()) : null, text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'),
         el('div', { class: 'chips' }, cfg.waitingChips.map((c) => text('span', '', c))), cfg.waiting ? cfg.waiting(ctx()) : null, botControls(),
         host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason, undefined, 'play:ink') : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to Play', openRules, 'text-button')), roster(cfg.rosterTag));
     }

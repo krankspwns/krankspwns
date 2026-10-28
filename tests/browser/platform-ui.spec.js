@@ -179,6 +179,7 @@ for(const game of ['bridge','hot-joker','grand-con','last-train','reckoning']) {
     await expect(page.locator('body')).not.toHaveClass(/pf-signed-in/);
     if(game==='last-train')await page.getByRole('button',{name:'Invite ▾',exact:true}).click();
     if(game==='reckoning')await page.locator('#setBtn').click();
+    if(['bridge','hot-joker','grand-con'].includes(game))await page.locator('.pf-room-invite').click();
     await expect(page.locator('[data-guest-only=room]')).toBeVisible();
   });
 }

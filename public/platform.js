@@ -249,6 +249,49 @@
       el('button', {type:'button',onclick:()=>openShop(),disabled:!w || undefined,text:'Open Shop'}),
       el('button', {type:'button',class:'pf-ghost',onclick:openLogin,text:'Sign In with Google or Apple'}));
   }
+  // Row's room code + Invite dropdown, shared by the table games and Grand Con.
+  let activeInvite=null, qrLoading=null;
+  function closeInvite() {
+    if(!activeInvite)return;
+    activeInvite.menu.hidden=true;activeInvite.button.setAttribute('aria-expanded','false');activeInvite=null;
+  }
+  document.addEventListener('click',e=>{if(activeInvite && !activeInvite.wrap.contains(e.target))closeInvite();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape' && activeInvite){const b=activeInvite.button;closeInvite();b.focus();}});
+  async function copyRoomText(value) {
+    try {await navigator.clipboard.writeText(value);toast('Copied!');closeInvite();}
+    catch {modal('Copy Link',el('input',{readOnly:true,value,'aria-label':'Copy Link',onclick:e=>e.target.select()}));}
+  }
+  async function roomQR(code,link) {
+    closeInvite();
+    const image=el('div',{class:'pf-room-qr',role:'status',text:'Loading…'});
+    const ov=modal('Scan to join',image,el('b',{class:'pf-qr-code','data-no-tr':'',text:code}),el('p',{class:'pf-note',text:'Point a phone camera at the code to open the room.'}),el('button',{type:'button',text:'Copy Invite Link',onclick:()=>copyRoomText(link)}));
+    try {
+      if(!window.qrcode)await (qrLoading ||= new Promise((resolve,reject)=>{
+        const s=el('script',{src:'/qrcode.js'});s.onload=resolve;s.onerror=()=>{s.remove();qrLoading=null;reject(Error('QR code could not load.'));};document.head.append(s);
+      }));
+      if(overlay!==ov)return;
+      const q=window.qrcode(0,'M');q.addData(link);q.make();const n=q.getModuleCount(),margin=4;
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 '+(n+margin*2)+' '+(n+margin*2));svg.setAttribute('shape-rendering','crispEdges');svg.setAttribute('role','img');svg.setAttribute('aria-label','QR Code');
+      let path='';for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(q.isDark(y,x))path+='M'+(x+margin)+' '+(y+margin)+'h1v1h-1z';
+      svg.innerHTML='<rect width="100%" height="100%" fill="white"/><path fill="#14182b" d="'+path+'"/>';image.replaceChildren(svg);
+    } catch(e) {if(overlay===ov)image.textContent=e.message;}
+  }
+  function roomBar({code,page,phase,onLeave,onRecovery}) {
+    const link=location.origin+page+'?room='+code;
+    const icon=k=>window.AvatarArt.icon(k,16);
+    const menu=el('div',{class:'pf-invite-menu',role:'menu',hidden:true});
+    const item=(label,key,fn)=>el('button',{type:'button',role:'menuitem',onclick:fn},icon(key),label);
+    menu.append(item('Copy Room Code','copy',()=>copyRoomText(code)),item('Copy Invite Link','link',()=>copyRoomText(link)),item('QR Code','qr',()=>roomQR(code,link)));
+    if(onRecovery)menu.append(guestOnly(item('Rejoin Code','lock',()=>{closeInvite();onRecovery();}),true));
+    const wrap=el('span',{class:'pf-invite-wrap'});
+    const invite=el('button',{type:'button',class:'pf-room-invite','aria-haspopup':'menu','aria-expanded':'false',onclick:()=>{
+      const open=menu.hidden;closeInvite();if(open){menu.hidden=false;invite.setAttribute('aria-expanded','true');activeInvite={menu,button:invite,wrap};}
+    },onkeydown:e=>{if(e.key==='ArrowDown'){e.preventDefault();menu.hidden=false;invite.setAttribute('aria-expanded','true');activeInvite={menu,button:invite,wrap};menu.querySelector('button').focus();}}},icon('link'),'Invite',window.AvatarArt.icon('caret',11));
+    wrap.append(invite,menu);
+    return el('section',{class:'room-bar pf-room-bar'+(phase==='lobby'?' pf-room-waiting':''),'aria-label':'Room'},
+      el('div',{class:'pf-room-identity'},el('span',{class:'eyebrow',text:'Room Code'}),el('b',{class:'room-code'+(phase==='lobby'?' large-code':''),'data-no-tr':'',text:code})),
+      el('div',{class:'room-actions'},wrap,el('button',{type:'button',class:'pf-room-leave',onclick:onLeave},icon('logout'),'Leave Room')));
+  }
   function settingsButton() {
     return el('button',{type:'button',class:'pf-settings-btn','aria-label':'Settings',title:'Settings',onclick:openSettings},window.AvatarArt.tool('settings'));
   }
@@ -363,7 +406,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, roomBar, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {
