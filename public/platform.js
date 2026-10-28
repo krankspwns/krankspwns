@@ -290,6 +290,18 @@
     chip ? chip.replaceWith(next) : document.body.append(next); chip = next;
   }
   window.Platform = { openLogin, openShop, account: () => account, avatar, toast };
+  // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
+  const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
+  function fillNames() {
+    const nick = account?.nick; if (!nick) return;
+    document.querySelectorAll(NAME_BOXES).forEach((i) => {
+      if (i.value || i.dataset.pfFilled || i.dataset.pfTyped) return;
+      i.dataset.pfFilled = '1'; i.value = i.maxLength > 0 ? Array.from(nick).slice(0, i.maxLength).join('') : nick;
+      i.dispatchEvent(new Event('input', { bubbles: true }));   // so the game's own state picks it up
+    });
+  }
+  document.addEventListener('input', (e) => { if (e.isTrusted && e.target.matches?.(NAME_BOXES)) e.target.dataset.pfTyped = '1'; }, true);
+  new MutationObserver(fillNames).observe(document.documentElement, { childList: true, subtree: true });
   (async () => {
     try { const j = await (await real(API, { credentials: 'same-origin' })).json(); config = { ...j.config, catalog: j.catalog, dailyCap: j.dailyCap }; account = j.account; } catch { config = { enabled: false }; }
     renderChip();
@@ -297,6 +309,7 @@
   document.addEventListener('click', (e) => { if (tray && !e.target.closest('.pf-tray, #pf-dock')) closeTray(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTray(); close(); } });
 })();
+
 
 
 
