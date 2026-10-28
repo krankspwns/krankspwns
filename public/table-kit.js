@@ -180,7 +180,7 @@
     }
     function roomBar() {
       return el('div', { class: 'room-bar' }, el('div', {}, text('span', 'eyebrow', 'PRIVATE ROOM'), el('b', { class: 'room-code' }, state.code)),
-        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, icon('link', 'btn-ico ic-blue'), 'Copy Link'), button('Rejoin Code', showRecovery, 'text-button', false, undefined, 'key:gold'), button('Leave', () => { if (confirm('Leave this room? Save your rejoin code so you can come back.')) send('leave'); }, 'text-button', false, undefined, 'exit:red')));
+        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, icon('link', 'btn-ico ic-blue'), 'Copy Link'), button('Rejoin Code', showRecovery, 'text-button', false, undefined, 'key:gold'), button('Leave', async () => { if (window.GameGuide ? await GameGuide.leaveRoom(state.recoveryCode) : confirm('Leave this room?')) send('leave'); }, 'text-button', false, undefined, 'exit:red')));
     }
     function roster(tagFor) {
       const present = state.players.filter((p) => !p.departed).length;

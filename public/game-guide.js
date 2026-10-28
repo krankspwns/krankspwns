@@ -73,6 +73,24 @@
   // the header button: gold book icon + label, exactly like Row of Reckoning's
   const button = (onclick) => el('button', { type: 'button', class: 'pfg-btn', onclick }, el('b', { 'aria-hidden': 'true' }, svg(BOOK)), el('span', { class: 'pfg-label' }, 'How to play'));
 
-  window.GameGuide = { open, close, button, B };
+  // a proper confirm box (replaces the browser's confirm()). Resolves true / false.
+  function ask({ title, body, ok = 'OK', cancel = 'Cancel', danger = false, code = '' }) {
+    return new Promise((resolve) => {
+      const prev = document.activeElement;
+      const done = (v) => { ov.remove(); document.removeEventListener('keydown', key, true); prev?.focus?.({ preventScroll: true }); resolve(v); };
+      const key = (e) => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+      const copy = el('button', { type: 'button', class: 'pfc-copy', onclick: async () => { try { await navigator.clipboard.writeText(code); copy.textContent = 'Copied!'; } catch { box.select(); } } }, 'Copy');
+      const box = el('input', { class: 'pfc-code', readOnly: true, value: code, 'aria-label': 'Rejoin code', onclick: (e) => e.target.select() });
+      const go = el('button', { type: 'button', class: 'pfc-ok' + (danger ? ' danger' : ''), onclick: () => done(true) }, ok);
+      const ov = el('div', { class: 'pfc-ov', role: 'alertdialog', 'aria-modal': 'true', 'aria-label': title, onclick: (e) => { if (e.target === ov) done(false); } },
+        el('div', { class: 'pfc' }, el('h2', {}, title), el('p', {}, body),
+          code ? el('div', { class: 'pfc-codebox' }, el('small', {}, 'Your rejoin code'), el('div', {}, box, copy)) : null,
+          el('div', { class: 'pfc-row' }, el('button', { type: 'button', class: 'pfc-cancel', onclick: () => done(false) }, cancel), go)));
+      document.body.append(ov); document.addEventListener('keydown', key, true); (code ? copy : el('i')).focus?.({ preventScroll: true }); if (!code) go.focus({ preventScroll: true });
+    });
+  }
+  const leaveRoom = (code) => ask({ title: 'Leave this room?', body: 'You can come back later with the room code, your name and your rejoin code.', ok: 'Leave room', cancel: 'Stay', danger: true, code });
+
+  window.GameGuide = { open, close, button, B, ask, leaveRoom };
 })();
 

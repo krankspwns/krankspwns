@@ -160,3 +160,15 @@ body.pfg-lock{overflow:hidden}
 .pfg-team span{font-size:28px}.pfg-team small{font-size:13px;opacity:.85;line-height:1.4}
 .pfg-team.truth{border-color:rgba(111,207,151,.6);background:rgba(111,207,151,.08)}.pfg-team.lie{border-color:rgba(240,120,120,.6);background:rgba(240,120,120,.08)}
 @media (max-width:420px){.pfg-scroll{padding:14px 14px 8px}.pfg-card{width:36px;height:52px}.pfg-card b{font-size:16px}.pfg-foot{padding:10px 12px}.pfg-foot>button{padding:0 12px}.pfg-dot.on{width:16px}}
+
+/* confirm box */
+.pfc-ov{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:16px;background:rgba(5,8,18,.72);backdrop-filter:blur(3px);animation:pfc-in .15s ease}
+.pfc{width:min(420px,100%);padding:22px 20px 18px;border-radius:20px;background:linear-gradient(180deg,#18213b,#0e1426);border:1px solid #8d7442;box-shadow:0 24px 60px rgba(0,0,0,.6);color:#f3ecdb;text-align:center}
+.pfc h2{margin:0 0 8px;font-size:21px}.pfc p{margin:0 0 14px;color:#c9c2b0;line-height:1.45;font-size:15px}
+.pfc-codebox{margin:0 0 16px;padding:10px;border-radius:14px;background:#ffffff0d;border:1px dashed #8d7442;text-align:left}
+.pfc-codebox small{display:block;margin-bottom:6px;letter-spacing:.12em;font-size:10px;color:#e5bf6d;font-weight:800}
+.pfc-codebox div{display:flex;gap:8px}.pfc-code{flex:1;min-width:0;padding:9px 10px;border-radius:10px;border:1px solid #ffffff22;background:#0b1020;color:#fff;font:600 13px ui-monospace,monospace}
+.pfc-copy{padding:0 14px;border-radius:10px;border:1px solid #e5bf6d;background:#e5bf6d22;color:#f4df9b;font-weight:800;cursor:pointer}
+.pfc-row{display:flex;gap:10px}.pfc-row button{flex:1;min-height:46px;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;border:1px solid #ffffff30;background:#ffffff10;color:#fff}
+.pfc-row .pfc-ok{background:linear-gradient(180deg,#f4df9b,#d6ac59);color:#2a1d05;border-color:#d6ac59}.pfc-row .pfc-ok.danger{background:linear-gradient(180deg,#ff8f8f,#d64545);color:#fff;border-color:#d64545}
+@keyframes pfc-in{from{opacity:0}}
