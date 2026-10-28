@@ -642,6 +642,7 @@ function view(room, pid, seen, cn) {
     predPen: PRED_PENALTY,
     recoveryCode: recoveryCode(room, me),
     meId: me.id,
+    hostId: room.hostId,
     isHost: room.hostId === me.id,
     hand: me.hand,
     players: room.players.map((p) => {
@@ -703,6 +704,7 @@ async function handle(action, b, query, ctx = {}) {
   if (action === 'join') need(!(await strike(ctx.ip, 'j', 40, 600)), 429, 'Too many tries. Wait a few minutes.');
   let room = /^[A-Z]{4}$/.test(code) ? (action === 'state' ? await loadRoomCached(code, query.f ? 0 : 700) : await loadRoom(code)) : null;
   if (!room) { need(!(await strike(ctx.ip, 'nf', 30, 600)), 429, 'Too many tries. Wait a few minutes.'); throw new HttpError(404, 'Room not found'); }
+  const switched = await require('../lib/room-switch').handle('reckoning', room, { method: action === 'state' ? 'GET' : 'POST', headers: { 'x-tok': ctx.tok } }, { ...query, ...b }, commitAccounts); if (switched) return switched;
   if (room.deadline && Date.now() >= room.deadline && room.phase === 'dealt') {   // time is up: arrange the stragglers' cards
     if (action === 'state') room = await loadRoom(code);
     // a Ready pressed as the clock ran out (it may reach us a moment late): that player was on time, not arranged by the timer

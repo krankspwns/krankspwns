@@ -319,3 +319,10 @@ html.pf-page-lock{overflow:hidden;overscroll-behavior:none}
 .game-header .header-left{gap:6px}
 .game-header .header-tools{gap:6px;min-width:0}
 @media(min-width:760px){.tk-header.game-header,.gc-header.game-header{grid-template-columns:auto auto minmax(0,1fr) auto;gap:22px;padding-bottom:20px}.game-header .header-nav{grid-column:1}.game-header .header-controls{display:contents}.game-header .header-left{grid-column:2}.game-header .header-tools{grid-column:4;justify-self:end}.header-brand-copy b{font-size:14px}}
+
+/* Shared, text-labelled room switch; usable beside every game's native tools. */
+.pf-switch-game{font:600 12px Inter,sans-serif;color:#f4ead8;background:#283749;border:1px solid #718194;border-radius:12px;padding:10px 12px;cursor:pointer;white-space:nowrap}
+.pf-switch-list{display:grid;gap:10px;margin:16px 0}.pf-box button.pf-switch-choice:not(.pf-x):not(.pf-apple){display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;padding:12px;text-align:left;border:1px solid #718194;border-radius:10px;background:#283749;color:#f4ead8;font:inherit;cursor:pointer}.pf-box .pf-switch-choice small{font-size:12px}.pf-box .pf-switch-choice:disabled{opacity:.5;cursor:not-allowed}.pf-switch-game:focus-visible,.pf-switch-choice:focus-visible{outline:3px solid #e7c685;outline-offset:3px}
+
+#pf-dock{max-width:calc(100vw - 24px);flex-wrap:wrap;justify-content:flex-end}
+.pf-box button.pf-switch-choice b{font:inherit;font-weight:700}

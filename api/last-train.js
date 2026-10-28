@@ -32,7 +32,7 @@ async function commit(room) {
 const save = async (room) => { await commit(room); await store.save(room); };
 async function execute(req, body) {
   const action = req.method === 'GET' ? (body.voice ? 'voice' : 'state') : body.action;
-  need(['voice', 'beginVoice', 'speakVoice', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick', 'ghostWhisper', 'bet'].includes(action), 400, 'Unknown choice. Please reload.');
+  need(['voice', 'beginVoice', 'speakVoice', 'switchGame', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick', 'ghostWhisper', 'bet'].includes(action), 400, 'Unknown choice. Please reload.');
   if (action === 'create') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     let code;
@@ -51,6 +51,7 @@ async function execute(req, body) {
   let room = await store.load(code);
   if (!room) { await new Promise(done => setTimeout(done, 350)); room = await store.load(code); }
   need(room, 404, 'Room not found.');
+  const switched = await require('../lib/room-switch').handle('last-train', room, req, body, commit); if (switched) return switched;
   let upgraded = false;
   if (room.rulesVersion !== 2) {
     Object.assign(room, { rulesVersion: 2, phase: 'lobby', round: 0, step: (room.step || 0) + 1, deadline: null, duration: null, night: null, votes: {}, history: [], speeches: [], seatOrder: null, paused: false, winner: null, receipts: [], notice: 'Last Train has a new journey and night order. The host can start the new game.' });

@@ -61,3 +61,33 @@ work and receive their recovery code on their next authenticated state fetch.
 
 Keep the recovery code private. If both browser storage and that code are lost,
 the host can remove the old seat and the player can join again with a new seat.
+
+## Switching the whole room
+
+With at least two real people present, the host has a **Switch game** button in
+the shared player toolbar. Confirming moves the present party (including Last
+Train observers) into a fresh lobby; it does not start the destination game.
+Names, host, seat credentials, account links, guest WP and inventory survive.
+Roles, hands, game settings and match progress reset. Unfinished matches do not
+award results. Departed/kicked seats do not return.
+
+`lib/room-switch.js` atomically freezes the source and creates the destination
+in one Redis Lua compare-and-set. Every game checks the source marker before
+processing joins, timers or actions, so delayed requests cannot revive an old
+match. Reconnecting devices follow the marker using their existing seat token;
+no credentials are placed in URLs. An unused destination keeps the same room
+code; collisions (including switching back) reserve a fresh code.
+
+A destination that cannot fit everyone is unavailable. A party below its minimum
+can invite more people in the new lobby. Practice bots may only move between
+Bridge and Hot Joker; remove them before moving to other games. Last Train
+blocks switching while WP bets are unsettled. Browser storage must be available
+to retain a guest seat. Existing room expiry rules still apply. For a different
+device, use the latest invite and its current private rejoin code (or sign in).
+
+`node tests/room-switch.js` covers all 20 directed game pairs, starting every
+destination, permissions, capacity, live-game confirmation, recovery, observers,
+wallets and racing switches. `node tests/room-switch.js --redis` also checks
+atomic persistence, lost responses and storage failures using the local Redis
+bridge. `tests/browser/room-switch.spec.js` drives two independent browsers
+through every game at 320px, 390px and desktop, including an offline guest.

@@ -31,6 +31,82 @@
   }
   const sfx = (n) => window.GameAudio?.sfx(n);
 
+  // Room-wide switching uses the same authenticated seat as each game's own client.
+  // No secrets in URLs; save and verify the destination seat before navigating.
+  const SWITCH_GAMES = {
+    reckoning: ['Row of Reckoning', 'sct', 2, 12],
+    'last-train': ['Last Train', 'lt-seat', 5, 12],
+    bridge: ['Hidden Alliance', 'br-seat', 4, 4],
+    'hot-joker': ['Hot Joker', 'hj-seat', 3, 10],
+    'grand-con': ['The Grand Con', 'gc-seat', 4, 12],
+  };
+  let switchSeat = null, switchState = null, switching = false, moving = false;
+  function followSwitch(data, owner) {
+    const move = data.roomSwitch, game = move && SWITCH_GAMES[move.game];
+    if (!game || !owner?.tok || moving) return;
+    if (!/^[A-Z]{4}$/.test(move.code) || move.pid !== owner.pid) throw Error('Could not verify your new room. Please reload.');
+    const value = JSON.stringify({ code: move.code, pid: owner.pid, tok: owner.tok });
+    // All clients read localStorage, so verify it rather than silently losing a guest's seat.
+    localStorage.setItem(game[1], value);
+    if (localStorage.getItem(game[1]) !== value) throw Error('Allow browser storage to keep your seat while switching.');
+    localStorage.setItem('arcade-last-game', move.game);
+    moving = true;
+    location.replace('/' + move.game + '.html?room=' + move.code);
+  }
+  function watchSwitch(path, init, data, responseOK) {
+    if (!responseOK) return;
+    let body = {}; try { body = typeof init?.body === 'string' ? JSON.parse(init.body) : {}; } catch {}
+    const query = new URL(path, location.href).searchParams;
+    const pid = data.meId || body.pid || query.get('pid');
+    const headers = new Headers(init?.headers || {});
+    const tok = data.tok || body.tok || headers.get('x-tok') || (switchSeat?.pid === pid ? switchSeat.tok : null);
+    const owner = { code: data.code || body.code || query.get('code'), pid, tok, api: new URL(path, location.href).pathname };
+    if (data.roomSwitch) { followSwitch(data, owner); return; }
+    if (body.action === 'leave') { switchSeat = null; switchState = null; renderDock(); return; }
+    if (!data.meId || !tok || !Array.isArray(data.players)) return;
+    if (switchState && switchSeat.code === data.code && switchSeat.pid === data.meId && switchState.version > data.version) return;
+    const signature = value => value ? [value.hostId, value.meId, [...value.players, ...(value.observers || [])].filter(p => !p.bot && !p.departed && !p.kicked && !p.released).length].join(':') : '';
+    const changed = signature(switchState) !== signature(data);
+    switchSeat = owner; switchState = data; if (changed) renderDock();
+  }
+  function openSwitchGame() {
+    const owner = switchSeat, current = switchState;
+    if (!owner || !current || current.hostId !== current.meId) return;
+    const people = [...current.players, ...(current.observers || [])].filter(p => !p.departed && !p.kicked && !p.released);
+    const error = el('p', { role: 'alert', class: 'pf-error' });
+    const live = !['lobby', 'finished'].includes(current.phase);
+    const list = el('div', { class: 'pf-switch-list' });
+    for (const [game, [title, , min, max]] of Object.entries(SWITCH_GAMES)) {
+      if (game === PAGE) continue;
+      const reason = people.length > max ? 'Fits up to ' + max + ' players' : people.some(p => p.bot) && !['bridge', 'hot-joker'].includes(game) ? 'Remove practice bots first' : '';
+      list.append(el('button', { type: 'button', class: 'pf-switch-choice', disabled: !!reason, onclick: () => {
+        const confirmError = el('p', { role: 'alert', class: 'pf-error' });
+        const go = el('button', { type: 'button', class: 'pf-primary', text: 'Switch everyone to ' + title, onclick: async () => {
+          if (switching) return; switching = true; go.disabled = true;
+          const ov = overlay; ov.dataset.pending = '1';
+          const payload = { action: 'switchGame', ...owner, version: current.version, game, confirm: true, requestId: uid() }; delete payload.api;
+          try {
+            let result;
+            // Retrying exactly the same request recovers an already-completed switch.
+            for (let attempt = 0; attempt < 2; attempt++) {
+              try {
+                const r = await real(owner.api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: AbortSignal.timeout(10000) });
+                result = await r.json(); if (!r.ok) throw Object.assign(Error(result.error || 'Please retry.'), { status: r.status }); break;
+              } catch (e) { if (attempt || e.status && e.status !== 503) throw e; }
+            }
+            followSwitch(result, owner);
+          } catch (e) { confirmError.textContent = e.message || 'Connection lost. Reload and retry; your seat is saved.'; }
+          finally { switching = false; go.disabled = false; delete ov.dataset.pending; }
+        } });
+        modal('Switch to ' + title + '?', el('p', { text: live ? 'This ends the current game without awarding unfinished results. Everyone still in the room moves to a fresh lobby.' : 'Everyone still in the room moves to a fresh lobby together.' }),
+          el('p', { text: 'Names, seats and WP stay with you. Game progress and roles reset. The room code stays the same unless it is already in use in that game.' }),
+          people.length < min ? el('p', { text: title + ' needs ' + min + ' players to start. You can invite more friends in the new lobby.' }) : null,
+          el('button', { type: 'button', class: 'pf-ghost', text: 'Cancel', onclick: close }), go, confirmError);
+      } }, el('b', { text: title }), el('small', { text: reason || min + '–' + max + ' players' })));
+    }
+    modal('Switch game', el('p', { text: 'Bring everyone to another game. Only the host can switch.' }), list, error);
+  }
+
   // ---------- small art ----------
   function avatar(key, bd = '', acc = '', size = 40) {
     const inner = window.AvatarArt.el(key, acc);
@@ -420,6 +496,7 @@
     const eq = account?.eq || st?.social?.cos[st.meId] || w?.eq;
     const profileArt = eq?.av ? avatar(eq.av,eq.bd,eq.acc,32) : window.AvatarArt.tool('profile');
     const next = el('div', { id:'pf-dock', role:'toolbar', 'aria-label':'Player Tools' }, ...tools,
+      ...(switchSeat && switchState?.hostId === switchState.meId && [...switchState.players, ...(switchState.observers || [])].filter(p => !p.bot && !p.departed && !p.kicked && !p.released).length >= 2 ? [el('button', { type: 'button', class: 'pf-switch-game', onclick: openSwitchGame, text: 'Switch game' })] : []),
       ...(PAGE === 'arcade' ? [btn('Shop',window.AvatarArt.tool('shop'),()=>{closeTray();openShop();},{disabled:!w || undefined,title:w?'Shop · '+w.pts.toLocaleString()+' WP':'Join a room or sign in to use the shop'})] : []),
       btn('Profile',profileArt,openProfile,{title:account?.nick || 'Your Profile'}));
     document.body.classList.toggle('pf-native-tools',OWN_TABLE_UI);
@@ -476,10 +553,14 @@
   }
   window.fetch = async function (input, init) {
     const res = await real(input, init);
-    try { const u = new URL(typeof input === 'string' ? input : input.url, location.href); if (u.origin === location.origin && (GAME_API.test(u.pathname) || /^\/api\/(game|last-train)$/.test(u.pathname))) res.clone().json().then(j=>{
-      if(GAME_API.test(u.pathname)) observe(u.href,init,j);
-      else if(j.meId && (j.wallet || j.me?.wallet)) {accountSeat=!!(j.wallet || j.me.wallet).account;updateRecoveryVisibility();}
-    }).catch(()=>{}); } catch {}
+    const u = new URL(typeof input === 'string' ? input : input.url, location.href);
+    if (u.origin === location.origin && (GAME_API.test(u.pathname) || /^\/api\/(game|last-train)$/.test(u.pathname))) {
+      let j; try { j = await res.clone().json(); } catch { return res; }
+      watchSwitch(u.href, init, j, res.ok);
+      if (j.roomSwitch && res.ok) return new Promise(() => {}); // navigation owns this reply, not the old game's renderer
+      if (GAME_API.test(u.pathname)) observe(u.href, init, j);
+      else if (j.meId && (j.wallet || j.me?.wallet)) { accountSeat = !!(j.wallet || j.me.wallet).account; updateRecoveryVisibility(); }
+    }
     return res;
   };
 

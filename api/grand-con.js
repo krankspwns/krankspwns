@@ -75,7 +75,7 @@ function view(room,me){
 const respond=async(room,me,extra)=>({...view(room,me),...(await social.view(room,me)),...extra});
 async function execute(req,body) {
   const action=req.method==='GET'?'state':body.action;
-  need(['state','create','join','start','advance','extend','forge','vote','next','leave','claim','audit','settings',...social.ACTIONS].includes(action),400,'Unknown action.');
+  need(['switchGame','state','create','join','start','advance','extend','forge','vote','next','leave','claim','audit','settings',...social.ACTIONS].includes(action),400,'Unknown action.');
   if(action==='create'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
     let code;for(let i=0;i<10;i++){code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ'[crypto.randomInt(24)]).join('');if(!await store.load(code))break;code=null;}
@@ -84,6 +84,7 @@ async function execute(req,body) {
   }
   const code=String(body.code||'').toUpperCase();need(/^[A-Z]{4}$/.test(code),400,'Enter a four-letter room code.');
   const room=await store.load(code);need(room,404,'Room not found.');
+  const switched = await require('../lib/room-switch').handle('grand-con', room, req, body); if (switched) return switched;
   const migrated=migrate(room);
   if(action==='join'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
