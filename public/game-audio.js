@@ -6,7 +6,7 @@
   const THEMES = {
     bridge: { name: 'Bridge', wave: 'triangle', lead: 'sine', root: 196, scale: [0, 2, 4, 5, 7, 9, 11], bpm: 84, bass: [0, -5, -3, -7],
       tune: [[4, 1], [2, 1], [0, 2], [2, 1], [4, 1], [7, 2], [5, 1], [4, 1], [2, 2], [0, 1], [2, 1], [4, 2]] },
-    'hot-joker': { name: 'Hot Joker', wave: 'square', lead: 'square', root: 220, scale: [0, 2, 4, 7, 9], bpm: 128, bass: [0, 0, 7, 5],
+    'hot-joker': { name: 'Hot Joker', wave: 'square', lead: 'triangle', mwave: 'sine', vol: 0.07, root: 220, scale: [0, 2, 4, 7, 9], bpm: 92, bass: [0, 0, 7, 5],
       tune: [[0, 0.5], [2, 0.5], [4, 0.5], [2, 0.5], [7, 1], [4, 1], [9, 0.5], [7, 0.5], [4, 0.5], [2, 0.5], [0, 1], [4, 1]] },
     'grand-con': { name: 'Grand Con', wave: 'sawtooth', lead: 'triangle', root: 164.81, scale: [0, 2, 3, 5, 7, 8, 10], bpm: 72, bass: [0, 0, -4, -2],
       tune: [[0, 2], [2, 1], [3, 1], [4, 2], [2, 1], [0, 1], [-2, 2], [0, 1], [2, 1], [3, 3]] },
@@ -61,13 +61,13 @@
     while (nextAt < ctx.currentTime + 0.3) {
       const [deg, len] = t.tune[step % t.tune.length];
       tone(hz(deg, 1), nextAt, len * beat * 0.9, { type: t.lead, gain: 0.5, dest: musicGain });
-      if (step % 2 === 0) tone(hz(t.bass[(step / 2 | 0) % t.bass.length] , -1), nextAt, len * beat * 1.8, { type: t.wave, gain: 0.45, dest: musicGain });
+      if (step % 2 === 0) tone(hz(t.bass[(step / 2 | 0) % t.bass.length] , -1), nextAt, len * beat * 1.8, { type: t.mwave || t.wave, gain: 0.45, dest: musicGain });
       nextAt += len * beat; step++;
     }
   }
   function startMusic() {
     if (!game || !prefs.music || playing || document.hidden || !boot()) return;
-    playing = true; nextAt = ctx.currentTime + 0.1; step = 0; musicGain.gain.cancelScheduledValues(0); musicGain.gain.setTargetAtTime(0.16, ctx.currentTime, 0.3);
+    playing = true; nextAt = ctx.currentTime + 0.1; step = 0; musicGain.gain.cancelScheduledValues(0); musicGain.gain.setTargetAtTime(theme().vol || 0.16, ctx.currentTime, 0.3);
     timer = setInterval(schedule, 120); schedule();
   }
   function stopMusic() { if (!playing) return; playing = false; clearInterval(timer); if (ctx) musicGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.15); }
