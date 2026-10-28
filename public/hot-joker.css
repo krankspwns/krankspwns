@@ -88,3 +88,10 @@ body { background: radial-gradient(ellipse at 95% 0,#812d5540,transparent 55%),r
 .set-chip .pcard.small:nth-child(3) { transform: translateY(1px) rotate(-1.5deg); }
 .set-chip .pcard.small:nth-child(4) { transform: translateY(-1px) rotate(3deg); }
 .set-chip:hover .pcard.small { transform: none; margin-left: -12px; } .set-chip:hover .pcard.small:first-child { margin-left: 0; }
+/* a set is one neat pile: only the top card face shows, the others peek out as edges */
+.set-chip { padding: 5px 9px 5px 6px; }
+.set-chip .pcard.small { margin-left: -35px; box-shadow: 0 1px 3px rgba(0,0,0,.55); transform: none !important; }
+.set-chip .pcard.small:first-child { margin-left: 0; }
+.set-chip .pcard.small:nth-child(2) { translate: 3px -1px; } .set-chip .pcard.small:nth-child(3) { translate: 6px -2px; } .set-chip .pcard.small:nth-child(4) { translate: 9px -3px; }
+.set-chip:hover .pcard.small { margin-left: -35px; } .set-chip:hover .pcard.small:first-child { margin-left: 0; }
+.set-chip .pcard.small:not(:last-child) .card-index, .set-chip .pcard.small:not(:last-child) .card-pips, .set-chip .pcard.small:not(:last-child) .card-court, .set-chip .pcard.small:not(:last-child) .card-ace { visibility: hidden; }
