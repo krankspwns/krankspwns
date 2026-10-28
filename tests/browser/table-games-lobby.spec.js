@@ -50,3 +50,23 @@ for (const [label, size, bots] of [['desktop', { width: 1200, height: 900 }, 4],
   });
 }
 
+
+test('Hot Joker starts with three players and always lays down pairs',async({page})=>{
+  await page.goto('/hot-joker.html');await page.fill('#tk-name','Host');
+  await page.getByRole('button',{name:'Create a Room',exact:true}).click();
+  const start=page.getByRole('button',{name:'START GAME',exact:true});
+  await expect(start).toBeDisabled();
+  await expect(page.getByText('Pairs Only · Match two cards with the same number or face.',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Add a bot',exact:true}).click();await expect(start).toBeDisabled();
+  await page.getByRole('button',{name:'Add a bot',exact:true}).click();await expect(start).toBeEnabled();
+  await expect(page.getByRole('button',{name:/four of a kind/i})).toHaveCount(0);
+  await page.getByRole('button',{name:'Settings',exact:true}).click();
+  const settings=page.getByRole('dialog',{name:'Settings',exact:true});
+  await expect(settings.getByText('Turn Timer',{exact:true})).toBeVisible();await expect(settings.getByRole('button',{name:/four of a kind/i})).toHaveCount(0);
+  await settings.getByRole('button',{name:'Close',exact:true}).click();
+  await page.locator('.pfg-btn').click();await expect(page.locator('.pfg-body')).not.toContainText('four of a kind');await page.locator('.pfg-x').click();
+  const response=page.waitForResponse(r=>r.url().endsWith('/api/hot-joker') && r.request().method()==='POST' && r.request().postDataJSON().action==='start');
+  await start.click();const data=await (await response).json();
+  expect(data.minPlayers).toBe(3);expect(data.settings.setSize).toBe(2);expect(data.order).toHaveLength(3);expect(data.sets.every(set=>set.cards.length===2)).toBe(true);
+  await expect(page.locator('.circle-seat')).toHaveCount(3);
+});

@@ -364,10 +364,10 @@
     const toggle=(label,on,change)=>el('label',{class:'pf-switch'},el('b',{text:label}),el('input',{type:'checkbox',checked:on || undefined,onchange:e=>change(e.target.checked)}));
     const content=[];
     if(a) content.push(el('section',{class:'pf-card'},el('h3',{text:'Sound'}),toggle('Sound effects',prefs.sfx,v=>a.setSfx(v)),toggle('Background music',prefs.music,v=>a.setMusic(v))));
-    const rules={bridge:['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[8,'8 deals']]],'hot-joker':['Sets to lay down','setSize',[[2,'Pairs (quick)'],[4,'Four of a kind (long)']]],'grand-con':['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]}[PAGE];
+    const rules={bridge:['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[8,'8 deals']]],'hot-joker':['Turn Timer','turnSeconds',[[20,'20 sec'],[40,'40 sec'],[60,'60 sec']]],'grand-con':['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]}[PAGE];
     if(st && seat && rules) {
       const [label,key,choices]=rules, editable=st.hostId===st.meId && ['lobby','finished'].includes(st.phase);
-      const current=key==='deals'?st.deals:st.settings?.[key] ?? (key==='setSize'?2:0);
+      const current=key==='deals'?st.deals:st.settings?.[key] ?? 0;
       const group=el('div',{class:'pf-settings-options'});
       choices.forEach(([value,text])=>group.append(el('button',{type:'button',text,'aria-pressed':String(value===current),disabled:!editable || undefined,onclick:async()=>{
         group.querySelectorAll('button').forEach(b=>b.disabled=true);

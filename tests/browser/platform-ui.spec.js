@@ -125,7 +125,7 @@ for(const game of ['bridge','hot-joker','grand-con','last-train']) {
   });
 }
 
-for(const [game,field,value,label] of [['bridge','deals',8,'8 deals'],['hot-joker','setSize',4,'Four of a kind (long)'],['grand-con','discussionSeconds',120,'120 sec']]) {
+for(const [game,field,value,label] of [['bridge','deals',8,'8 deals'],['hot-joker','turnSeconds',60,'60 sec'],['grand-con','discussionSeconds',120,'120 sec']]) {
   test(game+': help/settings stay left and host settings save',async({page})=>{
     await page.setViewportSize({width:320,height:844});
     await page.goto('/'+game+'.html');

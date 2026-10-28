@@ -4,8 +4,6 @@ const { pace } = require('../lib/bot-pace');
 const { createRoomApi, need, present, shuffle } = require('../lib/room-api');
 
 const TURN_OPTIONS = [20, 40, 60];
-const SIZE_OPTIONS = [2, 4]; // pairs (quick) or four of a kind (very long)
-const sizeOf = (room) => room.settings.setSize || 2;
 const randomIndex = (n) => crypto.randomInt(n);
 const setDeadline = (room) => { room.deadline = Date.now() + (room.settings.turnSeconds || 40) * 1000; };
 const place = (room, id) => { if (room.hands[id].length === 0 && !room.placed.includes(id)) room.placed.push(id); };
@@ -16,7 +14,7 @@ function start(room) {
   room.order = order; room.match = (room.match || 0) + 1;
   room.sets = []; room.placed = []; room.loser = null; room.last = {}; room.losses = room.losses || {};
   for (const id of order) {
-    const laid = R.layDown(hands[id], sizeOf(room));
+    const laid = R.layDown(hands[id]);
     hands[id] = laid.hand; laid.sets.forEach((s) => room.sets.push({ id, ...s }));
   }
   room.hands = hands; room.turn = 0; room.taker = order[randomIndex(order.length)];
@@ -29,29 +27,16 @@ function finish(room) {
   room.losses[room.loser] = (room.losses[room.loser] || 0) + 1;
   room.phase = 'finished'; room.taker = null; room.deadline = null;
 }
-// Four-of-a-kind games can get stuck: when no set can ever form again, the remaining sets go to whoever
-// holds most of each rank, everyone but the Joker holder is safe, and the game ends. Pairs never get stuck.
-function sweep(room) {
-  const holder = R.jokerHolder(room.order, room.hands), alive = R.alive(room.order, room.hands), byRank = {};
-  for (const id of alive) for (const card of room.hands[id]) if (!R.isJoker(card)) { const r = R.rankOf(card); (byRank[r] ||= []).push({ id, card }); }
-  for (const [rank, items] of Object.entries(byRank)) {
-    const counts = {}; items.forEach((x) => { counts[x.id] = (counts[x.id] || 0) + 1; });
-    room.sets.push({ id: Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0], rank, cards: items.map((x) => x.card) });
-  }
-  for (const id of alive) if (id !== holder) { room.hands[id] = []; place(room, id); }
-  room.hands[holder] = [R.JOKER];
-}
 function advance(room, from) {
   if (R.alive(room.order, room.hands).length <= 1) { finish(room); return; }
   const next = R.nextTaker(room.order, room.hands, from);
-  if (R.frozen(room.order, room.hands, next, sizeOf(room))) { sweep(room); finish(room); return; }
   room.taker = next; setDeadline(room);
 }
 function takeCard(room, index) {
   const taker = room.taker, source = R.sourceFor(room.order, room.hands, taker);
   const [card] = room.hands[source].splice(index, 1), hand = room.hands[taker];
   hand.splice(randomIndex(hand.length + 1), 0, card);
-  const laid = R.layDown(hand, sizeOf(room));
+  const laid = R.layDown(hand);
   room.hands[taker] = laid.hand; laid.sets.forEach((s) => room.sets.push({ id: taker, ...s }));
   room.turn++;
   room.last = { [taker]: { kind: 'got', card, other: source, turn: room.turn }, [source]: { kind: 'lost', card, other: taker, turn: room.turn } };
@@ -66,6 +51,21 @@ function botIndex(n) {
 }
 function tick(room) {
   let changed = false;
+  // Upgrade saved rooms without redealing or losing cards.
+  if(room.settings.setSize!==2) {
+    room.settings.setSize=2;changed=true;
+    room.sets=(room.sets||[]).flatMap(set=>set.cards?.length===4?[{...set,cards:set.cards.slice(0,2)},{...set,cards:set.cards.slice(2)}]:[set]);
+    if(room.phase==='playing') {
+      for(const id of room.order) {
+        const laid=R.layDown(room.hands[id]);room.hands[id]=laid.hand;
+        laid.sets.forEach(set=>room.sets.push({id,...set}));place(room,id);
+        if(laid.ranks.length)room.log=[...(room.log||[]),{kind:'pairs',taker:id,sets:laid.ranks,turn:room.turn}].slice(-60);
+      }
+      if(R.alive(room.order,room.hands).length<=1)finish(room);
+      else if(!room.hands[room.taker]?.length)advance(room,room.taker);
+      room.notice='Hot Joker now uses pairs only. Your remaining cards have been kept.';
+    }
+  }
   for (let i = 0; i < 2000 && room.phase === 'playing'; i++) {
     const actor = room.players.find((p) => p.id === room.taker), expired = room.deadline && Date.now() > room.deadline;
     const count = room.hands[R.sourceFor(room.order, room.hands, room.taker)].length;
@@ -99,7 +99,7 @@ const api = createRoomApi({
     const next = { ...room.settings };
     need(body.turnSeconds !== undefined || body.setSize !== undefined, 400, 'Choose a setting.');
     if (body.turnSeconds !== undefined) { need(TURN_OPTIONS.includes(body.turnSeconds), 400, 'Choose 20, 40 or 60 seconds.'); next.turnSeconds = body.turnSeconds; }
-    if (body.setSize !== undefined) { need(SIZE_OPTIONS.includes(body.setSize), 400, 'Choose pairs or four of a kind.'); next.setSize = body.setSize; }
+    if (body.setSize !== undefined) { need(body.setSize===2, 400, 'Hot Joker uses pairs only.'); next.setSize = body.setSize; }
     room.settings = next;
   },
   start,

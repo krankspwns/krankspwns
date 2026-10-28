@@ -12,9 +12,6 @@ function rulesTests() {
     assert.equal(new Set(ids.flatMap((id) => hands[id])).size, 53);
   }
   const lay = (hand, size) => { const r = R.layDown(hand, size); return { hand: r.hand, ranks: r.ranks }; };
-  assert.deepEqual(lay(['S7', 'H7', 'D7', 'C7', 'JK', 'S2'], 4), { hand: ['JK', 'S2'], ranks: ['7'] });
-  assert.deepEqual(lay(['S7', 'H7', 'D7', 'JK'], 4).ranks, [], 'three of a kind stays in hand for four-of-a-kind games');
-  assert.deepEqual(lay(['S10', 'H10', 'D10', 'C10', 'SK', 'HK', 'DK', 'CK'], 4), { hand: [], ranks: ['10', 'K'] });
   assert.deepEqual(lay(['S7', 'H7', 'D7', 'JK', 'S2']), { hand: ['D7', 'JK', 'S2'], ranks: ['7'] }, 'pairs are the default; the odd card stays');
   assert.deepEqual(R.layDown(['S7', 'H7', 'D7', 'C7', 'JK']).sets, [{ rank: '7', cards: ['S7', 'H7'] }, { rank: '7', cards: ['D7', 'C7'] }], 'each set lists its cards');
   assert.deepEqual(lay(['JK', 'JK']).ranks, [], 'the Joker never pairs');
@@ -56,6 +53,8 @@ function rulesTests() {
     assert.equal((await post(lobby[1], 'start')).s, 403, 'only the host starts');
     assert.equal((await post(lobby[1], 'shuffleSeats')).s, 403);
     assert.equal((await post(lobby[0], 'take', { index: 0, turn: 0 })).s, 409);
+    assert.equal((await get(lobby[0])).j.minPlayers,3);
+    assert.equal((await post(lobby[0], 'start')).s,200,'exactly three players can start');
     const crowd = await room(10);
     assert.equal((await enter('join', { code: crowd[0].code, name: 'P11' })).s, 409, 'ten players is the limit');
 
@@ -163,15 +162,30 @@ function rulesTests() {
       }
     }
     assert.equal(totalSets, 26 * 5);
-    // The host can pick four of a kind; bad sizes are refused. Nobody's hand ever keeps a finished set.
+    // Pairs are mandatory; previous four-card settings are rejected.
     {
       const [h] = await room(3);
       assert.equal((await post(h, 'settings', { setSize: 3 })).s, 400);
-      assert.equal((await post(h, 'settings', { setSize: 4 })).j.settings.setSize, 4);
+      assert.equal((await post(h, 'settings', { setSize: 4 })).s, 400);
       assert.equal((await post(h, 'settings', { setSize: 2 })).j.settings.setSize, 2);
       // A room saved by an older version (sets without card lists) must still load.
       const old = await raw(h.code); old.sets = [{ id: h.meId, rank: '7' }]; await save(old);
       assert.deepEqual((await get(h)).j.sets, [{ id: h.meId, rank: '7', cards: [] }], 'older rooms still load');
+    }
+    // Convert a saved four-card game without losing cards or keeping pairs in hand.
+    {
+      const players=await room(3),h=players[0],saved=await raw(h.code),ids=players.map(p=>p.meId);
+      Object.assign(saved,{phase:'playing',order:ids,turn:5,match:1,taker:ids[0],placed:[],log:[],deadline:Date.now()+60000});
+      saved.settings.setSize=4;
+      saved.hands={[ids[0]]:['S7','H7','SA','HA'],[ids[1]]:['D7','DA','JK'],[ids[2]]:['C7','CA']};
+      saved.sets=R.RANKS.filter(rank=>!['A','7'].includes(rank)).map(rank=>({id:ids[1],rank,cards:R.SUITS.map(suit=>suit+rank)}));
+      await save(saved);const migrated=(await get(h)).j;
+      assert.equal(migrated.settings.setSize,2);assert.equal(migrated.sets.length,24);
+      assert.ok(migrated.sets.every(set=>set.cards.length===2));assert.equal(migrated.taker,ids[1]);
+      assert.ok(migrated.placed.includes(ids[0]));
+      const final=await raw(h.code),cards=[...Object.values(final.hands).flat(),...final.sets.flatMap(set=>set.cards)];
+      assert.equal(cards.length,53);assert.equal(new Set(cards).size,53,'migration preserves every card exactly once');
+      for(const hand of Object.values(final.hands))assert.equal(R.layDown(hand).sets.length,0);
     }
     // ---- Bots: one per button press, host only, and they take cards like a person ----
     process.env.BOT_FAST = '1';
