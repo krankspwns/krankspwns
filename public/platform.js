@@ -390,13 +390,16 @@
   }
   function renderDock() {
     const inRoom = !!(st?.social && seat), w = wallet();
+    const hasOtherPlayers = inRoom && st.players.some(p=>!p.bot && !p.departed && p.id!==st.meId);
     refreshHeaderShop();
-    if (!inRoom) closeTray();
+    if (!inRoom || (!hasOtherPlayers && tray?.dataset.kind==='players')) closeTray();
     const btn = (label, art, fn, extra={}) => el('button', { type:'button', class:'pf-tool', 'aria-label':label, title:label, onclick:fn, ...extra }, art);
     const tools = inRoom && !OWN_TABLE_UI ? [
       btn('Reactions', window.EmoteArt.el('laugh',32), ()=>openTray('emote')),
-      ...(st.players.some(p=>!p.bot && !p.departed && p.id!==st.meId) ? [btn('Throw a Gift',window.AvatarArt.tool('gift'),()=>openTray('gift'))] : []),
-      btn('Players',window.AvatarArt.tool('players'),()=>openTray('players')),
+      ...(hasOtherPlayers ? [
+        btn('Throw a Gift',window.AvatarArt.tool('gift'),()=>openTray('gift')),
+        btn('Players',window.AvatarArt.tool('players'),()=>openTray('players')),
+      ] : []),
     ] : [];
     const eq = account?.eq || st?.social?.cos[st.meId] || w?.eq;
     const profileArt = eq?.av ? avatar(eq.av,eq.bd,eq.acc,32) : window.AvatarArt.tool('profile');

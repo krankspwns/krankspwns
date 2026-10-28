@@ -22,7 +22,8 @@ for(const width of [320,390,1100]) {
     await page.fill('#tk-name','Host');
     await page.getByRole('button',{name:'Create a Room'}).click();
     await expect(page.locator('.large-code')).toBeVisible();
-    await expect(page.locator('#pf-dock button')).toHaveCount(3);
+    await expect(page.locator('#pf-dock button')).toHaveCount(2);
+    await expect(page.locator('#pf-dock').getByRole('button',{name:'Players',exact:true})).toHaveCount(0);
     await checkDock(page);
     await page.locator('#pf-dock').getByRole('button',{name:'Reactions',exact:true}).click();
     await expect(page.locator('.pf-tray svg').first()).toBeVisible();
@@ -47,6 +48,14 @@ for(const width of [320,390,1100]) {
     await expect(page.locator('#pf-dock button')).toHaveCount(4);
     await expect(page.locator('#pf-dock').getByRole('button',{name:'Throw a Gift'})).toBeVisible();
     await checkDock(page);
+    await page.locator('#pf-dock').getByRole('button',{name:'Players',exact:true}).click();
+    await expect(page.locator('.pf-tray[data-kind=players]')).toBeVisible();
+    const friend=await joined.json();
+    const left=await page.request.post('/api/hot-joker',{data:{action:'leave',requestId:crypto.randomUUID(),code,pid:friend.meId,tok:friend.tok,match:friend.match}});
+    expect(left.ok()).toBe(true);
+    await expect(page.locator('#pf-dock').getByRole('button',{name:'Players',exact:true})).toHaveCount(0);
+    await expect(page.locator('.pf-tray[data-kind=players]')).toHaveCount(0);
+    await expect(page.locator('#pf-dock button')).toHaveCount(2);
     await page.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await page.screenshot({path:testInfo.outputPath('tools-'+width+'.png'),fullPage:true});
     expect(errors).toEqual([]);
