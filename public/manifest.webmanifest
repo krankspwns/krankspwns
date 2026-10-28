@@ -1,10 +1,10 @@
 {
   "name": "The Game Room",
   "short_name": "Game Room",
-  "description": "Competitive games for your table: Row of Reckoning, The Grand Con, and Last Train.",
+  "description": "Games for your table: Row of Reckoning, Last Train, Hidden Alliance, Hot Joker and The Grand Con.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1b1148",
+  "background_color": "#0e1426",
   "theme_color": "#18213b",
   "icons": [
     {
