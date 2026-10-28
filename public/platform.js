@@ -59,13 +59,19 @@
     document.body.append(overlay); document.body.classList.add('pf-lock'); return overlay;
   }
   const script = (src) => new Promise((ok, bad) => { if ([...document.scripts].some((s) => s.src === src)) return ok(); const s = el('script', { src, async: true }); s.onload = ok; s.onerror = bad; document.head.append(s); });
+  function setBusy(on) {   // full-dialog spinner while the server verifies the sign-in
+    const box = overlay?.querySelector('.pf-box'); if (!box) return;
+    box.querySelector('.pf-busy')?.remove(); box.removeAttribute('aria-busy');
+    if (on) { box.setAttribute('aria-busy', 'true'); box.append(el('div', { class: 'pf-busy', role: 'status' }, el('i', { class: 'pf-spin', 'aria-hidden': 'true' }), el('span', { text: 'Signing you in…' }))); }
+  }
   async function finishLogin(provider, idToken, nonce, ui) {
+    setBusy(true); ui.error.hidden = true;
     try {
       const j = await api({ action: 'login', provider, idToken, nonce, consent: { accepted: true, age: true, version: config.consentVersion } });
       account = j.account; sfx('good'); close(); renderChip();
       toast(j.created ? `Welcome! You start with ${config.startWp} WP.` : 'Signed in.', '👋');
       if (seat) toast('Create or rejoin a room now to bank your WP to this account.', 'ℹ️');
-    } catch (e) { ui.error.textContent = e.message; ui.error.hidden = false; sfx('error'); await prepare(ui); }
+    } catch (e) { ui.error.textContent = e.message; ui.error.hidden = false; sfx('error'); setBusy(false); await prepare(ui); }
   }
   async function prepare(ui) {   // a fresh one-time code for each attempt (stops a captured sign-in being replayed)
     ui.nonce = (await api({ action: 'nonce' })).nonce;
@@ -291,4 +297,6 @@
   document.addEventListener('click', (e) => { if (tray && !e.target.closest('.pf-tray, #pf-dock')) closeTray(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTray(); close(); } });
 })();
+
+
 

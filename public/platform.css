@@ -87,3 +87,9 @@ body.pf-lock{overflow:hidden}
 .pf-guest{width:100%}.pf-box .pf-fine{text-align:center}
 .pf-gbox{width:100%;max-width:400px;height:44px;min-height:0;display:flex;align-items:center;justify-content:center;overflow:visible;background:transparent;color-scheme:light;box-shadow:none;line-height:0}
 .pf-gbox>div,.pf-gbox iframe{box-shadow:none!important;margin:0!important;background:transparent!important;color-scheme:light}
+
+/* sign-in loading state */
+.pf-busy{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border-radius:inherit;background:rgba(14,12,32,.86);backdrop-filter:blur(3px);font-weight:600}
+.pf-spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#ffd23f;animation:pf-spin .8s linear infinite}
+@keyframes pf-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pf-spin{animation-duration:2s}}
