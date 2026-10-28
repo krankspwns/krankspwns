@@ -1,7 +1,7 @@
 const {test,expect}=require('@playwright/test');
-for(const width of [320,390,1100])test('White game list with individual card palettes, '+width,async({page},testInfo)=>{
+for(const width of [320,390,1100])test('Ivory game list with individual card palettes, '+width,async({page},testInfo)=>{
   await page.setViewportSize({width,height:900});await page.goto('/?games=1');
-  await expect(page.locator('body')).toHaveCSS('background-color','rgb(255, 255, 255)');
+  await expect(page.locator('body')).toHaveCSS('background-color','rgb(250, 248, 243)');
   await expect(page.locator('html')).toHaveCSS('color-scheme','light');
   await expect(page.locator('.game-card')).toHaveCount(5);
   const colors=await page.locator('.game-card').evaluateAll(cards=>cards.map(card=>{
