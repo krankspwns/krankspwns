@@ -19,31 +19,31 @@
 .arcade-header .wordmark{gap:12px;line-height:1.2}
 .arcade-header .brand-mark{box-sizing:border-box;display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:1px solid #c9a96a70;border-radius:13px;background:linear-gradient(145deg,#c9a96a12,#0e142666);font-size:0;line-height:0}
 .arcade-header .brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
-/* Warm ivory unifies the collection; soft card palettes echo the cover artwork. */
-html{color-scheme:light;background:#faf8f3}
-body{background:#faf8f3;color:#242a38}
-.arcade-header .wordmark{color:#1e2538}
-.arcade-header .brand-mark{background:#0e1426;border-color:#c9a96a99}
-.live-note,.arcade-footer{color:#636d7d}
-.live-note i{background:#397e5a;box-shadow:0 0 10px #397e5a26}
-.arcade-intro>.eyebrow{color:#80642f}
-h1 em{color:#896324}
-.arcade-intro p{color:#5d6574}
-.game-card{--card-ink:#f4ead8;--card-muted:#acb4c6;--card-tag:#bfae8d;--card-accent:#e4c88f;--card-line:#ffffff12;--chip-ink:#bec6d5;--chip-bg:#ffffff06;--chip-line:#ffffff14;color:var(--card-ink);box-shadow:0 8px 24px #3932250b}
+/* Warm midnight lets the illustrated covers lead; jewel tones connect each card to its art. */
+html{color-scheme:dark;background:#171b24}
+body{background:radial-gradient(ellipse at 0% 0%,#34302b66,transparent 55%),radial-gradient(ellipse at 100% 75%,#34263b40,transparent 55%),#171b24;color:#f3ecdf}
+.arcade-header .wordmark{color:#f3ecdf}
+.arcade-header .brand-mark{background:#101622;border-color:#c9a96a70}
+.live-note,.arcade-footer{color:#a9aaa9}
+.live-note i{background:#9cbd9e;box-shadow:0 0 10px #9cbd9e30}
+.arcade-intro>.eyebrow{color:#cbb58e}
+h1 em{color:#e0bb79}
+.arcade-intro p{color:#b7b7bc}
+.game-card{--card-ink:#f4ead8;--card-muted:#acb4c6;--card-tag:#bfae8d;--card-accent:#e4c88f;--card-line:#ffffff12;--chip-ink:#bec6d5;--chip-bg:#ffffff06;--chip-line:#ffffff14;color:var(--card-ink);box-shadow:0 12px 28px #00000024}
 /* Row of Reckoning retains its existing navy and gold card. */
 .reckoning-card{background:linear-gradient(145deg,#1f2635,#101622)}
-/* Dark ink on gently tinted surfaces keeps the catalogue airy and readable. */
-.train-card{background:linear-gradient(145deg,#eff4ee,#e5ede5);border-color:#cad8ca;--card-ink:#263d33;--card-muted:#4d6256;--card-tag:#48624e;--card-accent:#34553f;--card-line:#31543b24;--chip-ink:#405b48;--chip-bg:#ffffff60;--chip-line:#31543b24}
-.bridge-card{background:linear-gradient(145deg,#f0eff7,#e8e7f1);border-color:#d3cfdf;--card-ink:#34344e;--card-muted:#5f5e75;--card-tag:#63577d;--card-accent:#51446d;--card-line:#51446d24;--chip-ink:#59516d;--chip-bg:#ffffff60;--chip-line:#51446d24}
-.joker-card{background:linear-gradient(145deg,#fbefee,#f3e5e6);border-color:#e4cdcf;--card-ink:#51343f;--card-muted:#765a63;--card-tag:#895467;--card-accent:#85425c;--card-line:#85425c24;--chip-ink:#76505e;--chip-bg:#ffffff60;--chip-line:#85425c24}
-.con-card{background:linear-gradient(145deg,#f8f1e4,#efe5d3);border-color:#ddcfb4;--card-ink:#4e402a;--card-muted:#6b5d46;--card-tag:#786038;--card-accent:#745326;--card-line:#74532624;--chip-ink:#6c5738;--chip-bg:#ffffff60;--chip-line:#74532624}
+.train-card{background:linear-gradient(145deg,#253d38,#1b2c2a);border-color:#86b29b35;--card-ink:#eff2e7;--card-muted:#c1cfc5;--card-tag:#b3ccba;--card-accent:#c6dec6;--card-line:#b3ccba26;--chip-ink:#d0ddd2;--chip-bg:#b3ccba0c;--chip-line:#b3ccba26}
+.bridge-card{background:linear-gradient(145deg,#353044,#262433);border-color:#b2a1cc35;--card-ink:#f1ebf6;--card-muted:#ccc2d6;--card-tag:#c7b5df;--card-accent:#d7c6ed;--card-line:#c7b5df26;--chip-ink:#dbd0e6;--chip-bg:#c7b5df0c;--chip-line:#c7b5df26}
+.joker-card{background:linear-gradient(145deg,#482c38,#33232d);border-color:#d4a0af35;--card-ink:#f8e9e8;--card-muted:#dec1c8;--card-tag:#e3b1bd;--card-accent:#efbcc6;--card-line:#e3b1bd26;--chip-ink:#ebcdd4;--chip-bg:#e3b1bd0c;--chip-line:#e3b1bd26}
+.con-card{background:linear-gradient(145deg,#42372b,#302921);border-color:#c9ad7d35;--card-ink:#f5ebd9;--card-muted:#d5c7b2;--card-tag:#dbc29a;--card-accent:#e8c790;--card-line:#dbc29a26;--chip-ink:#e2d1b5;--chip-bg:#dbc29a0c;--chip-line:#dbc29a26}
 .game-card .game-tag{color:var(--card-tag)}
 .game-card p{color:var(--card-muted)}
 .game-card .game-facts span{color:var(--chip-ink);background:var(--chip-bg);border-color:var(--chip-line)}
 .game-card .game-cta{color:var(--card-accent);border-top-color:var(--card-line)}
-.game-card:hover{border-color:var(--card-accent);box-shadow:0 14px 32px #39322518}
-.joker-card .new-tag{background:#e8cbd4;color:#653549}
-.bridge-card .new-tag{background:#dcd7ea;color:#51446d}
-.con-card .new-tag{background:#e5d5b6;color:#644b27}
+.game-card:hover{border-color:var(--card-accent);box-shadow:0 16px 36px #00000040}
+.train-card .new-tag{background:#bad2be;color:#20382b}
+.joker-card .new-tag{background:#e5bdc7;color:#482735}
+.bridge-card .new-tag{background:#cfc0e4;color:#352b47}
+.con-card .new-tag{background:#e3ca9f;color:#49371e}
 .pf-ov,.pf-tray,#pf-dock{color-scheme:dark}
-.arcade a:focus-visible{outline-color:#896324}
+.arcade a:focus-visible{outline-color:#e0bb79}
