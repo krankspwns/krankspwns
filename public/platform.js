@@ -356,6 +356,14 @@
     }));
   }
 
+  function headerNav({page,title,art}) {
+    const arrow=el('span',{'aria-hidden':'true',class:'header-back-art'});
+    arrow.innerHTML='<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 6-6 6 6 6M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    return el('nav',{class:'header-nav','aria-label':'Game Navigation'},
+      el('a',{href:'/?games=1',class:'header-back','aria-label':'All games',title:'All games'},arrow),
+      el('a',{href:page,class:'header-brand'},el('span',{class:'header-brand-art','aria-hidden':'true'},art),
+        el('span',{class:'header-brand-copy'},el('small',{text:'THE GAME ROOM'}),el('b',{text:title.toUpperCase()}))));
+  }
   function settingsButton() {
     return el('button',{type:'button',class:'pf-settings-btn','aria-label':'Settings',title:'Settings',onclick:openSettings},window.AvatarArt.tool('settings'));
   }
@@ -483,7 +491,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

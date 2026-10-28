@@ -301,3 +301,21 @@ html.pf-page-lock{overflow:hidden;overscroll-behavior:none}
 .pf-deal-options .pf-deal-choice[aria-pressed=true],.pf-box .pf-deal-options .pf-deal-choice[aria-pressed=true]{background:linear-gradient(180deg,#e8d3a2,#c9a96a);border-color:#e8d3a2;color:#1a1407}
 .pf-deal-options .pf-deal-choice:disabled{cursor:default;opacity:.6}
 .pf-deal-options .pf-deal-choice:focus-visible{outline:2px solid #e8d3a2;outline-offset:3px}
+/* Keep game identity beside Back; group controls in a second row on phones. */
+.tk-header.game-header,.gc-header.game-header{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:12px;padding:0 0 18px;margin-bottom:22px;border-bottom:1px solid #ffffff1a}
+.game-header .header-nav{display:flex;align-items:center;gap:12px;min-width:0}
+.game-header .header-back{display:grid;place-items:center;flex:none;box-sizing:border-box;width:44px;height:44px;border:1px solid #ffffff1f;border-radius:13px;background:#ffffff06;color:#e8d3a2;text-decoration:none;transition:background .15s,border-color .15s}
+.header-back-art,.header-back-art svg{display:block;width:22px;height:22px}
+.game-header .header-back:hover{background:#ffffff10;border-color:#c9a96a66}
+.game-header .header-back:focus-visible,.game-header .header-brand:focus-visible{outline:2px solid #e8d3a2;outline-offset:4px}
+.game-header .header-brand{display:flex;align-items:center;gap:10px;min-width:0;color:#f4ead2;text-decoration:none}
+.header-brand-art{display:grid;place-items:center;box-sizing:border-box;flex:none;width:40px;height:40px;border:1px solid #c9a96a55;border-radius:12px;background:linear-gradient(140deg,#c9a96a24,#c9a96a05);color:#e8d3a2;line-height:0}
+.header-brand-art>.tk-icon,.header-brand-art>.gc-icon{display:grid;place-items:center;width:24px;height:24px;padding:0}
+.header-brand-art svg{display:block;width:24px;height:24px}
+.header-brand-copy{display:grid;gap:4px;min-width:0}
+.header-brand-copy small{font:600 8px/1.2 Inter,system-ui,sans-serif;letter-spacing:1.5px;color:#aeb3c4}
+.header-brand-copy b{font:750 13px/1.25 Inter,system-ui,sans-serif;letter-spacing:.6px;overflow-wrap:anywhere}
+.game-header .header-controls{display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;padding:0;min-width:0}
+.game-header .header-left{gap:6px}
+.game-header .header-tools{gap:6px;min-width:0}
+@media(min-width:760px){.tk-header.game-header,.gc-header.game-header{grid-template-columns:auto auto minmax(0,1fr) auto;gap:22px;padding-bottom:20px}.game-header .header-nav{grid-column:1}.game-header .header-controls{display:contents}.game-header .header-left{grid-column:2}.game-header .header-tools{grid-column:4;justify-self:end}.header-brand-copy b{font-size:14px}}

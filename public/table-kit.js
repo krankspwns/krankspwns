@@ -159,7 +159,7 @@
     function showRecovery() {
       const d = dialog(el('h2', {}, 'Save Your Rejoin Code'), el('p', {}, 'Save this code and keep it private. To play on another phone, enter the room code, your same name, and this code. The old phone will be signed out.'), el('input', { readOnly: true, value: state.recoveryCode, 'aria-label': 'Rejoin Code', onclick: (e) => e.target.select() }), button('Close', () => d.close(), 'primary'));
     }
-    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), el('div', {class:'header-controls'}, el('div',{class:'header-left'}, cfg.guide && window.GameGuide ? GameGuide.button(openRules) : button('How to Play', openRules, 'text-button'), window.Platform?.settingsButton() || null), el('div',{class:'header-tools'}, window.GameAudio?.soundMenu?.() || null, window.GameI18n?.menu() || null, window.Platform?.shopButton() || null)));
+    const header = () => el('header', { class: 'tk-header game-header' }, Platform.headerNav({page:cfg.page,title:cfg.title,art:icon(cfg.icon || 'cards')}), el('div', {class:'header-controls'}, el('div',{class:'header-left'}, cfg.guide && window.GameGuide ? GameGuide.button(openRules) : button('How to Play', openRules, 'text-button'), window.Platform?.settingsButton() || null), el('div',{class:'header-tools'}, window.GameAudio?.soundMenu?.() || null, window.GameI18n?.menu() || null, window.Platform?.shopButton() || null)));
     function landing() {
       const L = cfg.landing;
       return el('div', { class: 'tk-landing' },
