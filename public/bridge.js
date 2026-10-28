@@ -77,7 +77,7 @@
     return el('div', { class: 'seat-preview' },
       el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: !host, onclick: () => { if (busy || state.deals === n) return; state.deals = n; send('settings', { deals: n }); } }, n + ' deals')))),
       el('div', { class: 'partners' }, [0, 1, 2, 3].map((i) => el('div', { class: 'partner-card' }, text('b', '', state.seats[i] ? seatLabel(i) + ' · ' + c.who(state.seats[i]) : seatLabel(i) + ' · Waiting…')))),
-      host ? c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary', state.players.length < 2) : null,
+      host ? c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary', state.players.length < 2, undefined, 'shuffle:blue') : null,
       text('p', 'muted small', 'Choose a seat and sit in this clockwise order. Your name follows you through bidding and play.'));
   }
 
@@ -159,8 +159,8 @@
       el('fieldset', { class: 'bid-picker' }, el('legend', {}, '2. Suit'), el('div', { class: 'bid-suits' }, ['C', 'D', 'H', 'S', 'N'].map(suit =>
         el('button', { type: 'button', class: 'bid' + (bidSuit === suit ? ' selected' : ''), 'data-focus': 'bid-suit-' + suit, 'aria-label': names[suit], 'aria-pressed': bidSuit === suit, disabled: c.busy || !bidLevel || !ok(bidLevel + suit), onclick: () => { bidSuit = suit; pick = bidLevel + suit; c.render(); } }, suitSpan(suit))))),
       bidLevel ? text('p', 'bid-explanation', 'Your team needs ' + (6 + bidLevel) + ' tricks.') : null,
-      c.button(pick ? 'Bid ' + pick[0] + ' ' + names[pick[1]] : 'Choose Number and Suit', async () => { const call = pick; if (await send('call', { call })) { pick = ''; bidLevel = 0; bidSuit = ''; } }, 'primary', !pick || !ok(pick), 'bid-confirm'),
-      c.button('Pass', () => send('call', { call: 'P' }), 'secondary', false, 'bid-P'));
+      c.button(pick ? 'Bid ' + pick[0] + ' ' + names[pick[1]] : 'Choose Number and Suit', async () => { const call = pick; if (await send('call', { call })) { pick = ''; bidLevel = 0; bidSuit = ''; } }, 'primary', !pick || !ok(pick), 'bid-confirm', 'check:ink'),
+      c.button('Pass', () => send('call', { call: 'P' }), 'secondary', false, 'bid-P', 'skip:blue'));
   }
   function callBox(c) {
     const { state, send } = c, d = state.deal;
@@ -169,7 +169,7 @@
     return el('div', { class: 'call-box' },
       text('p', 'muted small', 'Name one card. Whoever holds it is your secret partner. A card from your own hand means you play alone.'),
       ...['S', 'H', 'D', 'C'].map((s) => el('div', { class: 'call-row' }, suitSpan(s), ...[...ranksAsc].reverse().map((r) => { const code = s + r; return el('button', { type: 'button', class: 'call-card' + (callPick === code ? ' selected' : '') + (mine.has(code) ? ' own' : ''), 'data-focus': 'call-' + code, 'aria-pressed': callPick === code, disabled: c.busy, onclick: () => { callPick = code; c.render(); } }, c.rankLabel(r)); }))),
-      c.button(callPick ? ['Call ', cardLabel(callPick, c)] : 'Choose a Card', async () => { const card = callPick; if (await send('callCard', { card })) callPick = ''; }, 'primary', !callPick, 'call-confirm'));
+      c.button(callPick ? ['Call ', cardLabel(callPick, c)] : 'Choose a Card', async () => { const card = callPick; if (await send('callCard', { card })) callPick = ''; }, 'primary', !callPick, 'call-confirm', 'spark:ink'));
   }
   function turnBanner(c) {
     const { state } = c, d = state.deal; let msg = '', mine = false;
@@ -205,7 +205,7 @@
       note ? text('p', 'role-note', note) : null,
       leadHint(c) ? text('p', 'hint', leadHint(c)) : null,
       handRow(c, d.myHand, { legal, play, scroll: 'mine', privatePartner:d.iAmPartner }),
-      legal && pick ? c.button('Play ' + c.rankLabel(pick.slice(1)) + c.SUIT[pick[0]], () => play(pick), 'primary', !legal.includes(pick), 'play-confirm') : legal ? text('p', 'muted small', 'Tap a card to choose it. Tap again to play. Grey cards cannot be played.') : null,
+      legal && pick ? c.button('Play ' + c.rankLabel(pick.slice(1)) + c.SUIT[pick[0]], () => play(pick), 'primary', !legal.includes(pick), 'play-confirm', 'cards:ink') : legal ? text('p', 'muted small', 'Tap a card to choose it. Tap again to play. Grey cards cannot be played.') : null,
       extra || null);
   }
   function auctionHeads(c, seats, dealer) {
@@ -232,7 +232,7 @@
   function reveal(c, entry, host) {
     const { state, send } = c;
     return c.panel('reveal-panel', text('span', 'eyebrow', 'Deal ' + entry.board + ' Result'), el('h2', {}, resultText(entry, c)), dealDetail(c, entry),
-      host ? c.button(state.board >= state.deals ? 'Show Final Result' : 'Next Deal', () => send('next'), 'host-button', collecting(state), 'next') : text('p', 'waiting', 'Waiting for the host to continue.'));
+      host ? c.button(state.board >= state.deals ? 'Show Final Result' : 'Next Deal', () => send('next'), 'host-button', collecting(state), 'next', 'play:ink') : text('p', 'waiting', 'Waiting for the host to continue.'));
   }
   function balancedCards(c, cards) {
     const rows = Math.max(1, Math.ceil(cards.length / 5)), base = Math.floor(cards.length / rows), extra = cards.length % rows;
@@ -257,7 +257,7 @@
     const { state, send } = c, host = state.hostId === state.meId, w = state.finalWinners || [], mine = state.mySeat >= 0 && w.includes(state.mySeat);
     return c.panel('finale-panel', victory(c, w, w.length > 1 ? 'Joint Champions!' : c.who(state.seats[w[0]]) + ' Wins!', mine ? 'Well Played · Match Complete' : 'Match Complete · Until Next Time', [state.code,state.match,'match'].join(':')), scoreStrip(c),
       el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Number of Deals'), el('div', { class: 'pace-options' }, [2, 4, 8].map((n) => el('button', { type: 'button', class: state.deals === n ? 'selected' : '', 'aria-pressed': state.deals === n, disabled: !host, onclick: () => { if (c.busy || state.deals === n) return; state.deals = n; send('settings', { deals: n }); } }, n + ' deals')))),
-      host ? [c.botControls(), c.button('Play Again', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 4), c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary')] : text('p', 'waiting', 'Waiting for the host to start a new match.'));
+      host ? [c.botControls(), c.button('Play Again', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 4, undefined, 'refresh:ink'), c.button('Shuffle Seats', () => send('shuffleSeats'), 'secondary')] : text('p', 'waiting', 'Waiting for the host to start a new match.'));
   }
   function screen(c) {
     const { state } = c, d = state.deal, host = state.hostId === state.meId;

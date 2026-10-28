@@ -8,12 +8,12 @@ for (const game of [{ page: '/hot-joker.html', title: 'Hot Joker' }, { page: '/b
     await page.fill('#tk-name', 'Host');
     await page.getByRole('button', { name: 'Create a Room' }).click();
     await expect(page.locator('.large-code')).toBeVisible();
-    await expect(page.getByRole('button', { name: '+ Add a bot' })).toBeVisible();
-    await page.getByRole('button', { name: '+ Add a bot' }).click();
+    await expect(page.getByRole('button', { name: 'Add a bot' })).toBeVisible();
+    await page.getByRole('button', { name: 'Add a bot' }).click();
     await expect(page.locator('.seat-bot')).toHaveCount(1);
-    await page.getByRole('button', { name: '+ Add a bot' }).click();
+    await page.getByRole('button', { name: 'Add a bot' }).click();
     await expect(page.locator('.seat-bot')).toHaveCount(2);
-    await page.getByRole('button', { name: '− Remove a bot' }).click();
+    await page.getByRole('button', { name: 'Remove a bot' }).click();
     await expect(page.locator('.seat-bot')).toHaveCount(1);
     expect(errors).toEqual([]);
   });
@@ -24,7 +24,7 @@ async function hotJokerWith(page, bots) {
   await page.fill('#tk-name', 'Host');
   await page.getByRole('button', { name: 'Create a Room' }).click();
   await expect(page.locator('.large-code')).toBeVisible();
-  for (let i = 1; i <= bots; i++) { await page.getByRole('button', { name: '+ Add a bot' }).click(); await expect(page.locator('.seat-bot')).toHaveCount(i); }
+  for (let i = 1; i <= bots; i++) { await page.getByRole('button', { name: 'Add a bot' }).click(); await expect(page.locator('.seat-bot')).toHaveCount(i); }
   await page.getByRole('button', { name: 'START GAME' }).click();
   await expect(page.locator('.circle')).toBeVisible();
 }

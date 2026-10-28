@@ -7,7 +7,7 @@ async function playUntilTrickCollected(page) {
   await page.fill('#tk-name', 'Host');
   await page.getByRole('button', { name: 'Create a Room' }).click();
   await expect(page.locator('.large-code')).toBeVisible();
-  for (let i = 1; i <= 3; i++) { await page.getByRole('button', { name: '+ Add a bot' }).click(); await expect(page.locator('.seat-bot')).toHaveCount(i); }
+  for (let i = 1; i <= 3; i++) { await page.getByRole('button', { name: 'Add a bot' }).click(); await expect(page.locator('.seat-bot')).toHaveCount(i); }
   await page.getByRole('button', { name: 'START GAME' }).click();
   const deadline = Date.now() + 100000;
   while (Date.now() < deadline) {

@@ -127,7 +127,7 @@
       el('ol', { class: 'order-list' }, state.order.map((id) => el('li', {}, c.avatar(id), el('b', {}, c.who(id) + (id === state.meId ? ' · You' : ''))))),
       text('p', 'muted small', 'Each player takes cards from the one before them in this list. Sit in this order around the table.'),
       el('fieldset', { class: 'pace-settings' }, el('legend', {}, 'Sets to lay down'), el('div', { class: 'pace-options' }, [[2, 'Pairs (quick)'], [4, 'Four of a kind (long)']].map(([n, label]) => el('button', { type: 'button', class: size === n ? 'selected' : '', 'aria-pressed': size === n, disabled: !host, onclick: () => { if (c.busy || size === n) return; c.state.settings = { ...c.state.settings, setSize: n }; c.send('settings', { setSize: n }); } }, label)))),
-      host ? c.button('Shuffle seats', () => c.send('shuffleSeats'), 'secondary', state.order.length < 2) : null);
+      host ? c.button('Shuffle seats', () => c.send('shuffleSeats'), 'secondary', state.order.length < 2, undefined, 'shuffle:blue') : null);
   }
   function logLine(c, e) {
     if (e.kind === 'deal') return c.who(e.taker) + ' goes first.';
@@ -181,7 +181,7 @@
     return c.panel('take-panel active', text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
       el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + ' hidden card' + (state.sourceCount === 1 ? '' : 's') + '. One of them might be the Joker. Tap a card to choose it, then confirm.'),
       el('div', { class: 'pick-row', 'data-scroll': 'pick' }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable' + (pick === i ? ' selected' : ''), 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, 'aria-pressed': pick === i, disabled: c.busy, onclick: () => { pick = i; c.render(); } }))),
-      c.button(pick >= 0 ? 'Take card ' + (pick + 1) : 'Choose a card', async () => { const i = pick; if (await send('take', { index: i, turn: state.turn })) pick = -1; }, 'primary', pick < 0, 'take-confirm'));
+      c.button(pick >= 0 ? 'Take card ' + (pick + 1) : 'Choose a card', async () => { const i = pick; if (await send('take', { index: i, turn: state.turn })) pick = -1; }, 'primary', pick < 0, 'take-confirm', 'hand:ink'));
   }
   function handPanel(c) {
     const { state, send } = c, hand = state.me.hand, playing = state.phase === 'playing';
@@ -191,9 +191,9 @@
       state.source === state.meId && playing ? el('p', { class: 'warn small' }, c.who(state.taker) + ' is about to pick one of these. Move or shuffle your cards now.') : null,
       hand.length ? el('div', { class: 'hand-row', 'data-scroll': 'hand' }, hand.map((code, i) => c.card(code, { selected: sel === i, onclick: arrange ? () => { sel = sel === i ? -1 : i; c.render(); } : undefined, label: undefined }))) : text('p', 'muted', state.me.place ? 'You finished #' + state.me.place + '. Watch the others sweat.' : 'No cards left.'),
       arrange ? el('div', { class: 'arrange' },
-        c.button('← Left', async () => { const from = sel; if (from > 0 && await send('move', { from, to: from - 1 })) sel = from - 1; }, 'secondary', sel <= 0, 'move-left'),
-        c.button('Shuffle', async () => { await send('shuffle'); sel = -1; }, 'secondary', false, 'shuffle'),
-        c.button('Right →', async () => { const from = sel; if (from >= 0 && from < hand.length - 1 && await send('move', { from, to: from + 1 })) sel = from + 1; }, 'secondary', sel < 0 || sel >= hand.length - 1, 'move-right')) : null,
+        c.button('Left', async () => { const from = sel; if (from > 0 && await send('move', { from, to: from - 1 })) sel = from - 1; }, 'secondary', sel <= 0, 'move-left', 'arrowL:blue'),
+        c.button('Shuffle', async () => { await send('shuffle'); sel = -1; }, 'secondary', false, 'shuffle', 'shuffle:purple'),
+        c.button('Right', async () => { const from = sel; if (from >= 0 && from < hand.length - 1 && await send('move', { from, to: from + 1 })) sel = from + 1; }, 'secondary', sel < 0 || sel >= hand.length - 1, 'move-right', 'arrowR:blue')) : null,
       arrange ? text('p', 'muted small', 'Drag a card to a new spot, or tap it and use the arrows. Shuffle mixes them all.') : null);
   }
   // Every set that has been laid down, grouped by who laid it.
@@ -216,7 +216,7 @@
       el('p', { class: 'muted' }, me ? 'The last Joker is yours. Better luck next round.' : 'Everyone else got out safely. Phew.'),
       el('div', { class: 'tally' }, text('span', 'eyebrow', 'JOKERS HELD'), ...state.players.map((p) => el('div', { class: 'tally-row' }, c.avatar(p.id), el('b', {}, p.name), text('span', 'tally-n', '×' + (state.losses[p.id] || 0))))),
       state.placed.length ? el('p', { class: 'muted small' }, 'Finish order: ' + state.placed.map((id, i) => (i + 1) + '. ' + c.who(id)).join('  ·  ')) : null,
-      host ? [c.botControls(), c.button('PLAY AGAIN', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 3), c.button('Shuffle seats', () => send('shuffleSeats'), 'secondary')] : text('p', 'waiting', 'Waiting for the host to start another game.'));
+      host ? [c.botControls(), c.button('PLAY AGAIN', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 3, undefined, 'refresh:ink'), c.button('Shuffle seats', () => send('shuffleSeats'), 'secondary', false, undefined, 'shuffle:blue')] : text('p', 'waiting', 'Waiting for the host to start another game.'));
   }
   function screen(c) {
     const { state } = c; cur = c; requestAnimationFrame(() => after(c));

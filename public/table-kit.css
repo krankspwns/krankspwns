@@ -170,3 +170,14 @@ body[data-game] .hand-row .pcard { margin-right:0; }
 .bot-btn.remove:hover:not(:disabled) { color: var(--ink); background: #ffffff14; }
 .bot-btn:disabled { opacity: .4; cursor: not-allowed; }
 .bot-controls small { text-align: center; }
+
+/* coloured button icons */
+.btn-ico { width: 18px; height: 18px; margin-right: 8px; vertical-align: -3px; flex: none; }
+button:has(> .btn-ico) { display: inline-flex; align-items: center; justify-content: center; }
+.btn-ico.ic-green { color: #5fd68a; } .btn-ico.ic-red { color: #ff7a7a; } .btn-ico.ic-gold { color: #f1c75b; }
+.btn-ico.ic-blue { color: #7db8ff; } .btn-ico.ic-purple { color: #c99bff; } .btn-ico.ic-ink { color: currentColor; }
+.bot-btn.add { border-color: #3f9e63; background: #5fd68a1f; color: #bff3d1; }
+.bot-btn.add:hover:not(:disabled) { background: #5fd68a33; border-color: #5fd68a; }
+.bot-btn.remove { border-color: #b85a5a66; background: #ff7a7a12; color: #ffc4c4; }
+.bot-btn.remove:hover:not(:disabled) { background: #ff7a7a26; color: #fff; }
+button:disabled .btn-ico { opacity: .5; }

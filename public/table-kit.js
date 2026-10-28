@@ -13,6 +13,16 @@
     eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
     users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
     crown: '<path d="m3 8 4.5 4L12 5l4.5 7L21 8l-2 11H5Z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
+    bot: '<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4m-2 0h4M9 13h.01M15 13h.01M9.5 16.5h5"/>',
+    play: '<path d="M7 4.5v15l13-7.5Z"/>', skip: '<path d="M5 5v14l9-7ZM18 5v14"/>',
+    shuffle: '<path d="M3 7h3c5 0 6 10 11 10h4M3 17h3c1.5 0 2.7-.8 3.7-2M14.3 9C15.3 7.8 16.4 7 18 7h3M18 4l3 3-3 3M18 14l3 3-3 3"/>',
+    arrowL: '<path d="M19 12H5m6-6-6 6 6 6"/>', arrowR: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9m-3 3 3 3m-6-3 2 2"/>',
+    exit: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M16 8l4 4-4 4M20 12H9"/>',
+    login: '<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 8l-4 4 4 4M6 12h10" transform="scale(-1 1) translate(-24 0)"/>',
+    refresh: '<path d="M20 11a8 8 0 0 0-14-4L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4l2-2m0 5v-5h-5"/>',
   };
   const SUIT = { S: '♠', H: '♥', D: '♦', C: '♣' };
   const rankLabel = (r) => (r === 'T' ? '10' : r);
@@ -74,7 +84,8 @@
     if (seat) try { localStorage.setItem('arcade-last-game', cfg.game); } catch {}
     const who = (id) => state?.players.find((p) => p.id === id)?.name || 'Player';
     const announce = (message) => { document.getElementById('tk-announcer').textContent = message; };
-    const button = (label, click, kind = '', disabled = false, focus) => el('button', { type: 'button', class: kind, 'data-focus': focus || (typeof label === 'string' ? label : ''), onclick: click, disabled: busy || disabled }, label);
+    // ico is an icon name, optionally with a colour: 'plus:green'
+    const button = (label, click, kind = '', disabled = false, focus, ico) => el('button', { type: 'button', class: kind, 'data-focus': focus || (typeof label === 'string' ? label : ''), onclick: click, disabled: busy || disabled }, ...(ico ? [icon(ico.split(':')[0], 'btn-ico ic-' + (ico.split(':')[1] || 'gold'))] : []), label);
     const panel = (cls, ...children) => el('section', { class: 'tk-panel ' + cls }, ...children);
     function avatar(id, cls = '') {
       const i = Math.max(0, state?.players.findIndex((p) => p.id === id) ?? 0);
@@ -147,7 +158,7 @@
     function openRules() {
       if (cfg.guide && window.GameGuide) return GameGuide.open({ title: cfg.title + ' · How to play', pages: cfg.guide(GameGuide.B) });
       if (rulesDialog?.isConnected) return;
-      rulesDialog = dialog(text('span', 'eyebrow', cfg.rulesEyebrow || 'HOW TO PLAY'), el('h2', { tabIndex: -1 }, cfg.rulesTitle), ...cfg.rules(), button('Let’s play', () => rulesDialog.close(), 'primary'));
+      rulesDialog = dialog(text('span', 'eyebrow', cfg.rulesEyebrow || 'HOW TO PLAY'), el('h2', { tabIndex: -1 }, cfg.rulesTitle), ...cfg.rules(), button('Let’s play', () => rulesDialog.close(), 'primary', false, undefined, 'check:ink'));
       rulesDialog.querySelector('h2').focus({ preventScroll: true });
     }
     function showRecovery() {
@@ -161,15 +172,15 @@
           el('div', { class: 'quick-steps' }, L.steps.map(([i, t], n) => el('div', {}, icon(i), text('small', '', String(n + 1).padStart(2, '0')), text('b', '', t))))),
         panel('entrance', el('div', { class: 'entrance-seal', 'aria-hidden': 'true' }, icon('lock')), text('span', 'eyebrow', 'PLAY WITH FRIENDS'), el('h2', {}, 'Ready to Play?'),
           el('label', { htmlFor: 'tk-name' }, 'Your Name'), el('input', { id: 'tk-name', maxLength: 12, value: name, autocomplete: 'nickname', placeholder: 'Your Name', oninput: (e) => { name = e.target.value; } }),
-          button('Create a Room', () => enter('create'), 'primary'), text('div', 'or', 'or join your friends'),
+          button('Create a Room', () => enter('create'), 'primary', false, undefined, 'plus:ink'), text('div', 'or', 'or join your friends'),
           el('label', { htmlFor: 'tk-code' }, 'Room Code'), el('input', { id: 'tk-code', maxLength: 4, value: code, placeholder: 'ABCD', autocomplete: 'off', class: 'code-input', oninput: (e) => { code = e.target.value; } }),
-          button('Join Room', () => enter('join'), 'secondary'),
+          button('Join Room', () => enter('join'), 'secondary', false, undefined, 'login:blue'),
           el('details', {}, el('summary', {}, 'Rejoin on Another Phone'), el('p', {}, 'Use your same name and saved rejoin code.'), el('label', { htmlFor: 'tk-recovery' }, 'Rejoin Code'), el('input', { id: 'tk-recovery', value: recover, autocomplete: 'off', oninput: (e) => { recover = e.target.value; } })),
           text('p', 'muted small', L.note)));
     }
     function roomBar() {
       return el('div', { class: 'room-bar' }, el('div', {}, text('span', 'eyebrow', 'PRIVATE ROOM'), el('b', { class: 'room-code' }, state.code)),
-        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, 'Copy Link'), button('Rejoin Code', showRecovery, 'text-button'), button('Leave', () => { if (confirm('Leave this room? Save your rejoin code so you can come back.')) send('leave'); }, 'text-button')));
+        el('div', { class: 'room-actions' }, el('button', { type: 'button', 'data-copy': '', onclick: copyInvite }, icon('link', 'btn-ico ic-blue'), 'Copy Link'), button('Rejoin Code', showRecovery, 'text-button', false, undefined, 'key:gold'), button('Leave', () => { if (confirm('Leave this room? Save your rejoin code so you can come back.')) send('leave'); }, 'text-button', false, undefined, 'exit:red')));
     }
     function roster(tagFor) {
       const present = state.players.filter((p) => !p.departed).length;
@@ -185,15 +196,15 @@
       const seated = state.players.filter((p) => !p.departed).length, bots = state.players.filter((p) => p.bot).length;
       return el('div', { class: 'bot-controls' },
         el('div', { class: 'bot-row' },
-          button('+ Add a bot', () => send('addBot'), 'bot-btn add', seated >= cfg.max, 'add-bot'),
-          bots ? button('− Remove a bot', () => send('removeBot'), 'bot-btn remove', false, 'remove-bot') : null),
+          button('Add a bot', () => send('addBot'), 'bot-btn add', seated >= cfg.max, 'add-bot', 'bot:green'),
+          bots ? button('Remove a bot', () => send('removeBot'), 'bot-btn remove', false, 'remove-bot', 'minus:red') : null),
         text('small', 'muted', bots ? bots + (bots === 1 ? ' bot' : ' bots') + ' at the table. Bots play like casual players.' : 'No friends nearby? A bot can take a seat.'));
     }
     function waitingRoom() {
       const host = state.meId === state.hostId, n = state.players.filter((p) => !p.departed).length, reason = cfg.startBlock(state, n);
       return el('div', { class: 'lobby-grid' }, panel('waiting-card', cfg.landing.art ? el('div', { class: 'lobby-art' }, cfg.landing.art()) : null, text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'), text('div', 'large-code', state.code),
         el('div', { class: 'chips' }, cfg.waitingChips.map((c) => text('span', '', c))), cfg.waiting ? cfg.waiting(ctx()) : null, botControls(),
-        host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason) : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to Play', openRules, 'text-button')), roster(cfg.rosterTag));
+        host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason, undefined, 'play:ink') : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to Play', openRules, 'text-button')), roster(cfg.rosterTag));
     }
     const ctx = () => ({ state, send, busy, error, el, text, button, icon, card, cardBack, who, avatar, render, panel, roster, botControls, fresh, announce, dialog, SUIT, rankLabel, countdown: () => text('span', 'countdown', ''), read, store });
     // A screen that fails to draw must never leave the player staring at "Loading": offer a way out.
@@ -201,7 +212,7 @@
       try { return cfg.screen(ctx()); } catch (e) {
         console.error(e);
         return panel('', el('h2', {}, 'This screen did not load'), el('p', { class: 'muted' }, 'Your seat is saved. Reload to try again, or leave the room and rejoin with your code.'),
-          button('Reload', () => location.reload(), 'primary'), button('Leave Room', () => { seat = null; state = null; store(cfg.seatKey, null); clearTimeout(pollTimer); render(); }, 'secondary'));
+          button('Reload', () => location.reload(), 'primary', false, undefined, 'refresh:ink'), button('Leave Room', () => { seat = null; state = null; store(cfg.seatKey, null); clearTimeout(pollTimer); render(); }, 'secondary', false, undefined, 'exit:red'));
       }
     }
     function render() {
