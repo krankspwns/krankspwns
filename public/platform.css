@@ -1,9 +1,14 @@
 /* Account chip, shop, table dock, reactions and gifts shared by every game */
-#pf-chip{position:fixed;left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));z-index:60;display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(17,19,38,.92);color:#fff;font:600 13px/1.1 system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)}
-#pf-chip small{font-weight:400;opacity:.7}#pf-chip b{color:#ffd23f}
-#pf-dock{position:fixed;right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:60;display:flex;gap:6px;align-items:center;padding:6px;border-radius:999px;background:rgba(17,19,38,.92);border:1px solid rgba(255,255,255,.25);box-shadow:0 4px 14px rgba(0,0,0,.35)}
-#pf-dock button{min-width:44px;min-height:44px;border-radius:999px;border:0;background:rgba(255,255,255,.1);color:#fff;font-size:20px;cursor:pointer}
-#pf-dock .pf-wpchip{font:700 14px system-ui,sans-serif;padding:0 12px;color:#ffd23f}
+#pf-dock{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;gap:6px;align-items:center;padding:0;border:0;background:transparent;box-shadow:none}
+#pf-dock .pf-tool{display:grid;place-items:center;box-sizing:border-box;flex:none;width:44px;height:44px;min-width:44px;min-height:44px;padding:6px;margin:0;border:0;border-radius:50%;background:transparent;box-shadow:none;line-height:0;cursor:pointer;filter:drop-shadow(0 3px 5px #0009)}
+#pf-dock .pf-tool:hover:not(:disabled){background:transparent;transform:translateY(-2px)}
+#pf-dock .pf-tool:focus-visible{outline:2px solid #edcf8b;outline-offset:2px}
+#pf-dock .pf-tool:disabled{opacity:.4;cursor:default}
+#pf-dock .pf-tool>.pf-art{width:32px;height:32px;display:block;line-height:0}
+#pf-dock .pf-tool>.pf-art svg,#pf-dock .pf-tool>svg{display:block;width:32px;height:32px}
+body.pf-floating-tools{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+body.pf-native-tools #pf-dock{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+body.pf-native-tools{padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))}
 .pf-tray{position:fixed;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + 62px);z-index:61;display:flex;flex-wrap:wrap;gap:6px;max-width:min(340px,calc(100vw - 16px));padding:10px;border-radius:16px;background:rgba(17,19,38,.97);border:1px solid rgba(255,255,255,.25);color:#fff}
 .pf-tray button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:52px;min-height:52px;padding:4px;border-radius:12px;border:0;background:rgba(255,255,255,.08);color:#fff;cursor:pointer}
 .pf-tray .pf-note{flex-basis:100%;margin:0}
@@ -13,7 +18,7 @@
 .pf-av{position:relative;display:inline-grid;place-items:center;width:var(--s);height:var(--s);border-radius:50%;background:#2b2f4d;flex:none;vertical-align:middle}
 .pf-av img{width:100%;height:100%;border-radius:50%;object-fit:cover}.pf-face{font-size:calc(var(--s)*.58);line-height:1}
 .pf-acc{position:absolute;top:-22%;right:-14%;font-style:normal;font-size:calc(var(--s)*.5)}
-.pf-bd{padding:3px;box-sizing:border-box;background:var(--ring,#fff)}.pf-bd>*{border-radius:50%;background:#2b2f4d}
+.pf-bd{padding:var(--ring-pad,3px);box-sizing:border-box;background:var(--ring,#fff)}.pf-bd>*{border-radius:50%;background:#2b2f4d}
 .pf-bd-silver{--ring:linear-gradient(135deg,#f4f6fa,#9aa3b5)}.pf-bd-gold{--ring:linear-gradient(135deg,#fff2a8,#d9a21a)}.pf-bd-emerald{--ring:linear-gradient(135deg,#7dffc0,#0c8a54)}.pf-bd-ice{--ring:linear-gradient(135deg,#e7fbff,#4fb7ff)}
 .pf-bd-neon{--ring:linear-gradient(135deg,#ff3dcb,#3df2ff);box-shadow:0 0 10px #ff3dcb88}.pf-bd-royal{--ring:linear-gradient(135deg,#a98bff,#4a2bbf)}.pf-bd-fire{--ring:linear-gradient(135deg,#ffd23f,#ff3b1f);box-shadow:0 0 10px #ff6a1f99}.pf-bd-rainbow{--ring:conic-gradient(#f33,#fc3,#3d6,#3cf,#93f,#f33)}
 .pf-float{position:fixed;left:var(--x);bottom:90px;z-index:70;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;color:#fff;animation:pf-up 2.8s ease-out forwards;text-shadow:0 1px 3px #000}
@@ -46,11 +51,6 @@ body.pf-lock{overflow:hidden}
 @media (prefers-reduced-motion:reduce){.pf-float,.pf-fly{animation-duration:.01s}}
 
 
-/* account chip with avatar */
-#pf-chip:not(.guest){padding:5px 14px 5px 6px}
-#pf-chip .pf-cn{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left}
-#pf-chip .pf-cn b{color:#fff;font-size:13px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#pf-chip .pf-cn small{opacity:1;color:#ffd23f;font-weight:700;font-size:12px}
 /* account page */
 .pf-hero{display:flex;gap:16px;align-items:center;padding:16px;border-radius:16px;background:linear-gradient(135deg,#2a2166,#1a1d3d 70%);border:1px solid rgba(255,255,255,.14)}
 .pf-who{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}.pf-name{font-size:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pf-who small{opacity:.7}
@@ -172,3 +172,44 @@ body.pfg-lock{overflow:hidden}
 .pfc-row{display:flex;gap:10px}.pfc-row button{flex:1;min-height:46px;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;border:1px solid #ffffff30;background:#ffffff10;color:#fff}
 .pfc-row .pfc-ok{background:linear-gradient(180deg,#f4df9b,#d6ac59);color:#2a1d05;border-color:#d6ac59}.pfc-row .pfc-ok.danger{background:linear-gradient(180deg,#ff8f8f,#d64545);color:#fff;border-color:#d64545}
 @keyframes pfc-in{from{opacity:0}}
+
+/* Shared SVG animals and icons use the same centred viewboxes as Row of Reckoning. */
+.pf-av>.pf-art{display:block;width:100%;height:100%;border-radius:50%;overflow:hidden;line-height:0}
+.pf-art svg{display:block;width:100%;height:100%}
+.pf-x{display:grid;place-items:center;flex:none;padding:0;line-height:1}
+.pf-box button:not(.pf-x):not(.pf-apple){display:flex;align-items:center;justify-content:center;gap:8px;line-height:1.2}
+.pf-box input[type=text]{font-size:16px}
+
+.pf-box .pf-tabs button[role=tab]{background:#ffffff12}
+.pf-box .pf-tabs button[aria-selected=true]{background:#7c5cff}
+
+/* Profile identity stays compact until the player chooses to edit it. */
+.pf-name-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+.pf-name-row .pf-name{min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:20px}
+.pf-box .pf-name-row .pf-edit{flex:none;min-height:36px;padding:0 10px;background:#ffffff12;color:#ded4ff;font-size:12px}
+.pf-name-editor{display:grid;gap:10px;min-width:0;margin-top:8px}
+.pf-name-editor .pf-row>*{flex:1;min-width:0}
+.pf-name-editor[hidden],.pf-name-row[hidden]{display:none}
+.pf-box .pf-cta button.pf-customise{background:linear-gradient(115deg,#c89c4a,#f7e2a1 55%,#d8b56c);color:#302107;border:1px solid #ffe9b0;box-shadow:inset 0 1px #fff6;gap:10px}
+.pf-customise .pf-art{display:block;flex:none;width:26px;height:26px;line-height:0}
+/* Native details content needs its own layout, rather than flex on <details>. */
+details.pf-privacy{display:block;padding:0;overflow:hidden}
+.pf-privacy summary{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;padding:12px 40px;list-style:none;text-align:center}
+.pf-privacy summary::-webkit-details-marker{display:none}
+.pf-privacy summary::after{content:'';position:absolute;right:18px;top:19px;width:7px;height:7px;border-right:2px solid #bfb3df;border-bottom:2px solid #bfb3df;transform:rotate(45deg)}
+.pf-privacy[open] summary::after{top:22px;transform:rotate(225deg)}
+.pf-privacy-content{display:grid;gap:16px;padding:4px 16px 16px}
+.pf-privacy-content p{margin:0;font-size:13px;line-height:1.6}
+.pf-privacy-actions{display:grid;gap:10px}
+.pf-privacy-actions button{width:100%;min-height:46px}
+.pf-box .pf-privacy-actions button.pf-ghost{background:#ffffff12}
+.pf-box .pf-privacy-actions button.pf-danger{background:#572737;color:#ffd3dc;border:1px solid #bb637d66}
+.pf-signout button{min-width:0;line-height:1.4!important;text-align:center}
+
+.pf-hero{display:grid;grid-template-columns:auto minmax(0,1fr)}
+.pf-hero>.pf-name-editor{grid-column:1 / -1;width:100%;margin:0}
+
+.pf-box>*{flex-shrink:0}
+.pf-box .pf-switch{margin:0;min-height:44px;font-size:13px}
+.pf-box .pf-switch input{margin:0}
+@media(max-width:380px){.pf-hero{padding:12px;gap:12px}.pf-hero>.pf-av{width:64px;height:64px;--ring-pad:4.8px!important}.pf-name-row{gap:6px}.pf-name-row .pf-name{font-size:18px}.pf-box .pf-name-row .pf-edit{padding:0 8px}}

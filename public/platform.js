@@ -5,12 +5,8 @@
   'use strict';
   const API = '/api/platform';
   const GAME_API = /^\/api\/(bridge|hot-joker|grand-con)$/;
-  const PAGE = { '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con', '/last-train.html': 'last-train' }[location.pathname] || 'reckoning';
+  const PAGE = { '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con', '/last-train.html': 'last-train', '/reckoning.html':'reckoning' }[location.pathname] || 'arcade';
   const OWN_TABLE_UI = PAGE === 'reckoning' || PAGE === 'last-train';   // these two already draw their own reactions, shop and gifts
-  const FREE = { cat: '🐱', dog: '🐶', fox: '🦊', bear: '🐻', panda: '🐼', rabbit: '🐰', frog: '🐸', lion: '🦁', pig: '🐷', koala: '🐨', owl: '🦉', tiger: '🐯', penguin: '🐧', monkey: '🐵', elephant: '🐘', mouse: '🐭', chicken: '🐔', cow: '🐮', dino: '🦖', unicorn: '🦄' };
-  const PREM = { dragon: '🐲', robot: '🤖', alien: '👽', ghost: '👻', wizard: '🧙', ninja: '🥷' };
-  const LEGEND = new Set(['phoenix', 'shadowphoenix', 'moonwolf', 'samurai', 'thundertiger', 'goldlion', 'reaper']);
-  const ACC = { hat: '🎩', shades: '🕶️', mustache: '🧔', flower: '🌸', headphones: '🎧', horns: '😈', crown: '👑', halo: '😇' };
   const GIFT = { tomato: '🍅', rose: '🌹', snowball: '❄️', popper: '🎉', balloon: '🎈', kiss: '💋', pie: '🥧', ghost: '👻', rocket: '🚀', bomb: '💣', zap: '⚡', fireworks: '🎆', disco: '🪩', cash: '💸' };
   const EMO = { laugh: '😂', wow: '😮', cry: '😢', cool: '😎', fire: '🔥', rip: '🪦', angry: '😠', think: '🤔', heart: '❤️', trophy: '🏆' };
   const TAG = { gg: 'GG', ez: 'EZ', gl: 'GL', wp: 'WP', oof: 'OOF', faster: 'FASTER LEH', aiyo: 'AIYO!', steady: 'STEADY' };
@@ -36,9 +32,8 @@
 
   // ---------- small art ----------
   function avatar(key, bd = '', acc = '', size = 40) {
-    const inner = LEGEND.has(key) ? el('img', { src: '/avatars/' + key + '.webp', alt: '', width: size, height: size, loading: 'lazy' }) : el('span', { class: 'pf-face', text: FREE[key] || PREM[key] || '🙂' });
-    const w = el('span', { class: 'pf-av' + (bd ? ' pf-bd pf-bd-' + bd : ''), style: `--s:${size}px`, 'aria-hidden': 'true' }, inner);
-    if (acc && ACC[acc]) w.append(el('i', { class: 'pf-acc', text: ACC[acc] })); return w;
+    const inner = window.AvatarArt.el(key, acc);
+    return el('span', { class: 'pf-av' + (bd ? ' pf-bd pf-bd-' + bd : ''), style: `--s:${size}px;--ring-pad:${Math.min(10,Math.max(1.5,size*.075))}px`, 'aria-hidden': 'true' }, inner);
   }
   if (!window.EmoteArt) { const s = document.createElement('script'); s.src = '/emote-art.js'; document.head.append(s); }
   const emoteArt = (k) => (window.EmoteArt?.has(k) ? window.EmoteArt.el(k, 36) : TAG[k] ? el('b', { class: 'pf-tag', text: TAG[k] }) : el('span', { class: 'pf-emo', text: EMO[k] || '🙂' }));
@@ -75,7 +70,7 @@
     } catch (e) { ui.error.textContent = e.message; ui.error.hidden = false; sfx('error'); setBusy(false); await prepare(ui); }
   }
   // the room keeps its own record of whose seat this is: tell it when the player signs in or out
-  const relink = async () => { if (seat && st?.social) { try { await roomAct('relink'); } catch {} renderDock(); renderChip(); } };
+  const relink = async () => { if (seat && st?.social) { try { await roomAct('relink'); } catch {} renderChip(); } };
   async function prepare(ui) {   // a fresh one-time code for each attempt (stops a captured sign-in being replayed)
     ui.nonce = (await api({ action: 'nonce' })).nonce;
     if (config.google && window.google?.accounts?.id) {
@@ -125,8 +120,17 @@
   function openAccount() {
     const eq = account.eq || {}, a = window.GameAudio, prefs = a?.prefs() || {};
     const run = (fn) => async () => { try { await fn(); } catch (e) { toast(e.message, '⚠️'); } };
-    const nick = el('input', { type: 'text', maxlength: 12, value: account.nick || '', placeholder: 'Pick a nickname', 'aria-label': 'Nickname', onkeydown: (e) => { if (e.key === 'Enter') save.click(); } });
-    const save = el('button', { type: 'button', class: 'pf-small', text: 'Save', onclick: run(async () => { account = (await api({ action: 'nick', nick: nick.value })).account; renderChip(); toast('Nickname saved.', '✅'); }) });
+    const name = el('b', {class:'pf-name',text:account.nick || 'Player'});
+    const nick = el('input', {type:'text',maxlength:12,value:account.nick || '',placeholder:'Pick a nickname','aria-label':'Nickname',onkeydown:e=>{if(e.key==='Escape'){e.stopPropagation();cancelEdit();}}});
+    const cancelEdit = () => { editor.hidden=true; nameRow.hidden=false; edit.focus(); };
+    const edit = el('button', {type:'button',class:'pf-edit','aria-label':'Edit Nickname',text:'Edit',onclick:()=>{nick.value=account.nick || '';nameRow.hidden=true;editor.hidden=false;nick.focus();nick.select();}});
+    const nameRow = el('div',{class:'pf-name-row'},name,edit);
+    const save = el('button',{type:'submit',class:'pf-small',text:'Save'});
+    const editor = el('form',{class:'pf-name-editor',hidden:true,onsubmit:async e=>{
+      e.preventDefault();if(save.disabled)return;save.disabled=true;
+      try {account=(await api({action:'nick',nick:nick.value})).account;name.textContent=account.nick || 'Player';renderChip();cancelEdit();toast('Nickname saved.','✅');}
+      catch(error){toast(error.message,'⚠️');}finally{save.disabled=false;}
+    }},nick,el('div',{class:'pf-row'},save,el('button',{type:'button',class:'pf-ghost',text:'Cancel',onclick:cancelEdit})));
     const count = (o) => Object.values(o).reduce((n, v) => n + v.length, 0);
     const gifts = Object.values(account.gifts || {}).reduce((n, v) => n + Math.max(0, v), 0);
     const cap = config.dailyCap || 400, got = Math.min(cap, account.earnedToday || 0);
@@ -134,8 +138,7 @@
     const provider = account.provider === 'apple' ? ' Apple' : 'Google';
     modal('Your account',
       el('section', { class: 'pf-hero' }, avatar(eq.av || 'cat', eq.bd, eq.acc, 84),
-        el('div', { class: 'pf-who' }, el('b', { class: 'pf-name', text: account.nick || 'Player' }), el('small', { text: 'Signed in with ' + provider }),
-          el('div', { class: 'pf-row' }, nick, save))),
+        el('div', { class: 'pf-who' }, nameRow, el('small', { text: 'Signed in with ' + provider })), editor),
       el('section', { class: 'pf-wpcard' }, el('div', {}, el('small', { text: 'YOUR WP' }), el('b', { class: 'pf-big', text: '🏆 ' + account.pts.toLocaleString() })),
         el('div', { class: 'pf-meter', role: 'img', 'aria-label': got + ' of ' + cap + ' WP earned today' }, el('i', { style: 'width:' + Math.round(got / cap * 100) + '%' }), el('small', { text: 'Earned today ' + got + ' / ' + cap }))),
       el('div', { class: 'pf-stats' },
@@ -143,23 +146,24 @@
         el('div', {}, el('b', { text: String(account.owned.bd.length) }), el('small', { text: 'Borders' })),
         el('div', {}, el('b', { text: String(account.owned.acc.length) }), el('small', { text: 'Accessories' })),
         el('div', {}, el('b', { text: gifts > 9999 ? '9999+' : String(gifts) }), el('small', { text: 'Gifts' }))),
-      el('div', { class: 'pf-cta' }, el('button', { type: 'button', text: '🛍️  Shop & change look', onclick: () => openShop() })),
+      el('div', { class: 'pf-cta' }, el('button', { type: 'button', class:'pf-customise', onclick: () => openShop() }, window.AvatarArt.tool('shop'), 'Customise Avatar')),
       el('p', { class: 'pf-note', text: 'Win games with other people to earn WP. Use them in the shop in any game.' }),
       a ? el('section', { class: 'pf-card' }, el('h3', { text: 'Sound' }),
         toggle('Sound effects', 'Taps, cards and reactions', prefs.sfx, (v) => a.setSfx(v)),
         a.game ? toggle('Background music', a.themeName() + ' theme', prefs.music, (v) => a.setMusic(v)) : null) : null,
-      el('details', { class: 'pf-card' }, el('summary', { text: 'Privacy & data' }),
+      el('details', { class: 'pf-card pf-privacy' }, el('summary', {}, el('span',{text:'Privacy & Data'})),
+        el('div',{class:'pf-privacy-content'},
         el('p', { class: 'pf-note', text: 'We keep your nickname, WP, items and consent record. No name, email or photo from ' + provider.trim() + '.' }),
-        el('div', { class: 'pf-row wrap' },
-          el('button', { type: 'button', class: 'pf-ghost', text: 'Download my data', onclick: run(async () => {
+        el('div', { class: 'pf-privacy-actions' },
+          el('button', { type: 'button', class: 'pf-ghost', text: 'Download My Data', onclick: run(async () => {
             const j = await api({ action: 'export' }), url = URL.createObjectURL(new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' }));
             el('a', { href: url, download: 'krankspwns-my-data.json' }).click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
           }) }),
-          el('button', { type: 'button', class: 'pf-danger', text: 'Delete my account', onclick: run(async () => {
+          el('button', { type: 'button', class: 'pf-danger', text: 'Delete My Account', onclick: run(async () => {
             if (prompt('This permanently deletes your account, WP and items. Type DELETE to confirm.') !== 'DELETE') return;
             await api({ action: 'delete', confirm: 'DELETE' }); account = null; close(); renderChip(); toast('Your account and data were deleted.', '🗑️');
           }) })),
-        el('p', { class: 'pf-fine' }, el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' · consent version ', account.consent?.version || '')),
+        el('p', { class: 'pf-fine' }, el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' · consent version ', account.consent?.version || ''))),
       el('div', { class: 'pf-row wrap pf-signout' },
         el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', onclick: run(async () => { await api({ action: 'logout' }); account = null; close(); renderChip(); await relink(); toast('Signed out.', '👋'); }) }),
         el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', onclick: run(async () => { await api({ action: 'logoutAll' }); account = null; close(); renderChip(); await relink(); toast('Signed out on every device.', '👋'); }) })));
@@ -185,7 +189,7 @@
     const card = (pre, name, sub, btn) => el('div', { class: 'pf-item' }, el('div', { class: 'pf-pre' }, pre), el('b', { text: name }), el('small', { text: sub }), btn);
     const eq = w.eq || {};
     if (shopTab === 'av') {
-      for (const k of c.avatars || Object.keys(FREE)) items.push(card(avatar(k, eq.bd, '', 48), cap(k), 'Free', el('button', { type: 'button', disabled: eq.av === k || undefined, onclick: () => shopAct('equip', { kind: 'av', key: k }), text: eq.av === k ? 'In use' : 'Use' })));
+      for (const k of c.avatars || window.AvatarArt.free) items.push(card(avatar(k, eq.bd, '', 48), cap(k), 'Free', el('button', { type: 'button', disabled: eq.av === k || undefined, onclick: () => shopAct('equip', { kind: 'av', key: k }), text: eq.av === k ? 'In use' : 'Use' })));
       for (const [k, price] of Object.entries(c.av).sort((x, y) => x[1] - y[1])) { const own = w.owned.av.includes(k);
         items.push(card(avatar(k, eq.bd, '', 48), cap(k), own ? 'Owned' : price + ' WP', own ? el('button', { type: 'button', disabled: eq.av === k || undefined, onclick: () => shopAct('equip', { kind: 'av', key: k }), text: eq.av === k ? 'In use' : 'Use' }) : el('button', { type: 'button', disabled: w.pts < price || undefined, onclick: () => shopAct('buy', { kind: 'av', key: k }), text: 'Buy · ' + price }))); }
     } else if (shopTab === 'bd' || shopTab === 'acc') {
@@ -232,14 +236,35 @@
         return el('button', { type: 'button', onclick: async () => { closeTray(); const q = mine('g', item); flyGift({ n: 0, t: 'g', id: st.meId, to: p.id, k: item }); try { await roomAct('throw', { item, target: p.id }); } catch (e) { drop(q); toast(e.message, '⚠️'); sfx('error'); } } }, avatar(c.av || 'cat', c.bd, c.acc, 34), el('small', { text: p.name })); }));
     document.body.append(tray);
   }
+  function openProfile() {
+    closeTray();
+    if (account) return openAccount();
+    const w = wallet(), eq = st?.social?.cos[st.meId] || w?.eq || {}, me = st?.players.find(p=>p.id===st.meId);
+    modal('Your Profile',
+      el('section', {class:'pf-hero'}, avatar(eq.av || 'cat', eq.bd, eq.acc, 72),
+        el('div', {class:'pf-who'}, el('b', {class:'pf-name',text:me?.name || 'Guest'}), el('small',{text:'Guest Profile'}))),
+      el('p', {class:'pf-wp'}, 'Your WP: ', el('b',{text:(w?.pts || 0).toLocaleString()})),
+      el('p', {class:'pf-note',text:'Guest WP and items belong to this room. Sign in to keep your collection across games.'}),
+      el('button', {type:'button',onclick:()=>openShop(),disabled:!w || undefined,text:'Open Shop'}),
+      el('button', {type:'button',class:'pf-ghost',onclick:openLogin,text:'Sign In with Google or Apple'}));
+  }
   function renderDock() {
-    const show = !!(st?.social && seat) && !OWN_TABLE_UI;
-    if (!show) { dock?.remove(); dock = null; closeTray(); return; }
-    const w = st.social.wallet;
-    const btn = (label, text, fn) => el('button', { type: 'button', 'aria-label': label, title: label, onclick: fn, text });
-    const next = el('div', { id: 'pf-dock' }, btn('Reactions', '😀', () => openTray('emote')), ...(st.players.some((p) => !p.bot && !p.departed && p.id !== st.meId) ? [btn('Throw a gift', '🎁', () => openTray('gift'))] : []), btn('Players', '👥', () => openTray('players')),
-      el('button', { type: 'button', class: 'pf-wpchip', 'aria-label': 'Shop', onclick: () => openShop(), text: '🏆 ' + w.pts }));
-    dock ? dock.replaceWith(next) : document.body.append(next); dock = next;
+    const inRoom = !!(st?.social && seat), w = wallet();
+    if (!inRoom) closeTray();
+    const btn = (label, art, fn, extra={}) => el('button', { type:'button', class:'pf-tool', 'aria-label':label, title:label, onclick:fn, ...extra }, art);
+    const tools = inRoom && !OWN_TABLE_UI ? [
+      btn('Reactions', window.EmoteArt.el('laugh',32), ()=>openTray('emote')),
+      ...(st.players.some(p=>!p.bot && !p.departed && p.id!==st.meId) ? [btn('Throw a Gift',window.AvatarArt.tool('gift'),()=>openTray('gift'))] : []),
+      btn('Players',window.AvatarArt.tool('players'),()=>openTray('players')),
+    ] : [];
+    const eq = account?.eq || st?.social?.cos[st.meId] || w?.eq;
+    const profileArt = eq?.av ? avatar(eq.av,eq.bd,eq.acc,32) : window.AvatarArt.tool('profile');
+    const next = el('div', { id:'pf-dock', role:'toolbar', 'aria-label':'Player Tools' }, ...tools,
+      btn('Shop',window.AvatarArt.tool('shop'),()=>{closeTray();openShop();},{disabled:!w || undefined,title:w?'Shop · '+w.pts.toLocaleString()+' WP':'Join a room or sign in to use the shop'}),
+      btn('Profile',profileArt,openProfile,{title:account?.nick || 'Your Profile'}));
+    document.body.classList.toggle('pf-native-tools',OWN_TABLE_UI);
+    document.body.classList.add('pf-floating-tools');
+    dock ? dock.replaceWith(next) : document.body.append(next); dock=next;
   }
   // my own emote / gift is shown the moment I tap it; when the server's copy comes back in the feed it is skipped once
   const pending = [];
@@ -285,7 +310,7 @@
     const aw = j.social.awards;
     if (aw && seenAward !== aw.match) { if (seenAward !== null || prev) { const n = aw.wp[j.meId]; if (n) { toast(`+${n} WP${j.social.wallet.account ? ' added to your account' : ' (guest: kept for this room only)'}`, '🏆'); sfx('win'); } else if (aw.note === 'solo') toast('No WP for games with bots only. Play with another person to earn WP.', 'ℹ️'); } seenAward = aw.match; }
     if (prev && prev.phase !== j.phase && PHASE_SFX[j.phase] && window.GameAudio?.game) sfx(PHASE_SFX[j.phase]);
-    if (!prev || prev.social.wallet.pts !== j.social.wallet.pts || prev.social.n !== j.social.n || prev.meId !== j.meId) { renderDock(); renderChip(); }
+    if (!prev || prev.social.wallet.pts !== j.social.wallet.pts || prev.social.n !== j.social.n || prev.meId !== j.meId || prev.players.filter(p=>!p.bot && !p.departed).length !== j.players.filter(p=>!p.bot && !p.departed).length) { renderChip(); }
   }
   window.fetch = async function (input, init) {
     const res = await real(input, init);
@@ -293,15 +318,8 @@
     return res;
   };
 
-  // ---------- the account chip ----------
-  let chip = null;
-  function renderChip() {
-    const w = wallet();
-    const next = account
-      ? el('button', { id: 'pf-chip', type: 'button', onclick: openAccount, title: 'Your account' }, avatar(account.eq?.av || 'cat', account.eq?.bd, account.eq?.acc, 30), el('span', { class: 'pf-cn' }, el('b', { text: account.nick || 'My account' }), el('small', { text: '🏆 ' + account.pts.toLocaleString() })))
-      : el('button', { id: 'pf-chip', type: 'button', class: 'guest', onclick: openLogin, title: 'Sign in with Google or Apple' }, el('span', { text: seat && w ? 'Guest · 🏆 ' + w.pts : 'Sign in' }), seat ? null : el('small', { text: 'or play as guest' }));
-    chip ? chip.replaceWith(next) : document.body.append(next); chip = next;
-  }
+  // Keep this entry point for wallet/sign-in updates; there is no second chip.
+  function renderChip() { document.getElementById('pf-chip')?.remove(); renderDock(); }
   window.Platform = { openLogin, openShop, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';

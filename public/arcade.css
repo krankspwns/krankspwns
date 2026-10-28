@@ -13,3 +13,5 @@
 .game-art:not(.train-hub-art)::after{content:'';position:absolute;inset:8px;border:1px solid #edcf8b44;border-radius:17px 17px 5px 5px;pointer-events:none}
 .game-card{border-color:#cfab6d30;background:linear-gradient(145deg,#1f2635,#101622);box-shadow:0 12px 35px #0003}
 @media(prefers-reduced-motion:reduce){.game-card:hover .game-art img{transform:none}}
+
+.brand-mark{line-height:1;letter-spacing:0;flex:none}

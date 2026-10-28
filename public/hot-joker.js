@@ -171,9 +171,7 @@
       host ? c.button('Shuffle seats', () => c.send('shuffleSeats'), 'secondary', state.order.length < 2, undefined, 'shuffle:blue') : null);
   }
   function logLine(c, e) {
-    if (e.kind === 'deal') return c.who(e.taker) + ' goes first.';
-    const size = sizeOf(c.state), sets = e.sets.map((r) => ' laid down ' + setName(r, size));
-    return c.who(e.taker) + ' took a card from ' + c.who(e.source) + (sets.length ? ' and' + sets.join(' and') + '!' : '.');
+    return c.who(e.taker) + ' laid down ' + e.sets.map(r=>setName(r,sizeOf(c.state))).join(' and ') + '.';
   }
   function privateNote(c) {
     const last = c.state.me.last; if (!last || c.state.phase !== 'playing') return null;
@@ -249,7 +247,8 @@
   }
   function logPanel(c) {
     const { state } = c;
-    return c.panel('log-panel', el('h3', {}, 'What happened'), el('ol', { class: 'log', reversed: true }, state.log.slice().reverse().map((e) => el('li', { class: e.sets?.length ? 'big' : '' }, logLine(c, e)))));
+    const events = state.log.filter(e=>e.sets?.length).slice().reverse();
+    return c.panel('log-panel', el('h3', {}, 'What Happened'), events.length ? el('ol', { class:'log', reversed:true }, events.map(e=>el('li',{class:'big'},logLine(c,e)))) : text('p','muted small','Laid-down sets will appear here.'));
   }
   function finale(c) {
     const { state, send } = c, host = state.hostId === state.meId, loser = state.loser, me = loser === state.meId;

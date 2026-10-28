@@ -5,10 +5,11 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 function build() {
+  require('./build-shared-art')(root);
   const files = JSON.parse(fs.readFileSync(path.join(root, 'src/order.json'), 'utf8'));
   const script = files.map((file) => `\n// Source: src/${file}\n${fs.readFileSync(path.join(root, 'src', file), 'utf8')}`).join('\n');
   new vm.Script(script, { filename: 'app.js' });
-  for (const file of ['arcade.js', 'platform.js', 'game-audio.js', 'game-guide.js', 'emote-art.js', 'grand-con.js', 'table-kit.js', 'bridge.js', 'hot-joker.js', 'last-train.js', 'last-train-audio.js', 'last-train-voice.js', 'last-train-notebook.js', 'last-train-letters.js', 'last-train-test-players.js', 'last-train-test-strategy.js']) new vm.Script(fs.readFileSync(path.join(root, 'public', file), 'utf8'), { filename: file });
+  for (const file of ['avatar-art.js', 'arcade.js', 'platform.js', 'game-audio.js', 'game-guide.js', 'emote-art.js', 'grand-con.js', 'table-kit.js', 'bridge.js', 'hot-joker.js', 'last-train.js', 'last-train-audio.js', 'last-train-voice.js', 'last-train-notebook.js', 'last-train-letters.js', 'last-train-test-players.js', 'last-train-test-strategy.js']) new vm.Script(fs.readFileSync(path.join(root, 'public', file), 'utf8'), { filename: file });
   fs.writeFileSync(path.join(root, 'public/app.js'), script);
   fs.copyFileSync(path.join(root, 'src/styles.css'), path.join(root, 'public/styles.css'));
   console.log(`Built ${files.length} frontend files`);

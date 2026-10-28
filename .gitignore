@@ -6,3 +6,5 @@ node_modules
 /public/styles.css
 /test-results/
 /playwright-report/
+
+/public/avatar-art.js

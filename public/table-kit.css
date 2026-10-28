@@ -181,3 +181,6 @@ button:has(> .btn-ico) { display: inline-flex; align-items: center; justify-cont
 .bot-btn.remove { border-color: #b85a5a66; background: #ff7a7a12; color: #ffc4c4; }
 .bot-btn.remove:hover:not(:disabled) { background: #ff7a7a26; color: #fff; }
 button:disabled .btn-ico { opacity: .5; }
+
+.tk-wordmark .tk-icon{display:grid;place-items:center;flex:none;line-height:0}
+.tk-wordmark .tk-icon svg{display:block}

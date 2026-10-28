@@ -7,7 +7,8 @@ const grandCon = require('../api/grand-con');
 const lastTrain = require('../api/last-train');
 const bridge = require('../api/bridge');
 const hotJoker = require('../api/hot-joker');
-const apis = { '/api/game': handler, '/api/grand-con': grandCon, '/api/last-train': lastTrain, '/api/bridge': bridge, '/api/hot-joker': hotJoker };
+const platform = require('../api/platform');
+const apis = { '/api/game': handler, '/api/grand-con': grandCon, '/api/last-train': lastTrain, '/api/bridge': bridge, '/api/hot-joker': hotJoker, '/api/platform': platform };
 const root = path.resolve(__dirname, '../public');
 const types = { '.woff2': 'font/woff2', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer(async (req, res) => {
