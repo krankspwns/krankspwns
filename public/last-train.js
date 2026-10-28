@@ -496,7 +496,7 @@
       el('span', { class: 'lt-spacer' }),
       (() => { const b = svgButton('lt-pill sound-pill', SOUND_MODES[sfx.mode], ICONS.sound[sfx.mode], e => soundMenu(e.currentTarget)); b.insertAdjacentHTML('beforeend', '<svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'); b.setAttribute('aria-haspopup', 'menu'); return b; })(),
       (() => { const b = el('button', { type: 'button', class: 'lt-pill lang-pill', 'aria-haspopup': 'menu', 'aria-label': 'Language', title: 'Language', onclick: e => langMenu(e.currentTarget) }, el('span', { 'data-no-tr': '' }, i18n.LANGS[i18n.lang][0])); b.insertAdjacentHTML('beforeend', '<svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'); return b; })(),
-      inRoom && w ? (() => { const b = svgButton('lt-iconbtn shop-button', 'Shop · ' + w.wp + ' WP', ICONS.shop, () => social.openShop()); b.append(txt('b', 'wp-badge', w.wp + ' WP')); return b; })() : null);
+      window.Platform?.shopButton(inRoom && w ? {points:w.wp, open:()=>social.openShop()} : {}) || null);
     const title = el('a', { href: '/last-train.html', class: 'lt-title' }, txt('i', '', ''), trainMark('brand-icon'), txt('span', '', 'LAST TRAIN'), txt('i', '', ''));
     if (!inRoom) return el('header', { class: 'lt-header' }, top, title);
     const host = state.hostId === state.meId, aboard = state.players.filter(p => !p.departed && (state.phase === 'lobby' || p.alive)).length;

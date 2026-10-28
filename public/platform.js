@@ -248,8 +248,20 @@
       el('button', {type:'button',onclick:()=>openShop(),disabled:!w || undefined,text:'Open Shop'}),
       el('button', {type:'button',class:'pf-ghost',onclick:openLogin,text:'Sign In with Google or Apple'}));
   }
+  function shopButton(options = {}) {
+    const w = wallet(), points = options.points ?? w?.pts;
+    const b = el('button', {type:'button',class:'pf-header-shop', 'aria-label':points == null ? 'Shop' : 'Shop · '+points+' WP', title:points == null ? 'Shop' : 'Shop · '+points+' WP', onclick:options.open || (()=>{closeTray();openShop();})}, window.AvatarArt.tool('shop'));
+    if (options.open) b.dataset.nativeWallet = '1';
+    if (points != null) b.append(el('b',{class:'pf-shop-wp','data-no-tr':'',text:points >= 10000 ? Math.round(points / 1000)+'k' : String(points)}));
+    return b;
+  }
+  function refreshHeaderShop() {
+    // Native Row and Last Train keep their own room-wallet updates.
+    document.querySelectorAll('.pf-header-shop:not([data-native-wallet])').forEach(b=>b.replaceWith(shopButton()));
+  }
   function renderDock() {
     const inRoom = !!(st?.social && seat), w = wallet();
+    refreshHeaderShop();
     if (!inRoom) closeTray();
     const btn = (label, art, fn, extra={}) => el('button', { type:'button', class:'pf-tool', 'aria-label':label, title:label, onclick:fn, ...extra }, art);
     const tools = inRoom && !OWN_TABLE_UI ? [
@@ -260,7 +272,7 @@
     const eq = account?.eq || st?.social?.cos[st.meId] || w?.eq;
     const profileArt = eq?.av ? avatar(eq.av,eq.bd,eq.acc,32) : window.AvatarArt.tool('profile');
     const next = el('div', { id:'pf-dock', role:'toolbar', 'aria-label':'Player Tools' }, ...tools,
-      btn('Shop',window.AvatarArt.tool('shop'),()=>{closeTray();openShop();},{disabled:!w || undefined,title:w?'Shop · '+w.pts.toLocaleString()+' WP':'Join a room or sign in to use the shop'}),
+      ...(PAGE === 'arcade' ? [btn('Shop',window.AvatarArt.tool('shop'),()=>{closeTray();openShop();},{disabled:!w || undefined,title:w?'Shop · '+w.pts.toLocaleString()+' WP':'Join a room or sign in to use the shop'})] : []),
       btn('Profile',profileArt,openProfile,{title:account?.nick || 'Your Profile'}));
     document.body.classList.toggle('pf-native-tools',OWN_TABLE_UI);
     document.body.classList.add('pf-floating-tools');
@@ -320,7 +332,7 @@
 
   // Keep this entry point for wallet/sign-in updates; there is no second chip.
   function renderChip() { document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

@@ -5,7 +5,7 @@ async function checkDock(page) {
   await expect(page.locator('#pf-chip')).toHaveCount(0);
   const dock=page.locator('#pf-dock');
   await expect(dock).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
-  for(const label of ['Shop','Profile']) await expect(dock.getByRole('button',{name:label,exact:true})).toHaveCount(1);
+  for(const label of ['Profile']) await expect(dock.getByRole('button',{name:label,exact:true})).toHaveCount(1);
   const geometry=await dock.locator('button').evaluateAll(buttons=>buttons.map(b=>{
     const r=b.getBoundingClientRect(),a=b.firstElementChild.getBoundingClientRect(),s=getComputedStyle(b);
     return {x:r.x,right:r.right,width:r.width,height:r.height,dx:Math.abs(a.x+a.width/2-r.x-r.width/2),dy:Math.abs(a.y+a.height/2-r.y-r.height/2),bg:s.backgroundColor};
@@ -22,13 +22,13 @@ for(const width of [320,390,1100]) {
     await page.fill('#tk-name','Host');
     await page.getByRole('button',{name:'Create a Room'}).click();
     await expect(page.locator('.large-code')).toBeVisible();
-    await expect(page.locator('#pf-dock button')).toHaveCount(4);
+    await expect(page.locator('#pf-dock button')).toHaveCount(3);
     await checkDock(page);
     await page.locator('#pf-dock').getByRole('button',{name:'Reactions',exact:true}).click();
     await expect(page.locator('.pf-tray svg').first()).toBeVisible();
     await page.locator('.pf-tray').getByRole('menuitem',{name:'laugh',exact:true}).click();
     await expect(page.locator('.pf-float')).toBeVisible();
-    await page.locator('#pf-dock').getByRole('button',{name:'Shop',exact:true}).click();
+    await page.locator('.pf-header-shop').click();
     await expect(page.locator('.pf-item .pf-av svg')).toHaveCount(C.AVATARS.length+Object.keys(C.PREMIUM).length);
     expect(await page.evaluate(()=>AvatarArt.keys.sort())).toEqual([...C.AVATARS,...Object.keys(C.PREMIUM)].sort());
     const ids=await page.locator('.pf-grid [id]').evaluateAll(ns=>ns.map(n=>n.id));
@@ -44,7 +44,7 @@ for(const width of [320,390,1100]) {
     const code=(await page.locator('.large-code').textContent()).trim();
     const joined=await page.request.post('/api/hot-joker',{data:{action:'join',requestId:crypto.randomUUID(),code,name:'Friend'}});
     expect(joined.ok()).toBe(true);
-    await expect(page.locator('#pf-dock button')).toHaveCount(5);
+    await expect(page.locator('#pf-dock button')).toHaveCount(4);
     await expect(page.locator('#pf-dock').getByRole('button',{name:'Throw a Gift'})).toBeVisible();
     await checkDock(page);
     await page.evaluate(()=>scrollTo(0,document.body.scrollHeight));
@@ -62,7 +62,7 @@ for(const width of [320,390]) {
       return route.fulfill({json:body?{account}:{config:{enabled:false},catalog,dailyCap:400,account}});
     });
     await page.goto('/hot-joker.html');
-    await expect(page.locator('#pf-dock button')).toHaveCount(2);
+    await expect(page.locator('#pf-dock button')).toHaveCount(1);
     await checkDock(page);
     await page.locator('#pf-dock').getByRole('button',{name:'Profile',exact:true}).click();
     const dialog=page.getByRole('dialog',{name:'Your account'});
@@ -89,5 +89,29 @@ for(const width of [320,390]) {
     const avatarFit=await page.locator('#pf-dock .pf-av').evaluate(e=>{const r=e.getBoundingClientRect(),s=e.querySelector('svg').getBoundingClientRect();return {dx:Math.abs(r.x+r.width/2-s.x-s.width/2),dy:Math.abs(r.y+r.height/2-s.y-s.height/2),inside:s.width<r.width};});
     expect(avatarFit.dx).toBeLessThan(1);expect(avatarFit.dy).toBeLessThan(1);expect(avatarFit.inside).toBe(true);
     await page.screenshot({path:testInfo.outputPath('profile.png'),fullPage:true});
+  });
+}
+
+for(const game of ['bridge','hot-joker','grand-con','last-train']) {
+  test(game+': header keeps sound, language and wallet shop together',async({page},testInfo)=>{
+    await page.setViewportSize({width:320,height:844});
+    const account={id:'header-profile',nick:'Benny',provider:'google',pts:99584,eq:{av:'panda'},owned:{av:[],bd:[],acc:[]},gifts:{}};
+    await page.route('**/api/platform',route=>route.fulfill({json:{config:{enabled:false},catalog,dailyCap:400,account}}));
+    await page.goto('/'+game+'.html');
+    const shop=page.locator('.pf-header-shop');
+    await expect(shop).toBeVisible();
+    // Wait for account loading; native Last Train's home header has no game poll to redraw it.
+    await expect(shop.locator('.pf-shop-wp')).toHaveText('100k');
+    await expect(page.locator('#pf-dock').getByRole('button',{name:'Shop',exact:true})).toHaveCount(0);
+    const bounds=await shop.evaluate(b=>{
+      const r=b.getBoundingClientRect(),s=b.querySelector('.pf-art').getBoundingClientRect();
+      return {right:r.right,dx:Math.abs(s.x+s.width/2-r.x-r.width/2),dy:Math.abs(s.y+s.height/2-r.y-r.height/2)};
+    });
+    expect(bounds.right).toBeLessThanOrEqual(320);expect(bounds.dx).toBeLessThan(1);expect(bounds.dy).toBeLessThan(1);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+    await shop.click();
+    await expect(page.getByRole('dialog',{name:'Shop',exact:true})).toBeVisible();
+    await page.locator('.pf-x').click();
+    await page.screenshot({path:testInfo.outputPath('header.png')});
   });
 }

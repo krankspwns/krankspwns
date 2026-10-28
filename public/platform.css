@@ -230,3 +230,11 @@ details.pf-privacy{display:block;padding:0;overflow:hidden}
 #pf-dock .pf-tool:hover:not(:disabled){background:rgba(17,19,38,.94);transform:scale(1.06)}
 @media(max-width:600px){.tk-header,.gc-header{flex-wrap:wrap}.tk-header>.header-tools,.gc-header>.header-tools{flex-basis:100%;justify-content:flex-end}}
 html[lang^=zh] .tk-shell,html[lang^=zh] .gc-shell{font-family:Inter,'PingFang SC','PingFang TC','Microsoft YaHei',sans-serif}
+
+/* Shared header shop: the same storefront and compact gold wallet badge as Row. */
+.pf-header-shop{position:relative;display:grid;place-items:center;flex:none;box-sizing:border-box;width:40px;height:40px;min-width:40px;padding:7px;margin:0 0 8px 2px;overflow:visible;border-radius:50%;border:1px solid rgba(255,150,110,.55);background:linear-gradient(135deg,rgba(255,176,46,.22),rgba(255,77,141,.22));cursor:pointer;line-height:0;box-shadow:none}
+.pf-header-shop>.pf-art,.pf-header-shop>.pf-art svg{display:block;width:24px;height:24px}
+.pf-header-shop .pf-shop-wp{position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);min-width:20px;padding:1px 5px;border-radius:99px;border:2px solid #111326;background:linear-gradient(180deg,#ffe9a8,#d9b55f);color:#1a1407;font:800 10px/1.25 system-ui,sans-serif;text-align:center;white-space:nowrap;box-shadow:0 2px 6px #0006;pointer-events:none}
+.pf-header-shop:hover{filter:brightness(1.12);transform:none}
+.pf-header-shop:focus-visible{outline:2px solid #edcf8b;outline-offset:3px}
+.lt-header .lt-topbar .lt-pill{border-radius:99px;background:rgba(255,255,255,.06);border:1px solid #ffffff1a;box-shadow:none}
