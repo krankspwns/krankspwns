@@ -5,7 +5,7 @@
   const rankName = (r) => RANK_NAME[r] || r + 's';
   const sizeOf = (s) => s.settings?.setSize || 2;
   const setName = (r, size) => (size === 4 ? 'four ' + rankName(r) : 'a pair of ' + rankName(r));
-  let pick = -1, sel = -1, pickKey = '', cur = null, seen = null, prev = { hand: [], rects: new Map() };
+  let pickRect = null, pick = -1, sel = -1, pickKey = '', cur = null, seen = null, prev = { hand: [], rects: new Map() };
   const calm = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---- animation: cards flying between players, hand reordering ----
@@ -17,6 +17,20 @@
     const at = (r, k) => 'translate(' + (r.left + r.width / 2 - w / 2) + 'px,' + (r.top + r.height / 2 - h / 2) + 'px) scale(' + k + ')';
     const a = n.animate([{ transform: at(from, 0.6), opacity: 0.9 }, { transform: at(from, 1.1), opacity: 1, offset: 0.2 }, { transform: at(to, scaleTo), opacity: 1 }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
     const end = () => { n.remove(); done?.(); }; a.onfinish = end; a.oncancel = end;
+  }
+  // the card I picked turns over where it lay, then travels into my hand
+  function flipFly(c, code, from, to, done) {
+    if (!from || !to || calm()) { done?.(); return; }
+    const w = from.width, h = from.height, wrap = document.createElement('div'), inner = document.createElement('div');
+    wrap.className = 'hj-fly hj-flip'; wrap.style.width = w + 'px'; wrap.style.height = h + 'px';
+    inner.className = 'hj-flip-in'; const back = c.cardBack(), face = c.card(code); face.classList.add('hj-flip-face');
+    for (const n of [back, face]) { n.style.width = '100%'; n.style.height = '100%'; }
+    inner.append(back, face); wrap.append(inner); document.body.append(wrap);
+    const at = (r, k) => 'translate(' + (r.left + r.width / 2 - w / 2) + 'px,' + (r.top + r.height / 2 - h / 2) + 'px) scale(' + k + ')';
+    const k2 = Math.min(1.4, to.width / w || 1);
+    const a = wrap.animate([{ transform: at(from, 1), offset: 0 }, { transform: at(from, 1.18), offset: 0.3 }, { transform: at(from, 1.18), offset: 0.45 }, { transform: at(to, k2), offset: 1 }], { duration: 1150, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+    inner.animate([{ transform: 'rotateY(0deg)', offset: 0 }, { transform: 'rotateY(180deg)', offset: 0.35 }, { transform: 'rotateY(180deg)', offset: 1 }], { duration: 1150, easing: 'ease-in-out', fill: 'forwards' });
+    const end = () => { wrap.remove(); done?.(); }; a.onfinish = end; a.oncancel = end;
   }
   function burst(node, label) {
     if (!node || calm()) return;
@@ -54,7 +68,9 @@
         if (e.taker === me && last?.card) {
           const idx = hand.indexOf(last.card), tgt = idx >= 0 ? cards[idx] : null;
           if (tgt) { tgt.style.opacity = 0; handled.add(last.card); }
-          fly(c, last.card, src?.getBoundingClientRect(), tgt ? tgt.getBoundingClientRect() : dst?.getBoundingClientRect(), tgt ? 1 : 0.5, () => { if (tgt) tgt.style.opacity = ''; pair(); });
+          const landed = () => { if (tgt) tgt.style.opacity = ''; pair(); }, dest = tgt ? tgt.getBoundingClientRect() : dst?.getBoundingClientRect();
+          if (pickRect && Date.now() - pickRect.at < 8000) { const from = pickRect; pickRect = null; flipFly(c, last.card, from, dest, landed); }
+          else fly(c, last.card, src?.getBoundingClientRect(), dest, tgt ? 1 : 0.5, landed);
         } else if (e.source === me && last?.card) {
           fly(c, last.card, prev.rects.get(last.card) || row?.getBoundingClientRect(), dst?.getBoundingClientRect(), 0.5, pair);
         } else fly(c, null, src?.getBoundingClientRect(), dst?.getBoundingClientRect(), 0.5, pair);
@@ -195,7 +211,7 @@
     return c.panel('take-panel active', text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
       el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + ' hidden card' + (state.sourceCount === 1 ? '' : 's') + '. One of them might be the Joker. Tap a card to choose it, then confirm.'),
       el('div', { class: 'pick-row', 'data-scroll': 'pick' }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable' + (pick === i ? ' selected' : ''), 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, 'aria-pressed': pick === i, disabled: c.busy, onclick: () => { pick = i; c.render(); } }))),
-      c.button(pick >= 0 ? 'Take card ' + (pick + 1) : 'Choose a card', async () => { const i = pick; if (await send('take', { index: i, turn: state.turn })) pick = -1; }, 'primary', pick < 0, 'take-confirm', 'hand:ink'));
+      c.button(pick >= 0 ? 'Take card ' + (pick + 1) : 'Choose a card', async () => { const i = pick; const pr = document.querySelectorAll('.pick-row .pcard')[i]?.getBoundingClientRect(); if (pr) pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now() }; if (await send('take', { index: i, turn: state.turn })) pick = -1; }, 'primary', pick < 0, 'take-confirm', 'hand:ink'));
   }
   function handPanel(c) {
     const { state, send } = c, hand = state.me.hand, playing = state.phase === 'playing';
