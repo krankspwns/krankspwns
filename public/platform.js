@@ -276,22 +276,37 @@
       svg.innerHTML='<rect width="100%" height="100%" fill="white"/><path fill="#14182b" d="'+path+'"/>';image.replaceChildren(svg);
     } catch(e) {if(overlay===ov)image.textContent=e.message;}
   }
-  function roomBar({code,page,phase,onLeave,onRecovery}) {
+  function roomBar({code,page,phase,onLeave,onRecovery,body=[],count}) {
     const link=location.origin+page+'?room='+code;
-    const icon=k=>window.AvatarArt.icon(k,16);
+    const icon=k=>['link','copy','qr','users'].includes(k)?window.AvatarArt.tool(k):window.AvatarArt.icon(k,16);
     const menu=el('div',{class:'pf-invite-menu',role:'menu',hidden:true});
     const item=(label,key,fn)=>el('button',{type:'button',role:'menuitem',onclick:fn},icon(key),label);
     menu.append(item('Copy Room Code','copy',()=>copyRoomText(code)),item('Copy Invite Link','link',()=>copyRoomText(link)),item('QR Code','qr',()=>roomQR(code,link)));
     if(onRecovery)menu.append(guestOnly(item('Rejoin Code','lock',()=>{closeInvite();onRecovery();}),true));
     const wrap=el('span',{class:'pf-invite-wrap'});
-    const invite=el('button',{type:'button',class:'pf-room-invite','aria-haspopup':'menu','aria-expanded':'false',onclick:()=>{
+    const invite=el('button',{type:'button',class:'pf-room-action pf-room-invite','aria-haspopup':'menu','aria-expanded':'false',onclick:()=>{
       const open=menu.hidden;closeInvite();if(open){menu.hidden=false;invite.setAttribute('aria-expanded','true');activeInvite={menu,button:invite,wrap};}
     },onkeydown:e=>{if(e.key==='ArrowDown'){e.preventDefault();menu.hidden=false;invite.setAttribute('aria-expanded','true');activeInvite={menu,button:invite,wrap};menu.querySelector('button').focus();}}},icon('link'),'Invite',window.AvatarArt.icon('caret',11));
     wrap.append(invite,menu);
-    return el('section',{class:'room-bar pf-room-bar'+(phase==='lobby'?' pf-room-waiting':''),'aria-label':'Room'},
-      el('div',{class:'pf-room-identity'},el('span',{class:'eyebrow',text:'Room Code'}),el('b',{class:'room-code'+(phase==='lobby'?' large-code':''),'data-no-tr':'',text:code})),
-      el('div',{class:'room-actions'},wrap,el('button',{type:'button',class:'pf-room-leave',onclick:onLeave},icon('logout'),'Leave Room')));
+    const players=el('button',{type:'button',class:'pf-room-action pf-room-players',onclick:()=>{closeInvite();modal('Players',...playerRows());}},icon('users'),'Players');
+    const leave=el('button',{type:'button',class:'pf-room-action pf-room-leave',onclick:onLeave},'Leave Room');
+    const label=el('div',{class:'pf-room-label',text:'Room Code'});
+    const roomCode=el('div',{class:'room-code '+(phase==='lobby'?'large-code pf-lobby-code':'pf-game-code'),'data-no-tr':'',text:code});
+    return el('section',{class:'pf-room-bar'+(phase==='lobby'?' pf-room-waiting':''),'aria-label':'Room'},
+      ...(phase==='lobby'?[label,roomCode,el('div',{class:'pf-room-actions'},wrap,players),count?el('div',{class:'pf-room-count',text:count}):null,...body,el('div',{class:'pf-room-footer'},leave)]
+        :[el('div',{class:'pf-room-identity'},label,roomCode),el('div',{class:'pf-room-actions'},players,wrap,leave)]));
   }
+  function roomSeats({players,max,meId,hostId,avatar,status}) {
+    return el('div',{class:'pf-room-seats'},...Array.from({length:Math.max(max,players.length)},(_,i)=>{
+      const p=players[i];
+      if(!p)return el('div',{class:'pf-room-seat empty'},el('span',{class:'pf-seat-avatar pf-empty-avatar','aria-hidden':'true',text:'+'}),el('div',{class:'pf-seat-name',text:'Waiting…'}));
+      const face=avatar(p.id);face.classList.add('pf-seat-avatar');
+      return el('div',{class:'pf-room-seat seat'+(p.id===meId?' me mine':'')+(p.bot?' seat-bot':'')+(p.departed?' seat-away':'')},face,
+        el('div',{class:'pf-seat-name seat-name',title:p.name,'data-no-tr':''},el('b',{text:p.name+(p.id===meId?' · You':'')})),
+        el('small',{class:'pf-seat-tag',text:p.departed?'AWAY':p.bot?['BOT',status?.(p)].filter(Boolean).join(' · '):status?.(p)||(p.id===hostId?'HOST':'JOINED')}));
+    }));
+  }
+
   function settingsButton() {
     return el('button',{type:'button',class:'pf-settings-btn','aria-label':'Settings',title:'Settings',onclick:openSettings},window.AvatarArt.tool('settings'));
   }
@@ -406,7 +421,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, roomBar, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, roomBar, roomSeats, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

@@ -38,3 +38,35 @@ for(const game of ['bridge','hot-joker','grand-con']) {
     await expect(room).toBeVisible();
   });
 }
+
+test('Shared waiting room uses Row’s actual room-code, panel and button styles',async({browser})=>{
+  const context=await browser.newContext({reducedMotion:'reduce'}),page=await context.newPage();
+  try {
+    for(const width of [320,390,1100]) {
+      await page.setViewportSize({width,height:844});
+      const styles=async selectors=>{
+        await page.evaluate(()=>document.fonts.ready);
+        return page.evaluate(selectors=>Object.fromEntries(Object.entries(selectors).map(([key,selector])=>{
+          const s=getComputedStyle(document.querySelector(selector));
+          const props=key==='panel'?['padding','borderRadius','backgroundColor','borderTopColor','boxShadow','rowGap','fontFamily']:key==='code'?['fontSize','fontWeight','letterSpacing','backgroundImage','lineHeight','paddingLeft']:key==='label'?['fontSize','letterSpacing','fontWeight','opacity','color']:['fontFamily','fontSize','fontWeight','letterSpacing','padding','borderRadius','borderTopColor','backgroundImage','backgroundColor','color'];
+          return [key,Object.fromEntries(props.map(p=>[p,s[p]]))];
+        })),selectors);
+      };
+      await page.goto('/reckoning.html');
+      if(await page.locator('#player-name').count()) {await page.fill('#player-name','Style');await page.getByRole('button',{name:'Create a new room',exact:true}).click();}
+      await expect(page.locator('.waitroom')).toBeVisible();
+      const reference=await styles({panel:'.waitroom',code:'.bigcode',label:'.waitroom>.kicker',invite:'.waitact .invwrap>button',players:'.waitact>button'});
+      for(const game of ['bridge','hot-joker','grand-con']) {
+        await page.goto('/'+game+'.html');
+        const name=page.locator(game==='grand-con'?'#gc-name':'#tk-name');
+        if(await name.count()){await name.fill('Style');await page.getByRole('button',{name:/^Create a (Room|room)$/}).click();}
+        await expect(page.locator('.pf-room-waiting')).toBeVisible();
+        const actual=await styles({panel:'.pf-room-waiting',code:'.pf-lobby-code',label:'.pf-room-label',invite:'.pf-room-invite',players:'.pf-room-players'});
+        expect(actual,game+' at '+width+'px').toEqual(reference);
+        await expect(page.locator('.pf-room-waiting .pf-room-seats')).toBeVisible();
+        await expect(page.locator('.waiting-card')).toHaveCount(0);
+        expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+      }
+    }
+  } finally {await context.close();}
+});

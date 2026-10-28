@@ -173,8 +173,8 @@
           el('details', {'data-guest-only':'landing'}, el('summary', {}, 'Rejoin on Another Phone'), el('p', {}, 'Use your same name and saved rejoin code.'), el('label', { htmlFor: 'tk-recovery' }, 'Rejoin Code'), el('input', { id: 'tk-recovery', value: recover, autocomplete: 'off', oninput: (e) => { recover = e.target.value; } })),
           text('p', 'muted small', L.note)));
     }
-    function roomBar() {
-      return Platform.roomBar({code:state.code,page:cfg.page,phase:state.phase,onRecovery:showRecovery,onLeave:async()=>{
+    function roomBar(extra = {}) {
+      return Platform.roomBar({code:state.code,page:cfg.page,phase:state.phase,...extra,onRecovery:showRecovery,onLeave:async()=>{
         if(await GameGuide.leaveRoom(state.recoveryCode))send('leave');
       }});
     }
@@ -198,9 +198,11 @@
     }
     function waitingRoom() {
       const host = state.meId === state.hostId, n = state.players.filter((p) => !p.departed).length, reason = cfg.startBlock(state, n);
-      return el('div', { class: 'lobby-grid' }, panel('waiting-card', cfg.landing.art ? el('div', { class: 'lobby-art' }, cfg.landing.art()) : null, text('span', 'eyebrow', 'WAITING FOR FRIENDS'), el('h1', {}, 'Who’s ready?'), el('p', { class: 'muted' }, 'Share this room code with your friends.'),
-        el('div', { class: 'chips' }, cfg.waitingChips.map((c) => text('span', '', c))), cfg.waiting ? cfg.waiting(ctx()) : null, botControls(),
-        host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason, undefined, 'play:ink') : text('p', 'waiting', 'Waiting for the host to start…'), reason ? text('p', 'muted small', reason) : null, button('How to Play', openRules, 'text-button')), roster(cfg.rosterTag));
+      return roomBar({count:n+' of '+cfg.max+' players have joined',body:[
+        cfg.waiting ? cfg.waiting(ctx()) : null,
+        Platform.roomSeats({players:state.order?state.order.map(id=>state.players.find(p=>p.id===id)).filter(Boolean):state.players,max:cfg.max,meId:state.meId,hostId:state.hostId,avatar,status:p=>cfg.rosterTag?.(p,state)}),
+        botControls(),host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason, undefined, 'play:ink') : text('p', 'waiting', 'Waiting for the host to start…'),
+        reason ? text('p','muted small',reason) : null]});
     }
     const ctx = () => ({ state, send, busy, error, el, text, button, icon, card, cardBack, who, avatar, render, panel, roster, botControls, fresh, announce, dialog, SUIT, rankLabel, countdown: () => text('span', 'countdown', ''), read, store });
     // A screen that fails to draw must never leave the player staring at "Loading": offer a way out.
@@ -217,7 +219,7 @@
       const openDetails = [...root.querySelectorAll('details[open][data-details]')].map((n) => n.dataset.details);
       const scrolls = [...root.querySelectorAll('[data-scroll]')].map((n) => [n.dataset.scroll, n.scrollLeft, n.scrollTop]);
       const content = !seat ? landing() : !state ? panel('', el('h2', {}, 'Loading your game…'), el('p', { class: 'muted' }, 'Getting your room ready.'), button('Try again', poll, 'secondary')) : state.phase === 'lobby' ? waitingRoom() : safeScreen();
-      root.replaceChildren(...[header(), error ? el('div', { class: 'error-banner', role: 'alert' }, error, button('Close', () => { error = ''; render(); }, 'text-button')) : null, seat && !connected ? text('div', 'connection-banner', 'Reconnecting… Your place is saved.') : null, state && seat ? roomBar() : null, state?.notice ? text('p', 'connection-banner', state.notice) : null, content, el('footer', { class: 'tk-footer' }, cfg.footer)].filter(Boolean));
+      root.replaceChildren(...[header(), error ? el('div', { class: 'error-banner', role: 'alert' }, error, button('Close', () => { error = ''; render(); }, 'text-button')) : null, seat && !connected ? text('div', 'connection-banner', 'Reconnecting… Your place is saved.') : null, state && seat && state.phase !== 'lobby' ? roomBar() : null, state?.notice ? text('p', 'connection-banner', state.notice) : null, content, el('footer', { class: 'tk-footer' }, cfg.footer)].filter(Boolean));
       for (const n of root.querySelectorAll('details[data-details]')) if (openDetails.includes(n.dataset.details)) n.open = true;
       for (const [key, left, top] of scrolls) { const n = root.querySelector('[data-scroll="' + key + '"]'); if (n) { n.scrollLeft = left; n.scrollTop = top; } }
       const restored = focus ? document.getElementById(focus) : focusKey ? [...root.querySelectorAll('[data-focus]')].find((n) => n.dataset.focus === focusKey) : null;

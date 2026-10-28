@@ -252,25 +252,31 @@ html[lang^=zh] .tk-shell,html[lang^=zh] .gc-shell{font-family:Inter,'PingFang SC
 .pf-settings-options button[aria-pressed=true]{border-color:#edcf8b;background:#d9b55f33;color:#ffe9a8}
 /* Guests keep code recovery; account-linked players rejoin with their login. */
 body.pf-signed-in [data-guest-only=landing],body.pf-signed-in.pf-account-seat [data-guest-only=room]{display:none!important}
-/* Row of Reckoning room controls: prominent gold code and a single Invite menu. */
-.room-bar.pf-room-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:18px 20px;margin:0 0 20px;border:1px solid #ffffff1a;border-radius:20px;background:linear-gradient(145deg,#ffffff0a,#ffffff04)}
-.pf-room-bar .pf-room-identity{display:flex;align-items:baseline;gap:12px}
-.pf-room-bar .eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:2px;color:#b9b2a7}
-.pf-room-bar .room-code{margin:0;font-size:28px;font-weight:700;line-height:1.1;letter-spacing:.14em;color:#ffe4a0}
-.room-bar.pf-room-waiting{flex-direction:column;justify-content:center;text-align:center;gap:22px;padding:30px 20px}
-.pf-room-waiting .pf-room-identity{display:grid;gap:14px;justify-items:center}
-.pf-room-waiting .room-code{font-size:clamp(52px,14vw,96px);padding-left:.14em;background:linear-gradient(90deg,#b49653,#ffe9a8,#d8b76a);background-clip:text;-webkit-background-clip:text;color:transparent}
-.pf-room-bar .room-actions{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
-.pf-room-bar .room-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;box-sizing:border-box;min-height:44px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;line-height:1.25;border-radius:12px;box-shadow:none;text-transform:none;letter-spacing:0;cursor:pointer}
-.pf-room-bar .room-actions .pf-room-invite{color:#f3ecda;border:1px solid #a68c5366;background:linear-gradient(180deg,#d9b55f47,#d9b55f1f)}
-.pf-room-bar .room-actions .pf-room-leave{color:#e4decf;border:1px solid #ffffff26;background:#ffffff08}
-.pf-invite-wrap{position:relative;display:inline-flex}
-.pf-invite-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:120;min-width:210px;max-width:calc(100vw - 48px);padding:6px;border-radius:14px;border:1px solid #a68c5366;background:#191a2d;box-shadow:0 14px 40px #0009}
-.pf-invite-menu[hidden]{display:none}
-.pf-room-bar .pf-invite-menu button{display:flex;justify-content:flex-start;width:100%;text-align:left;padding:10px;white-space:nowrap;border:0;border-radius:9px;background:transparent;color:#f3ecda}
-.pf-room-bar .pf-invite-menu button:hover{background:#ffffff12;transform:none}
-.pf-room-bar button:focus-visible{outline:2px solid #ffe4a0;outline-offset:2px}
+/* Room component structure; visual rules are generated from Row's styles.css. */
+.pf-room-bar{font-family:var(--display);font-size:15px;line-height:normal;color:var(--text);min-width:0}
+.pf-room-bar:not(.pf-room-waiting){display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pf-room-identity{display:flex;align-items:baseline;gap:10px}
+.pf-room-bar .room-code{margin:0;line-height:1}
+.pf-room-actions{margin:0}
+.pf-room-bar .pf-room-action{line-height:normal;min-height:0;text-transform:none}
+.pf-room-bar .pf-art{display:inline-block;flex:none;width:16px;height:16px;line-height:0;vertical-align:middle}
+.pf-room-bar .pf-art svg{display:block;width:100%;height:100%}
+.pf-room-bar .pf-invite-wrap{align-self:center}
+.pf-room-bar .pf-invite-menu[hidden]{display:none}
+.pf-room-bar button:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.pf-room-bar .pf-invite-menu{max-width:calc(100vw - 56px);text-align:left}
+.pf-room-bar .pf-seat-avatar{flex:none;border-radius:50%;width:54px;height:54px;grid-area:av}
+.pf-room-bar .pf-seat-name{margin:0;line-height:normal}
+.pf-room-bar .pf-seat-name b{font-weight:inherit;font-size:inherit;line-height:inherit}
+.pf-room-bar .pf-seat-tag{line-height:normal;white-space:normal}
+.pf-empty-avatar{display:grid;place-items:center;border:1px dashed var(--gold-lo);color:var(--gold-lo);font-size:24px}
+.pf-room-bar>.bot-controls,.pf-room-bar>.seat-order,.pf-room-bar>.seat-preview,.pf-room-bar>.pace-settings{width:100%;min-width:0;margin:0}
+.pf-room-bar .seat-order>.eyebrow,.pf-room-bar .seat-order>.order-list,.pf-room-bar .seat-preview>.partners{display:none}
+.pf-room-bar .seat-order,.pf-room-bar .seat-preview{display:grid;gap:10px}
+.pf-room-bar .pace-settings{margin:0;text-align:center}
+.pf-room-bar>.start-ticket{width:100%;max-width:900px}
+.pf-room-footer{display:flex;justify-content:center;width:100%}
 .pf-room-qr{max-width:260px;width:100%;margin:auto;background:white;border-radius:14px;padding:8px;box-sizing:border-box;color:#14182b}
 .pf-room-qr svg{display:block;width:100%;height:auto}
 .pf-qr-code{display:block;text-align:center;font-size:28px;letter-spacing:.14em;color:#ffe4a0}
-@media(max-width:380px){.room-bar.pf-room-bar{padding:20px 14px}.pf-room-bar .room-actions button{font-size:12px;padding:10px 12px}.pf-room-bar:not(.pf-room-waiting) .room-actions{width:100%}}
+@media(prefers-reduced-motion:reduce){.pf-room-bar .room-code,.pf-room-bar .pf-invite-menu{animation:none!important}}

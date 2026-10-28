@@ -6,6 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 function build() {
   require('./build-shared-art')(root);
+  require('./build-row-room')(root);
   const files = JSON.parse(fs.readFileSync(path.join(root, 'src/order.json'), 'utf8'));
   const script = files.map((file) => `\n// Source: src/${file}\n${fs.readFileSync(path.join(root, 'src', file), 'utf8')}`).join('\n');
   new vm.Script(script, { filename: 'app.js' });

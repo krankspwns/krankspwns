@@ -8,3 +8,5 @@ node_modules
 /playwright-report/
 
 /public/avatar-art.js
+
+/public/row-room.css
