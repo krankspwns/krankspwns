@@ -256,7 +256,7 @@
     const p = st.players.find((q) => q.id === item.id), c = st.social.cos[item.id] || {};
     const f = el('div', { class: 'pf-float', style: `--x:${10 + Math.random() * 70}%` }, avatar(c.av || 'cat', c.bd, c.acc, 30), el('small', { text: p?.name || '' }), emoteArt(item.k));
     document.body.append(f); setTimeout(() => f.remove(), 2800);
-    if (window.GameAudio && window.GameAudio.prefs().sfx && CLIPS.has(item.k)) { try { const a = clip(item.k).cloneNode(); a.volume = 0.8; a.play().catch(() => sfx('pop')); } catch { sfx('pop'); } } else sfx('pop');
+    if (window.GameAudio && window.GameAudio.prefs().sfx && CLIPS.has(item.k)) { try { const a = clip(item.k).cloneNode(); a.volume = 0.8; a.play().catch(() => sfx('pop')); } catch { sfx('pop'); } } else sfx(CLIPS.has(item.k) ? 'pop' : 'emo_' + item.k);
   }
   function flyGift(item) {
     if (document.hidden) return;

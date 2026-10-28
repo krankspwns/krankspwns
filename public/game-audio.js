@@ -50,6 +50,17 @@
     pop: (t) => tone(520, t, 0.12, { type: 'sine', gain: 0.18, to: 1040 }),
     whoosh: (t) => { noise(t, 0.35, 0.18, 700); tone(300, t, 0.3, { type: 'sine', gain: 0.08, to: 80 }); },
     error: (t) => { tone(160, t, 0.18, { type: 'sawtooth', gain: 0.08 }); },
+    // one little sound for each drawn reaction (same feel as Row of Reckoning)
+    emo_laugh: (t) => [0, 1, 2, 3, 4].forEach((i) => { noise(t + i * 0.12, 0.04, 0.08, 2400); tone(330 - i * 14, t + i * 0.12, 0.1, { type: 'triangle', gain: 0.16 - i * 0.02, to: 290 - i * 16 }); }),
+    emo_wow: (t) => { tone(260, t, 0.38, { gain: 0.2, to: 980 }); tone(520, t + 0.02, 0.34, { type: 'triangle', gain: 0.08, to: 1960 }); },
+    emo_cry: (t) => [[620, 480], [540, 360]].forEach(([f, to], i) => tone(f, t + i * 0.32, 0.3, { gain: 0.1, to })),
+    emo_cool: (t) => { tone(330, t, 0.18, { type: 'triangle', gain: 0.1, to: 392 }); tone(494, t + 0.18, 0.38, { type: 'triangle', gain: 0.1 }); },
+    emo_fire: (t) => { noise(t, 0.6, 0.14, 800); for (let i = 0; i < 8; i++) noise(t + 0.05 + i * 0.06, 0.03, 0.12, 2500); },
+    emo_rip: (t) => [196, 185, 175, 147].forEach((f, i) => tone(f, t + i * 0.2, i === 3 ? 0.5 : 0.18, { type: 'sawtooth', gain: 0.08, to: f * (i === 3 ? 0.9 : 1) })),
+    emo_angry: (t) => { tone(95, t, 0.5, { type: 'sawtooth', gain: 0.2, to: 70 }); noise(t, 0.45, 0.12, 300); },
+    emo_think: (t) => { tone(220, t, 0.5, { gain: 0.14, to: 232 }); tone(330, t + 0.5, 0.22, { type: 'triangle', gain: 0.13, to: 392 }); },
+    emo_heart: (t) => { [0, 0.15].forEach((d) => tone(110, t + d, 0.16, { gain: 0.22, to: 55 })); [659, 784, 988, 1319].forEach((f, i) => tone(f, t + 0.38 + i * 0.11, i === 3 ? 0.9 : 0.5, { gain: 0.07 })); },
+    emo_trophy: (t) => [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.11, i === 3 ? 0.5 : 0.14, { type: 'square', gain: 0.07 })),
   };
   function sfx(name) {
     if (!prefs.sfx || !boot() || !SFX[name]) return;
