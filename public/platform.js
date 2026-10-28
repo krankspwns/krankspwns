@@ -51,7 +51,9 @@
     if (localStorage.getItem(game[1]) !== value) throw Error('Allow browser storage to keep your seat while switching.');
     localStorage.setItem('arcade-last-game', move.game);
     moving = true;
-    location.replace('/' + move.game + '.html?room=' + move.code);
+    Promise.resolve(window.GameTransfer?.begin(move.game, game[0])).then(() => {
+      location.replace('/' + move.game + '.html?room=' + move.code);
+    });
   }
   function watchSwitch(path, init, data, responseOK) {
     if (!responseOK) return;
@@ -64,6 +66,7 @@
     if (data.roomSwitch) { followSwitch(data, owner); return; }
     if (body.action === 'leave') { switchSeat = null; switchState = null; renderDock(); return; }
     if (!data.meId || !tok || !Array.isArray(data.players)) return;
+    window.GameTransfer?.ready();
     if (switchState && switchSeat.code === data.code && switchSeat.pid === data.meId && switchState.version > data.version) return;
     const signature = value => value ? [value.hostId, value.meId, [...value.players, ...(value.observers || [])].filter(p => !p.bot && !p.departed && !p.kicked && !p.released).length].join(':') : '';
     const changed = signature(switchState) !== signature(data);

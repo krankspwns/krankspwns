@@ -35,9 +35,12 @@ for (const width of [320, 390, 1100]) test('whole party switches games without r
       }
       await picker.getByRole('button', { name: new RegExp(titles[game]) }).click();
       await pages[0].getByRole('button', { name: 'Switch everyone to ' + titles[game], exact: true }).click();
+      await expect(pages[0].locator('.pf-transfer')).toBeVisible();
+      await expect(pages[0].locator('.pf-transfer-name')).toHaveText(titles[game]);
       for (let i = 0; i < pages.length; i++) {
         if (i === 1 && width === 390 && game === 'hot-joker') await contexts[1].setOffline(false);
         await expect(pages[i]).toHaveURL(new RegExp('/' + game + '.html(?:\\?room=|$)'));
+        await expect(pages[i].locator('.pf-transfer')).toHaveCount(0);
         await expect.poll(async () => pages[i].evaluate(k => JSON.parse(localStorage.getItem(k) || 'null')?.pid, SEATS[game])).toBe(i === 0 ? host.meId : friend.meId);
       }
       await expect(pages[0].getByRole('button', { name: 'Switch game', exact: true })).toBeVisible();
@@ -47,4 +50,34 @@ for (const width of [320, 390, 1100]) test('whole party switches games without r
     }
     expect(errors).toEqual([]);
   } finally { await Promise.all(contexts.map(c => c.close())); }
+});
+
+for (const reducedMotion of ['reduce', 'no-preference']) test('transfer screen waits for destination room, '+reducedMotion, async ({browser,request},testInfo)=>{
+  const host=await post(request,'bridge',{action:'create',name:'Traveller'});
+  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion});
+  let release;const gate=new Promise(resolve=>{release=resolve;});
+  try {
+    await context.addInitScript(({host})=>{
+      localStorage.setItem('br-seat',JSON.stringify({code:host.code,pid:host.meId,tok:host.tok}));
+      sessionStorage.setItem('kp-game-transfer',JSON.stringify({game:'bridge',title:'Hidden Alliance',at:Date.now()}));
+    },{host});
+    const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.route('**/api/bridge*',async route=>{await gate;await route.continue();});
+    if(reducedMotion==='reduce')await page.clock.install();
+    await page.goto('/bridge.html?room='+host.code);
+    const screen=page.locator('.pf-transfer');
+    await expect(screen).toBeVisible();await expect(screen).toContainText('Teleporting to another game…');await expect(screen).toContainText('Hidden Alliance');
+    expect(await page.locator('.pf-transfer-track i').evaluate(e=>getComputedStyle(e).animationName)).toBe(reducedMotion==='reduce'?'none':'pf-transfer-travel');
+    await page.screenshot({path:testInfo.outputPath('teleporting.png')});
+    if(reducedMotion==='reduce'){
+      await page.clock.fastForward(16000);
+      await expect(screen.getByRole('button',{name:'Retry loading'})).toBeVisible();
+      await expect(screen).toContainText('Your seat is saved.');
+    }
+    release();await expect(screen).toHaveCount(0,{timeout:10000});
+    await expect(page.locator('html')).not.toHaveClass(/pf-transferring/);
+    expect(await page.evaluate(()=>sessionStorage.getItem('kp-game-transfer'))).toBeNull();
+    await expect(page.locator('.large-code')).toContainText(host.code);
+    expect(errors).toEqual([]);
+  }finally{release();await context.close();}
 });

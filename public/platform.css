@@ -326,3 +326,21 @@ html.pf-page-lock{overflow:hidden;overscroll-behavior:none}
 
 #pf-dock{max-width:calc(100vw - 24px);flex-wrap:wrap;justify-content:flex-end}
 .pf-box button.pf-switch-choice b{font:inherit;font-weight:700}
+
+/* One continuous, calm transition while the party moves between games. */
+html.pf-transferring{background:#101522!important}
+html.pf-transferring body{visibility:hidden}
+.pf-transfer{visibility:visible;position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px 24px;background:radial-gradient(ellipse at 50% 40%,#2c3348,#101522 70%);color:#f4ead8;text-align:center;font-family:Inter,system-ui,sans-serif;opacity:1;transition:opacity .3s ease;color-scheme:dark}
+.pf-transfer img{object-fit:contain;filter:drop-shadow(0 8px 24px #d5b57530)}
+.pf-transfer .pf-transfer-label{margin:0;color:#bfae8d;font-size:10px;font-weight:700;letter-spacing:2.5px}
+.pf-transfer h1{max-width:560px;margin:8px 0 0;font-size:clamp(26px,5vw,40px);font-weight:650;line-height:1.2;letter-spacing:-.8px;color:#f4ead8}
+.pf-transfer .pf-transfer-name{margin:0;color:#e4c88f;font-size:18px;font-weight:600}
+.pf-transfer .pf-transfer-note{max-width:340px;margin:4px 0;color:#b9c1d2;font-size:13px;line-height:1.6}
+.pf-transfer-track{width:160px;height:3px;margin-top:12px;overflow:hidden;background:#ffffff16;border-radius:4px}
+.pf-transfer-track i{display:block;width:45%;height:100%;background:#e4c88f;border-radius:4px;animation:pf-transfer-travel 1.3s ease-in-out infinite alternate}
+.pf-transfer button{min-height:44px;padding:10px 20px;border:1px solid #bfae8d80;border-radius:12px;background:#273145;color:#f4ead8;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.pf-transfer button:focus-visible{outline:3px solid #e4c88f;outline-offset:4px}
+.pf-transfer.pf-transfer-done{opacity:0;pointer-events:none}
+html.pf-transferring:has(.pf-transfer-done) body{visibility:visible}
+@keyframes pf-transfer-travel{from{transform:translateX(0)}to{transform:translateX(123%)}}
+@media(prefers-reduced-motion:reduce){.pf-transfer{transition:none}.pf-transfer-track i{animation:none;width:100%}}
