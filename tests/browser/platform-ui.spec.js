@@ -176,6 +176,7 @@ for(const game of ['bridge','hot-joker','grand-con','last-train','reckoning']) {
     // Signing out brings guest code controls back without a page reload.
     await page.locator('#pf-dock').getByRole('button',{name:'Profile',exact:true}).click();
     await page.getByRole('button',{name:'Sign out',exact:true}).click();
+    await page.getByRole('dialog',{name:'Sign out?',exact:true}).getByRole('button',{name:'Sign out',exact:true}).click();
     await expect(page.locator('body')).not.toHaveClass(/pf-signed-in/);
     if(game==='last-train')await page.getByRole('button',{name:'Invite ▾',exact:true}).click();
     if(game==='reckoning')await page.locator('#setBtn').click();

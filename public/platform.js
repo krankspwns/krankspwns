@@ -47,13 +47,35 @@
   const catalog = () => st?.social?.prices || config?.catalog;
 
   // ---------- sign-in ----------
-  let overlay = null;
-  const close = () => { overlay?.remove(); overlay = null; document.body.classList.remove('pf-lock'); };
+  let overlay = null, pageLock = null, returnFocus = null;
+  function lockPage() {
+    if(pageLock)return;
+    const props=['position','top','left','right','width'];
+    pageLock={x:scrollX,y:scrollY,styles:props.map(k=>[k,document.body.style.getPropertyValue(k),document.body.style.getPropertyPriority(k)])};
+    returnFocus=document.activeElement;
+    Object.assign(document.body.style,{position:'fixed',top:-pageLock.y+'px',left:'0',right:'0',width:'100%'});
+    document.body.classList.add('pf-lock');document.documentElement.classList.add('pf-page-lock');
+  }
+  function close() {
+    overlay?.remove();overlay=null;
+    if(pageLock){
+      const saved=pageLock;pageLock=null;
+      saved.styles.forEach(([k,value,priority])=>value?document.body.style.setProperty(k,value,priority):document.body.style.removeProperty(k));
+      document.body.classList.remove('pf-lock');document.documentElement.classList.remove('pf-page-lock');
+      window.scrollTo({left:saved.x,top:saved.y,behavior:'instant'});
+      if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});returnFocus=null;
+    }
+  }
+  function dismissModal() {
+    if(overlay?.dataset.pending)return;
+    if(overlay?.onDismiss)overlay.onDismiss();else close();
+  }
   function modal(title, ...body) {
-    close();
-    overlay = el('div', { class: 'pf-ov', onclick: (e) => { if (e.target === overlay) close(); } }, el('div', { class: 'pf-box', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
-      el('div', { class: 'pf-head' }, el('h2', { text: title }), el('button', { type: 'button', class: 'pf-x', 'aria-label': 'Close', onclick: close, text: '✕' })), ...body));
-    document.body.append(overlay); document.body.classList.add('pf-lock'); return overlay;
+    // Replacing a popup keeps the original page position locked throughout.
+    lockPage();overlay?.remove();
+    overlay = el('div', { class: 'pf-ov', onclick: (e) => { if (e.target === overlay) dismissModal(); } }, el('div', { class: 'pf-box', role: 'dialog', 'aria-modal': 'true', 'aria-label': title,tabindex:-1 },
+      el('div', { class: 'pf-head' }, el('h2', { text: title }), el('button', { type: 'button', class: 'pf-x', 'aria-label': 'Close', onclick: dismissModal, text: '✕' })), ...body));
+    document.body.append(overlay);overlay.querySelector('.pf-box').focus({preventScroll:true});return overlay;
   }
   const script = (src) => new Promise((ok, bad) => { if ([...document.scripts].some((s) => s.src === src)) return ok(); const s = el('script', { src, async: true }); s.onload = ok; s.onerror = bad; document.head.append(s); });
   function setBusy(on) {   // full-dialog spinner while the server verifies the sign-in
@@ -160,14 +182,41 @@
             const j = await api({ action: 'export' }), url = URL.createObjectURL(new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' }));
             el('a', { href: url, download: 'krankspwns-my-data.json' }).click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
           }) }),
-          el('button', { type: 'button', class: 'pf-danger', text: 'Delete My Account', onclick: run(async () => {
-            if (prompt('This permanently deletes your account, WP and items. Type DELETE to confirm.') !== 'DELETE') return;
-            await api({ action: 'delete', confirm: 'DELETE' }); account = null; close(); renderChip(); toast('Your account and data were deleted.', '🗑️');
-          }) })),
+          el('button', { type: 'button', class: 'pf-danger', text: 'Delete My Account', 'data-account-action':'delete', onclick: () => confirmAccountAction('delete') })),
         el('p', { class: 'pf-fine' }, el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' · consent version ', account.consent?.version || ''))),
       el('div', { class: 'pf-row wrap pf-signout' },
-        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', onclick: run(async () => { await api({ action: 'logout' }); account = null; close(); renderChip(); await relink(); toast('Signed out.', '👋'); }) }),
-        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', onclick: run(async () => { await api({ action: 'logoutAll' }); account = null; close(); renderChip(); await relink(); toast('Signed out on every device.', '👋'); }) })));
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out', 'data-account-action':'logout', onclick:()=>confirmAccountAction('logout') }),
+        el('button', { type: 'button', class: 'pf-ghost', text: 'Sign out everywhere', 'data-account-action':'logoutAll', onclick:()=>confirmAccountAction('logoutAll') })));
+  }
+
+  function confirmAccountAction(action) {
+    const deleting=action==='delete', everywhere=action==='logoutAll';
+    const title=deleting?'Delete your account?':everywhere?'Sign out everywhere?':'Sign out?';
+    const label=deleting?'Delete My Account':everywhere?'Sign out everywhere':'Sign out';
+    const previousScroll=overlay?.querySelector('.pf-box').scrollTop || 0, privacyOpen=!!overlay?.querySelector('.pf-privacy')?.open;
+    const cancel=()=>{
+      openAccount();const box=overlay.querySelector('.pf-box');box.querySelector('.pf-privacy').open=privacyOpen;
+      box.scrollTop=previousScroll;box.querySelector('[data-account-action="'+action+'"]').focus({preventScroll:true});
+    };
+    let pending=false;
+    const error=el('p',{class:'pf-confirm-error',role:'alert',hidden:true});
+    const input=deleting?el('input',{id:'pf-delete-confirm',type:'text',autocomplete:'off',autocapitalize:'off',spellcheck:'false','aria-label':'Type DELETE to confirm',placeholder:'DELETE',oninput:e=>{submit.disabled=e.target.value!=='DELETE';}}):null;
+    const submit=el('button',{type:'submit',class:'pf-confirm-go'+(deleting?' pf-danger':''),text:label,disabled:deleting || undefined});
+    const back=el('button',{type:'button',class:'pf-ghost',text:'Cancel',onclick:cancel});
+    const form=el('form',{class:'pf-account-confirm',onsubmit:async e=>{
+      e.preventDefault();if(pending || deleting && input.value!=='DELETE')return;
+      pending=true;ov.dataset.pending='1';submit.disabled=true;back.disabled=true;if(input)input.disabled=true;error.hidden=true;
+      try {
+        await api({action,...(deleting?{confirm:'DELETE'}:{})});account=null;close();renderChip();
+        if(!deleting)await relink();
+        toast(deleting?'Your account and data were deleted.':everywhere?'Signed out on every device.':'Signed out.',deleting?'🗑️':'👋');
+      } catch(e) {
+        pending=false;delete ov.dataset.pending;submit.disabled=deleting && input.value!=='DELETE';back.disabled=false;if(input)input.disabled=false;
+        error.textContent=e.message;error.hidden=false;
+      }
+    }},el('p',{class:'pf-note',text:deleting?'This permanently deletes your account, WP and items. Type DELETE to confirm.':everywhere?'This signs you out on every device. Your account, WP and items will stay saved.':'Sign out on this device? Your account, WP and items will stay saved.'}),
+      deleting?el('label',{for:'pf-delete-confirm',text:'Type DELETE to confirm'}):null,input,error,el('div',{class:'pf-row'},back,submit));
+    const ov=modal(title,form);ov.onDismiss=cancel;back.focus({preventScroll:true});
   }
 
   // ---------- shop ----------
@@ -439,7 +488,15 @@
     renderChip();
   })();
   document.addEventListener('click', (e) => { if (tray && !e.composedPath().some((n) => n.matches?.('.pf-tray, #pf-dock'))) closeTray(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTray(); close(); } });
+  document.addEventListener('keydown', (e) => {
+    if(e.key==='Escape') {closeTray();if(overlay){e.preventDefault();e.stopImmediatePropagation();dismissModal();}}
+    if(e.key==='Tab' && overlay) {
+      const controls=[...overlay.querySelectorAll('button,input,select,textarea,a[href],summary,[tabindex="0"]')].filter(n=>!n.disabled && n.getClientRects().length);
+      const first=controls[0],last=controls.at(-1);if(!first)return;
+      if(e.shiftKey && (document.activeElement===first || !controls.includes(document.activeElement))){e.preventDefault();last.focus();}
+      else if(!e.shiftKey && (document.activeElement===last || !controls.includes(document.activeElement))){e.preventDefault();first.focus();}
+    }
+  });
 })();
 
 

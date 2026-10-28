@@ -6,6 +6,14 @@
 
   add({'Sign in to the same account and enter the room code to return.':'登录同一个账号，并输入房间代码即可返回。'});
 
+  add({
+    'Sign out?':'退出登录？', 'Sign out everywhere?':'退出所有设备？', 'Delete your account?':'删除你的账户？',
+    'Sign out on this device? Your account, WP and items will stay saved.':'要在此设备上退出登录吗？你的账户、WP 和物品都会保留。',
+    'This signs you out on every device. Your account, WP and items will stay saved.':'这会在所有设备上退出登录。你的账户、WP 和物品都会保留。',
+    'Type DELETE to confirm':'输入 DELETE 确认',
+    'This permanently deletes your account, WP and items. Type DELETE to confirm.':'这会永久删除你的账户、WP 和物品。输入 DELETE 确认。'
+  });
+
   // Header, entrance and room
   add({
     'Last Train · The Game Room': '末班列车 · 游戏室', 'Last Train · Every cabin hides a secret.': '末班列车 · 每个包厢都藏着秘密。',
