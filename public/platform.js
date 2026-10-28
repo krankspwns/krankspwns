@@ -79,7 +79,7 @@
     const ui = { error: el('p', { class: 'pf-err', role: 'alert', hidden: true }), gbox: el('div', { class: 'pf-gbox' }), nonce: '' };
     const a = el('input', { type: 'checkbox', id: 'pf-c1' }), b = el('input', { type: 'checkbox', id: 'pf-c2' });
     const buttons = el('div', { class: 'pf-providers', 'aria-disabled': 'true' });
-    const sync = () => buttons.classList.toggle('off', !(a.checked && b.checked));
+    const sync = () => { const on = a.checked && b.checked; buttons.classList.toggle('off', !on); document.querySelector('.pf-hint')?.toggleAttribute('hidden', on); };
     a.onchange = b.onchange = sync;
     if (config.google) buttons.append(ui.gbox);
     if (config.apple) buttons.append(el('button', { type: 'button', class: 'pf-apple', onclick: async () => {
@@ -89,11 +89,25 @@
         const r = await AppleID.auth.signIn(); await finishLogin('apple', r.authorization.id_token, ui.nonce, ui);
       } catch (e) { if (e && e.error !== 'popup_closed_by_user') { ui.error.textContent = 'Apple sign-in did not finish.'; ui.error.hidden = false; } }
     }, text: ' Continue with Apple' }));
-    modal('Sign in', el('p', { class: 'pf-note', text: 'Sign in to keep your WP, avatars, borders and gifts in every game. You can also play as a guest: guests earn WP in a room, but it is gone when they leave the room or switch game.' }),
-      el('label', { class: 'pf-check', for: 'pf-c1' }, a, el('span', {}, 'I have read the ', el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' and agree that my data is collected and used as it describes.')),
-      el('label', { class: 'pf-check', for: 'pf-c2' }, b, el('span', { text: 'I am 13 or older, or a parent or guardian has agreed for me.' })),
-      buttons, ui.error, el('p', { class: 'pf-fine', text: 'We keep no name, email address or photo from Google or Apple. You can download or delete your data any time from your account.' }),
-      el('button', { type: 'button', class: 'pf-ghost', onclick: close, text: 'Keep playing as a guest' }));
+    const perk = (icon, title, text) => el('li', {}, el('span', { class: 'pf-perk', text: icon }), el('div', {}, el('b', { text: title }), el('small', { text })));
+    const ov = modal('',
+      el('section', { class: 'pf-login-hero' },
+        el('div', { class: 'pf-logo', 'aria-hidden': 'true' }, ...['🃏', '🏆', '🎁'].map((t) => el('span', { text: t }))),
+        el('h2', { text: 'Join the Game Room' }), el('p', { text: 'One account for every game. Your WP and style go wherever you play.' })),
+      el('ul', { class: 'pf-perks' },
+        perk('🏆', 'Keep your WP', 'Earn WP by winning with friends and spend it in any game'),
+        perk('🎨', 'Your own style', 'Avatars, borders and accessories are yours in every game'),
+        perk('🎁', 'Gifts & reactions', 'Your gifts follow you from room to room')),
+      el('section', { class: 'pf-consent' },
+        el('label', { class: 'pf-check', for: 'pf-c1' }, a, el('span', {}, 'I have read the ', el('a', { href: '/privacy.html', target: '_blank', rel: 'noopener', text: 'Privacy Notice' }), ' and agree to my data being used as it describes.')),
+        el('label', { class: 'pf-check', for: 'pf-c2' }, b, el('span', { text: 'I am 13 or older, or a parent or guardian agrees for me.' }))),
+      buttons, el('p', { class: 'pf-hint', text: 'Tick both boxes to continue' }), ui.error,
+      el('p', { class: 'pf-fine', text: 'We keep no name, email or photo from Google or Apple. Download or delete your data any time.' }),
+      el('div', { class: 'pf-or' }, el('span', { text: 'or' })),
+      el('button', { type: 'button', class: 'pf-ghost pf-guest', onclick: close, text: 'Play as a guest' }),
+      el('p', { class: 'pf-fine', text: 'Guests earn WP inside a room, but it is lost when they leave the room or change game.' }));
+    ov.querySelector('.pf-head')?.remove();
+    ov.querySelector('.pf-box').prepend(el('button', { type: 'button', class: 'pf-x pf-x-float', 'aria-label': 'Close', onclick: close, text: '✕' }));
     sync();
     try { if (config.google) await script('https://accounts.google.com/gsi/client'); await prepare(ui); } catch { ui.error.textContent = 'Could not reach the sign-in service. Check your connection.'; ui.error.hidden = false; }
   }

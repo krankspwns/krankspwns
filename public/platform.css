@@ -71,3 +71,17 @@ body.pf-lock{overflow:hidden}
 .pf-switch input:checked{background:#7c5cff}.pf-switch input:checked::after{transform:translateX(20px)}
 .pf-signout button{flex:1}
 
+
+/* sign-in dialog */
+.pf-box{position:relative}.pf-x-float{position:absolute;top:10px;right:10px;z-index:2}
+.pf-login-hero{text-align:center;padding:22px 12px 6px;margin:-18px -18px 0;border-radius:18px 18px 0 0;background:radial-gradient(120% 90% at 50% 0%,#4b34b8 0%,#241c5c 55%,#15172e 100%)}
+.pf-login-hero h2{font-size:24px;margin:10px 0 4px}.pf-login-hero p{margin:0 auto;max-width:320px;opacity:.8;font-size:14px}
+.pf-logo{display:flex;justify-content:center;gap:10px}.pf-logo span{width:54px;height:54px;display:grid;place-items:center;font-size:28px;border-radius:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);transform:rotate(-6deg)}
+.pf-logo span:nth-child(2){transform:translateY(-6px) scale(1.1);background:rgba(255,210,63,.2)}.pf-logo span:nth-child(3){transform:rotate(6deg)}
+.pf-perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.pf-perks li{display:flex;gap:12px;align-items:center}.pf-perks div{display:flex;flex-direction:column}.pf-perks small{opacity:.7}
+.pf-perk{width:40px;height:40px;flex:none;display:grid;place-items:center;font-size:20px;border-radius:12px;background:rgba(255,255,255,.08)}
+.pf-consent{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:14px}
+.pf-providers{min-height:44px;transition:opacity .2s}.pf-hint{margin:-4px 0 0;text-align:center;font-size:13px;color:#ffd23f}
+.pf-or{display:flex;align-items:center;gap:10px;opacity:.6;font-size:13px}.pf-or::before,.pf-or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.25)}
+.pf-guest{width:100%}.pf-box .pf-fine{text-align:center}
