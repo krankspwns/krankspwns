@@ -85,5 +85,5 @@ body.pf-lock{overflow:hidden}
 .pf-providers{min-height:44px;transition:opacity .2s}.pf-hint{margin:-4px 0 0;text-align:center;font-size:13px;color:#ffd23f}
 .pf-or{display:flex;align-items:center;gap:10px;opacity:.6;font-size:13px}.pf-or::before,.pf-or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.25)}
 .pf-guest{width:100%}.pf-box .pf-fine{text-align:center}
-.pf-gbox{color-scheme:dark;border-radius:22px;overflow:hidden;background:transparent;min-height:44px}
-.pf-gbox iframe{color-scheme:dark;background:transparent!important}
+.pf-gbox{width:280px;height:40px;min-height:0;border-radius:20px;overflow:hidden;background:#131314;clip-path:inset(0 round 20px);box-shadow:none;line-height:0}
+.pf-gbox>div,.pf-gbox iframe{border-radius:20px;box-shadow:none!important;margin:0!important}
