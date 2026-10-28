@@ -8,11 +8,19 @@ module.exports = function buildSharedArt(root) {
   const start = source.indexOf('const eyes ='), end = source.indexOf('const GIFT_ART =');
   const fit = source.match(/^const AV_FIT = .*$/m)?.[0];
   const settings = read('src/settings.js');
+  const guide = settings.match(/const GUIDE_ICON = ('[^\n]*');/)?.[1];
+  const icons = read('src/icons.js').split('const COLOR_ICONS =')[0];
+  const lineIcons = ['volume-x','volume-2','music','caret'].map(key=>{
+    const row=icons.split('\n').find(line=>line.startsWith("  '"+key+"':") || line.startsWith('  '+key+':'));
+    if(!row)throw Error('Missing header icon: '+key);
+    return JSON.stringify(key)+':'+row.slice(row.indexOf(':')+1).trim().replace(/,$/,'');
+  }).join(',');
   const shop = settings.match(/const SHOP_ICON = ('[^\n]*');/)?.[1];
   const gift = settings.match(/GIFT_ICON = ('[^\n]*');/)?.[1];
   const users = read('src/icons.js').split('const COLOR_ICONS =')[1].match(/  users: ('[^\n]*'),/)?.[1];
-  if (start < 0 || end <= start || !fit || !shop || !gift || !users) throw Error('Shared artwork sources changed; update build-shared-art.js.');
-  const out = `// Generated from src/avatars.js, src/icons.js and src/settings.js. Do not edit.\n(() => {\n'use strict';\n${source.slice(start,end)}\n${fit}\nconst TOOLS = {shop:${shop}, gift:${gift}, players:${users}, profile:'<circle cx="16" cy="10" r="6" fill="#8fd3ff"/><path d="M4 29v-3a12 12 0 0124 0v3z" fill="#6b8cff"/><path d="M11 8q1-3 5-3" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'};
+  if (start < 0 || end <= start || !fit || !shop || !gift || !users || !guide) throw Error('Shared artwork sources changed; update build-shared-art.js.');
+  const out = `// Generated from src/avatars.js, src/icons.js and src/settings.js. Do not edit.\n(() => {\n'use strict';\n${source.slice(start,end)}\n${fit}\nconst LINE_ICONS = {${lineIcons}};
+const TOOLS = {guide:${guide},shop:${shop}, gift:${gift}, players:${users}, profile:'<circle cx="16" cy="10" r="6" fill="#8fd3ff"/><path d="M4 29v-3a12 12 0 0124 0v3z" fill="#6b8cff"/><path d="M11 8q1-3 5-3" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'};
 let uid=0;
 function unique(html) {
   const suffix='shared-av-'+(++uid);
@@ -30,7 +38,11 @@ function avatar(key,acc='') {
   const badge=LEGEND_KEYS.includes(key)?LEGEND_BADGE:PREMIUM_KEYS.includes(key)?STAR_BADGE:'';
   return svg('<circle cx="24" cy="24" r="24" fill="'+bg+'"/>'+portrait+(ACC[acc]?accFit(key,acc):'')+badge);
 }
-window.AvatarArt={el:avatar,free:AVATAR_KEYS,has:key=>Object.hasOwn(AVATARS,key),keys:Object.keys(AVATARS),tool:key=>svg(TOOLS[key]||TOOLS.profile,32)};
+function icon(key,size=17) {
+  const n=svg('<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+LINE_ICONS[key]+'</g>',24);
+  n.classList.add('pf-line-icon');n.style.width=n.style.height=size+'px';return n;
+}
+window.AvatarArt={icon,el:avatar,free:AVATAR_KEYS,has:key=>Object.hasOwn(AVATARS,key),keys:Object.keys(AVATARS),tool:key=>svg(TOOLS[key]||TOOLS.profile,32)};
 })();\n`;
   fs.writeFileSync(path.join(root,'public/avatar-art.js'),out);
 };

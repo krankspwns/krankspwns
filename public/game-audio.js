@@ -87,7 +87,7 @@
   document.addEventListener('pointerdown', (e) => { startMusic(); if (e.target.closest?.('button, [role=button], a')) sfx('tap'); }, true);
   // one shared header dropdown (same look as Row of Reckoning's sound control). A single element is reused, so it survives the games' re-renders.
   let menuHost = null;
-  const MODES = [['🔇', 'Sound off'], ['🔊', 'Effects'], ['🎵', 'Effects + music']];
+  const MODES = [['volume-x', 'Sound off'], ['volume-2', 'Effects'], ['music', 'Effects + music']];
   const mode = () => (!prefs.sfx ? 0 : prefs.music ? 2 : 1);
   function setMode(m) { prefs.sfx = m > 0; prefs.music = m > 1; save(); if (m > 1) startMusic(); else stopMusic(); if (m > 0) sfx('coin'); drawMenu(); }
   function drawMenu() {
@@ -95,12 +95,13 @@
     const h = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
     const cur = mode(), open = menuHost.classList.contains('open');
     const btn = h('button', 'pf-ddbtn'); btn.type = 'button'; btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', 'Sound: ' + MODES[cur][1]); btn.title = 'Sound: ' + MODES[cur][1];
-    btn.append(h('span', '', MODES[cur][0]), h('i', 'pf-ddcaret', '▾'));
+    const caret=window.AvatarArt.icon('caret',11);caret.classList.add('pf-ddcaret');
+    btn.append(window.AvatarArt.icon(MODES[cur][0]),caret);
     btn.onclick = (e) => { e.stopPropagation(); menuHost.classList.toggle('open'); btn.setAttribute('aria-expanded', String(menuHost.classList.contains('open'))); };
     const list = h('div', 'pf-ddmenu'); list.setAttribute('role', 'menu');
     MODES.forEach(([ic, label], m) => {
       const b = h('button', m === cur ? 'on' : ''); b.type = 'button'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(m === cur));
-      b.append(h('span', '', ic), h('span', '', label)); b.onclick = (e) => { e.stopPropagation(); menuHost.classList.remove('open'); setMode(m); };
+      b.append(window.AvatarArt.icon(ic), h('span', '', label)); b.onclick = (e) => { e.stopPropagation(); menuHost.classList.remove('open'); setMode(m); };
       list.append(b);
     });
     menuHost.replaceChildren(btn, list);

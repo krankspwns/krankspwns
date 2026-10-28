@@ -82,7 +82,7 @@
     if (seat && !seat.tok) seat = null;
     if (invitation && seat?.code !== invitation) { seat = null; store(cfg.seatKey, null); }
     if (seat) try { localStorage.setItem('arcade-last-game', cfg.game); } catch {}
-    const who = (id) => state?.players.find((p) => p.id === id)?.name || 'Player';
+    const who = (id) => window.GameI18n?.protectName(state?.players.find((p) => p.id === id)?.name) || state?.players.find((p) => p.id === id)?.name || 'Player';
     const announce = (message) => { document.getElementById('tk-announcer').textContent = message; };
     // ico is an icon name, optionally with a colour: 'plus:green'
     const button = (label, click, kind = '', disabled = false, focus, ico) => el('button', { type: 'button', class: kind, 'data-focus': focus || (typeof label === 'string' ? label : ''), onclick: click, disabled: busy || disabled }, ...(ico ? [icon(ico.split(':')[0], 'btn-ico ic-' + (ico.split(':')[1] || 'gold'))] : []), label);
@@ -164,7 +164,7 @@
     function showRecovery() {
       const d = dialog(el('h2', {}, 'Save Your Rejoin Code'), el('p', {}, 'Save this code and keep it private. To play on another phone, enter the room code, your same name, and this code. The old phone will be signed out.'), el('input', { readOnly: true, value: state.recoveryCode, 'aria-label': 'Rejoin Code', onclick: (e) => e.target.select() }), button('Close', () => d.close(), 'primary'));
     }
-    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), el('div', { class: 'header-tools' }, cfg.guide && window.GameGuide ? GameGuide.button(openRules) : button('How to Play', openRules, 'text-button'), window.GameAudio?.soundMenu?.() || null));
+    const header = () => el('header', { class: 'tk-header' }, el('a', { href: '/?games=1', class: 'back-link' }, '← All games'), el('a', { href: cfg.page, class: 'tk-wordmark' }, icon(cfg.icon || 'cards'), el('span', {}, text('small', '', 'THE GAME ROOM'), text('b', '', cfg.title.toUpperCase()))), el('div', { class: 'header-tools' }, cfg.guide && window.GameGuide ? GameGuide.button(openRules) : button('How to Play', openRules, 'text-button'), window.GameAudio?.soundMenu?.() || null, window.GameI18n?.menu() || null));
     function landing() {
       const L = cfg.landing;
       return el('div', { class: 'tk-landing' },
@@ -216,6 +216,7 @@
       }
     }
     function render() {
+      state?.players.forEach(p=>window.GameI18n?.protectName(p.name));
       const focus = document.activeElement?.id, focusKey = document.activeElement?.dataset?.focus, selection = document.activeElement?.selectionStart, selectionEnd = document.activeElement?.selectionEnd;
       const openDetails = [...root.querySelectorAll('details[open][data-details]')].map((n) => n.dataset.details);
       const scrolls = [...root.querySelectorAll('[data-scroll]')].map((n) => [n.dataset.scroll, n.scrollLeft, n.scrollTop]);

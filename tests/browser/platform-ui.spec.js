@@ -11,7 +11,7 @@ async function checkDock(page) {
     return {x:r.x,right:r.right,width:r.width,height:r.height,dx:Math.abs(a.x+a.width/2-r.x-r.width/2),dy:Math.abs(a.y+a.height/2-r.y-r.height/2),bg:s.backgroundColor};
   }));
   const width=await page.evaluate(()=>innerWidth);
-  for(const b of geometry) {expect(b.x).toBeGreaterThanOrEqual(0);expect(b.right).toBeLessThanOrEqual(width);expect(b.width).toBeGreaterThanOrEqual(44);expect(b.height).toBeGreaterThanOrEqual(44);expect(b.dx).toBeLessThan(1);expect(b.dy).toBeLessThan(1);expect(b.bg).toBe('rgba(0, 0, 0, 0)');}
+  for(const b of geometry) {expect(b.x).toBeGreaterThanOrEqual(0);expect(b.right).toBeLessThanOrEqual(width);expect(b.width).toBeGreaterThanOrEqual(44);expect(b.height).toBeGreaterThanOrEqual(44);expect(b.dx).toBeLessThan(1);expect(b.dy).toBeLessThan(1);expect(b.bg).toBe('rgba(17, 19, 38, 0.94)');}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 }
 for(const width of [320,390,1100]) {

@@ -70,8 +70,8 @@
     draw(); ov.querySelector('.pfg-scroll').focus({ preventScroll: true });
   }
 
-  // the header button: gold book icon + label, exactly like Row of Reckoning's
-  const button = (onclick) => el('button', { type: 'button', class: 'pfg-btn', onclick }, el('b', { 'aria-hidden': 'true' }, svg(BOOK)), el('span', { class: 'pfg-label' }, 'How to play'));
+  // The header uses Row of Reckoning's canonical coloured book artwork.
+  const button = (onclick) => el('button', { type: 'button', class: 'pfg-btn', 'aria-label':'How to Play', title:'How to Play', onclick }, el('b', { 'aria-hidden': 'true' }, window.AvatarArt.tool('guide')), el('span', { class: 'pfg-label' }, 'How to Play'));
 
   // a proper confirm box (replaces the browser's confirm()). Resolves true / false.
   function ask({ title, body, ok = 'OK', cancel = 'Cancel', danger = false, code = '' }) {
