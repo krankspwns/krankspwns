@@ -18,6 +18,7 @@ for(const width of [320,390,1100])test('Ivory game list with individual card pal
   await expect(page.locator('.reckoning-card')).toHaveCSS('color','rgb(244, 234, 216)');
   await expect(page.locator('.reckoning-card img')).toHaveAttribute('src','/game-art/reckoning.webp');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+  await page.locator('.game-art img').evaluateAll(images=>Promise.all(images.map(image=>{image.loading='eager';return image.decode();})));
   await page.screenshot({path:testInfo.outputPath('game-list.png'),fullPage:true});
   await page.getByRole('link',{name:/Row of Reckoning/}).click();
   await expect(page.locator('html')).not.toHaveCSS('color-scheme','light');
