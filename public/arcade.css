@@ -5,12 +5,10 @@
 
 .game-card{display:flex;flex-direction:column}.game-art{flex:none}.game-card-body{display:flex;flex-direction:column;flex:1}.game-cta{margin-top:auto}
 
-/* Keep the complete square train cover, with a soft extension behind its sides. */
-.train-hub-art::before{content:'';position:absolute;inset:-16px;background:url('/last-train/train-icon.webp') center/cover;filter:blur(14px) brightness(.6)}
 .game-art img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;object-position:center}
 
-/* Four new illustrated covers; Last Train retains its existing artwork. */
-.game-art:not(.train-hub-art)::after{content:'';position:absolute;inset:8px;border:1px solid #edcf8b44;border-radius:17px 17px 5px 5px;pointer-events:none}
+/* Landscape covers share a frame that preserves the full composition. */
+.game-art::after{content:'';position:absolute;inset:8px;border:1px solid #edcf8b44;border-radius:17px 17px 5px 5px;pointer-events:none}
 .game-card{border-color:#cfab6d30;background:linear-gradient(145deg,#1f2635,#101622);box-shadow:0 12px 35px #0003}
 @media(prefers-reduced-motion:reduce){.game-card:hover .game-art img{transform:none}}
 
