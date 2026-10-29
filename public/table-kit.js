@@ -65,8 +65,8 @@
       : el('span', { class: 'card-pips', 'aria-hidden': 'true' }, (PIPS[Number(rank)] || []).map(([x, y]) => el('i', { class: 'card-pip' + (y > 50 ? ' inverted' : ''), style: 'left:' + x + '%;top:' + y + '%' }, SUIT[suit])));
     const face = joker ? [text('b', 'pcard-joker', '★'), text('small', '', 'JOKER')] : [artwork, corner(), corner(true)];
     const name = joker ? 'Joker' : rank + ' of ' + { S: 'spades', H: 'hearts', D: 'diamonds', C: 'clubs' }[suit];
-    if (!onclick) return el('span', { class: cls, role: 'img', 'aria-label': label || name }, face);
-    return el('button', { type: 'button', class: cls, 'data-focus': 'card-' + code, 'aria-label': label || name, 'aria-pressed': selected ? 'true' : undefined, disabled: !!disabled, onclick }, face);
+    if (!onclick) return el('span', { class: cls, role: 'img', 'data-rank': rank || undefined, 'aria-label': label || name }, face);
+    return el('button', { type: 'button', class: cls, 'data-rank': rank || undefined, 'data-focus': 'card-' + code, 'aria-label': label || name, 'aria-pressed': selected ? 'true' : undefined, disabled: !!disabled, onclick }, face);
   }
   const cardBack = (cls = '') => el('span', { class: 'pcard back ' + cls, 'aria-hidden': 'true' });
 

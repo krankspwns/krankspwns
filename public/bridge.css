@@ -180,3 +180,9 @@ body { background:radial-gradient(ellipse at 8% 0,#49447655,transparent 55%),rad
 @keyframes br-pop { 0% { transform: scale(.94); box-shadow: 0 0 0 0 rgba(245,196,81,.8); } 40% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(245,196,81,0); } 100% { transform: none; } }
 .felt-seat.winner .plate { animation: br-pop .9s ease; }
 @media (prefers-reduced-motion: reduce) { .br-pop, .felt-seat.winner .plate { animation: none; } }
+
+/* A calmer face for Hidden Alliance: suit information stays in the corners. */
+body[data-game="bridge"] .pcard .card-pips,body[data-game="bridge"] .pcard .card-ace{display:none}
+body[data-game="bridge"] .pcard.number::before,body[data-game="bridge"] .pcard.ace::before{content:attr(data-rank);position:absolute;inset:20px 3px;display:grid;place-items:center;font:500 30px/1 Georgia,serif;letter-spacing:-1px;pointer-events:none}
+body[data-game="bridge"] .pcard.small.number::before,body[data-game="bridge"] .pcard.small.ace::before{inset:16px 2px;font-size:22px}
+@media(max-width:420px){body[data-game="bridge"] .pcard.number:not(.small)::before,body[data-game="bridge"] .pcard.ace:not(.small)::before{font-size:28px}}
