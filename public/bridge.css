@@ -195,6 +195,7 @@ body[data-game="bridge"] .pcard.small.number::before,body[data-game="bridge"] .p
 
 /* Court artwork fills the face; the indices remain readable over the illustration. */
 body[data-game="bridge"] .card-court,body[data-game="bridge"] .pcard.small .card-court{inset:0;width:auto;height:auto;aspect-ratio:auto;transform:none;background-image:url('/game-art/hidden-alliance-courts.webp');border:0;border-radius:inherit;box-shadow:none}
+body[data-game="bridge"] .pcard.suit-H[data-rank="K"] .card-court{background-image:url('/game-art/hidden-alliance-king-hearts.webp');background-size:100% 100%;background-position:center}
 body[data-game="bridge"] .pcard.court .card-index{top:0;left:0;flex-direction:column;gap:0;min-width:17px;padding:2px 2px;background:transparent;border-radius:0;box-shadow:none;text-shadow:0 0 2px #fff4dbe6}
 body[data-game="bridge"] .pcard.court .card-index.bottom{top:auto;left:auto;right:0;bottom:0}
 body[data-game="bridge"] .pcard.court .card-index .pcard-suit{font-size:16px;font-weight:800}
