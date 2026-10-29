@@ -189,8 +189,12 @@ body[data-game="bridge"] .pcard.small.number::before,body[data-game="bridge"] .p
 
 /* Court artwork fills the face; the indices remain readable over the illustration. */
 body[data-game="bridge"] .card-court,body[data-game="bridge"] .pcard.small .card-court{inset:0;width:auto;height:auto;aspect-ratio:auto;transform:none;background-image:url('/game-art/hidden-alliance-courts.webp');border:0;border-radius:inherit;box-shadow:none}
-body[data-game="bridge"] .pcard.court .card-index{top:0;left:0;flex-direction:column;gap:0;min-width:17px;padding:2px 2px;background:#fff8e9;border-radius:0 0 5px 0;box-shadow:0 1px 3px #3c281b30;text-shadow:none}
+body[data-game="bridge"] .pcard.court .card-index{top:0;left:0;flex-direction:column;gap:0;min-width:17px;padding:2px 2px;background:transparent;border-radius:0;box-shadow:none;text-shadow:0 0 2px #fff4dbe6}
 body[data-game="bridge"] .pcard.court .card-index.bottom{top:auto;left:auto;right:0;bottom:0}
 body[data-game="bridge"] .pcard.court .card-index .pcard-suit{font-size:16px;font-weight:800}
 body[data-game="bridge"] .pcard.small.court .card-index{gap:0;min-width:14px;padding:1px 2px}
 body[data-game="bridge"] .pcard.small.court .card-index .pcard-suit{font-size:12px}
+
+/* Feather the parchment beneath the ink into the portrait instead of using labels. */
+body[data-game="bridge"] .card-court::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse 32px 54px at top left,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%),radial-gradient(ellipse 32px 54px at bottom right,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%)}
+body[data-game="bridge"] .pcard.small .card-court::after{background:radial-gradient(ellipse 25px 43px at top left,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%),radial-gradient(ellipse 25px 43px at bottom right,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%)}
