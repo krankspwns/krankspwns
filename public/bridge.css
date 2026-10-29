@@ -189,4 +189,8 @@ body[data-game="bridge"] .pcard.small.number::before,body[data-game="bridge"] .p
 
 /* Court artwork fills the face; the indices remain readable over the illustration. */
 body[data-game="bridge"] .card-court,body[data-game="bridge"] .pcard.small .card-court{inset:0;width:auto;height:auto;aspect-ratio:auto;transform:none;background-image:url('/game-art/hidden-alliance-courts.webp');border:0;border-radius:inherit;box-shadow:none}
-body[data-game="bridge"] .pcard.court .card-index{text-shadow:1px 0 #fff8e9,-1px 0 #fff8e9,0 1px #fff8e9,0 -1px #fff8e9,0 0 3px #fff8e9}
+body[data-game="bridge"] .pcard.court .card-index{top:0;left:0;flex-direction:column;gap:0;min-width:17px;padding:2px 2px;background:#fff8e9;border-radius:0 0 5px 0;box-shadow:0 1px 3px #3c281b30;text-shadow:none}
+body[data-game="bridge"] .pcard.court .card-index.bottom{top:auto;left:auto;right:0;bottom:0}
+body[data-game="bridge"] .pcard.court .card-index .pcard-suit{font-size:16px;font-weight:800}
+body[data-game="bridge"] .pcard.small.court .card-index{gap:0;min-width:14px;padding:1px 2px}
+body[data-game="bridge"] .pcard.small.court .card-index .pcard-suit{font-size:12px}

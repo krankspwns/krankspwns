@@ -25,7 +25,7 @@ async function fixture(page, playing=false) {
   return {host,room,guests};
 }
 
-test('Compact mobile bidding uses separate number and suit choices, with transparent card labels',async({page},testInfo)=>{
+test('Compact mobile bidding uses separate number and suit choices, with readable card labels',async({page},testInfo)=>{
   await page.setViewportSize({width:320,height:760});
   const {room}=await fixture(page);
   await expect(page.locator('.bid-levels button')).toHaveCount(7);
@@ -34,7 +34,7 @@ test('Compact mobile bidding uses separate number and suit choices, with transpa
   await page.getByRole('button',{name:'Spades',exact:true}).click();
   await expect(page.locator('[data-focus="bid-confirm"]')).toHaveText('Bid 2 Spades');
   await expect(page.locator('.bid-explanation')).toHaveText('Your team needs 8 tricks.');
-  expect(await page.locator('.card-index').first().evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  expect(await page.locator('.pcard.number .card-index').first().evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({path:testInfo.outputPath('bidding-320.png'),fullPage:true});
   await page.locator('[data-focus="bid-confirm"]').click();
