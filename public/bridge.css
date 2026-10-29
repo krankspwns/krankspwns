@@ -187,6 +187,7 @@ body[data-game="bridge"] .pcard.suit-S{--face-suit:'♠'}
 body[data-game="bridge"] .pcard.suit-H{--face-suit:'♥'}
 body[data-game="bridge"] .pcard.suit-D{--face-suit:'♦'}
 body[data-game="bridge"] .pcard.suit-C{--face-suit:'♣'}
+body[data-game="bridge"] .pcard:is(.number,.ace) .card-index{flex-direction:column;gap:0}
 body[data-game="bridge"] .pcard.number::before,body[data-game="bridge"] .pcard.ace::before{content:var(--face-suit);position:absolute;inset:20px 3px;display:grid;place-items:center;font:500 30px/1 Georgia,serif;pointer-events:none}
 body[data-game="bridge"] .pcard.small.number::before,body[data-game="bridge"] .pcard.small.ace::before{inset:16px 2px;font-size:22px}
 @media(max-width:420px){body[data-game="bridge"] .pcard.number:not(.small)::before,body[data-game="bridge"] .pcard.ace:not(.small)::before{font-size:28px}}
