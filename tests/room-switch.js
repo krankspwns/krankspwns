@@ -61,15 +61,16 @@ async function main() {
   const first = moves[0], fresh = ok(await call(first.game, { ...race.seats[0], code: first.code }, 'GET'));
   const back = ok(await call(first.game, { ...race.seats[0], code: first.code, action: 'switchGame', version: fresh.version, game: 'bridge' }));
   assert.notEqual(back.roomSwitch.code, race.seats[0].code);
-  // A lone human and bots cannot pretend to be a party; unsupported bots never become dead seats.
+  // A lone human and bots cannot pretend to be a party; bots move with their party once another human has joined.
   const solo = await create('bridge', 1);
   assert.equal((await call('bridge', { ...solo.seats[0], action: 'switchGame', version: solo.state.version, game: 'last-train' })).status, 409);
   const bot = ok(await call('bridge', { ...solo.seats[0], action: 'addBot', match: 0 }));
   assert.equal((await call('bridge', { ...solo.seats[0], action: 'switchGame', version: bot.version, game: 'hot-joker' })).status, 409);
   const botParty = await create('bridge');
   const withBot = ok(await call('bridge', { ...botParty.seats[0], action: 'addBot', match: 0 }));
-  const unsupported = await call('bridge', { ...botParty.seats[0], action: 'switchGame', game: 'last-train', version: withBot.version });
-  assert.equal(unsupported.status, 409); assert.match(unsupported.data.error, /practice bots/);
+  const supported = await call('bridge', { ...botParty.seats[0], action: 'switchGame', game: 'last-train', version: withBot.version });
+  const moved=ok(supported);const destination=ok(await call('last-train',{...botParty.seats[0],code:moved.roomSwitch.code},'GET'));
+  assert.equal(destination.players.filter(p=>p.bot).length,1);
   const betting = await create('last-train');
   const trainStore = require('../lib/last-train-store'), pending = await trainStore.load(betting.state.code);
   pending.bets = { [betting.seats[1].pid]: { stake: 5 } }; await trainStore.save(pending);

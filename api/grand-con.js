@@ -3,6 +3,7 @@ const store = require('../lib/grand-con-store');
 const CASES = require('../lib/grand-con-cases');
 const P = require('../lib/platform');
 const social = require('../lib/table-social');
+const B=require('../lib/practice-bots'),bots=require('../lib/grand-con-bot');
 const need=(ok,status,message)=>{if(!ok)throw Object.assign(Error(message),{status});};
 const hash=value=>crypto.createHash('sha256').update(String(value)).digest('hex');
 const secret=()=>crypto.randomBytes(24).toString('base64url');
@@ -65,7 +66,7 @@ function view(room,me){
   const document=room.phase==='forging'?null:room.documents?.find(d=>d.ownerId===me.id);
   return {game:'grand-con',rulesVersion:2,code:room.code,version:room.version,phase:room.phase,match:room.match||0,lotNumber:room.lot+1,deadline:room.deadline,now:Date.now(),hostId:room.hostId,meId:me.id,notice:room.notice||null,settings:room.settings||{discussionSeconds:0},discussionSeconds:room.discussionSeconds||45,claims:room.phase==='forging'?[]:room.claims||[],
     lot:c?{art:c.art,name:c.name,claim:c.claim}:null,score:room.score||{house:0,ring:0},extended:!!room.extended,
-    players:room.players.map(p=>({id:p.id,name:p.name,avatarIndex:room.players.indexOf(p),departed:!!p.departed,voteLocked:!!room.votes?.[p.id],...(finished?{team:p.team}:{})})),
+    players:room.players.map(p=>({id:p.id,name:p.name,avatarIndex:p.avatarIndex??room.players.indexOf(p),bot:!!p.bot,departed:!!p.departed,voteLocked:!!room.votes?.[p.id],...(finished?{team:p.team}:{})})),
     me:{team:me.team||null,auditUsed:!!me.auditUsed,auditReport:me.auditReport||null,document:document?{source:document.source,text:document.ownerId===room.tamper?.ownerId?room.tamper.altered:document.text,question:document.question}:null,vote:room.votes?.[me.id]||null,recoveryCode:recovery(room,me),
       ...(ring&&c?{ring:{allies:room.players.filter(p=>p.team==='ring').map(p=>p.id),forgerId:room.forgerId,genuine:lot.genuine,explanation:lot.genuine?c.truth:c.fake,tamper:room.tamper||null,
         ...(room.phase==='forging'?{options:room.documents.map(d=>({ownerId:d.ownerId,source:d.source,original:d.text,altered:d.replacement}))}:{})}}:{})},
@@ -75,7 +76,7 @@ function view(room,me){
 const respond=async(room,me,extra)=>({...view(room,me),...(await social.view(room,me)),...extra});
 async function execute(req,body) {
   const action=req.method==='GET'?'state':body.action;
-  need(['switchGame','state','create','join','start','advance','extend','forge','vote','next','leave','claim','audit','settings',...social.ACTIONS].includes(action),400,'Unknown action.');
+  need(['switchGame','state','create','join','start','advance','extend','forge','vote','next','leave','claim','audit','settings','addBot','removeBot',...social.ACTIONS].includes(action),400,'Unknown action.');
   if(action==='create'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
     let code;for(let i=0;i<10;i++){code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ'[crypto.randomInt(24)]).join('');if(!await store.load(code))break;code=null;}
@@ -89,7 +90,7 @@ async function execute(req,body) {
   if(action==='join'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
     const uid=await P.identify(req),owned=uid&&room.players.find(p=>!p.bot&&social.accountOf(room,p.id)===uid);
-    let p=owned||room.players.find(p=>p.name.toLowerCase()===name.toLowerCase());let tok;
+    let p=owned||room.players.find(p=>!p.bot&&p.name.toLowerCase()===name.toLowerCase());let tok;
     if(p){
       const replay=owned?P.seatToken(uid,'gc:'+code,p.id,body.requestId):body.requestId&&body.recoveryCode?crypto.createHmac('sha256',String(body.recoveryCode).trim()).update('gc:'+code+':'+p.id+':'+body.requestId).digest('base64url'):null;
       if(p.recoveryReceipt===body.requestId&&replay&&equal(p.tokenHash,hash(replay)))return respond(room,p,{tok:replay});
@@ -110,9 +111,15 @@ async function execute(req,body) {
   const receipt=(room.receipts||[]).find(r=>r.pid===me.id&&r.id===body.requestId);
   if(action!=='state'&&receipt){need(receipt.fingerprint===fingerprint,409,'That request was already used. Please refresh and try again.');return respond(room,me);}
   let changed=timed(room)||migrated;
+  changed=bots.tick(room,{view,seal:sealForgery,settle})||changed;
   if(action==='state'){if(changed)await store.save(room);return respond(room,me);}
   if(['forge','vote','advance','extend','next','claim','audit'].includes(action))need(body.match===room.match&&body.lotNumber===room.lot+1,409,'The round has changed. Check the new round.');
   const host=()=>need(room.hostId===me.id,403,'Only the host can do that.');
+  if(['addBot','removeBot'].includes(action)){
+    host();need(['lobby','finished'].includes(room.phase),409,'Change bots before the game starts.');
+    if(action==='addBot'){need(present(room).length<12,409,'This room has 12 players.');B.add(room,12);}
+    else B.remove(room,body.targetId);
+  }
   if(action==='settings'){
     host();need(['lobby','finished'].includes(room.phase),409,'Change the pace before the next game.');
     need([0,60,90,120].includes(body.discussionSeconds),400,'Choose Auto, 60, 90 or 120 seconds.');
@@ -161,13 +168,14 @@ async function execute(req,body) {
   }
   if(action==='leave'){
     if(room.phase==='lobby')room.players=room.players.filter(p=>p.id!==me.id);else me.departed=true;
-    if(room.hostId===me.id)room.hostId=present(room)[0]?.id||null;
+    if(room.hostId===me.id)room.hostId=present(room).find(p=>!p.bot)?.id||null;
     if(room.phase==='forging'&&room.forgerId===me.id){
       const editor=present(room).find(p=>p.team==='ring');if(editor)room.forgerId=editor.id;else {room.forgerId=null;if(!room.tamper)sealForgery(room);}
     }
     // A departing voter keeps their sealed vote; an uncast vote stays in the fixed electorate.
     social.forget(room,me);
   }
+  bots.tick(room,{view,seal:sealForgery,settle});
   // the winning team shares the prize once, when the game ends
   if(room.phase==='finished'){const win=room.score?.house===3?'house':room.score?.ring===3?'ring':null;await social.settle(room,'grand-con',room.players.filter(p=>win&&p.team===win).map(p=>({id:p.id,place:1})));}
   room.receipts=[...(room.receipts||[]),{pid:me.id,id:body.requestId,fingerprint}].slice(-100);

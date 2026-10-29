@@ -1,6 +1,7 @@
 // ---- translations (English / 简体中文) ----
 const I18N = {
   en: {
+    botAdd:'Add a bot',botRemove:'Remove a bot',botTitle:'Practice players',botHint:'Bots arrange cards, make calls and reveal each row.',
     title: 'Crown Clash', langLabel: 'Language',
     kicker: 'Every row has a loser', h2a: 'Deal. Arrange. ', h2b: 'Reveal.',
     heroP: 'Gather up to twelve friends, get dealt seven cards each, and arrange them in secret on your own table before the big reveal.',
@@ -84,6 +85,7 @@ const I18N = {
     e_busy: 'Busy, try again', e_server: 'Server error', e_unknown: 'Something went wrong',
   },
   zh: {
+    botAdd:'添加电脑玩家',botRemove:'移除电脑玩家',botTitle:'练习玩家',botHint:'电脑玩家会摆牌、猜输家，并逐行翻牌。',
     title: '王冠对决', langLabel: '语言',
     kicker: '每一行，都有一个输家', h2a: '发牌，排列，', h2b: '揭晓！',
     heroP: '最多邀请十二位朋友，每人发七张牌，在自己的牌桌上悄悄排好，再一起揭晓。',
@@ -167,6 +169,7 @@ const I18N = {
     e_busy: '服务器繁忙，请重试', e_server: '服务器错误', e_unknown: '出错了',
   },
   zht: {
+    botAdd:'新增電腦玩家',botRemove:'移除電腦玩家',botTitle:'練習玩家',botHint:'電腦玩家會擺牌、猜輸家，並逐行翻牌。',
     title: '王冠對決', langLabel: '語言',
     kicker: '每一行，都有一個輸家', h2a: '發牌，排列，', h2b: '揭曉！',
     heroP: '最多邀請十二位朋友，每人發七張牌，在自己的牌桌上悄悄排好，再一起揭曉。',

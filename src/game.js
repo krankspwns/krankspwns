@@ -29,6 +29,7 @@ function renderGame() {
     }
     app.append(stagePanel(active));
     const res = resultsPanel(); if (res) app.append(res);
+    if(st.currentRow===4&&drinkPendingRow()<0)app.append(crownBotControls());
     const watchers = st.players.filter((p) => p.spectator);
     if (watchers.length) app.append(el('div', { class: 'panel watchers' }, el('span', { class: 'lrk' }, t('watching')), ...watchers.map((p) => el('span', { class: 'loserchip wchip' }, p.name))));
     return;

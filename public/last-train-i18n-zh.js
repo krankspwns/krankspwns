@@ -14,6 +14,8 @@
     'This permanently deletes your account, WP and items. Type DELETE to confirm.':'这会永久删除你的账户、WP 和物品。输入 DELETE 确认。'
   });
 
+  add({'Add a bot':'添加电脑玩家','Remove a bot':'移除电脑玩家','Practice players':'练习玩家','Bots use their roles, share findings and vote. Saboteurs may lie.':'电脑玩家会使用身份能力、分享发现并投票。破坏者可能说谎。'});
+
   // Header, entrance and room
   add({
     'Last Train · The Game Room': '末班列车 · 游戏室', 'Last Train · Every cabin hides a secret.': '末班列车 · 每个包厢都藏着秘密。',

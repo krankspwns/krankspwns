@@ -344,3 +344,13 @@ html.pf-transferring body{visibility:hidden}
 html.pf-transferring:has(.pf-transfer-done) body{visibility:visible}
 @keyframes pf-transfer-travel{from{transform:translateX(0)}to{transform:translateX(123%)}}
 @media(prefers-reduced-motion:reduce){.pf-transfer{transition:none}.pf-transfer-track i{animation:none;width:100%}}
+
+/* Practice controls share one layout across each game's lobby and results. */
+.pf-bot-controls{width:100%;margin:20px 0;color:#d4d9e4}
+.pf-bot-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.pf-bot-controls .pf-bot-row button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 12px;border:1px solid #73b78b80;border-radius:14px;background:#40624b30;color:#ace3bd;font:650 13px Inter,system-ui,sans-serif;cursor:pointer;letter-spacing:0;text-transform:none;box-shadow:none}
+.pf-bot-controls .pf-bot-row .pf-bot-remove{border-color:#bd718480;background:#713e4d30;color:#f0bcc9}
+.pf-bot-controls .pf-bot-row .pf-bot-remove>span:first-child{font-size:24px;line-height:1}
+.pf-bot-controls .pf-bot-row button:disabled{opacity:.45;cursor:not-allowed}
+.pf-bot-controls .pf-bot-row button:focus-visible{outline:3px solid #e4c88f;outline-offset:3px}
+.pf-bot-controls>p{margin:10px 0 0;font:400 12px/1.6 Inter,system-ui,sans-serif;color:#b9c1d2;text-align:center}

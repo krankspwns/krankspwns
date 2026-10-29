@@ -101,6 +101,8 @@
       return prefix + "I'm Medic. My heal is " + (me.medicine?.heal ? 'still available' : 'used') + ' and my poison is ' + (me.medicine?.poison ? 'still available' : 'used') + '.';
     }
     if (me.role === 'witness') {
+      const glimpse = reports.find(r => r.type === 'glimpse');
+      if (glimpse?.ids?.length) return "I'm Witness. I saw " + glimpse.ids.map(id => name(view, id)).join(' and ') + ' in the corridor. One of them is BAD.';
       const watch = reports.find(r => r.type === 'watch');
       if (watch) return watch.targetId ? "I'm Witness. The Saboteurs targeted " + name(view, watch.targetId) + " last night. I don't know whether medicine was used." : "I'm Witness. The Saboteurs chose no attack last night.";
       if (reports.some(r => r.type === 'watch-blocked')) return "I'm Witness. My watch was blocked last night. I did not see the target.";

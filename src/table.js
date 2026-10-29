@@ -1,3 +1,7 @@
+function crownBotControls() {
+  return window.Platform?.botControls({state:st,max:st.maxPlayers,onSend:action=>act(action),available:st.phase==='lobby'||st.currentRow===4,
+    hint:t('botHint'),labels:{add:t('botAdd'),remove:t('botRemove'),title:t('botTitle')}})||'';
+}
 function copyText(text, btn) {
   const done = () => { const keep = [...btn.childNodes]; btn.replaceChildren(withIcon('tick', t('copied'))); setTimeout(() => btn.replaceChildren(...keep), 1400); };
   if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => {});
@@ -39,7 +43,7 @@ function renderWaitingRoom() {
             ? editableAvatar(p.avatar, 54, setMyAvatar, p.acc, p.bd)
             : avatarEl(p.avatar, 54, '', p.acc, p.bd),
           el('div', { class: 'sname' }, p.name + (p.id === st.meId ? t('you') : '')),
-          p.isHost ? el('span', { class: 'tag' }, t('host')) : p.online === false ? el('span', { class: 'tag offl' }, t('offlineTag')) : el('span', { class: 'tag joined' }, t('joined')))
+          p.bot ? el('span',{class:'tag'},'BOT') : p.isHost ? el('span', { class: 'tag' }, t('host')) : p.online === false ? el('span', { class: 'tag offl' }, t('offlineTag')) : el('span', { class: 'tag joined' }, t('joined')))
       : el('div', { class: 'seat empty' + (i - st.players.length < 2 ? ' live' : '') },
           el('div', { class: 'avatar av-empty' }, el('i', { class: 'ring' }), icon('plus', 18)),
           el('div', { class: 'sname' }, t('waitingPlayer'), el('span', { class: 'wdots' }, el('i'), el('i'), el('i')))));
@@ -57,6 +61,7 @@ function renderWaitingRoom() {
     el('div', { class: 'count' }, t('joinedCount', { n: st.players.length, max: st.maxPlayers })),
     waitSettings(),
     seats,
+    crownBotControls(),
     action,
     el('div', { class: 'row center' }, el('button', { class: 'ghost', onclick: confirmLeave }, t('leaveRoom')))));
 }
@@ -65,7 +70,7 @@ function renderWaitingRoom() {
 function who(p, label, size = 26) {
   const w = el('div', { class: 'who' },
     el('div', { class: 'wname' }, avatarEl(p.avatar, size, '', p.acc, p.bd), el('span', { class: 'wtxt' }, label)),
-    el('div', { class: 'wtags' }, p.isHost ? el('span', { class: 'tag' }, t('host')) : '', pill(p)));
+    el('div', { class: 'wtags' }, p.bot ? el('span',{class:'tag'},'BOT') : p.isHost ? el('span', { class: 'tag' }, t('host')) : '', pill(p)));
   w.dataset.pid = p.id;   // so a thrown gift knows where to fly
   return w;
 }

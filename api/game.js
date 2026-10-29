@@ -4,6 +4,7 @@
 // in-memory storage, which is only suitable for local testing.
 const crypto = require('crypto');
 const P = require('../lib/platform');
+const B=require('../lib/practice-bots'),botStrategy=require('../lib/crown-clash-bot');
 const { AVATARS, ACC_PRICE, PREMIUM, GIFTS, BORDER_PRICE, EMOTES, GIFT_USES, START_WP, placeWpFor, predWpFor } = require('../lib/catalog');
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
@@ -412,7 +413,7 @@ function tallyWins(room) {
     room.bonus = room.bonus || {};
     for (const p of act) {
       const place = 1 + vals.filter((v) => v < tot[p.id]).length;
-      const n = tot[p.id] === worst || place > 3 ? 0 : prize[place - 1];
+      const n = p.bot || !B.canEarn(room) || tot[p.id] === worst || place > 3 ? 0 : prize[place - 1];
       if (n) { room.placeWp[p.id] = n; room.bonus[p.id] = (room.bonus[p.id] || 0) + n; }
     }
   }
@@ -472,19 +473,19 @@ function storeResults(room) {
     room.results[r.row].called = Object.keys(pr).length;
     room.results[r.row].picks = { ...pr };   // who named whom, shown on the tiles once the row is open
     if (!r.tie) {
-      const PRED_WP = room.results[r.row].wp = predWpFor(activeOf(room).length);
+      const PRED_WP = room.results[r.row].wp = B.canEarn(room)?predWpFor(activeOf(room).length):0;
       const hit = Object.entries(pr).filter(([pid, tgt]) => r.losers.includes(tgt) && room.players.some((q) => q.id === pid));
       const miss = Object.entries(pr).filter(([pid, tgt]) => !r.losers.includes(tgt) && room.players.some((q) => q.id === pid) && balanceOf(room, pid) >= PRED_PENALTY);   // a wrong call costs a point, never below zero
       if (miss.length) {
         room.bonus = room.bonus || {};
-        for (const [pid] of miss) room.bonus[pid] = (room.bonus[pid] || 0) - PRED_PENALTY;
+        for (const [pid] of miss.filter(([id])=>!room.players.find(p=>p.id===id)?.bot&&B.canEarn(room))) room.bonus[pid] = (room.bonus[pid] || 0) - PRED_PENALTY;
         room.results[r.row].misses = miss.map(([pid]) => room.players.find((q) => q.id === pid).name);
         room.results[r.row].missIds = miss.map(([pid]) => pid);
       }
       if (hit.length || miss.length) sysChat(room, { k: 'called', names: hit.map(([pid]) => room.players.find((q) => q.id === pid).name), miss: room.results[r.row].misses || [], wp: PRED_WP, pen: PRED_PENALTY });
       if (hit.length) {
         room.bonus = room.bonus || {};
-        for (const [pid] of hit) room.bonus[pid] = (room.bonus[pid] || 0) + PRED_WP;
+        for (const [pid] of hit.filter(([id])=>!room.players.find(p=>p.id===id)?.bot)) room.bonus[pid] = (room.bonus[pid] || 0) + PRED_WP;
         room.results[r.row].hits = hit.map(([pid]) => room.players.find((q) => q.id === pid).name);
         room.results[r.row].hitIds = hit.map(([pid]) => pid);
       }
@@ -650,6 +651,7 @@ function view(room, pid, seen, cn) {
       return {
         id: p.id,
         name: p.name,
+        bot: !!p.bot,
         avatar: p.avatar || AVATARS[0],
         acc: p.acc || '',
         bd: p.bd || '',
@@ -681,6 +683,45 @@ function slotOf(v) {
 
 function need(cond, status, msg) {
   if (!cond) throw new HttpError(status, msg);
+}
+
+// Poll-driven server turns are paced and saved with the same room version as human moves.
+function tickBots(room) {
+  if(room.phase!=='dealt')return false;
+  let changed=false;
+  for(const bot of activeOf(room).filter(p=>p.bot)){
+    const row=currentRowOf(room),w=predWindow(room),key=room.round+':'+(!bot.ready?'arrange':row>=4?'finished':w&&Date.now()<w.until?'calls':'row-'+row);
+    const wait=B.due(bot,key,!bot.ready?{min:6000,spread:8000}:undefined);changed=wait.changed||changed;if(!wait.act)continue;
+    if(!bot.ready){
+      const cards=botStrategy.arrange([...bot.hand,...bot.board.filter(Boolean).map(s=>s.c)]);
+      if(cards.length!==7)continue;
+      bot.hand=[];bot.board=cards.map(c=>({c,up:false}));bot.ready=true;changed=true;
+      const active=activeOf(room);
+      if(active.length>1&&active.every(p=>p.ready)){room.allReady={id:bot.id,name:bot.name,at:Date.now()};room.deadline=null;}
+      continue;
+    }
+    for(const drinkRow of ['late',0,1,2,3]){
+      if((drinkRow==='late'&&!room.allReady)||(drinkRow!=='late'&&!room.results?.[drinkRow]))continue;
+      if(drinksFor(room,drinkRow)[bot.id]&&!room.drunk?.[drinkRow]?.[bot.id]){
+        ((room.drunk||={})[drinkRow]||={})[bot.id]=true;changed=true;
+        if(drinkRow==='late'&&!lateDrinkPending(room))room.drunkLateAt=Date.now();
+      }
+    }
+    if(row>=4){if(!room.nextReady?.[bot.id]&&drinksPending(room)<0){(room.nextReady||={})[bot.id]=true;changed=true;}continue;}
+    if(!activeOf(room).every(p=>p.ready))continue;
+    if(w&&Date.now()>=w.from-1500&&Date.now()<w.until){
+      if(![0,1,2,3].every(r=>bot.id in (room.preds?.[r]||{}))){
+        botStrategy.calls(activeOf(room).map(p=>({id:p.id})),bot.id).forEach((target,r)=>{((room.preds||={})[r]||={})[bot.id]=target;});
+        if(activeOf(room).every(p=>[0,1,2,3].every(r=>p.id in (room.preds?.[r]||{}))))(room.predEnd||={})[0]||=Date.now();
+        changed=true;
+      }
+      continue;
+    }
+    if(w&&Date.now()<w.until||lateDrinkPending(room)||drinksPending(room)>=0&&drinksPending(room)<row)continue;
+    let start=ROW_SIZES.slice(0,row).reduce((a,n)=>a+n,0);
+    for(let i=start;i<start+ROW_SIZES[row];i++)if(bot.board[i]&&!bot.board[i].up){bot.board[i].up=true;changed=true;}
+  }
+  return changed;
 }
 
 async function handle(action, b, query, ctx = {}) {
@@ -720,8 +761,8 @@ async function handle(action, b, query, ctx = {}) {
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
     // Account ownership restores its seat; guests prove ownership with a private code.
-    const owned = ctx.uid && room.players.find(p=>acctOf(room,p.id)===ctx.uid);
-    const same = owned || room.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
+    const owned = ctx.uid && room.players.find(p=>!p.bot&&acctOf(room,p.id)===ctx.uid);
+    const same = owned || room.players.find((p) => !p.bot && p.name.toLowerCase() === name.toLowerCase());
     if (same) {
       const receipt = same.recoveryReceipt;
       const replayTok = owned ? P.seatToken(ctx.uid,'reckoning:'+code,same.id,b.requestId) : b.requestId && b.recoveryCode ? recoveredToken(room, same, b.recoveryCode, b.requestId) : null;
@@ -784,11 +825,24 @@ async function handle(action, b, query, ctx = {}) {
     }
   }
   await touchPresence(code, pid);
+  const botsChanged=tickBots(room);
+  if(action==='state'&&botsChanged){storeResults(room);await saveRoom(room);}
   const PLAYER_ACTIONS = ['predict', 'place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
   need(!(me.spectator && PLAYER_ACTIONS.includes(action)), 409, 'Wait for the next round');
   const active = activeOf(room);
 
   switch (action) {
+    case 'addBot':
+    case 'removeBot': {
+      need(room.hostId===pid,403,'Only the host can do that');
+      need(room.phase==='lobby'||currentRowOf(room)===4,409,'Change bots before the next round.');
+      need(drinksPending(room)<0,409,'Finish the drinks first');
+      if(action==='addBot'){
+        need(room.players.length<MAX_PLAYERS,409,'This room has 12 players.');
+        const bot=B.add(room,MAX_PLAYERS,'tkh');Object.assign(bot,{avatar:pickAvatar(null,room.players.map(p=>p.avatar)),hand:[],board:Array(7).fill(null),ready:false,spectator:room.phase==='dealt'});
+      }else B.remove(room,b.targetId);
+      break;
+    }
     case 'rt':
       return { rt: rtUrl(code) };
 
@@ -1120,7 +1174,7 @@ async function handle(action, b, query, ctx = {}) {
         else await redis(['DEL', `room:${code}`]);
         return { left: true };
       }
-      if (room.hostId === pid) room.hostId = (room.players.find((p) => !p.spectator) || room.players[0]).id;
+      if (room.hostId === pid) room.hostId = (room.players.find((p) => !p.bot&&!p.spectator) || room.players.find(p=>!p.bot))?.id||null;
       room.allReady = null;
       storeResults(room);
       await saveRoom(room);
@@ -1130,6 +1184,7 @@ async function handle(action, b, query, ctx = {}) {
     default:
       throw new HttpError(400, 'Unknown action');
   }
+  tickBots(room);
   storeResults(room);
   rememberRequest(room, pid, b, action);
   await saveRoom(room);

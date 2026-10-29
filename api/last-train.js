@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const store = require('../lib/last-train-store');
 const rules = require('../lib/last-train-rules');
 const voice = require('../lib/last-train-voice');
+const B=require('../lib/practice-bots'),bots=require('../lib/last-train-bot');
 const P = require('../lib/platform');
 const { need, present } = rules;
 const hash = value => crypto.createHash('sha256').update(String(value)).digest('hex');
@@ -32,7 +33,7 @@ async function commit(room) {
 const save = async (room) => { await commit(room); await store.save(room); };
 async function execute(req, body) {
   const action = req.method === 'GET' ? (body.voice ? 'voice' : 'state') : body.action;
-  need(['voice', 'beginVoice', 'speakVoice', 'switchGame', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick', 'ghostWhisper', 'bet'].includes(action), 400, 'Unknown choice. Please reload.');
+  need(['voice', 'beginVoice', 'speakVoice', 'addBot', 'removeBot', 'switchGame', 'state', 'create', 'join', 'settings', 'shuffleRoles', 'start', 'ready', 'night', 'medicine', 'advance', 'speak', 'finishSpeech', 'whisper', 'letter', 'dismissLetters', 'vote', 'pause', 'resume', 'leave', 'emote', 'buy', 'wear', 'throw', 'suspect', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal', 'lastWords', 'ghostGuess', 'restart', 'kick', 'ghostWhisper', 'bet'].includes(action), 400, 'Unknown choice. Please reload.');
   if (action === 'create') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     let code;
@@ -63,7 +64,7 @@ async function execute(req, body) {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     room.observers ||= [];
     const uid=await P.identify(req), owned=uid && [...room.players,...room.observers].find(p=>!p.bot && room.acct?.[p.id]===uid);
-    let me = owned || [...room.players, ...room.observers].find(p => p.name.toLowerCase() === name.toLowerCase()), tok;
+    let me = owned || [...room.players, ...room.observers].find(p => !p.bot && p.name.toLowerCase() === name.toLowerCase()), tok;
     if (me) {
       const replay = owned ? P.seatToken(uid,'lt:'+code,me.id,body.requestId) : body.recoveryCode ? crypto.createHmac('sha256', String(body.recoveryCode).trim()).update('lt:' + code + ':' + me.id + ':' + body.requestId).digest('base64url') : null;
       need(!me.kicked, 403, 'The host removed you from this room.');
@@ -95,7 +96,8 @@ async function execute(req, body) {
   await hydrate(room, me);
   need(!me.departed || ['state', 'voice', 'dismissLetters', 'wear', 'buy'].includes(action), 403, 'Use your rejoin code to come back.');
   need(!me.observer || ['state', 'voice', 'emote', 'leave', 'bet'].includes(action), 403, 'Observers watch this journey. You take a seat when the next journey starts.');
-  const changed = rules.timed(room);
+  let changed = rules.timed(room);
+  changed=bots.tick(room)||changed;
   if (action === 'voice') {
     const speech = room.speeches?.find(m => m.audio?.id === body.voice);
     need(speech, 404, 'Recording not found.');
@@ -111,6 +113,11 @@ async function execute(req, body) {
   else if (!['leave', 'kick', 'ghostWhisper', 'bet', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
   const host = () => need(room.hostId === me.id, 403, 'Only the host can do that.');
   need(!room.paused || ['resume', 'leave', 'kick', 'dismissLetters', 'speakVoice', 'emote', 'buy', 'wear', 'throw'].includes(action), 409, 'The game is paused.');
+  if (['addBot','removeBot'].includes(action)) {
+    host(); need(['lobby','finished'].includes(room.phase),409,'Change bots before the game starts.');
+    if(action==='addBot'){need(present(room).length<12,409,'This room already has 12 players.');B.add(room,12);}
+    else B.remove(room,body.targetId);
+  }
   if (action === 'settings') {
     host(); need(['lobby','finished'].includes(room.phase), 409, 'Change roles before the game starts.');
     need(['brave', 'speaker'].includes(body.extra) && typeof body.blocker === 'boolean' && ['in-person', 'chat'].includes(body.discussion), 400, 'Choose the role mix on screen.');
@@ -180,9 +187,10 @@ async function execute(req, body) {
   else if (action === 'leave') {
     if (room.phase === 'lobby') room.players = room.players.filter(p => p.id !== me.id);
     else me.departed = true;
-    if (room.hostId === me.id) room.hostId = present(room).find(p => p.alive !== false)?.id || present(room)[0]?.id || null;
+    if (room.hostId === me.id) room.hostId = present(room).find(p => !p.bot && p.alive !== false)?.id || present(room).find(p=>!p.bot)?.id || null;
     // Departure never changes alive/group counts or committed actions. Timed phases handle missing input.
   }
+  bots.tick(room);
   room.receipts = [...(room.receipts || []), { pid: me.id, id: body.requestId, fingerprint }].slice(-200);
   await save(room); return view(room, me);
 }

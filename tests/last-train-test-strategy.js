@@ -22,6 +22,7 @@ for(const power of ['heal','poison','pass']) {
 {
   const bot={},v=view('medic',{blocked:true,medicine:{heal:1,poison:1}});v.phase='night';v.nightRole='medic';remember(bot,v);const day=view('medic');remember(bot,day);assert.match(statement(bot,day),/blocked.*used no medicine/);
 }
+assert.match(statement({},view('witness',{reports:[{round:1,type:'glimpse',ids:['benny','luna']}]})),/saw Benny and Luna.*One of them is BAD/);
 assert.match(statement({},view('witness',{reports:[{round:1,type:'watch',targetId:'luna'}]})),/targeted Luna.*don't know whether medicine was used/);
 assert.match(statement({},view('witness',{reports:[{round:1,type:'watch-blocked'}]})),/blocked.*did not see the target/);
 assert.match(statement({},view('witness',{reports:[{round:1,type:'watch',targetId:null}]})),/chose no attack/);

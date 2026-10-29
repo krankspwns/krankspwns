@@ -81,7 +81,7 @@
     const list = el('div', { class: 'pf-switch-list' });
     for (const [game, [title, , min, max]] of Object.entries(SWITCH_GAMES)) {
       if (game === PAGE) continue;
-      const reason = people.length > max ? 'Fits up to ' + max + ' players' : people.some(p => p.bot) && !['bridge', 'hot-joker'].includes(game) ? 'Remove practice bots first' : '';
+      const reason = people.length > max ? 'Fits up to ' + max + ' players' : '';
       list.append(el('button', { type: 'button', class: 'pf-switch-choice', disabled: !!reason, onclick: () => {
         const confirmError = el('p', { role: 'alert', class: 'pf-error' });
         const go = el('button', { type: 'button', class: 'pf-primary', text: 'Switch everyone to ' + title, onclick: async () => {
@@ -435,6 +435,15 @@
     }));
   }
 
+  function botControls({state,max=12,onSend,available=['lobby','finished'].includes(state.phase),hint='',labels={}}) {
+    if(!available||state.hostId!==state.meId)return null;
+    const count=state.players.filter(p=>!p.departed&&!p.kicked).length,bots=state.players.filter(p=>p.bot).length;
+    return el('section',{class:'pf-bot-controls','aria-label':labels.title||'Practice players'},
+      el('div',{class:'pf-bot-row'},
+        el('button',{type:'button',class:'pf-bot-add',disabled:count>=max,onclick:()=>onSend('addBot')},avatar('robot','','',24),el('span',{text:labels.add||'Add a bot'})),
+        bots?el('button',{type:'button',class:'pf-bot-remove',onclick:()=>onSend('removeBot')},el('span',{'aria-hidden':'true',text:'−'}),el('span',{text:labels.remove||'Remove a bot'})):null),
+      hint?el('p',{text:hint}):null);
+  }
   function headerNav({page,title,art}) {
     const arrow=el('span',{'aria-hidden':'true',class:'header-back-art'});
     arrow.innerHTML='<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 6-6 6 6 6M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -575,7 +584,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, botControls, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

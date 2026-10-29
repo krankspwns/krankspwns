@@ -567,6 +567,7 @@
         state.settings.quick ? el('span', { class: 'rules-chip on' }, txt('i', '', '🚄'), txt('span', '', 'Quick Journey')) : null,
         ...ROOM_TOGGLES.map(([key, label]) => { const on = toggleOn(key); return el('span', { class: 'rules-chip' + (on ? ' on' : ' off'), title: on ? 'On' : 'Off' }, toggleIcon(key), txt('span', '', label), on ? null : txt('em', '', 'Off')); })));
   }
+  function botControls(){return Platform.botControls({state,max:12,onSend:action=>send(action),hint:'Bots use their roles, share findings and vote. Saboteurs may lie.'});}
   function waitingRoom() {
     const n = state.players.filter(p => !p.departed).length, host = state.hostId === state.meId;
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Gather at least 5 players. Each person needs their own phone.'), txt('div', 'large-code', state.code),
@@ -579,6 +580,7 @@
         el('label', { class: 'switch-row toggle-card' }, toggleIcon(key), el('span', {}, txt('b', '', label), txt('small', '', hint)), el('input', { type: 'checkbox', role: 'switch', checked: toggleOn(key), disabled: busy, onchange: e => setting({ [key]: e.target.checked }) })))),
       n >= 5 ? el('div', { class: 'role-mix' }, ...state.mix.map(m => el('span', {}, rolePortrait(m.role, 'mix-portrait'), txt('b', '', m.count + '×'), role(m.role).name))) : txt('p', 'muted', (5 - n) + ' more needed to start.'),
       host ? el('div', { class: 'role-settings-actions' }, btn('Choose Roles', roleSettingsDialog, 'secondary', n < 5), btn('Shuffle Roles', () => send('shuffleRoles'), 'text-button', n < 5), txt('p', 'muted small', state.settings.autoShuffle ? (state.settings.mixPicked ? 'This journey uses the mix you set. After it, a new mix is drawn each journey.' : 'Shuffle is on: a new role mix is drawn when the journey starts.') : 'Roles are dealt to players at random.')) : null,
+      botControls(),
       host ? startJourneyButton(n < 5) : txt('p', 'waiting', 'The host will start your journey.'), btn('See The Rules', rules, 'text-button')), roster());
   }
   const BAD_KEYS = ['blocker', 'forger', 'framer', 'silencer', 'smuggler'];
@@ -1738,7 +1740,7 @@
     return el('div', {class:'finale'}, el('section', {class:'world finale-scene ' + (bad ? 'bad-victory' : 'good-victory')},
       el('div', {class:'winner-stage'}, art('lounge-room'), el('div', {class:'winner-heading'}, txt('span','eyebrow','THE LAST WORD'), trainMark('victory-mark'), el('h1',{},bad ? 'The Saboteurs win!' : 'The good team wins!'), txt('p','',bad ? 'They played their part. They kept their secrets.' : 'The truth made it through the night.'), txt('small','winner-reason',state.winReason)),
         txt('div','winner-team-label','THE WINNING TEAM'), el('div', {class:'winner-cast',style:'--winners:'+winners.length+';--winner-columns:'+Math.min(3,winners.length)}, ...winners.map(p => el('article',{class:'winner-person'},standingTraveller(p),el('div',{class:'winner-nameplate'},el('b',{},p.name + (p.id === state.meId ? ' · You' : '')),txt('small','',role(p.role).name))))),
-        el('div',{class:'victory-actions'},state.hostId === state.meId ? startJourneyButton(state.players.filter(p => !p.departed).length < 5, true) : txt('p','waiting','The host can start another journey.'), el('div', { class: 'victory-role-actions' }, ...[
+        el('div',{class:'victory-actions'},botControls(),state.hostId === state.meId ? startJourneyButton(state.players.filter(p => !p.departed).length < 5, true) : txt('p','waiting','The host can start another journey.'), el('div', { class: 'victory-role-actions' }, ...[
           state.hostId === state.meId ? actionChip('roles', 'Choose Roles', state.settings.autoShuffle ? 'Pick by hand' : 'Set the mix', roleSettingsDialog, state.players.filter(p => !p.departed).length < 5) : null,
           // With auto shuffle on, every new journey already draws a fresh mix.
           state.hostId === state.meId ? actionChip('shuffle', 'Shuffle Roles', 'Random mix', () => send('shuffleRoles'), state.players.filter(p => !p.departed).length < 5) : null,
