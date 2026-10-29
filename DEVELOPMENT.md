@@ -80,7 +80,7 @@ code; collisions (including switching back) reserve a fresh code.
 
 A destination that cannot fit everyone is unavailable. A party below its minimum
 can invite more people in the new lobby. Practice bots may only move between
-Bridge and Hot Joker; remove them before moving to other games. Last Train
+Bridge and Last Laugh; remove them before moving to other games. Last Train
 blocks switching while WP bets are unsettled. Browser storage must be available
 to retain a guest seat. Existing room expiry rules still apply. For a different
 device, use the latest invite and its current private rejoin code (or sign in).

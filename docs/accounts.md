@@ -4,8 +4,8 @@
 - **Sign in with Google or Apple** (optional). Signed-in WP, avatars, borders, accessories and gifts follow the account to every game.
 - **Guests** can play everything. A guest earns and spends WP inside a room only; it disappears when they leave the room, the room expires, or they switch game.
 - **WP** is earned by finishing in the top places of a game with at least two people (bots earn nothing, and a table of one person plus bots pays nothing). Rewards use `placeWpFor` in `lib/catalog.js`; signed-in earnings are capped at 400 WP a day (SGT).
-- **Reactions, gifts, avatars and borders** work in all five games. Bridge, Hot Joker and Grand Con use the shared dock from `public/platform.js`; Reckoning and Last Train keep their own screens but use the same account wallet.
-- **Sound:** Bridge, Hot Joker and Grand Con each have their own effects and looping music (`public/game-audio.js`, no files to download). Reckoning and Last Train keep their own audio.
+- **Reactions, gifts, avatars and borders** work in all five games. Bridge, Last Laugh and Grand Con use the shared dock from `public/platform.js`; Reckoning and Last Train keep their own screens but use the same account wallet.
+- **Sound:** Bridge, Last Laugh and Grand Con each have their own effects and looping music (`public/game-audio.js`, no files to download). Reckoning and Last Train keep their own audio.
 
 ## Setup (Vercel environment variables)
 | Variable | Purpose |

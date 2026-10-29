@@ -9,7 +9,7 @@ const setDeadline = (room) => { room.deadline = Date.now() + (room.settings.turn
 const place = (room, id) => { if (room.hands[id].length === 0 && !room.placed.includes(id)) room.placed.push(id); };
 
 function start(room) {
-  need(room.players.length >= 3, 409, 'Hot Joker needs at least 3 players.');
+  need(room.players.length >= 3, 409, 'Last Laugh needs at least 3 players.');
   const order = room.players.map((p) => p.id), hands = R.deal(order);
   room.order = order; room.match = (room.match || 0) + 1;
   room.sets = []; room.placed = []; room.loser = null; room.last = {}; room.losses = room.losses || {};
@@ -63,7 +63,7 @@ function tick(room) {
       }
       if(R.alive(room.order,room.hands).length<=1)finish(room);
       else if(!room.hands[room.taker]?.length)advance(room,room.taker);
-      room.notice='Hot Joker now uses pairs only. Your remaining cards have been kept.';
+      room.notice='Last Laugh now uses pairs only. Your remaining cards have been kept.';
     }
   }
   for (let i = 0; i < 2000 && room.phase === 'playing'; i++) {
@@ -99,7 +99,7 @@ const api = createRoomApi({
     const next = { ...room.settings };
     need(body.turnSeconds !== undefined || body.setSize !== undefined, 400, 'Choose a setting.');
     if (body.turnSeconds !== undefined) { need(TURN_OPTIONS.includes(body.turnSeconds), 400, 'Choose 20, 40 or 60 seconds.'); next.turnSeconds = body.turnSeconds; }
-    if (body.setSize !== undefined) { need(body.setSize===2, 400, 'Hot Joker uses pairs only.'); next.setSize = body.setSize; }
+    if (body.setSize !== undefined) { need(body.setSize===2, 400, 'Last Laugh uses pairs only.'); next.setSize = body.setSize; }
     room.settings = next;
   },
   start,

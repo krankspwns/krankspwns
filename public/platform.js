@@ -37,7 +37,7 @@
     reckoning: ['Row of Reckoning', 'sct', 2, 12],
     'last-train': ['Last Train', 'lt-seat', 5, 12],
     bridge: ['Hidden Alliance', 'br-seat', 4, 4],
-    'hot-joker': ['Hot Joker', 'hj-seat', 3, 10],
+    'hot-joker': ['Last Laugh', 'hj-seat', 3, 10],
     'grand-con': ['The Grand Con', 'gc-seat', 4, 12],
   };
   let switchSeat = null, switchState = null, switching = false, moving = false;

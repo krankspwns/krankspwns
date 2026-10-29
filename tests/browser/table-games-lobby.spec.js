@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-for (const game of [{ page: '/hot-joker.html', title: 'Hot Joker' }, { page: '/bridge.html', title: 'Bridge' }]) {
+for (const game of [{ page: '/hot-joker.html', title: 'Last Laugh' }, { page: '/bridge.html', title: 'Bridge' }]) {
   test(game.title + ': creating a room opens the waiting room, and the host can add and remove bots', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -31,7 +31,7 @@ async function hotJokerWith(page, bots) {
 const overlap = (a, b) => a.x < b.x + b.width - 2 && b.x < a.x + a.width - 2 && a.y < b.y + b.height - 2 && b.y < a.y + a.height - 2;
 
 for (const [label, size, bots] of [['desktop', { width: 1200, height: 900 }, 4], ['phone', { width: 360, height: 760 }, 4], ['desktop full table', { width: 1200, height: 900 }, 9], ['phone full table', { width: 360, height: 760 }, 9]]) {
-  test('Hot Joker circle, ' + label + ' with ' + (bots + 1) + ' players: seats do not overlap, pairs are shown, no pair stays in hand', async ({ page }) => {
+  test('Last Laugh circle, ' + label + ' with ' + (bots + 1) + ' players: seats do not overlap, pairs are shown, no pair stays in hand', async ({ page }) => {
     const errors = []; page.on('pageerror', (e) => errors.push(e.message));
     await page.setViewportSize(size);
     await hotJokerWith(page, bots);
@@ -51,7 +51,7 @@ for (const [label, size, bots] of [['desktop', { width: 1200, height: 900 }, 4],
 }
 
 
-test('Hot Joker starts with three players and always lays down pairs',async({page})=>{
+test('Last Laugh starts with three players and always lays down pairs',async({page})=>{
   await page.goto('/hot-joker.html');await page.fill('#tk-name','Host');
   await page.getByRole('button',{name:'Create a Room',exact:true}).click();
   const start=page.getByRole('button',{name:'START GAME',exact:true});
@@ -69,4 +69,18 @@ test('Hot Joker starts with three players and always lays down pairs',async({pag
   await start.click();const data=await (await response).json();
   expect(data.minPlayers).toBe(3);expect(data.settings.setSize).toBe(2);expect(data.order).toHaveLength(3);expect(data.sets.every(set=>set.cards.length===2)).toBe(true);
   await expect(page.locator('.circle-seat')).toHaveCount(3);
+});
+
+test('Last Laugh name appears in catalogue, title, hero and both Chinese variants',async({page})=>{
+  await page.goto('/?games=1');
+  await page.getByRole('link',{name:/Last Laugh/}).click();
+  await expect(page).toHaveURL(/\/hot-joker\.html$/);
+  await expect(page).toHaveTitle('Last Laugh · The Game Room');
+  await expect(page.locator('.header-brand-copy b')).toHaveText('LAST LAUGH');
+  await expect(page.locator('.tk-intro h1')).toContainText('Last');
+  await expect(page.locator('.tk-intro h1 em')).toHaveText('Laugh.');
+  for(const [lang,title] of [['zh','笑到最后'],['zht','笑到最後'],['en','LAST LAUGH']]){
+    await page.evaluate(lang=>GameI18n.set(lang),lang);
+    await expect(page.locator('.header-brand-copy b')).toHaveText(title);
+  }
 });

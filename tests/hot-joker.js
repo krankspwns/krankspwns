@@ -217,7 +217,7 @@ function rulesTests() {
       assert.equal((await post(h, 'start')).j.phase, 'playing');
       assert.equal((await get(h)).j.players.filter((p) => p.bot).length, 2);
     }
-    console.log('Hot Joker ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot, bots and recovery passed');
+    console.log('Last Laugh ' + (redis ? 'Redis' : 'memory') + ': clockwise taking, hidden hands, sets, 3–10 player games, privacy, timers, autopilot, bots and recovery passed');
   } finally { if (redis) await redis.close(); }
 })().catch((e) => { console.error(e); process.exitCode = 1; });
 

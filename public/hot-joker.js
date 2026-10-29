@@ -119,13 +119,13 @@
   document.addEventListener('click', (ev) => { if (justDragged) { ev.stopPropagation(); ev.preventDefault(); } }, true);
 
   TableKit({
-    game: 'hot-joker', api: '/api/hot-joker', page: '/hot-joker.html', seatKey: 'hj-seat', nameKey: 'hj-name', title: 'Hot Joker', icon: 'cards', min: 3, max: 10,
-    footer: 'Hot Joker · Take a card. Lay down pairs. Don’t get stuck with the Joker.',
+    game: 'hot-joker', api: '/api/hot-joker', page: '/hot-joker.html', seatKey: 'hj-seat', nameKey: 'hj-name', title: 'Last Laugh', icon: 'cards', min: 3, max: 10,
+    footer: 'Last Laugh · Take a card. Lay down pairs. Don’t get stuck with the Joker.',
     announce: { playing: 'The cards are dealt. Match pairs and get rid of the Joker.', finished: 'The game is over.' },
     scene: (s) => s.phase,
     landing: {
       art: () => el('div', { class: 'club-art', 'aria-hidden': 'true' }, el('img', { src: '/game-art/hot-joker.webp', alt: '', width: 1200, height: 800, fetchPriority: 'high' })),
-      eyebrow: 'TAKE. MATCH. PASS THE JOKER.', title: ['Hot', 'Joker.'], lead: 'Everyone holds hidden cards. Take one from the player before you, lay down matching pairs, and make sure you are not the last one holding the Joker.',
+      eyebrow: 'TAKE. MATCH. PASS THE JOKER.', title: ['Last', 'Laugh.'], lead: 'Everyone holds hidden cards. Take one from the player before you, lay down matching pairs, and make sure you are not the last one holding the Joker.',
       chips: ['3–10 players', 'Hidden cards', 'One Joker loses'], steps: [['hand', 'Take a hidden card'], ['cards', 'Lay down pairs'], ['eye', 'Dodge the Joker']],
       note: 'Everyone uses their own phone. Sit around the table in the order shown in the room.',
     },

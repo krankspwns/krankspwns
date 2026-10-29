@@ -1,4 +1,4 @@
-// Shared "How to play" for Bridge, Hot Joker and The Grand Con. Same look as Row of Reckoning's guide: a gold book button in the
+// Shared "How to play" for Bridge, Last Laugh and The Grand Con. Same look as Row of Reckoning's guide: a gold book button in the
 // header, a paged popup with a title bar, one idea per page, dots to jump around and Back / Next. Each game supplies its own pages.
 (() => {
   'use strict';

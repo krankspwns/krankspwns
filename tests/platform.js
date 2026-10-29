@@ -61,7 +61,7 @@ async function signIn(sub, provider = 'google', consent = { accepted: true, age:
   assert.equal((await post({ action: 'equip', kind: 'bd', key: 'silver' }, ann)).j.account.eq.bd, 'silver');
   assert.equal((await post({ action: 'buy', kind: 'bd', key: 'silver' }, null)).s, 401, 'sign in required');
 
-  // a room with two signed-in players and one guest: Hot Joker
+  // a room with two signed-in players and one guest: Last Laugh
   const hj = (b, h = {}, q) => call(hotJoker, q ? 'GET' : 'POST', q ? null : { requestId: rid(), ...b }, h, q);
   let host = (await hj({ action: 'create', name: 'Ann' }, { cookie: ann })).j; assert.equal(host.social.wallet.account, true); assert.equal(host.social.cos[host.meId].bd, 'silver', 'equipped border follows the account');
   const bobJ = (await hj({ action: 'join', name: 'Bob', code: host.code }, { cookie: bob })).j;

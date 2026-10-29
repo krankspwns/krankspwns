@@ -1,4 +1,4 @@
-// Shared client for the card games (Bridge, Hot Joker): seat storage, polling,
+// Shared client for the card games (Bridge, Last Laugh): seat storage, polling,
 // idempotent requests, landing/lobby screens, rules dialog and focus-safe
 // rendering. A game supplies its own screens through TableKit(config).
 (() => {
