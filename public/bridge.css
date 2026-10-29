@@ -182,6 +182,7 @@ body { background:radial-gradient(ellipse at 8% 0,#49447655,transparent 55%),rad
 @media (prefers-reduced-motion: reduce) { .br-pop, .felt-seat.winner .plate { animation: none; } }
 
 /* One central suit keeps number cards clear, with ranks in the corners. */
+body[data-game="bridge"] .pcard:is(.number,.ace),body[data-game="bridge"] .pcard:is(.number,.ace).playable:hover:not(:disabled){background:#fff4db url('/game-art/hidden-alliance-card-frame.webp') center/100% 100%;border-color:#c3a05c}
 body[data-game="bridge"] .pcard .card-pips,body[data-game="bridge"] .pcard .card-ace{display:none}
 body[data-game="bridge"] .pcard.suit-S{--face-suit:'♠'}
 body[data-game="bridge"] .pcard.suit-H{--face-suit:'♥'}
