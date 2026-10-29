@@ -50,7 +50,7 @@
     pop: (t) => tone(520, t, 0.12, { type: 'sine', gain: 0.18, to: 1040 }),
     whoosh: (t) => { noise(t, 0.35, 0.18, 700); tone(300, t, 0.3, { type: 'sine', gain: 0.08, to: 80 }); },
     error: (t) => { tone(160, t, 0.18, { type: 'sawtooth', gain: 0.08 }); },
-    // one little sound for each drawn reaction (same feel as Row of Reckoning)
+    // one little sound for each drawn reaction (same feel as Crown Clash)
     emo_laugh: (t) => [0, 1, 2, 3, 4].forEach((i) => { noise(t + i * 0.12, 0.04, 0.08, 2400); tone(330 - i * 14, t + i * 0.12, 0.1, { type: 'triangle', gain: 0.16 - i * 0.02, to: 290 - i * 16 }); }),
     emo_wow: (t) => { tone(260, t, 0.38, { gain: 0.2, to: 980 }); tone(520, t + 0.02, 0.34, { type: 'triangle', gain: 0.08, to: 1960 }); },
     emo_cry: (t) => [[620, 480], [540, 360]].forEach(([f, to], i) => tone(f, t + i * 0.32, 0.3, { gain: 0.1, to })),
@@ -85,7 +85,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopMusic(); else startMusic(); });
   // browsers only allow sound after a tap: the first one starts the music, and every button gives a click
   document.addEventListener('pointerdown', (e) => { startMusic(); if (e.target.closest?.('button, [role=button], a')) sfx('tap'); }, true);
-  // one shared header dropdown (same look as Row of Reckoning's sound control). A single element is reused, so it survives the games' re-renders.
+  // one shared header dropdown (same look as Crown Clash's sound control). A single element is reused, so it survives the games' re-renders.
   let menuHost = null;
   const MODES = [['volume-x', 'Sound off'], ['volume-2', 'Effects'], ['music', 'Effects + music']];
   const mode = () => (!prefs.sfx ? 0 : prefs.music ? 2 : 1);

@@ -34,7 +34,7 @@
   // Room-wide switching uses the same authenticated seat as each game's own client.
   // No secrets in URLs; save and verify the destination seat before navigating.
   const SWITCH_GAMES = {
-    reckoning: ['Row of Reckoning', 'sct', 2, 12],
+    reckoning: ['Crown Clash', 'sct', 2, 12],
     'last-train': ['Last Train', 'lt-seat', 5, 12],
     bridge: ['Hidden Alliance', 'br-seat', 4, 4],
     'hot-joker': ['Last Laugh', 'hj-seat', 3, 10],

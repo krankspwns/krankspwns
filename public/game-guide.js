@@ -1,4 +1,4 @@
-// Shared "How to play" for Bridge, Last Laugh and The Grand Con. Same look as Row of Reckoning's guide: a gold book button in the
+// Shared "How to play" for Bridge, Last Laugh and The Grand Con. Same look as Crown Clash's guide: a gold book button in the
 // header, a paged popup with a title bar, one idea per page, dots to jump around and Back / Next. Each game supplies its own pages.
 (() => {
   'use strict';
@@ -70,7 +70,7 @@
     draw(); ov.querySelector('.pfg-scroll').focus({ preventScroll: true });
   }
 
-  // The header uses Row of Reckoning's canonical coloured book artwork.
+  // The header uses Crown Clash's canonical coloured book artwork.
   const button = (onclick) => el('button', { type: 'button', class: 'pfg-btn', 'aria-label':'How to Play', title:'How to Play', onclick }, el('b', { 'aria-hidden': 'true' }, window.AvatarArt.tool('guide')), el('span', { class: 'pfg-label' }, 'How to Play'));
 
   // a proper confirm box (replaces the browser's confirm()). Resolves true / false.

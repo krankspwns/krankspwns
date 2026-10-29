@@ -65,7 +65,7 @@
       bad: () => { [220, 208, 196, 147].forEach((f, i) => tone({ f, at: i * .3, dur: i === 3 ? 1.4 : .34, vol: .13, type: 'sawtooth', lp: 650, attack: .05 })); },
       letter: () => { noise({ dur: .18, vol: .08, type: 'bandpass', f: 3000, f2: 1500, q: 1 }); bell({ f: 1568, at: .12, dur: .5, vol: .06 }); },
       buy: () => { [1047, 1319, 1568].forEach((f, i) => tone({ f, at: i * .06, dur: .22, vol: .08, type: 'triangle' })); noise({ at: .05, dur: .15, vol: .05, type: 'highpass', f: 6000 }); },
-      // reactions and throws (the same sounds as Row of Reckoning)
+      // reactions and throws (the same sounds as Crown Clash)
       throw: () => noise({ dur: .3, vol: .12, type: 'bandpass', f: 500, f2: 2600, q: 1.2 }),
       splat: () => { noise({ dur: .2, vol: .22, type: 'lowpass', f: 1800, f2: 300 }); tone({ f: 170, f2: 60, dur: .2, vol: .2 }); },
       boom: () => { noise({ dur: .8, vol: .3, type: 'lowpass', f: 900, f2: 70 }); tone({ f: 95, f2: 32, dur: .7, vol: .32 }); },
@@ -95,7 +95,7 @@
       if (!ensure()) return;
       try { R[name](); } catch {}
     }
-    // Recorded voices from Row of Reckoning for the word reactions; the synthesised sound is the fallback.
+    // Recorded voices from Crown Clash for the word reactions; the synthesised sound is the fallback.
     const VOICED = new Set(['gg', 'gl', 'wp', 'faster', 'aiyo', 'steady', 'oof']);
     function emote(key) {
       if (!mode) return;

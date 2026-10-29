@@ -1,4 +1,4 @@
-// The drawn reaction faces and tags shared by every game (same art as Row of Reckoning).
+// The drawn reaction faces and tags shared by every game (same art as Crown Clash).
 (() => {
   'use strict';
   let uid = 0;

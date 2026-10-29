@@ -832,7 +832,7 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
   :root body :is(input:not([type=checkbox]):not([type=radio]), textarea, select) { font-size: 16px !important; }
 }
 
-/* ===== Polish pass: Row of Reckoning structure in the Last Train palette ===== */
+/* ===== Polish pass: Crown Clash structure in the Last Train palette ===== */
 .lt-header, .lt-header.in-room { display: block; padding: 0 !important; margin: 0 0 16px; background: none; border: 0; }
 .lt-topbar { display: flex; align-items: center; gap: 8px; }
 .lt-spacer { flex: 1; }
@@ -1149,7 +1149,7 @@ body:has(.notebook-launcher) .lt-header, body:has(.letters-launcher) .lt-header 
 @media (prefers-reduced-motion: reduce) { .journey-clock.urgent, .speaker-seconds.urgent { animation: none; } }
 .award-medal { width: 62px; height: 62px; }
 
-/* ===== Buttons and surfaces, v2: chunky, glossy and colourful like Row of Reckoning ===== */
+/* ===== Buttons and surfaces, v2: chunky, glossy and colourful like Crown Clash ===== */
 #lt-app button, .lt-dialog button, dialog button { font-family: Inter, system-ui, sans-serif; letter-spacing: .15px; }
 .gold, .secondary, .danger, .heal, .host { position: relative; overflow: hidden; border-radius: 15px !important; font-weight: 700 !important; box-shadow: inset 0 1px #ffffff55, inset 0 -3px #00000030, 0 8px 20px #0007 !important; transition: transform .12s ease, filter .2s, box-shadow .2s !important; }
 .gold:active:not(:disabled), .secondary:active:not(:disabled), .danger:active:not(:disabled), .heal:active:not(:disabled), .host:active:not(:disabled) { transform: translateY(2px) scale(.99); box-shadow: inset 0 1px #ffffff40, inset 0 -1px #00000030, 0 3px 10px #0006 !important; }
@@ -2338,7 +2338,7 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .toggle-card small { font-size: 11px !important; line-height: 1.35; color: #b9b1cf; }
 .toggle-card input[role="switch"] { grid-area: switch; justify-self: end; margin: 0; }
 .toggle-card:has(input:not(:checked)) .toggle-icon svg { opacity: .45; filter: grayscale(1); }
-/* Language pill and menu, like Row of Reckoning: the short name in the pill, each language in its own script. */
+/* Language pill and menu, like Crown Clash: the short name in the pill, each language in its own script. */
 .lang-pill { white-space: nowrap; flex-shrink: 0; }
 .lang-pill > span { white-space: nowrap; font: 700 13px/1 Inter, system-ui, sans-serif; letter-spacing: .3px; color: #f3e3b8; }
 .lang-menu { min-width: 170px; }
@@ -2382,7 +2382,7 @@ body.climbing { user-select: none; -webkit-user-select: none; -webkit-touch-call
 .sight-card:focus-visible { outline: 3px solid #f2ce86; outline-offset: 2px; }
 .sight-card:disabled { filter: saturate(.3) brightness(.7); cursor: default; }
 @media (max-width: 374px) { .sight-card { grid-template-columns: 50px 1fr 20px; gap: 10px; } .sight-art svg { width: 50px; height: 50px; } .sight-copy b { font-size: 17px; } .sight-copy small { font-size: 12.5px; } }
-/* How to play: one idea per row, an icon for each, pages with dots like Row of Reckoning's guide. */
+/* How to play: one idea per row, an icon for each, pages with dots like Crown Clash's guide. */
 .guide-dialog { display: flex; flex-direction: column; }
 .guide-dialog > h2 { margin-bottom: 4px; }
 .guide-page { display: grid; gap: 14px; min-height: 340px; align-content: start; animation: guide-in .22s ease-out; }

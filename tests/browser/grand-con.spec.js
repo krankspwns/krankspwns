@@ -2,7 +2,7 @@ const {test,expect}=require('@playwright/test');
 test('game hub selects both games and keeps legacy invitations working',async({page})=>{
   await page.goto('/?games=1');
   await expect(page.getByRole('heading',{name:'Bring your people. Pick your game.'})).toBeVisible();
-  await page.getByRole('link',{name:/Row of Reckoning/}).click();
+  await page.getByRole('link',{name:/Crown Clash/}).click();
   await expect(page.getByRole('button',{name:'Create a new room',exact:true})).toBeVisible();
   await page.goto('/?room=ABCD');
   await expect(page).toHaveURL(/reckoning\.html/);
@@ -107,7 +107,7 @@ test('saved seats resume the last selected game while All games remains reachabl
     localStorage.setItem('arcade-last-game','grand-con');return {row:row.code,con:con.code};
   });
   await page.goto('/');await expect(page).toHaveURL(/grand-con\.html/);await expect(page.locator('.room-code')).toHaveText(codes.con);
-  await page.getByRole('link',{name:'← All games'}).click();await page.getByRole('link',{name:/Row of Reckoning/}).click();
+  await page.getByRole('link',{name:'← All games'}).click();await page.getByRole('link',{name:/Crown Clash/}).click();
   await expect(page.locator('.bigcode')).toHaveText(codes.row);
   await page.goto('/');await expect(page).toHaveURL(/reckoning\.html/);await expect(page.locator('.bigcode')).toHaveText(codes.row);
 });

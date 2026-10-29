@@ -20,7 +20,7 @@ for (const width of [320, 390, 1100]) test('whole party switches games without r
     await Promise.all(pages.map(p => p.goto('/bridge.html')));
     await expect(pages[0].getByRole('button', { name: 'Switch game', exact: true })).toBeVisible();
     await expect(pages[1].getByRole('button', { name: 'Switch game', exact: true })).toHaveCount(0);
-    const titles = { 'hot-joker': 'Last Laugh', reckoning: 'Row of Reckoning', 'grand-con': 'The Grand Con', 'last-train': 'Last Train', bridge: 'Hidden Alliance' };
+    const titles = { 'hot-joker': 'Last Laugh', reckoning: 'Crown Clash', 'grand-con': 'The Grand Con', 'last-train': 'Last Train', bridge: 'Hidden Alliance' };
     for (const game of ['hot-joker', 'reckoning', 'grand-con', 'last-train', 'bridge']) {
       if (width === 390 && game === 'hot-joker') await contexts[1].setOffline(true);
       const tools = await pages[0].locator('#pf-dock button').evaluateAll(nodes => nodes.map(n => ({ left: n.getBoundingClientRect().left, right: n.getBoundingClientRect().right })));

@@ -94,7 +94,7 @@ body.pf-lock{overflow:hidden}
 @keyframes pf-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pf-spin{animation-duration:2s}}
 
-/* shared header tools + sound dropdown (matches Row of Reckoning's header) */
+/* shared header tools + sound dropdown (matches Crown Clash's header) */
 .header-tools{display:flex;align-items:center;gap:6px;flex:none}
 .pf-dd{position:relative}
 .pf-ddbtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 11px;border-radius:99px;font-size:15px;line-height:1;background:rgba(255,255,255,.06);color:#f4f5ff;border:1px solid rgba(255,255,255,.2);cursor:pointer}
@@ -105,7 +105,7 @@ body.pf-lock{overflow:hidden}
 .pf-ddmenu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:11px;font:600 14px system-ui,sans-serif;text-align:left;background:transparent;color:#f4f5ff;border:0;cursor:pointer;white-space:nowrap}
 .pf-ddmenu button:hover{background:rgba(255,255,255,.1)}.pf-ddmenu button.on{background:rgba(255,210,63,.2);color:#ffd23f}
 
-/* How to play: shared paged guide (same look as Row of Reckoning's) */
+/* How to play: shared paged guide (same look as Crown Clash's) */
 .pfg-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;border-radius:99px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.3px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.2);cursor:pointer;white-space:nowrap}
 .pfg-btn:hover{background:rgba(255,255,255,.12)}
 .pfg-btn b,.pfg-title b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#e8d3a2,#c9a96a);color:#1a1407;flex:none}
@@ -173,7 +173,7 @@ body.pfg-lock{overflow:hidden}
 .pfc-row .pfc-ok{background:linear-gradient(180deg,#f4df9b,#d6ac59);color:#2a1d05;border-color:#d6ac59}.pfc-row .pfc-ok.danger{background:linear-gradient(180deg,#ff8f8f,#d64545);color:#fff;border-color:#d64545}
 @keyframes pfc-in{from{opacity:0}}
 
-/* Shared SVG animals and icons use the same centred viewboxes as Row of Reckoning. */
+/* Shared SVG animals and icons use the same centred viewboxes as Crown Clash. */
 .pf-av>.pf-art{display:block;width:100%;height:100%;border-radius:50%;overflow:hidden;line-height:0}
 .pf-art svg{display:block;width:100%;height:100%}
 .pf-x{display:grid;place-items:center;flex:none;padding:0;line-height:1}
@@ -214,7 +214,7 @@ details.pf-privacy{display:block;padding:0;overflow:hidden}
 .pf-box .pf-switch input{margin:0}
 @media(max-width:380px){.pf-hero{padding:12px;gap:12px}.pf-hero>.pf-av{width:64px;height:64px;--ring-pad:4.8px!important}.pf-name-row{gap:6px}.pf-name-row .pf-name{font-size:18px}.pf-box .pf-name-row .pf-edit{padding:0 8px}}
 
-/* Row of Reckoning's header controls: coloured book, gold line icons, 36px pills. */
+/* Crown Clash's header controls: coloured book, gold line icons, 36px pills. */
 .header-tools{gap:6px}
 .header-tools .pfg-btn{height:36px;padding:4px 12px 4px 6px;font-size:12px;font-weight:700;border-color:#ffffff1a;box-shadow:none}
 .header-tools .pfg-btn b{width:26px;height:26px;background:none;border-radius:0;line-height:0}
@@ -224,7 +224,7 @@ details.pf-privacy{display:block;padding:0;overflow:hidden}
 .pf-line-icon svg{display:block;width:100%;height:100%}
 .header-tools .pfg-btn:hover,.pf-dd .pf-ddbtn:hover,.pf-ddmenu button:hover{transform:none;filter:none}
 @media(max-width:440px){.header-tools .pfg-btn{padding:4px;gap:0}}
-/* The original Row of Reckoning floating-button treatment. */
+/* The original Crown Clash floating-button treatment. */
 #pf-dock{gap:10px}
 #pf-dock .pf-tool{width:48px;height:48px;background:rgba(17,19,38,.94);border:1px solid #8d7442;box-shadow:0 8px 24px #0008;filter:none}
 #pf-dock .pf-tool:hover:not(:disabled){background:rgba(17,19,38,.94);transform:scale(1.06)}

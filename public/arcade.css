@@ -30,7 +30,7 @@ body{background:radial-gradient(ellipse at 0% 0%,#34302b66,transparent 55%),radi
 h1 em{color:#e0bb79}
 .arcade-intro p{color:#b7b7bc}
 .game-card{--card-ink:#f4ead8;--card-muted:#acb4c6;--card-tag:#bfae8d;--card-accent:#e4c88f;--card-line:#ffffff12;--chip-ink:#bec6d5;--chip-bg:#ffffff06;--chip-line:#ffffff14;color:var(--card-ink);box-shadow:0 12px 28px #00000024}
-/* Row of Reckoning retains its existing navy and gold card. */
+/* Crown Clash retains its existing navy and gold card. */
 .reckoning-card{background:linear-gradient(145deg,#1f2635,#101622)}
 .train-card{background:linear-gradient(145deg,#253d38,#1b2c2a);border-color:#86b29b35;--card-ink:#eff2e7;--card-muted:#c1cfc5;--card-tag:#b3ccba;--card-accent:#c6dec6;--card-line:#b3ccba26;--chip-ink:#d0ddd2;--chip-bg:#b3ccba0c;--chip-line:#b3ccba26}
 .bridge-card{background:linear-gradient(145deg,#353044,#262433);border-color:#b2a1cc35;--card-ink:#f1ebf6;--card-muted:#ccc2d6;--card-tag:#c7b5df;--card-accent:#d7c6ed;--card-line:#c7b5df26;--chip-ink:#dbd0e6;--chip-bg:#c7b5df0c;--chip-line:#c7b5df26}

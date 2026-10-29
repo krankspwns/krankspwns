@@ -1,6 +1,6 @@
 # Last Train
 
-A separate 5–12-player secret-team game at `/last-train.html`. The existing Row of Reckoning and Grand Con (Review) remain separate. Its API is `/api/last-train`, Redis namespace `last-train:room:*`, and browser seat `lt-seat`.
+A separate 5–12-player secret-team game at `/last-train.html`. The existing Crown Clash and Grand Con (Review) remain separate. Its API is `/api/last-train`, Redis namespace `last-train:room:*`, and browser seat `lt-seat`.
 
 The journey now uses illustrated train scenes: team introductions → boarding on the platform → closing eyes and finding a private cabin → sequential night turns → gathering in the lounge → speaking in seat order → a sealed vote → a public removal and vote record → the next night or winner.
 
@@ -106,13 +106,13 @@ Notes belong to the current room, player and game. Lobby notes carry into the fi
 
 ## Header
 
-The header follows Row of Reckoning: an icon bar (All games, How to play, the sound menu, and the Shop with the WP balance), the centred LAST TRAIN title, and a room card with the shimmering room code, Leave (with a confirmation popup), a stats line (travellers, aboard, phase), and Players / Invite ▾ / Pause. Invite offers the link, a QR code and the private rejoin code. The roster strip under it shows round portraits in seat order: the speaker has a gold ring and microphone, voted players a green ring, removed players turn grey with a red cross, the host has a star, and suspect-pin counts appear as small badges. Test bots collapse to one line.
+The header follows Crown Clash: an icon bar (All games, How to play, the sound menu, and the Shop with the WP balance), the centred LAST TRAIN title, and a room card with the shimmering room code, Leave (with a confirmation popup), a stats line (travellers, aboard, phase), and Players / Invite ▾ / Pause. Invite offers the link, a QR code and the private rejoin code. The roster strip under it shows round portraits in seat order: the speaker has a gold ring and microphone, voted players a green ring, removed players turn grey with a red cross, the host has a star, and suspect-pin counts appear as small badges. Test bots collapse to one line.
 
 ## Reactions, shop and throwables
 
-The reaction button opens a tray of 18 reactions from Row of Reckoning (EZ, fire and trophy are left out; SUS, Shh and Eyes are new). A reaction floats above the sender's lounge seat, or their roster portrait. Word reactions play the recorded voices. Reactions and throws are off during boarding, settling and night so a tap can never hint at a secret move. Players who are out can still react, shown faded like a ghost, but cannot throw.
+The reaction button opens a tray of 18 reactions from Crown Clash (EZ, fire and trophy are left out; SUS, Shh and Eyes are new). A reaction floats above the sender's lounge seat, or their roster portrait. Word reactions play the recorded voices. Reactions and throws are off during boarding, settling and night so a tap can never hint at a secret move. Players who are out can still react, shown faded like a ghost, but cannot throw.
 
-The shop has two tabs. **Frames** are Row of Reckoning's eight borders (15–50 WP), drawn around the portrait in the roster, letters, Players list and the finale cast. **Throwables** are nine packs of three throws (10–25 WP), thrown from the reaction tray at a traveller's seat with the same arc and splat as Row of Reckoning. A speaker cannot be hit in the first five seconds of their turn. The wallet belongs to this room and is separate from Row of Reckoning: everyone starts with 25 WP and earns more by winning (+15 for 5–7 players, +20 for 8–10, +25 for 11–12), staying aboard to the end (+5), a vote that removes a Saboteur (+5 per voter), or, for Saboteurs, a good player voted out (+5).
+The shop has two tabs. **Frames** are Crown Clash's eight borders (15–50 WP), drawn around the portrait in the roster, letters, Players list and the finale cast. **Throwables** are nine packs of three throws (10–25 WP), thrown from the reaction tray at a traveller's seat with the same arc and splat as Crown Clash. A speaker cannot be hit in the first five seconds of their turn. The wallet belongs to this room and is separate from Crown Clash: everyone starts with 25 WP and earns more by winning (+15 for 5–7 players, +20 for 8–10, +25 for 11–12), staying aboard to the end (+5), a vote that removes a Saboteur (+5 per voter), or, for Saboteurs, a good player voted out (+5).
 
 ## Awards and sound
 

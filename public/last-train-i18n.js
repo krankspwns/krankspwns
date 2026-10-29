@@ -1,4 +1,4 @@
-/* Last Train languages: English, Simplified Chinese and Traditional Chinese, like Row of Reckoning (the choice is shared).
+/* Last Train languages: English, Simplified Chinese and Traditional Chinese, like Crown Clash (the choice is shared).
    The game is written in English. This layer watches the page and swaps each piece of text, placeholder and label for
    its translation, so every screen, dialog and module is covered without changing how they are built. A dictionary
    holds whole strings; patterns cover text with names or numbers inside ("Night 3", "Write to Ava"). */

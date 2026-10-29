@@ -11,6 +11,7 @@ for (const width of [320,390,430,1280]) {
       openScoreboard();
     });
     await expect(page.getByRole('dialog', { name:'Session Scoreboard' })).toBeVisible();
+    await expect(page.locator('.sb-k')).toHaveText('CROWN CLASH');
     const measurements = await page.locator('.sbr:not(.hd)').evaluateAll(rows => rows.map(row => {
       const values=[...row.querySelectorAll('.sbv')];
       const bounds=values.map(n=>{const range=document.createRange();range.selectNodeContents(n);const r=range.getBoundingClientRect();return {left:r.left,right:r.right}});
@@ -35,3 +36,16 @@ for (const width of [320,390,430,1280]) {
     expect(gap).toBeGreaterThanOrEqual(4);
   });
 }
+
+test('Crown Clash branding follows language without changing the game route',async({page})=>{
+  await page.goto('/?games=1');
+  await page.getByRole('link',{name:/Crown Clash/}).click();
+  await expect(page).toHaveURL(/\/reckoning\.html$/);
+  for(const [lang,title] of [['en','Crown Clash'],['zh','王冠对决'],['zht','王冠對決']]){
+    await page.evaluate(lang=>setLang(lang),lang);
+    await expect(page).toHaveTitle(title);
+    await expect(page.locator('#h1')).toHaveText(title);
+    expect(await page.evaluate(()=>t('sbPlay'))).toContain('Crown Clash');
+  }
+  await page.reload();await expect(page).toHaveTitle('王冠對決');
+});

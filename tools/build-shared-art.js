@@ -1,4 +1,4 @@
-// Derive the shared renderer from Row of Reckoning's canonical artwork.
+// Derive the shared renderer from Crown Clash's canonical artwork.
 // The source game keeps its existing initialization and interaction code.
 const fs = require('node:fs');
 const path = require('node:path');

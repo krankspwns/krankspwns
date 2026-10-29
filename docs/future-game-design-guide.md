@@ -1,6 +1,6 @@
 # The Game Room: a guide for future games
 
-Derived from Row of Reckoning, Last Train, the code in this repository, and the owner's repeated playtest feedback. Treat explicit preferences as requirements; treat inferred patterns as starting points to validate with people. A passing test cannot establish that a party game is fun.
+Derived from Crown Clash, Last Train, the code in this repository, and the owner's repeated playtest feedback. Treat explicit preferences as requirements; treat inferred patterns as starting points to validate with people. A passing test cannot establish that a party game is fun.
 
 ## The experience to aim for
 

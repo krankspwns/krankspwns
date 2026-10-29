@@ -1,4 +1,4 @@
-/* Reactions, the shop and throwables. Artwork comes from Row of Reckoning (window.TRAIN_ART).
+/* Reactions, the shop and throwables. Artwork comes from Crown Clash (window.TRAIN_ART).
    The wallet is this room's own Last Train wallet. Nothing here is tied to a turn, and nothing works at night. */
 (() => {
   'use strict';

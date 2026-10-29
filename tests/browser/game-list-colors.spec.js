@@ -20,6 +20,6 @@ for(const width of [320,390,1100])test('Midnight game list with individual jewel
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
   await page.locator('.game-art img').evaluateAll(images=>Promise.all(images.map(image=>{image.loading='eager';return image.decode();})));
   await page.screenshot({path:testInfo.outputPath('game-list.png'),fullPage:true});
-  await page.getByRole('link',{name:/Row of Reckoning/}).click();
+  await page.getByRole('link',{name:/Crown Clash/}).click();
   await expect(page.locator('html')).not.toHaveCSS('color-scheme','light');
 });

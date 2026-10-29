@@ -36,7 +36,7 @@
   const social = window.createTrainSocial({ dock: fabDock, request, onState: fromModule, sfx });
   const testPlayers = new URLSearchParams(location.search).get('test') === '1' ? window.createTrainTestPlayers(root) : null;
   const compactScene = matchMedia('(max-width: 680px)');
-  // Phone preferences (like Row of Reckoning): colour scheme, text size, calm mode and vibration.
+  // Phone preferences (like Crown Clash): colour scheme, text size, calm mode and vibration.
   const THEMES = [['navy', 'Orient Navy', '#1f3157', '#e9c46f'], ['plum', 'Midnight Plum', '#2b2350', '#f2ce86'], ['emerald', 'Emerald Sleeper', '#163d34', '#e9c46f'], ['oxblood', 'Oxblood', '#4a1426', '#f2d9a6'], ['smoke', 'Smoke & Brass', '#2a2d33', '#d9a441']];
   let ui = { theme: 'navy', text: 0, calm: false, haptics: true, ...(read('lt-ui') || {}) };
   const systemCalm = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -241,7 +241,7 @@
   const roleName = key => key === 'saboteur' ? 'Saboteurs' : role(key).name;
   const player = id => state?.players.find(p => p.id === id);
   const fence = () => [state?.code, state?.match, state?.step].join(':');
-  // How to play: short pages with an icon per idea, like Row of Reckoning's guide. Back / Next and dots move between them.
+  // How to play: short pages with an icon per idea, like Crown Clash's guide. Back / Next and dots move between them.
   const GUIDE_PAGES = [
     { title: 'One train. Two secret teams.', body: () => [
       el('div', { class: 'guide-tiles' }, ...[['📱', 'Own phone', '5–12 players, one phone each'], ['🎟️', 'Secret role', 'Only you see your ticket'], ['🌙', 'Nights and days', 'Secret moves, then talk']].map(([i, t, s]) => el('div', { class: 'guide-tile' }, txt('span', 'guide-emoji', i), txt('b', '', t), txt('small', '', s)))),
@@ -377,7 +377,7 @@
     const menu = el('div', { class: 'lt-menu sound-menu', role: 'menu' }, ...SOUND_MODES.map((label, m) => el('button', { type: 'button', role: 'menuitemradio', 'aria-checked': String(sfx.mode === m), class: sfx.mode === m ? 'on' : '', onclick: () => { menu.remove(); sfx.setMode(m); if (m) sfx.play('pop'); } }, label)));
     popMenu(anchor, menu);
   }
-  // Languages: the same choice as Row of Reckoning. The page text is swapped by last-train-i18n.js; the menu shows each
+  // Languages: the same choice as Crown Clash. The page text is swapped by last-train-i18n.js; the menu shows each
   // language in its own script, so those names stay as written.
   const i18n = window.ltI18n;
   i18n.onChange(() => render());

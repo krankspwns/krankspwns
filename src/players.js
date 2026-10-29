@@ -56,7 +56,7 @@ async function scoreboardImage(data) {
   // faint card suits, only in the empty space below the table
   { const free0 = top + blockH + 40; if (1690 - free0 > 260) { g.fillStyle = 'rgba(255,255,255,.035)'; g.font = f(400, Math.min(380, 1690 - free0)); g.textBaseline = 'bottom'; g.fillText('♠', 170, 1700); g.fillText('♣', 920, 1700); g.textBaseline = 'alphabetic'; } }
   // heading
-  g.fillStyle = 'rgba(255,226,140,.9)'; g.font = f(800, 32); spaced('ROW OF RECKONING', W / 2, top + 40, 14);
+  g.fillStyle = 'rgba(255,226,140,.9)'; g.font = f(800, 32); spaced('CROWN CLASH', W / 2, top + 40, 14);
   const tg = g.createLinearGradient(0, top + 70, 0, top + 170); tg.addColorStop(0, '#fff6d8'); tg.addColorStop(1, '#ffcf57'); g.fillStyle = tg; g.font = f(900, 92); g.shadowColor = 'rgba(255,190,60,.45)'; g.shadowBlur = 30; g.fillText(fit(t('sbTitle'), 980), W / 2, top + 152); g.shadowBlur = 0;
   g.fillStyle = 'rgba(255,255,255,.7)'; g.font = f(500, 34); g.fillText(fit(t('room') + ' ' + st.code + '  ·  ' + t('sbRounds', { n: rounds }) + '  ·  ' + new Date().toLocaleDateString(), 980), W / 2, top + 220);
   let y = top + 280;
@@ -127,7 +127,7 @@ function openScoreboard() {
     el('span', { class: 'sbv' }, String(e.p.wins || 0)), el('span', { class: 'sbv' }, String(e.x.pen)), el('span', { class: 'sbv' }, e.x.hits + '/' + e.x.calls), el('span', { class: 'sbv wp' }, String(e.p.wp ?? 0))));
   const d = new Date();
   const box = el('div', { class: 'avbox sbbox' + (list.length > 7 ? ' many' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': t('sbTitle') },
-    el('div', { class: 'sb-k' }, 'ROW OF RECKONING'),
+    el('div', { class: 'sb-k' }, 'CROWN CLASH'),
     el('div', { class: 'sb-t' }, t('sbTitle')),
     el('div', { class: 'sb-sub' }, t('room') + ' ' + st.code + ' · ' + t('sbRounds', { n: rounds }) + ' · ' + d.toLocaleDateString()),
     rounds ? el('div', { class: 'sbhl' }, hl('sbMost', most, most ? '×' + most[0].p.wins : ''), hl('sbCaller', caller, caller ? caller[0].x.hits + '/' + caller[0].x.calls : ''), hl('sbClean', clean, clean ? String(clean[0].x.pen) : '')) : el('p', { class: 'leavep' }, t('sbEmpty')),

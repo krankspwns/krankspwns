@@ -1,6 +1,6 @@
 # Game languages
 
-Row of Reckoning and Last Train already provide English, Simplified Chinese and Traditional Chinese. Bridge, Last Laugh and The Grand Con use `public/game-i18n.js`, with the same `sct-lang` preference.
+Crown Clash and Last Train already provide English, Simplified Chinese and Traditional Chinese. Bridge, Last Laugh and The Grand Con use `public/game-i18n.js`, with the same `sct-lang` preference.
 
 The shared layer translates text and accessible labels from local dictionaries. It preserves English originals to switch back, and leaves typed text, player names, card indices and room codes intact. Mark player-written content with `data-no-tr`.
 
