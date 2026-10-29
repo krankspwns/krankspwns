@@ -101,6 +101,10 @@ function rulesTests() {
           assert.equal((await post(taker, 'take', { index: v.sourceCount, turn: v.turn })).s, 400, 'index out of range');
           assert.equal((await post(taker, 'take', { index: -1, turn: v.turn })).s, 400);
           assert.equal((await post(taker, 'take', { index: 0, turn: v.turn + 1 })).s, 409, 'stale turn');
+          const source = by[v.source], held = (await ownerView(source)).me.hand.slice();
+          assert.equal((await post(source, 'shuffle')).s, 409, 'draw source cannot shuffle');
+          assert.equal((await post(source, 'move', { from: 0, to: held.length - 1 })).s, 409, 'draw source cannot move cards');
+          assert.deepEqual((await ownerView(source)).me.hand, held, 'locked card positions stay unchanged');
           // Arranging cards never changes the multiset.
           const before = (await ownerView(taker)).me.hand.slice().sort();
           await post(taker, 'shuffle'); await post(taker, 'move', { from: 0, to: before.length - 1 });

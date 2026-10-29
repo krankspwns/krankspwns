@@ -121,10 +121,12 @@ const api = createRoomApi({
     },
     shuffle(room, me) {
       need(room.phase === 'playing', 409, 'The game is not in progress.');
+      need(R.sourceFor(room.order, room.hands, room.taker) !== me.id, 409, 'Your cards are locked while someone is drawing from you.');
       room.hands[me.id] = shuffle(room.hands[me.id].slice());
     },
     move(room, me, body) {
       need(room.phase === 'playing', 409, 'The game is not in progress.');
+      need(R.sourceFor(room.order, room.hands, room.taker) !== me.id, 409, 'Your cards are locked while someone is drawing from you.');
       const hand = room.hands[me.id].slice(), ok = (i) => Number.isInteger(i) && i >= 0 && i < hand.length;
       need(ok(body.from) && ok(body.to), 400, 'Choose a card to move.');
       hand.splice(body.to, 0, hand.splice(body.from, 1)[0]);

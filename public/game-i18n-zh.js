@@ -873,6 +873,9 @@ window.GAME_I18N_REGISTER("zh",{
     "Queens": "Q",
     "Jacks": "J",
     "DOUBLE PAIR!": "双对子！",
+    "Tap a card to take it immediately.": "点一下牌就会立即抽取。",
+    "Your cards are locked while someone is drawing from you.": "有人正在抽你的牌，暂时不能调整手牌。",
+    "You can rearrange your cards until another player starts drawing from you.": "其他玩家开始抽你的牌之前，可以调整手牌顺序。",
     "PAIR!": "对子！",
     "The cards are dealt. Match pairs and get rid of the Joker.": "牌已发好。配对子，摆脱鬼牌。",
     "The game is over.": "游戏结束。",
@@ -1399,6 +1402,10 @@ window.GAME_I18N_REGISTER("zh",{
     [
       "Pick a card from {N0}",
       "从 {0} 手里选一张牌"
+    ],
+    [
+      "They are holding {#} card.",
+      "对方有 {#} 张牌。"
     ],
     [
       "They are holding {#} cards.",

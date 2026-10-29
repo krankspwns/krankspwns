@@ -4,7 +4,7 @@
   const RANK_NAME = { A: 'Aces', K: 'Kings', Q: 'Queens', J: 'Jacks' };
   const rankName = (r) => RANK_NAME[r] || r + 's';
   const setName = r => 'a pair of '+rankName(r);
-  let pickRect = null, pick = -1, sel = -1, pickKey = '', cur = null, seen = null, prev = { hand: [], rects: new Map() };
+  let pickRect = null, sel = -1, cur = null, seen = null, prev = { hand: [], rects: new Map() };
   const calm = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---- animation: cards flying between players, hand reordering ----
@@ -98,12 +98,13 @@
     [...row.children].forEach((n, i) => { const r = n.getBoundingClientRect(), dd = Math.hypot(x - (r.left + r.width / 2), (y - (r.top + r.height / 2)) * 1.6); if (dd < d) { d = dd; best = i; } }); return best; };
   const mark = (from, to) => { const row = document.querySelector('.hand-row'); if (!row) return; [...row.children].forEach((n, i) => { n.classList.toggle('hj-drag-src', i === from); n.classList.toggle('hj-drop', i === to && to !== from); }); };
   document.addEventListener('pointerdown', (ev) => {
-    const node = ev.target.closest?.('.hand-row .pcard'); if (!node || (ev.button && ev.button !== 0) || !cur || cur.busy || cur.state?.phase !== 'playing') return;
+    const node = ev.target.closest?.('.hand-row .pcard'); if (!node || (ev.button && ev.button !== 0) || !cur || cur.busy || cur.state?.phase !== 'playing' || cur.state.source === cur.state.meId) return;
     const row = node.parentElement, from = [...row.children].indexOf(node); if (from < 0 || row.children.length < 2) return;
     drag = { from, to: from, x: ev.clientX, y: ev.clientY, on: false, ghost: null, w: node.offsetWidth, h: node.offsetHeight };
   });
   document.addEventListener('pointermove', (ev) => {
     if (!drag) return;
+    if (cur?.state.source === cur?.state.meId) { drag.ghost?.remove(); drag = null; mark(-1, -1); return; }
     if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 8) return;
       const src = document.querySelector('.hand-row')?.children[drag.from]; if (!src) { drag = null; return; }
       drag.on = true; drag.ghost = src.cloneNode(true); drag.ghost.classList.add('hj-ghost'); drag.ghost.style.width = drag.w + 'px'; drag.ghost.style.height = drag.h + 'px'; document.body.append(drag.ghost); }
@@ -113,7 +114,7 @@
   const finish = async (ev) => {
     const d = drag; drag = null; if (!d || !d.on) return;
     d.ghost.remove(); mark(-1, -1); justDragged = true; setTimeout(() => { justDragged = false; }, 50);
-    if (ev.type === 'pointerup' && d.to >= 0 && d.to !== d.from && cur && !cur.busy) { sel = -1; const h = cur.state.me.hand.slice(); h.splice(d.to, 0, h.splice(d.from, 1)[0]); cur.state.me.hand = h; cur.render(); await cur.send('move', { from: d.from, to: d.to }); }
+    if (ev.type === 'pointerup' && d.to >= 0 && d.to !== d.from && cur && !cur.busy && cur.state.source !== cur.state.meId) { sel = -1; const h = cur.state.me.hand.slice(); h.splice(d.to, 0, h.splice(d.from, 1)[0]); cur.state.me.hand = h; cur.render(); await cur.send('move', { from: d.from, to: d.to }); }
   };
   document.addEventListener('pointerup', finish); document.addEventListener('pointercancel', finish);
   document.addEventListener('click', (ev) => { if (justDragged) { ev.stopPropagation(); ev.preventDefault(); } }, true);
@@ -140,7 +141,7 @@
         B.note('Somewhere in that fan is the Joker. Nobody knows where.')],
       () => [B.h('Pairs go down'), B.p('Whenever you hold two cards with the same number or face, they are put down automatically as a pair for everyone to see.'),
         B.row([B.example('Pair!', B.cards([B.card('7', '♥'), B.card('7', '♣')]), 'Laid down', 'good'), B.example('No pair', B.cards([B.card('9', '♠'), B.card('K', '♦')]), 'Keep both', 'bad')])],
-      () => [B.h('Your turn'), B.steps([['👈', 'Take a hidden card', 'Take one face-down card from the previous player who still has cards.'], ['✨', 'Match it', 'If it makes a pair with a card you hold, the pair goes down.'], ['🔀', 'Shuffle your hand', 'Move your cards around so nobody can guess where the Joker is.']]),
+      () => [B.h('Your turn'), B.steps([['👈', 'Take a hidden card', 'Take one face-down card from the previous player who still has cards.'], ['✨', 'Match it', 'If it makes a pair with a card you hold, the pair goes down.'], ['🔀', 'Shuffle your hand', 'You can rearrange your cards until another player starts drawing from you.']]),
         B.dim('Players take turns clockwise around the circle.')],
       () => [B.h('Get out, or get stuck'), B.p('When you have no cards left you are safe. The game goes on until only one player still holds cards. That player is stuck with the Joker.'),
         B.row([B.example('Safe', B.el('div', { style: 'font-size:34px;line-height:60px' }, '🎉'), 'No cards left', 'good'), B.example('Stuck!', B.cards([B.card('★')]), 'Holding the Joker', 'bad')])],
@@ -153,7 +154,7 @@
       el('ol', {},
         el('li', {}, el('b', {}, 'Pairs go down. '), 'Whenever you hold two cards with the same number or face, like two 7s, they are put down automatically as a pair for everyone to see.'),
         el('li', {}, el('b', {}, 'Take a hidden card. '), 'Players take turns clockwise around the circle. On your turn, take one face-down card from the previous player who still has cards. If it makes a pair, the pair goes down.'),
-        el('li', {}, el('b', {}, 'Keep your cards safe. '), 'You can shuffle your cards or move them around so nobody can guess where the Joker is.'),
+        el('li', {}, el('b', {}, 'Keep your cards safe. '), 'You can rearrange your cards until another player starts drawing from you.'),
         el('li', {}, el('b', {}, 'Get out. '), 'When you have no cards left you are safe. The game goes on until only one player still holds cards. That player is stuck with the Joker and loses!')),
       el('p', { class: 'muted small' }, 'Nobody can see anyone’s hand, only how many cards they hold. Pairs that have been laid down are shown under each player. If a player takes too long, the game takes a random card for them. If someone leaves, the game plays on for them.'),
     ],
@@ -213,19 +214,23 @@
   }
   function takePanel(c) {
     const { state, send } = c, mine = state.taker === state.meId; if (state.phase !== 'playing' || !mine) return null;
-    const key = state.match + ':' + state.turn;
-    if (key !== pickKey) { pickKey = key; pick = -1; }
     return c.panel('take-panel active', text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
-      el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + ' hidden card' + (state.sourceCount === 1 ? '' : 's') + '. One of them might be the Joker. Tap a card to choose it, then confirm.'),
-      el('div', { class: 'pick-row', 'data-scroll': 'pick' }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable' + (pick === i ? ' selected' : ''), 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, 'aria-pressed': pick === i, disabled: c.busy, onclick: () => { pick = i; c.render(); } }))),
-      c.button(pick >= 0 ? 'Take card ' + (pick + 1) : 'Choose a card', async () => { const i = pick; const pr = document.querySelectorAll('.pick-row .pcard')[i]?.getBoundingClientRect(); if (pr) { pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now() }; leaveGhost(i); } if (await send('take', { index: i, turn: state.turn })) pick = -1; }, 'primary', pick < 0, 'take-confirm', 'hand:ink'));
+      el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + (state.sourceCount === 1 ? ' card.' : ' cards.')),
+      text('p', 'muted small', 'Tap a card to take it immediately.'),
+      el('div', { class: 'pick-row', 'data-scroll': 'pick' }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable', 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, disabled: c.busy, onclick: async () => {
+        if (c.busy) return;
+        const pr = document.querySelectorAll('.pick-row .pcard')[i]?.getBoundingClientRect();
+        if (pr) { pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now() }; leaveGhost(i); }
+        await send('take', { index: i, turn: state.turn });
+      } }))));
   }
   function handPanel(c) {
     const { state, send } = c, hand = state.me.hand, playing = state.phase === 'playing';
     if (sel >= hand.length) sel = -1;
-    const arrange = playing && hand.length > 1;
+    const arrange = playing && hand.length > 1 && state.source !== state.meId;
+    if (!arrange) sel = -1;
     return c.panel('hand-panel' + (state.source === state.meId ? ' being-taken' : ''), el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'KEEP THIS PRIVATE'), el('h3', {}, hand.length ? 'Your cards' : state.phase === 'finished' ? 'Your last cards' : 'You are safe!')), text('span', 'hcp', hand.length + (hand.length === 1 ? ' card' : ' cards'))),
-      state.source === state.meId && playing ? el('p', { class: 'warn small' }, c.who(state.taker) + ' is about to pick one of these. Move or shuffle your cards now.') : null,
+      state.source === state.meId && playing ? el('p', { class: 'warn small' }, 'Your cards are locked while someone is drawing from you.') : null,
       hand.length ? el('div', { class: 'hand-row', 'data-scroll': 'hand' }, hand.map((code, i) => c.card(code, { selected: sel === i, onclick: arrange ? () => { sel = sel === i ? -1 : i; c.render(); } : undefined, label: undefined }))) : text('p', 'muted', state.me.place ? 'You finished #' + state.me.place + '. Watch the others sweat.' : 'No cards left.'),
       arrange ? el('div', { class: 'arrange' },
         c.button('Left', async () => { const from = sel; if (from > 0 && await send('move', { from, to: from - 1 })) sel = from - 1; }, 'secondary', sel <= 0, 'move-left', 'arrowL:blue'),
