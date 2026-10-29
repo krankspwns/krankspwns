@@ -186,3 +186,7 @@ body[data-game="bridge"] .pcard .card-pips,body[data-game="bridge"] .pcard .card
 body[data-game="bridge"] .pcard.number::before,body[data-game="bridge"] .pcard.ace::before{content:attr(data-rank);position:absolute;inset:20px 3px;display:grid;place-items:center;font:500 30px/1 Georgia,serif;letter-spacing:-1px;pointer-events:none}
 body[data-game="bridge"] .pcard.small.number::before,body[data-game="bridge"] .pcard.small.ace::before{inset:16px 2px;font-size:22px}
 @media(max-width:420px){body[data-game="bridge"] .pcard.number:not(.small)::before,body[data-game="bridge"] .pcard.ace:not(.small)::before{font-size:28px}}
+
+/* Brighter, larger court portraits with a delicate inset gold frame. */
+body[data-game="bridge"] .card-court{height:calc(100% - 34px);background-image:url('/game-art/hidden-alliance-courts.webp');border:1px solid #c4a66b90;border-radius:3px;box-shadow:0 1px 3px #80602c20}
+body[data-game="bridge"] .pcard.small .card-court{height:calc(100% - 28px);border-radius:2px}
