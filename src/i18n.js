@@ -44,7 +44,7 @@ const I18N = {
     openedN: (v) => `${v.n}/${v.total} Opened`, hiddenState: 'Hidden', openedState: 'Opened', lostTag: 'LOST', safeTag: 'SAFE',
     youLose: 'YOU LOSE!', alongWith: (v) => `along with ${v.names}`, nextUp: 'Next up', allDone: 'All four rows done',
     finalTitle: 'Final Board', hallTitle: 'Hall of Fame', hallSub: (v) => `Round ${v.n} · lowest penalty wins`, hallPts: (v) => `${v.n} Pts`, hallLast: (v) => `+${v.n} this round`, hallLost: (v) => `${v.n} Row${v.n === 1 ? '' : 's'} Lost`, hallRounds: (v) => `${v.n} rd`, showBoard: 'Show Final Board', hideBoard: 'Hide Final Board', legLost: 'Lost', legSafe: 'Safe', legTie: 'Tie', lostRows: (v) => `Lost ${v.n} Of 4 Rows`,
-    guideBtn: 'How to play', guideTitle: 'How to play', gClose: 'Close', gBack: 'Back', gNext: 'Next', gDone: 'Got it!', gStep: (v) => `${v.i} / ${v.n}`,
+    allGames: 'All games', guideBtn: 'How to play', guideTitle: 'How to play', gClose: 'Close', gBack: 'Back', gNext: 'Next', gDone: 'Got it!', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: 'Lowest Card Loses', g_r2: 'Highest Card Loses', g_r3: 'Closest To 10.5', g_r4: 'Best pattern', gCards: (v) => `${v.n} card${v.n > 1 ? 's' : ''}`,
     gLoses: 'LOSES', gSafe: 'safe', gBust: 'BUST', gPerfect: 'PERFECT', gPenaltyIs: 'Penalty',
     g1t: 'The game in one minute', g1p: 'Up to 12 players. Everyone gets 7 cards and fills 4 rows. Each row is its own contest, and its loser takes a penalty.',
@@ -128,7 +128,7 @@ const I18N = {
     openedN: (v) => `${v.n}/${v.total} 已翻开`, hiddenState: '未翻开', openedState: '已翻开', lostTag: '输了', safeTag: '安全',
     youLose: '你输了！', alongWith: (v) => `还有 ${v.names}`, nextUp: '下一行', allDone: '四行全部结束',
     finalTitle: '最终结果', hallTitle: '名人堂', hallSub: (v) => `第 ${v.n} 回合 · 罚分最低者获胜`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `输了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '显示最终结果', hideBoard: '收起最终结果', legLost: '输', legSafe: '安全', legTie: '平局', lostRows: (v) => `输了 4 行中的 ${v.n} 行`,
-    guideBtn: '玩法说明', guideTitle: '玩法说明', gClose: '关闭', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
+    allGames: '所有游戏', guideBtn: '玩法说明', guideTitle: '玩法说明', gClose: '关闭', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: '最小的牌输', g_r2: '最大的牌输', g_r3: '最接近 10.5', g_r4: '牌型最强', gCards: (v) => `${v.n} 张牌`,
     gLoses: '输', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '惩罚',
     g1t: '一分钟看懂玩法', g1p: '最多 12 位玩家。每人 7 张牌，摆成 4 行。每一行各自比拼，输的人受罚。',
@@ -212,7 +212,7 @@ const I18N = {
     openedN: (v) => `${v.n}/${v.total} 已翻開`, hiddenState: '未翻開', openedState: '已翻開', lostTag: '輸了', safeTag: '安全',
     youLose: '你輸了！', alongWith: (v) => `還有 ${v.names}`, nextUp: '下一行', allDone: '四行全部結束',
     finalTitle: '最終結果', hallTitle: '名人堂', hallSub: (v) => `第 ${v.n} 回合 · 罰分最低者獲勝`, hallPts: (v) => `${v.n} 分`, hallLast: (v) => `本回合 +${v.n}`, hallLost: (v) => `輸了 ${v.n} 行`, hallRounds: (v) => `${v.n} 回合`, showBoard: '顯示最終結果', hideBoard: '收起最終結果', legLost: '輸', legSafe: '安全', legTie: '平局', lostRows: (v) => `輸了 4 行中的 ${v.n} 行`,
-    guideBtn: '玩法說明', guideTitle: '玩法說明', gClose: '關閉', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
+    allGames: '所有遊戲', guideBtn: '玩法說明', guideTitle: '玩法說明', gClose: '關閉', gBack: '上一步', gNext: '下一步', gDone: '明白了！', gStep: (v) => `${v.i} / ${v.n}`,
     g_r1: '最小的牌輸', g_r2: '最大的牌輸', g_r3: '最接近 10.5', g_r4: '牌型最強', gCards: (v) => `${v.n} 張牌`,
     gLoses: '輸', gSafe: '安全', gBust: '爆了', gPerfect: '完美', gPenaltyIs: '懲罰',
     g1t: '一分鐘看懂玩法', g1p: '最多 12 位玩家。每人 7 張牌，擺成 4 行。每一行各自比拼，輸的人受罰。',
@@ -372,6 +372,7 @@ function setLang(l) {
 }
 function applyStatic() {
   document.title = t('title');
+  { const back = document.getElementById('gamesBack'); back.title = back.ariaLabel = t('allGames'); }
   updateSndBtn();
   document.getElementById('h1').textContent = t('title');
   { const sb = document.getElementById('setBtn'); sb.replaceChildren(colorIcon(SET_ICON, 24)); sb.title = sb.ariaLabel = t('settings'); }
