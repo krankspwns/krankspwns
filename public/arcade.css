@@ -47,3 +47,10 @@ h1 em{color:#e0bb79}
 .con-card .new-tag{background:#e3ca9f;color:#49371e}
 .pf-ov,.pf-tray,#pf-dock{color-scheme:dark}
 .arcade a:focus-visible{outline-color:#e0bb79}
+
+/* Shared sound and language preferences belong in the catalogue header too. */
+.arcade-header{flex-wrap:wrap}
+.arcade-header .header-tools{margin-left:auto;gap:8px}
+.arcade-header .live-note{margin-right:16px}
+.arcade-header .pf-ddbtn{min-width:64px;min-height:44px;border-color:#c9a96a55;background:#ffffff08}
+@media(max-width:620px){.arcade-header .header-tools{flex-basis:100%;justify-content:flex-end}.arcade-header .live-note{display:none}}

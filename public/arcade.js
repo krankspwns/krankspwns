@@ -1,4 +1,6 @@
 (() => {
+  const controls=document.querySelector('.arcade-header .header-tools');
+  if(controls)controls.append(GameAudio.soundMenu(),GameI18n.menu());
   const query=new URLSearchParams(location.search);
   if(query.has('games'))return;
   if(query.has('room')){location.replace('/reckoning.html'+location.search);return;}

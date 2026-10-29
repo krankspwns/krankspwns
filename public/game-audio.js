@@ -97,7 +97,7 @@
     const btn = h('button', 'pf-ddbtn'); btn.type = 'button'; btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', 'Sound: ' + MODES[cur][1]); btn.title = 'Sound: ' + MODES[cur][1];
     const caret=window.AvatarArt.icon('caret',11);caret.classList.add('pf-ddcaret');
     btn.append(window.AvatarArt.icon(MODES[cur][0]),caret);
-    btn.onclick = (e) => { e.stopPropagation(); menuHost.classList.toggle('open'); btn.setAttribute('aria-expanded', String(menuHost.classList.contains('open'))); };
+    btn.onclick = (e) => { e.stopPropagation(); document.querySelectorAll('.header-tools .pf-dd.open').forEach(n => { if(n !== menuHost) { n.classList.remove('open'); n.querySelector('button')?.setAttribute('aria-expanded', 'false'); } }); menuHost.classList.toggle('open'); btn.setAttribute('aria-expanded', String(menuHost.classList.contains('open'))); };
     const list = h('div', 'pf-ddmenu'); list.setAttribute('role', 'menu');
     MODES.forEach(([ic, label], m) => {
       const b = h('button', m === cur ? 'on' : ''); b.type = 'button'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(m === cur));
