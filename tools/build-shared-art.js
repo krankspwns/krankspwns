@@ -21,10 +21,16 @@ module.exports = function buildSharedArt(root) {
   const shop = settings.match(/const SHOP_ICON = ('[^\n]*');/)?.[1];
   const gift = settings.match(/GIFT_ICON = ('[^\n]*');/)?.[1];
   const colorIcons=read('src/icons.js').split('const COLOR_ICONS =')[1];
+  const soundIcons=['volume-x','volume-2','music'].map(key=>{
+    const row=colorIcons.split('\n').find(line=>line.startsWith("  '"+key+"':") || line.startsWith('  '+key+':'));
+    if(!row)throw Error('Missing canonical sound icon: '+key);
+    return JSON.stringify(key)+':'+row.slice(row.indexOf(':')+1).trim().replace(/,$/,'');
+  }).join(',');
   const roomIcons=Object.fromEntries(['link','copy','qr','users'].map(key=>[key,colorIcons.match(new RegExp('  '+key+": ('[^\\n]*'),"))?.[1]]));
   const users = read('src/icons.js').split('const COLOR_ICONS =')[1].match(/  users: ('[^\n]*'),/)?.[1];
   if (start < 0 || end <= start || !fit || !shop || !gift || !users || !guide || !settingsArt || Object.values(roomIcons).some(value=>!value)) throw Error('Shared artwork sources changed; update build-shared-art.js.');
   const out = `// Generated from src/avatars.js, src/icons.js and src/settings.js. Do not edit.\n(() => {\n'use strict';\n${source.slice(start,end)}\n${source.slice(giftStart,giftEnd)}\n${fit}\nconst LINE_ICONS = {${lineIcons}};
+const SOUND_ICONS = {${soundIcons}};
 const TOOLS = {${Object.entries(roomIcons).map(([key,value])=>JSON.stringify(key)+':'+value).join(',')},settings:${settingsArt},guide:${guide},shop:${shop}, gift:${gift}, players:${users}, profile:'<circle cx="16" cy="10" r="6" fill="#8fd3ff"/><path d="M4 29v-3a12 12 0 0124 0v3z" fill="#6b8cff"/><path d="M11 8q1-3 5-3" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'};
 let uid=0;
 function unique(html) {
@@ -44,7 +50,7 @@ function avatar(key,acc='') {
   return svg('<circle cx="24" cy="24" r="24" fill="'+bg+'"/>'+portrait+(ACC[acc]?accFit(key,acc):'')+badge);
 }
 function icon(key,size=17) {
-  const n=svg('<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+LINE_ICONS[key]+'</g>',24);
+  const n=SOUND_ICONS[key] ? svg(SOUND_ICONS[key],32) : svg('<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+LINE_ICONS[key]+'</g>',24);
   n.classList.add('pf-line-icon');n.style.width=n.style.height=size+'px';return n;
 }
 function gift(key,size=40) {
