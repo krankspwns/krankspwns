@@ -195,6 +195,7 @@ body[data-game="bridge"] .pcard.court .card-index .pcard-suit{font-size:16px;fon
 body[data-game="bridge"] .pcard.small.court .card-index{gap:0;min-width:14px;padding:1px 2px}
 body[data-game="bridge"] .pcard.small.court .card-index .pcard-suit{font-size:12px}
 
-/* Feather the parchment beneath the ink into the portrait instead of using labels. */
-body[data-game="bridge"] .card-court::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse 32px 54px at top left,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%),radial-gradient(ellipse 32px 54px at bottom right,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%)}
-body[data-game="bridge"] .pcard.small .card-court::after{background:radial-gradient(ellipse 25px 43px at top left,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%),radial-gradient(ellipse 25px 43px at bottom right,#fff4db 0%,#fff4dbf5 42%,#fff4db80 65%,#fff4db00 100%)}
+/* A small parchment halo follows only the suit, leaving the portrait untouched. */
+body[data-game="bridge"] .pcard.court .card-index .pcard-suit{position:relative;inset:auto;isolation:isolate}
+body[data-game="bridge"] .pcard.court .pcard-suit::before{content:'';position:absolute;inset:-3px -4px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse,#fff4db 0%,#fff4dbed 35%,#fff4db80 58%,#fff4db00 85%)}
+body[data-game="bridge"] .pcard.small.court .pcard-suit::before{inset:-2px -3px}
