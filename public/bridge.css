@@ -187,6 +187,6 @@ body[data-game="bridge"] .pcard.number::before,body[data-game="bridge"] .pcard.a
 body[data-game="bridge"] .pcard.small.number::before,body[data-game="bridge"] .pcard.small.ace::before{inset:16px 2px;font-size:22px}
 @media(max-width:420px){body[data-game="bridge"] .pcard.number:not(.small)::before,body[data-game="bridge"] .pcard.ace:not(.small)::before{font-size:28px}}
 
-/* Brighter, larger court portraits with a delicate inset gold frame. */
-body[data-game="bridge"] .card-court{height:calc(100% - 34px);background-image:url('/game-art/hidden-alliance-courts.webp');border:1px solid #c4a66b90;border-radius:3px;box-shadow:0 1px 3px #80602c20}
-body[data-game="bridge"] .pcard.small .card-court{height:calc(100% - 28px);border-radius:2px}
+/* Court artwork fills the face; the indices remain readable over the illustration. */
+body[data-game="bridge"] .card-court,body[data-game="bridge"] .pcard.small .card-court{inset:0;width:auto;height:auto;aspect-ratio:auto;transform:none;background-image:url('/game-art/hidden-alliance-courts.webp');border:0;border-radius:inherit;box-shadow:none}
+body[data-game="bridge"] .pcard.court .card-index{text-shadow:1px 0 #fff8e9,-1px 0 #fff8e9,0 1px #fff8e9,0 -1px #fff8e9,0 0 3px #fff8e9}
