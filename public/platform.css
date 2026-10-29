@@ -354,3 +354,9 @@ html.pf-transferring:has(.pf-transfer-done) body{visibility:visible}
 .pf-bot-controls .pf-bot-row button:disabled{opacity:.45;cursor:not-allowed}
 .pf-bot-controls .pf-bot-row button:focus-visible{outline:3px solid #e4c88f;outline-offset:3px}
 .pf-bot-controls>p{margin:10px 0 0;font:400 12px/1.6 Inter,system-ui,sans-serif;color:#b9c1d2;text-align:center}
+
+/* Host: remove a player who has gone quiet. */
+.pf-pname{flex:1;min-width:0;overflow-wrap:anywhere}
+.pf-premove{margin-left:auto;flex:none;padding:6px 12px;border-radius:10px;border:1px solid #ff9aa866;background:#ff6b8118;color:#ffb3bf;font:700 12px/1.2 inherit;cursor:pointer}
+.pf-premove.armed{background:#ff6b81;color:#2a0c16;border-color:#ff6b81}
+.pf-premove:disabled{opacity:.5}

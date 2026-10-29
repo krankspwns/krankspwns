@@ -17,10 +17,14 @@ function start(room) {
     const laid = R.layDown(hands[id]);
     hands[id] = laid.hand; laid.sets.forEach((s) => room.sets.push({ id, ...s }));
   }
-  room.hands = hands; room.turn = 0; room.taker = order[randomIndex(order.length)];
-  room.log = [{ kind: 'deal', taker: room.taker }];
+  room.hands = hands; room.turn = 0;
   order.forEach((id) => place(room, id));
+  // Some hands are all pairs and start empty: they are already out, so the first draw goes to someone with cards.
+  const holders = R.alive(order, hands);
+  room.taker = holders[randomIndex(holders.length)];
+  room.log = [{ kind: 'deal', taker: room.taker }];
   room.phase = 'playing'; setDeadline(room);
+  if (holders.length <= 1) finish(room);
 }
 function finish(room) {
   room.loser = R.jokerHolder(room.order, room.hands);

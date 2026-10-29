@@ -211,3 +211,8 @@ body[data-game="bridge"] .pcard.small.court .pcard-suit::before{inset:-2px -3px}
 body[data-game="bridge"] .pcard:is([data-rank="J"],[data-rank="Q"]) .pcard-rank{position:relative;inset:auto;isolation:isolate}
 body[data-game="bridge"] .pcard:is([data-rank="J"],[data-rank="Q"]) .pcard-rank::before{content:'';position:absolute;inset:-2px -3px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse,#fff4db 0%,#fff4dbed 40%,#fff4db80 65%,#fff4db00 90%)}
 body[data-game="bridge"] .pcard.small:is([data-rank="J"],[data-rank="Q"]) .pcard-rank::before{inset:-1px -2px}
+
+/* Turn clock beside the banner: a player who stops playing has the move made for them. */
+.turn-banner .banner-timer { margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; font-weight: 800; }
+.turn-banner .countdown.urgent { color: #ff9aa8; }
+.turn-banner.mine .countdown.urgent { color: var(--accent-ink); text-decoration: underline wavy; }

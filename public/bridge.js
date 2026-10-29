@@ -186,7 +186,7 @@
       mine = d.turn === state.mySeat;
       msg = mine ? (!d.legal ? 'Getting your cards ready…' : d.trick.length ? 'Your turn. Follow suit if you can.' : 'Your turn. Lead a card.') : c.who(state.seats[d.turn]) + ' is playing…';
     }
-    return msg ? el('div', { class: 'turn-banner' + (mine ? ' mine' : ''), role: 'status' }, mine ? c.icon('spark') : null, msg) : null;
+    return msg ? el('div', { class: 'turn-banner' + (mine ? ' mine' : ''), role: 'status' }, mine ? c.icon('spark') : null, msg, state.deadline ? el('span', { class: 'banner-timer' }, c.countdown()) : null) : null;
   }
   function role(c) {
     const { state } = c, d = state.deal;

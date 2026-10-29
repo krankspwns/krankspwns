@@ -45,14 +45,22 @@
     }
   }
   function adopt(data){data.receivedAt=Date.now();if(!state||data.code!==state.code||data.version>=state.version){const changed=state?.phase!==data.phase;state=data;if(changed&&['voting','reveal','finished'].includes(data.phase))showPrivate=false;if(changed)announce({forging:'Open your card to see your team.',discussion:'Time to talk. Read your clue.',voting:'Vote real or fake.',reveal:'The answer and votes are ready.',finished:'The game has ended.'}[data.phase]||'Room ready.');}}
-  function schedulePoll(){clearTimeout(pollTimer);if(seat)pollTimer=setTimeout(poll,1100);}
+  // Every poll costs a database read. Slow down in a background tab, and when a lobby or a finished game has not changed.
+  let quietPolls=0,quietVersion=null;
+  function pollDelay(){
+    if(document.hidden)return 10000;
+    const calm=!!state&&['lobby','finished'].includes(state.phase);
+    if(calm&&state.version===quietVersion)quietPolls++;else{quietPolls=0;quietVersion=state?.version??null;}
+    return calm&&quietPolls>15?3000:1100;
+  }
+  function schedulePoll(){clearTimeout(pollTimer);if(seat)pollTimer=setTimeout(poll,pollDelay());}
   async function poll(){
     const owner=seat;if(!owner)return;
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
     try{
       const response=await fetch('/api/grand-con?code='+owner.code+'&pid='+owner.pid,{headers:{'x-tok':owner.tok},signal:controller.signal});
       const data=await response.json();if(seat!==owner)return;
-      if(!response.ok){if([401,404].includes(response.status)){seat=null;state=null;store('gc-seat',null);}throw Error(data.error);}
+      if(!response.ok){if([401,404,410].includes(response.status)){seat=null;state=null;store('gc-seat',null);}throw Error(data.error);}
       const changed=!state||state.version!==data.version||!connected;adopt(data);connected=true;if(changed)render();else tick();
     }catch(e){if(seat!==owner&&seat)return;connected=false;error=e.name==='AbortError'?'No connection. Trying again…':e.message;render();}
     finally{clearTimeout(timeout);if(seat===owner)schedulePoll();}

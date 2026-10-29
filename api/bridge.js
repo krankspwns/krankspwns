@@ -4,6 +4,12 @@ const { pace } = require('../lib/bot-pace');
 const { createRoomApi, need, present, shuffle } = require('../lib/room-api');
 
 const DEAL_OPTIONS = [2, 4, 6, 8];
+const TURN_OPTIONS = [0, 30, 60, 90];   // seconds a person gets for each bid, call or card (0 = no limit)
+const turnSeconds = (room) => (TURN_OPTIONS.includes(room.settings?.turnSeconds) ? room.settings.turnSeconds : 60);
+// The turn clock is derived from when the turn began (d.turnAt), so reading the room never has to write to it.
+const startTurn = (d, at = Date.now()) => { d.turnAt = at; };
+const humanTurn = (room) => { const d = room.d, actor = room.players.find((p) => p.id === room.seats?.[d.turn]); return !!actor && !actor.bot && !actor.departed; };
+const deadlineOf = (room) => { const secs = turnSeconds(room); return secs && room.d?.turnAt && ['bidding', 'calling', 'playing'].includes(room.phase) && humanTurn(room) ? room.d.turnAt + secs * 1000 : null; };
 const COLLECT_MS = 1600;
 const trumpOf = (contract) => (contract.denom === 'N' ? null : contract.denom);
 const sideTricks = (d) => d.tricksBy[d.declarer] + (Number.isInteger(d.partner) && d.partner !== d.declarer ? d.tricksBy[d.partner] : 0);
@@ -12,7 +18,7 @@ const decided = d => !!d.contract && (sideTricks(d) >= R.target(d.contract) || d
 function startDeal(room) {
   const board = room.board, hands = R.deal(), dealer = R.dealerFor(board);
   room.d = { board, dealer, hands, original: hands.map((h) => h.slice()), calls: [], turn: dealer, contract: null, declarer: null, called: null, partner: null, revealed: false, trumpBroken: false, trick: [], lastTrick: null, tricks: 0, tricksBy: [0, 0, 0, 0] };
-  room.phase = 'bidding';
+  startTurn(room.d); room.phase = 'bidding';
 }
 function start(room) {
   need(room.players.length === 4, 409, 'Bridge needs exactly 4 players.');
@@ -37,16 +43,16 @@ function finishDeal(room) {
 function doCall(room, call) {
   const d = room.d;
   d.calls.push({ seat: d.turn, call });
-  if (!R.auctionOver(d.calls)) { d.turn = R.left(d.turn); return; }
+  if (!R.auctionOver(d.calls)) { d.turn = R.left(d.turn); startTurn(d); return; }
   const contract = R.contractOf(d.calls);
   if (!contract) { finishDeal(room); return; }
-  d.contract = contract; d.declarer = contract.declarer; d.turn = contract.declarer; room.phase = 'calling';
+  d.contract = contract; d.declarer = contract.declarer; d.turn = contract.declarer; startTurn(d); room.phase = 'calling';
 }
 function doCallCard(room, card) {
   const d = room.d;
   d.called = card;
   d.partner = d.original.findIndex((h) => h.includes(card));
-  d.turn = R.openingLeader(d.contract); room.phase = 'playing';
+  d.turn = R.openingLeader(d.contract); startTurn(d); room.phase = 'playing';
 }
 function doPlay(room, card) {
   const d = room.d, seat = d.turn;
@@ -54,12 +60,12 @@ function doPlay(room, card) {
   d.trick.push({ seat, card });
   if (card === d.called) d.revealed = true;
   if (R.suitOf(card) === trumpOf(d.contract)) d.trumpBroken = true; // a void player trumping in (or any trump played) opens trumps for leading
-  if (d.trick.length < 4) { d.turn = R.left(seat); return; }
+  if (d.trick.length < 4) { d.turn = R.left(seat); startTurn(d); return; }
   const winner = R.trickWinner(d.trick, trumpOf(d.contract));
   d.tricksBy[winner]++; d.tricks++;
   d.lastTrick = { cards: d.trick, winner, number: d.tricks, at: Date.now() };
   d.collectUntil = d.lastTrick.at + COLLECT_MS;
-  d.trick = []; d.turn = winner;
+  d.trick = []; d.turn = winner; startTurn(d, d.collectUntil);
   if (decided(d)) finishDeal(room);
 }
 const legalFor = (d) => R.legalCards(d.hands[d.turn], d.trick[0] && R.suitOf(d.trick[0].card), { trump: d.contract && trumpOf(d.contract), broken: d.trumpBroken });
@@ -95,7 +101,11 @@ function autopilot(room) {
       if (!wait.act) break;
       botMove(room); changed = true; continue;
     }
-    if (!actor?.departed) break;
+    if (!actor?.departed) {
+      // A person who has stopped playing cannot hold the table up: when their clock runs out the move is made for them.
+      const due = deadlineOf(room);
+      if (!due || Date.now() <= due) break;
+    }
     if (room.phase === 'bidding') doCall(room, 'P');
     else if (room.phase === 'calling') doCallCard(room, autoCard(d));
     else doPlay(room, legalFor(d).slice().sort((a, b) => R.rankOf(a) - R.rankOf(b))[0]);
@@ -104,9 +114,10 @@ function autopilot(room) {
   return changed;
 }
 function view(room, me) {
-  const lobby = ['lobby', 'finished'].includes(room.phase);
-  const seats = lobby ? present(room).slice(0, 4).map((p) => p.id) : room.seats || present(room).slice(0, 4).map((p) => p.id);
-  const mySeat = seats.indexOf(me.id), d = room.d, out = { seats, mySeat, deals: room.settings.deals || 4, board: room.board || 0, scores: room.scores || [0, 0, 0, 0], history: room.history || [], deal: null };
+  // Scores, history and the deal are indexed by the seats of the game that was played, so they keep those seats until the
+  // next game starts, even if someone leaves or the seats are shuffled on the final screen.
+  const seats = room.phase === 'lobby' || !room.seats ? present(room).slice(0, 4).map((p) => p.id) : room.seats;
+  const mySeat = seats.indexOf(me.id), d = room.d, out = { seats, mySeat, deadline: room.d ? deadlineOf(room) : null, deals: room.settings.deals || 4, board: room.board || 0, scores: room.scores || [0, 0, 0, 0], history: room.history || [], deal: null };
   if (!d || room.phase === 'lobby') return out;
   const bidding = room.phase === 'bidding', calling = room.phase === 'calling', play = room.phase === 'playing';
   const deal = {
@@ -138,7 +149,13 @@ function view(room, me) {
 const api = createRoomApi({
   ns: 'bridge', min: 4, max: 4,
   init(room) { room.settings = { deals: 4 }; },
-  settings(room, body) { need(DEAL_OPTIONS.includes(body.deals), 400, 'Choose 2, 4, 6 or 8 deals.'); room.settings = { ...room.settings, deals: body.deals }; },
+  settings(room, body) {
+    need(body.deals !== undefined || body.turnSeconds !== undefined, 400, 'Choose a setting.');
+    const next = { ...room.settings };
+    if (body.deals !== undefined) { need(DEAL_OPTIONS.includes(body.deals), 400, 'Choose 2, 4, 6 or 8 deals.'); next.deals = body.deals; }
+    if (body.turnSeconds !== undefined) { need(TURN_OPTIONS.includes(body.turnSeconds), 400, 'Choose no limit, 30, 60 or 90 seconds.'); next.turnSeconds = body.turnSeconds; }
+    room.settings = next;
+  },
   start,
   tick: (room) => autopilot(room),
   // seats ranked by total score; equal scores share a place

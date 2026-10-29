@@ -355,9 +355,22 @@
     if (kind === 'players') tray.append(...playerRows());
     document.body.append(tray);
   }
+  // The host can remove a player who has gone quiet: the first tap asks, a second tap within 4 seconds removes them.
+  function removeButton(p) {
+    const b = el('button', { type: 'button', class: 'pf-premove', 'aria-label': 'Remove ' + p.name, text: 'Remove' });
+    let armed = 0;
+    b.onclick = async () => {
+      if (!armed || Date.now() - armed > 4000) { armed = Date.now(); b.textContent = 'Tap Again To Remove'; b.classList.add('armed'); setTimeout(() => { if (b.isConnected && Date.now() - armed >= 3900) { armed = 0; b.textContent = 'Remove'; b.classList.remove('armed'); } }, 4000); return; }
+      b.disabled = true;
+      try { await roomAct('kick', { targetId: p.id }); toast(p.name + ' was removed', '👋'); } catch (e) { toast(e.message, '⚠️'); b.disabled = false; return; }
+      if (tray?.dataset.kind === 'players') tray.replaceChildren(...playerRows()); else if (overlay) modal('Players', ...playerRows());
+    };
+    return b;
+  }
   function playerRows() {
+    const host = st.hostId === st.meId;
     return st.players.filter((p) => !p.bot && !p.departed).map((p) => { const c = st.social.cos[p.id] || {};
-      return el('div', { class: 'pf-prow' }, avatar(c.av || 'cat', c.bd, c.acc, 34), el('span', { class: 'pf-pname' }, p.name + (p.id === st.meId ? ' (you)' : ''), c.member ? el('i', { title: 'Signed-in player', text: ' ✔' }) : null)); });
+      return el('div', { class: 'pf-prow' }, avatar(c.av || 'cat', c.bd, c.acc, 34), el('span', { class: 'pf-pname' }, p.name + (p.id === st.meId ? ' (you)' : ''), c.member ? el('i', { title: 'Signed-in player', text: ' ✔' }) : null), host && p.id !== st.meId ? removeButton(p) : null); });
   }
   function pickTarget(item) {
     closeTray(); tray = el('div', { class: 'pf-tray', 'data-kind': 'target' }, el('p', { class: 'pf-note', text: 'Throw ' + cap(item) + ' at…' }),
@@ -463,15 +476,15 @@
     const toggle=(label,on,change)=>el('label',{class:'pf-switch'},el('b',{text:label}),el('input',{type:'checkbox',checked:on || undefined,onchange:e=>change(e.target.checked)}));
     const content=[];
     if(a) content.push(el('section',{class:'pf-card'},el('h3',{text:'Sound'}),toggle('Sound effects',prefs.sfx,v=>a.setSfx(v)),toggle('Background music',prefs.music,v=>a.setMusic(v))));
-    const rules={bridge:['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[6,'6 deals'],[8,'8 deals']]],'hot-joker':['Turn Timer','turnSeconds',[[20,'20 sec'],[40,'40 sec'],[60,'60 sec']]],'grand-con':['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]}[PAGE];
-    if(st && seat && rules) {
-      const [label,key,choices]=rules, editable=st.hostId===st.meId && ['lobby','finished'].includes(st.phase);
-      const current=key==='deals'?st.deals:st.settings?.[key] ?? 0;
+    const rules={bridge:[['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[6,'6 deals'],[8,'8 deals']]],['Turn Timer','turnSeconds',[[0,'No limit'],[30,'30 sec'],[60,'60 sec'],[90,'90 sec']],60]],'hot-joker':[['Turn Timer','turnSeconds',[[20,'20 sec'],[40,'40 sec'],[60,'60 sec']]]],'grand-con':[['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]]}[PAGE];
+    if(st && seat && rules) for(const [label,key,choices,fallback=0] of rules) {
+      const editable=st.hostId===st.meId && ['lobby','finished'].includes(st.phase);
+      const current=key==='deals'?st.deals:st.settings?.[key] ?? fallback;
       const choose=async value=>{
         group.querySelectorAll('button').forEach(b=>b.disabled=true);
         try {await roomAct('settings',{[key]:value});openSettings();} catch(e) {toast(e.message,'⚠️');group.querySelectorAll('button').forEach(b=>b.disabled=!editable);}
       };
-      const group=PAGE==='bridge'?dealOptions(current,!editable,choose):el('div',{class:'pf-settings-options'},...choices.map(([value,text])=>el('button',{type:'button',text,'aria-pressed':String(value===current),disabled:!editable || undefined,onclick:()=>choose(value)})));
+      const group=key==='deals'?dealOptions(current,!editable,choose):el('div',{class:'pf-settings-options'},...choices.map(([value,text])=>el('button',{type:'button',text,'aria-pressed':String(value===current),disabled:!editable || undefined,onclick:()=>choose(value)})));
       content.push(el('section',{class:'pf-card'},el('h3',{text:label}),group));
     }
     modal('Settings',...content);

@@ -64,7 +64,9 @@ async function execute(req, body) {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     room.observers ||= [];
     const uid=await P.identify(req), owned=uid && [...room.players,...room.observers].find(p=>!p.bot && room.acct?.[p.id]===uid);
-    let me = owned || [...room.players, ...room.observers].find(p => !p.bot && p.name.toLowerCase() === name.toLowerCase()), tok;
+    // A name carried over from a game with longer names (up to 12 characters) is matched by its first 10.
+    const same = p => !p.bot && (p.name.toLowerCase() === name.toLowerCase() || Array.from(p.name).slice(0, NAME_MAX).join('').toLowerCase() === name.toLowerCase());
+    let me = owned || [...room.players, ...room.observers].find(same), tok;
     if (me) {
       const replay = owned ? P.seatToken(uid,'lt:'+code,me.id,body.requestId) : body.recoveryCode ? crypto.createHmac('sha256', String(body.recoveryCode).trim()).update('lt:' + code + ':' + me.id + ':' + body.requestId).digest('base64url') : null;
       need(!me.kicked, 403, 'The host removed you from this room.');
@@ -133,7 +135,7 @@ async function execute(req, body) {
   if (action === 'ready') {
     need(room.phase === 'briefing' && me.alive, 409, 'You cannot use Ready now.');
     room.ready[me.id] = true;
-    if (rules.alive(room).every(p => room.ready[p.id])) rules.board(room);
+    if (rules.alive(room).filter(p => !p.departed).every(p => room.ready[p.id])) rules.board(room);
   }
   if (action === 'night') rules.nightChoice(room, me, body);
   if (action === 'medicine') rules.medicineChoice(room, me, body);
@@ -190,6 +192,7 @@ async function execute(req, body) {
     if (room.hostId === me.id) room.hostId = present(room).find(p => !p.bot && p.alive !== false)?.id || present(room).find(p=>!p.bot)?.id || null;
     // Departure never changes alive/group counts or committed actions. Timed phases handle missing input.
   }
+  if (['kick', 'leave'].includes(action)) rules.afterDeparture(room);
   bots.tick(room);
   room.receipts = [...(room.receipts || []), { pid: me.id, id: body.requestId, fingerprint }].slice(-200);
   await save(room); return view(room, me);

@@ -76,7 +76,7 @@ function view(room,me){
 const respond=async(room,me,extra)=>({...view(room,me),...(await social.view(room,me)),...extra});
 async function execute(req,body) {
   const action=req.method==='GET'?'state':body.action;
-  need(['switchGame','state','create','join','start','advance','extend','forge','vote','next','leave','claim','audit','settings','addBot','removeBot',...social.ACTIONS].includes(action),400,'Unknown action.');
+  need(['switchGame','state','create','join','start','advance','extend','forge','vote','next','leave','kick','claim','audit','settings','addBot','removeBot',...social.ACTIONS].includes(action),400,'Unknown action.');
   if(action==='create'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
     let code;for(let i=0;i<10;i++){code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ'[crypto.randomInt(24)]).join('');if(!await store.load(code))break;code=null;}
@@ -92,13 +92,14 @@ async function execute(req,body) {
     const uid=await P.identify(req),owned=uid&&room.players.find(p=>!p.bot&&social.accountOf(room,p.id)===uid);
     let p=owned||room.players.find(p=>!p.bot&&p.name.toLowerCase()===name.toLowerCase());let tok;
     if(p){
+      need(!p.kicked,403,'The host removed you from this room.');
       const replay=owned?P.seatToken(uid,'gc:'+code,p.id,body.requestId):body.requestId&&body.recoveryCode?crypto.createHmac('sha256',String(body.recoveryCode).trim()).update('gc:'+code+':'+p.id+':'+body.requestId).digest('base64url'):null;
       if(p.recoveryReceipt===body.requestId&&replay&&equal(p.tokenHash,hash(replay)))return respond(room,p,{tok:replay});
       need(owned||body.recoveryCode&&equal(recovery(room,p),String(body.recoveryCode).trim()),409,'That name is already in this room. Enter its rejoin code.');
       tok=replay||secret();p.tokenHash=hash(tok);p.departed=false;p.recoveryReceipt=body.requestId||null;
       if(!room.players.some(q=>q.id===room.hostId&&!q.departed))room.hostId=p.id;
     }else{
-      need(room.phase==='lobby',409,'The game has started. You can only rejoin an existing player.');need(room.players.length<12,409,'This room has 12 players.');
+      need(['lobby','finished'].includes(room.phase),409,'The game has started. You can only rejoin an existing player.');need(present(room).length<12,409,'This room has 12 players.');
       const created=player(name);p=created.p;tok=created.tok;room.players.push(p);
     }
     if(!room.hostId)room.hostId=p.id;
@@ -106,6 +107,7 @@ async function execute(req,body) {
     await store.save(room);return respond(room,p,{tok});
   }
   const me=room.players.find(p=>p.id===body.pid);need(me&&body.tok&&equal(me.tokenHash,hash(body.tok)),401,'We could not load your place. Use your rejoin code to come back.');
+  need(!me.kicked,410,'The host removed you from this room.');
   need(!me.departed||action==='state',403,'Use your rejoin code to come back.');
   const fingerprint=hash(JSON.stringify([action,body.match,body.lotNumber,body.targetId,body.choice,body.text,body.discussionSeconds]));
   const receipt=(room.receipts||[]).find(r=>r.pid===me.id&&r.id===body.requestId);
@@ -144,7 +146,7 @@ async function execute(req,body) {
     need(doc,400,'Choose another player at the table.');
     me.auditUsed=true;me.auditReport={round:room.lot+1,targetId:target.id,source:doc.source,text:doc.text};
   }
-  if(social.ACTIONS.includes(action))await social.act(room,me,body);
+  if(social.ACTIONS.includes(action))await social.act(room,me,body,action==='relink'?await P.identify(req):undefined);
   if(action==='start'){host();need(['lobby','finished'].includes(room.phase),409,'The game has already started.');start(room);}
   if(action==='advance'){host();need(room.phase==='discussion',409,'Talking time has ended.');advance(room);}
   if(action==='extend'){
@@ -166,14 +168,23 @@ async function execute(req,body) {
     host();need(room.phase==='reveal',409,'This round has not ended yet.');
     if(room.score.house===3||room.score.ring===3){room.phase='finished';room.deadline=null;}else{room.lot++;beginLot(room);}
   }
-  if(action==='leave'){
-    if(room.phase==='lobby')room.players=room.players.filter(p=>p.id!==me.id);else me.departed=true;
-    if(room.hostId===me.id)room.hostId=present(room).find(p=>!p.bot)?.id||null;
-    if(room.phase==='forging'&&room.forgerId===me.id){
+  // A player leaves, or the host removes one who has gone quiet (their seat is freed in the lobby; in a game their
+  // character plays on automatically and that phone cannot come back).
+  const depart=(who,removed)=>{
+    if(room.phase==='lobby')room.players=room.players.filter(p=>p.id!==who.id);else{who.departed=true;if(removed)who.kicked=true;}
+    if(room.hostId===who.id)room.hostId=present(room).find(p=>!p.bot)?.id||null;
+    if(room.phase==='forging'&&room.forgerId===who.id){
       const editor=present(room).find(p=>p.team==='ring');if(editor)room.forgerId=editor.id;else {room.forgerId=null;if(!room.tamper)sealForgery(room);}
     }
     // A departing voter keeps their sealed vote; an uncast vote stays in the fixed electorate.
-    social.forget(room,me);
+    social.forget(room,who);
+  };
+  if(action==='leave')depart(me,false);
+  if(action==='kick'){
+    host();
+    const target=room.players.find(p=>p.id===body.targetId&&!p.departed);need(target&&target.id!==me.id,400,'Choose another player to remove.');
+    if(!target.bot)room.kicked=[...(room.kicked||[]),target.id].slice(-50);
+    depart(target,true);
   }
   bots.tick(room,{view,seal:sealForgery,settle});
   // the winning team shares the prize once, when the game ends
@@ -182,7 +193,7 @@ async function execute(req,body) {
   await store.save(room);return respond(room,me);
 }
 module.exports=async function handler(req,res){
-  res.setHeader('Cache-Control','no-store');
+  res.setHeader('Cache-Control','no-store');require('../lib/storage-warning').mark(res);
   try{
     need(['GET','POST'].includes(req.method),405,'Method not allowed.');
     const body=req.method==='GET'?{...req.query,tok:req.headers?.['x-tok']}:typeof req.body==='string'?JSON.parse(req.body):req.body||{};

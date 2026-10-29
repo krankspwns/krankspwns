@@ -1192,7 +1192,7 @@ async function handle(action, b, query, ctx = {}) {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', 'no-store'); require('../lib/storage-warning').mark(res);
   res.setHeader('X-Content-Type-Options', 'nosniff');
   try {
     need(req.method === 'GET' || req.method === 'POST', 405, 'Method not allowed');

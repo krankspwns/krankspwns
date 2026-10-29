@@ -174,7 +174,15 @@
     } else if (next.phase === 'night' && prev.nightPhase !== next.nightPhase) sfx.play('creak');
     if (next.phase === 'discussion' && next.speakerId === next.meId && (entered || prev.speakerId !== next.speakerId)) sfx.play('chime');
   }
-  function schedule() { clearTimeout(timer); if (seat) timer = setTimeout(poll, 1000); }
+  // Every poll costs a database read. Slow down in a background tab, and when a lobby or a finished game has not changed.
+  let quietPolls = 0, quietVersion = null;
+  function pollDelay() {
+    if (document.hidden) return 10000;
+    const calm = !!state && ['lobby', 'finished'].includes(state.phase);
+    if (calm && state.version === quietVersion) quietPolls++; else { quietPolls = 0; quietVersion = state?.version ?? null; }
+    return calm && quietPolls > 15 ? 3000 : 1000;
+  }
+  function schedule() { clearTimeout(timer); if (seat) timer = setTimeout(poll, pollDelay()); }
   function poll() {
     if (polling) return polling;
     const owner = seat; if (!owner) return Promise.resolve();
