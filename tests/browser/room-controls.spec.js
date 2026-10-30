@@ -63,7 +63,8 @@ test('Shared waiting room uses Row’s actual room-code, panel and button styles
         await expect(page.locator('.pf-room-waiting')).toBeVisible();
         const actual=await styles({panel:'.pf-room-waiting',code:'.pf-lobby-code',label:'.pf-room-label',invite:'.pf-room-invite',players:'.pf-room-players'});
         expect(actual,game+' at '+width+'px').toEqual(reference);
-        await expect(page.locator('.pf-room-waiting .pf-room-seats')).toBeVisible();
+        // Last Laugh seats everyone in the circle it is played in, which players can rearrange by dragging.
+        await expect(page.locator(game==='hot-joker'?'.pf-room-waiting .seat-circle':'.pf-room-waiting .pf-room-seats')).toBeVisible();
         await expect(page.locator('.waiting-card')).toHaveCount(0);
         expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
       }

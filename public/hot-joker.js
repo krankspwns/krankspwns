@@ -4,7 +4,12 @@
   const RANK_NAME = { A: 'Aces', K: 'Kings', Q: 'Queens', J: 'Jacks' };
   const rankName = (r) => RANK_NAME[r] || r + 's';
   const setName = r => 'a pair of '+rankName(r);
-  let pickRect = null, sel = -1, cur = null, seen = null, prev = { hand: [], rects: new Map() };
+  let pickRect = null, sel = -1, cur = null, seen = null, prev = { hand: [], rel: new Map() }, lobbyCur = null, seatSel = null;
+  // Cards and pair chips that are still on their way stay hidden until their flight lands. A render rebuilds the nodes
+  // they are waiting on, so the holds are applied again after every render.
+  const held = new Set(), heldChips = new Set();
+  // After I take a card, the pick row's space is kept until the card has landed, so nothing jumps while it travels.
+  let linger = null;
   const calm = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---- animation: cards flying between players, hand reordering ----
@@ -17,16 +22,23 @@
     const a = n.animate([{ transform: at(from, 0.6), opacity: 0.9 }, { transform: at(from, 1.1), opacity: 1, offset: 0.2 }, { transform: at(to, scaleTo), opacity: 1 }], { duration: 750, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
     const end = () => { n.remove(); done?.(); }; a.onfinish = end; a.oncancel = end;
   }
-  // the pick panel fades out gently instead of vanishing, with the picked card lifted out of it
-  function leaveGhost(i) {
-    const panel = document.querySelector('.take-panel'); if (!panel || calm()) return;
-    const r = panel.getBoundingClientRect(), g = panel.cloneNode(true);
-    g.classList.add('hj-ghost-panel'); g.style.cssText += ';position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;margin:0;z-index:1500;pointer-events:none';
-    const cards = g.querySelectorAll('.pick-row .pcard'); if (cards[i]) cards[i].style.visibility = 'hidden';
-    g.querySelectorAll('button').forEach((b) => { b.disabled = true; b.removeAttribute('data-focus'); });
-    document.body.append(g);
-    const a = g.animate([{ opacity: 1, transform: 'none' }, { opacity: 1, transform: 'none', offset: 0.45 }, { opacity: 0, transform: 'translateY(-10px) scale(.98)' }], { duration: 1100, easing: 'ease-out', fill: 'forwards' });
-    a.onfinish = () => g.remove(); a.oncancel = () => g.remove(); setTimeout(() => g.remove(), 2500);
+  const handCards = () => [...(document.querySelector('.hand-row')?.children || [])];
+  const chipNode = (key) => { const [id, k] = key.split(':'); return document.querySelector('.set-row[data-id="' + id + '"] .sets')?.children[Number(k)]; };
+  function applyHolds() {
+    const hand = cur?.state.me?.hand || [];
+    handCards().forEach((n, i) => { if (held.has(hand[i])) n.style.opacity = 0; });
+    for (const key of heldChips) { const chip = chipNode(key); if (chip) chip.style.opacity = 0; }
+  }
+  function landCard(code) {
+    held.delete(code); const i = (cur?.state.me?.hand || []).indexOf(code), n = handCards()[i];
+    if (n) { n.style.opacity = ''; if (!calm()) n.animate([{ transform: 'scale(1.12)' }, { transform: 'none' }], { duration: 220, easing: 'ease-out' }); }
+  }
+  function landChip(key) { heldChips.delete(key); const chip = chipNode(key); if (chip) { chip.style.opacity = ''; chip.classList.add('pop'); } }
+  function endLinger() {
+    if (!linger || linger.phase === 'collapse') return;
+    linger.phase = 'collapse'; clearTimeout(linger.timer);
+    const sp = document.querySelector('.take-spacer'); if (sp) { sp.style.height = '0px'; sp.style.marginBottom = '0px'; sp.style.opacity = '0'; }
+    setTimeout(() => { linger = null; cur?.render(); }, calm() ? 0 : 380);
   }
   // the card I picked turns over where it lay, then travels into my hand
   function flipFly(c, code, from, to, done) {
@@ -38,8 +50,8 @@
     inner.append(back, face); wrap.append(inner); document.body.append(wrap);
     const at = (r, k) => 'translate(' + (r.left + r.width / 2 - w / 2) + 'px,' + (r.top + r.height / 2 - h / 2) + 'px) scale(' + k + ')';
     const k2 = Math.min(1.4, to.width / w || 1);
-    const a = wrap.animate([{ transform: at(from, 1), offset: 0 }, { transform: at(from, 1.18), offset: 0.3 }, { transform: at(from, 1.18), offset: 0.45 }, { transform: at(to, k2), offset: 1 }], { duration: 1400, easing: 'cubic-bezier(.4,.1,.2,1)', fill: 'forwards' });
-    inner.animate([{ transform: 'rotateY(0deg)', offset: 0 }, { transform: 'rotateY(180deg)', offset: 0.35 }, { transform: 'rotateY(180deg)', offset: 1 }], { duration: 1400, easing: 'ease-in-out', fill: 'forwards' });
+    const a = wrap.animate([{ transform: at(from, 1), offset: 0 }, { transform: at(from, 1.18), offset: 0.3 }, { transform: at(from, 1.18), offset: 0.45 }, { transform: at(to, k2), offset: 1 }], { duration: 1100, easing: 'cubic-bezier(.4,.1,.2,1)', fill: 'forwards' });
+    inner.animate([{ transform: 'rotateY(0deg)', offset: 0 }, { transform: 'rotateY(180deg)', offset: 0.35 }, { transform: 'rotateY(180deg)', offset: 1 }], { duration: 1100, easing: 'ease-in-out', fill: 'forwards' });
     const end = () => { wrap.remove(); done?.(); }; a.onfinish = end; a.oncancel = end;
   }
   function burst(node, label) {
@@ -51,7 +63,8 @@
   function after(c) {
     const st = c.state; if (!st || st.phase === 'lobby' || cur !== c) return;
     const row = document.querySelector('.hand-row'), cards = row ? [...row.children] : [], hand = st.me?.hand || [];
-    const rects = new Map(); cards.forEach((n, i) => { if (hand[i]) rects.set(hand[i], n.getBoundingClientRect()); });
+    // positions inside the row, so a page that scrolls or shifts is never mistaken for cards being rearranged
+    const o = row?.getBoundingClientRect(), rel = new Map(); cards.forEach((n, i) => { const r = n.getBoundingClientRect(); if (hand[i]) rel.set(hand[i], { x: r.left - o.left, y: r.top - o.top, abs: r }); });
     const takes = (st.log || []).filter((e) => e.kind === 'take'), top = takes.reduce((m, e) => Math.max(m, e.turn || 0), 0);
     let handled = new Set();
     if (!seen || seen.match !== st.match) seen = { match: st.match, turn: top };
@@ -60,36 +73,39 @@
       fresh.forEach((e, k) => setTimeout(() => {
         const me = st.meId, last = st.me?.last, src = tileOf(e.source), dst = tileOf(e.taker);
         src?.classList.add('lost'); dst?.classList.add('got'); setTimeout(() => { src?.classList.remove('lost'); dst?.classList.remove('got'); }, 900);
-        // the cards of a laid-down set travel from the taker into the "Sets laid down" panel
-        const chips = (e.sets || []).map((rank) => { const mineSets = st.sets.filter((x) => x.id === e.taker), at = mineSets.map((x) => x.rank).lastIndexOf(rank);
-          const chip = document.querySelector('.set-row[data-id="' + e.taker + '"] .sets')?.children[at]; if (chip) chip.style.opacity = 0; return { chip, set: mineSets[at] }; });
-        const showChips = () => chips.forEach(({ chip }) => { if (chip) chip.style.opacity = ''; });
-        setTimeout(showChips, 3500 + k * 700);
+        // the cards of a laid-down set travel from the taker into the "Pairs laid down" panel
+        const chips = (e.sets || []).map((rank) => { const mineSets = st.sets.filter((x) => x.id === e.taker), at = mineSets.map((x) => x.rank).lastIndexOf(rank), key = e.taker + ':' + at;
+          if (at >= 0) heldChips.add(key); return { key, set: mineSets[at] }; });
+        applyHolds();
+        const showChips = () => chips.forEach(({ key }) => landChip(key));
+        setTimeout(showChips, 3600 + k * 700);
         const pair = () => {
           if (!e.sets?.length) return;
           burst(tileOf(e.taker), '✨ ' + (e.sets.length > 1 ? 'DOUBLE PAIR!' : 'PAIR!'));
           const origin = e.taker === me ? document.querySelector('.hand-row')?.getBoundingClientRect() || tileOf(e.taker)?.getBoundingClientRect() : tileOf(e.taker)?.getBoundingClientRect();
-          chips.forEach(({ chip, set }, j) => {
-            const cardsOf = set?.cards || [], to = chip?.getBoundingClientRect();
-            if (!to || !cardsOf.length) { if (chip) chip.style.opacity = ''; return; }
-            cardsOf.forEach((code, i) => setTimeout(() => fly(c, code, origin, to, 0.7, i === cardsOf.length - 1 ? () => { chip.style.opacity = ''; chip.classList.add('pop'); } : null), j * 300 + i * 140));
+          chips.forEach(({ key, set }, j) => {
+            const cardsOf = set?.cards || [], chip = chipNode(key), to = chip?.getBoundingClientRect();
+            if (!to || !cardsOf.length) { landChip(key); return; }
+            cardsOf.forEach((code, i) => setTimeout(() => fly(c, code, origin, to, 0.7, i === cardsOf.length - 1 ? () => landChip(key) : null), j * 300 + i * 140));
           });
         };
         if (e.taker === me && last?.card) {
-          const idx = hand.indexOf(last.card), tgt = idx >= 0 ? cards[idx] : null;
-          if (tgt) { tgt.style.opacity = 0; handled.add(last.card); }
-          const landed = () => { if (tgt) tgt.style.opacity = ''; pair(); }, dest = tgt ? tgt.getBoundingClientRect() : dst?.getBoundingClientRect();
-          if (pickRect && Date.now() - pickRect.at < 8000) { const from = pickRect; pickRect = null; flipFly(c, last.card, from, dest, landed); }
-          else fly(c, last.card, src?.getBoundingClientRect(), dest, tgt ? 1 : 0.5, landed);
+          const idx = hand.indexOf(last.card), tgt = idx >= 0 ? handCards()[idx] : null;
+          if (tgt) { held.add(last.card); applyHolds(); handled.add(last.card); }
+          const landed = () => { landCard(last.card); endLinger(); pair(); }, dest = tgt ? tgt.getBoundingClientRect() : dst?.getBoundingClientRect();
+          if (pickRect && Date.now() - pickRect.at < 8000) {
+            const from = { ...pickRect, left: pickRect.left - (scrollX - pickRect.sx), top: pickRect.top - (scrollY - pickRect.sy) }; pickRect = null; flipFly(c, last.card, from, dest, landed);
+          } else fly(c, last.card, src?.getBoundingClientRect(), dest, tgt ? 1 : 0.5, landed);
         } else if (e.source === me && last?.card) {
-          fly(c, last.card, prev.rects.get(last.card) || row?.getBoundingClientRect(), dst?.getBoundingClientRect(), 0.5, pair);
+          fly(c, last.card, prev.rel.get(last.card)?.abs || row?.getBoundingClientRect(), dst?.getBoundingClientRect(), 0.5, pair);
         } else fly(c, null, src?.getBoundingClientRect(), dst?.getBoundingClientRect(), 0.5, pair);
       }, k * 700));
     }
+    applyHolds();
     // reordering my own hand slides the cards to their new places
-    if (!calm() && hand.length === prev.hand.length) cards.forEach((n, i) => { const was = prev.rects.get(hand[i]), now = rects.get(hand[i]); if (!was || !now || handled.has(hand[i])) return;
-      const dx = was.left - now.left, dy = was.top - now.top; if (Math.abs(dx) + Math.abs(dy) > 2) n.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' }); });
-    prev = { hand: hand.slice(), rects };
+    if (!calm() && hand.length === prev.hand.length) cards.forEach((n, i) => { const was = prev.rel.get(hand[i]), now = rel.get(hand[i]); if (!was || !now || handled.has(hand[i]) || held.has(hand[i])) return;
+      const dx = was.x - now.x, dy = was.y - now.y; if (Math.abs(dx) + Math.abs(dy) > 2) n.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' }); });
+    prev = { hand: hand.slice(), rel };
   }
 
   // ---- drag and drop to reorder my own cards ----
@@ -117,6 +133,27 @@
     if (ev.type === 'pointerup' && d.to >= 0 && d.to !== d.from && cur && !cur.busy && cur.state.source !== cur.state.meId) { sel = -1; const h = cur.state.me.hand.slice(); h.splice(d.to, 0, h.splice(d.from, 1)[0]); cur.state.me.hand = h; cur.render(); await cur.send('move', { from: d.from, to: d.to }); }
   };
   document.addEventListener('pointerup', finish); document.addEventListener('pointercancel', finish);
+  // drag a player's seat onto another seat
+  let seatDrag = null, justSeatDragged = false;
+  const seatUnder = (x, y) => document.elementFromPoint(x, y)?.closest?.('.seat-tile');
+  const markSeat = (over) => document.querySelectorAll('.seat-tile').forEach((n) => n.classList.toggle('hj-drop', n === over));
+  document.addEventListener('pointerdown', (ev) => {
+    const tile = ev.target.closest?.('.seat-tile.movable'); if (!tile || (ev.button && ev.button !== 0) || !lobbyCur || lobbyCur.busy) return;
+    seatDrag = { id: tile.dataset.id, x: ev.clientX, y: ev.clientY, on: false, ghost: null, w: tile.offsetWidth, h: tile.offsetHeight, over: null, tile };
+  });
+  document.addEventListener('pointermove', (ev) => {
+    if (!seatDrag) return;
+    if (!seatDrag.on) { if (Math.hypot(ev.clientX - seatDrag.x, ev.clientY - seatDrag.y) < 8) return;
+      seatDrag.on = true; seatDrag.ghost = seatDrag.tile.cloneNode(true); seatDrag.ghost.classList.add('hj-ghost'); seatDrag.ghost.style.width = seatDrag.w + 'px'; document.body.append(seatDrag.ghost); seatDrag.tile.classList.add('hj-drag-src'); }
+    ev.preventDefault(); seatDrag.ghost.style.transform = 'translate(' + (ev.clientX - seatDrag.w / 2) + 'px,' + (ev.clientY - seatDrag.h / 2) + 'px) scale(1.06)';
+    const over = seatUnder(ev.clientX, ev.clientY); seatDrag.over = over && over.dataset.id !== seatDrag.id ? over : null; markSeat(seatDrag.over);
+  }, { passive: false });
+  const finishSeat = (ev) => {
+    const d = seatDrag; seatDrag = null; if (!d || !d.on) return;
+    d.ghost.remove(); d.tile.classList.remove('hj-drag-src'); markSeat(null); justSeatDragged = true; setTimeout(() => { justSeatDragged = false; }, 60);
+    if (ev.type === 'pointerup' && d.over && lobbyCur && !lobbyCur.busy) { seatSel = null; lobbyCur.send('swapSeats', { a: d.id, b: d.over.dataset.id }); }
+  };
+  document.addEventListener('pointerup', finishSeat); document.addEventListener('pointercancel', finishSeat);
   document.addEventListener('click', (ev) => { if (justDragged) { ev.stopPropagation(); ev.preventDefault(); } }, true);
 
   TableKit({
@@ -132,7 +169,7 @@
     },
     waitingChips: ['3–10 players', 'Pairs go down', 'Last Joker loses'],
     startBlock: (s, n) => (n < 3 ? `Waiting for ${3 - n} more player${3 - n === 1 ? '' : 's'}. You need at least 3.` : ''),
-    seatControls: (p, i, c) => (c.state.phase === 'lobby' ? seatArrows(c, p.id, i) : null),
+    hideSeatGrid: true,
     rosterTag: (p, s) => { const n = s.losses?.[p.id]; return p.id === s.hostId ? 'HOST' + (n ? ' · JOKER ×' + n : '') : n ? 'JOKER ×' + n : null; },
     waiting: (c) => seating(c),
     guide: (B) => [
@@ -163,18 +200,31 @@
   });
 
   // Seats: the host can seat anyone, and every player can move their own seat. The list is the clockwise order of the next game.
-  function seatArrows(c, id, i) {
-    const { state } = c, host = state.hostId === state.meId, order = state.seatOrder || state.order;
-    if (!host && id !== state.meId) return null;
-    const arrow = (to, label, glyph) => el('button', { type: 'button', class: 'seat-move', 'aria-label': label, disabled: c.busy || to < 0 || to >= order.length, onclick: () => c.send('moveSeat', { id, to }) }, glyph);
-    return el('span', { class: 'seat-moves' }, arrow(i - 1, 'Move ' + c.who(id) + ' earlier', '◀'), arrow(i + 1, 'Move ' + c.who(id) + ' later', '▶'));
+  // Seats are shown as the circle the game is played in. Drag a player onto another seat to swap them, or tap one and then
+  // the other. The host can seat anyone; each player can move only their own seat.
+  const canMove = (c, id) => c.state.hostId === c.state.meId || id === c.state.meId;
+  function seatCircle(c) {
+    const { state } = c, order = state.seatOrder || state.order, n = order.length, me = Math.max(0, order.indexOf(state.meId)), rad = n > 6 ? 40 : 36;
+    const spot = (i) => { const k = (i - me + n) % n, a = ((180 + (k * 360) / n) * Math.PI) / 180; return { x: 50 + rad * Math.sin(a), y: 50 - rad * Math.cos(a) }; };
+    return el('div', { class: 'circle seat-circle' + (n > 6 ? ' dense' : ''), role: 'list', 'aria-label': 'Seats around the table, clockwise' },
+      el('div', { class: 'circle-centre' }, text('span', 'eyebrow', 'CLOCKWISE'), el('b', {}, n + (n === 1 ? ' seat' : ' seats')), text('small', 'muted', seatSel ? 'Now tap the seat to swap with.' : 'Drag a player onto another seat to swap.')),
+      order.map((id, i) => {
+        const p = spot(i), movable = canMove(c, id), bot = !!state.players.find((q) => q.id === id)?.bot;
+        return el('div', { class: 'circle-seat', role: 'listitem', style: 'left:' + p.x + '%;top:' + p.y + '%' },
+          el('button', { type: 'button', class: 'tile seat-tile' + (id === state.meId ? ' mine' : '') + (bot ? ' seat-bot' : '') + (movable ? ' movable' : '') + (seatSel === id ? ' picked' : ''), 'data-id': id, 'aria-pressed': String(seatSel === id), 'aria-label': 'Seat ' + (i + 1) + ': ' + c.who(id), onclick: () => {
+            if (justSeatDragged) return;
+            if (!seatSel) { if (movable) seatSel = id; }
+            else if (seatSel === id) seatSel = null;
+            else { const a = seatSel; seatSel = null; c.send('swapSeats', { a, b: id }); }
+            c.render();
+          } }, c.avatar(id), el('b', {}, c.who(id) + (id === state.meId ? ' · You' : '')), text('small', 'count', (bot ? 'BOT · ' : '') + 'SEAT ' + (i + 1))));
+      }));
   }
   function seating(c) {
     const { state } = c, host = state.hostId === state.meId, order = state.seatOrder || state.order;
-    return el('div', { class: 'seat-order' }, text('span', 'eyebrow', 'CLOCKWISE ORDER'),
-      el('ol', { class: 'order-list' }, order.map((id, i) => el('li', {}, c.avatar(id), el('b', {}, c.who(id) + (id === state.meId ? ' · You' : '')),
-        seatArrows(c, id, i)))),
-      text('p', 'muted small', (host ? 'Use the arrows to seat anyone. ' : 'Use the arrows to choose your own seat. ') + 'Each player takes cards from the one before them in this list. Sit in this order around the table.'),
+    lobbyCur = c;
+    return el('div', { class: 'seat-order' }, text('span', 'eyebrow', 'TABLE SEATING'), seatCircle(c),
+      text('p', 'muted small', (host ? 'Drag any player onto another seat to swap them. ' : 'Drag yourself onto another seat to swap. ') + 'Each player takes cards from the one before them, going clockwise. Sit in this order around the table.'),
       text('p','pairs-rule','Pairs Only · Match two cards with the same number or face.'),
       host ? c.button('Shuffle seats', () => c.send('shuffleSeats'), 'secondary', order.length < 2, undefined, 'shuffle:blue') : null);
   }
@@ -225,13 +275,19 @@
   const cols = (n) => '--cols:' + Math.max(1, Math.min(n, 6));
   function takeSection(c) {
     const { state, send } = c;
-    return el('section', { class: 'take-panel active' }, text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
+    const taken = !!linger && linger.phase === 'hold';
+    return el('section', { class: 'take-panel active' + (taken ? ' taken' : '') }, text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
       el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + (state.sourceCount === 1 ? ' card' : ' cards') + ', in this order. Tap one to take it.'),
-      el('div', { class: 'pick-row', 'data-scroll': 'pick', style: cols(state.sourceCount) }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable', 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, disabled: c.busy, onclick: async () => {
+      el('div', { class: 'pick-row', 'data-scroll': 'pick', style: cols(state.sourceCount) }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable', 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, disabled: c.busy || taken, style: taken && linger.index === i ? 'visibility:hidden' : null, onclick: async () => {
         if (c.busy) return;
-        const pr = document.querySelectorAll('.pick-row .pcard')[i]?.getBoundingClientRect();
-        if (pr) { pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now() }; leaveGhost(i); }
-        await send('take', { index: i, turn: state.turn });
+        const node = document.querySelectorAll('.pick-row .pcard')[i], pr = node?.getBoundingClientRect(), sec = document.querySelector('.take-panel');
+        if (pr) pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now(), sx: scrollX, sy: scrollY };
+        if (sec && !calm()) { linger = { phase: 'hold', index: i, height: sec.offsetHeight + (parseFloat(getComputedStyle(sec).marginBottom) || 0), timer: setTimeout(endLinger, 3600) }; sec.classList.add('taken'); }
+        if (node) node.style.visibility = 'hidden';
+        // the dimmed pick row stays in view (a copy, in the same place) until the card has landed
+        if (linger && sec) { linger.clone = sec.cloneNode(true); linger.clone.querySelectorAll('button').forEach((b) => { b.disabled = true; b.removeAttribute('data-focus'); }); }
+        // a rejected take (someone else was faster) puts the pick row back
+        if (!await send('take', { index: i, turn: state.turn }) && linger) { clearTimeout(linger.timer); linger = null; c.render(); }
       } }))));
   }
   function handPanel(c) {
@@ -240,7 +296,8 @@
     const arrange = playing && hand.length > 1 && state.source !== state.meId;
     if (!arrange) sel = -1;
     const turn = playing && state.taker === state.meId;
-    return c.panel('hand-panel' + (state.source === state.meId ? ' being-taken' : '') + (turn ? ' my-turn' : ''), turn ? takeSection(c) : null, el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'KEEP THIS PRIVATE'), el('h3', {}, hand.length ? 'Your cards' : state.phase === 'finished' ? 'Your last cards' : 'You are safe!')), text('span', 'hcp', hand.length + (hand.length === 1 ? ' card' : ' cards'))),
+    const spacer = !turn && linger ? el('div', { class: 'take-spacer', style: 'height:' + (linger.phase === 'collapse' ? 0 : linger.height) + 'px' }, linger.phase === 'collapse' ? null : linger.clone?.cloneNode(true) || null) : null;
+    return c.panel('hand-panel' + (state.source === state.meId ? ' being-taken' : '') + (turn || linger ? ' my-turn' : ''), turn ? takeSection(c) : spacer, el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'KEEP THIS PRIVATE'), el('h3', {}, hand.length ? 'Your cards' : state.phase === 'finished' ? 'Your last cards' : 'You are safe!')), text('span', 'hcp', hand.length + (hand.length === 1 ? ' card' : ' cards'))),
       state.source === state.meId && playing ? el('p', { class: 'warn small' }, 'Your cards are locked while someone is drawing from you.') : null,
       hand.length ? el('div', { class: 'hand-row', 'data-scroll': 'hand', style: cols(hand.length) }, hand.map((code, i) => c.card(code, { selected: sel === i, onclick: arrange ? () => { sel = sel === i ? -1 : i; c.render(); } : undefined, label: undefined }))) : text('p', 'muted', state.me.place ? 'You finished #' + state.me.place + '. Watch the others sweat.' : 'No cards left.'),
       arrange ? el('div', { class: 'arrange' },
@@ -288,7 +345,7 @@
     const { state } = c; cur = c; requestAnimationFrame(() => after(c));
     return el('div', { class: 'tk-scene' }, state.phase === 'finished' ? finale(c) : null,
       c.panel('table-panel', circle(c), turnBanner(c)),
-      el('div', { class: 'joker-grid' }, el('div', { class: 'main-col' }, privateNote(c), state.reveal ? observerPanel(c) : handPanel(c)), el('div', { class: 'side-col' }, setsPanel(c), logPanel(c), c.roster((p, s) => s.losses[p.id] ? 'JOKER ×' + s.losses[p.id] : null))));
+      el('div', { class: 'joker-grid' }, el('div', { class: 'main-col' }, state.reveal ? observerPanel(c) : handPanel(c), privateNote(c)), el('div', { class: 'side-col' }, setsPanel(c), logPanel(c))));
   }
 })();
 

@@ -127,6 +127,15 @@ const api = createRoomApi({
       list.splice(body.to, 0, list.splice(from, 1)[0]);
       room.players = [...list, ...room.players.filter((p) => p.departed)];
     },
+    // Drag one player onto another's seat to swap them: the host can swap anyone, a player only their own seat.
+    swapSeats(room, me, body, { host }) {
+      need(['lobby', 'finished'].includes(room.phase), 409, 'Change seats before the next game.');
+      const list = present(room), a = list.findIndex((p) => p.id === body.a), b = list.findIndex((p) => p.id === body.b);
+      need(a >= 0 && b >= 0 && a !== b, 400, 'Choose two players at the table.');
+      if (body.a !== me.id && body.b !== me.id) host();
+      [list[a], list[b]] = [list[b], list[a]];
+      room.players = [...list, ...room.players.filter((p) => p.departed)];
+    },
     take(room, me, body) {
       need(room.phase === 'playing', 409, 'No card can be taken now.');
       need(room.taker === me.id, 409, 'It is not your turn.');

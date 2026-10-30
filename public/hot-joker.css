@@ -124,3 +124,16 @@ body { background: radial-gradient(ellipse at 95% 0,#812d5540,transparent 55%),r
 .order-list li { display: flex; align-items: center; gap: 8px; }
 
 .pf-room-seat .seat-moves { margin: 6px 0 0; justify-content: center; width: 100%; }
+
+/* Seats in a circle, with drag and drop. */
+.seat-circle { margin-top: 10px; }
+.seat-tile { font: inherit; color: inherit; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.seat-tile.movable { cursor: grab; }
+.seat-tile.picked { box-shadow: 0 0 0 2px var(--accent, #e3be78), 0 0 22px #efd08c44; transform: translateY(-3px); }
+.seat-tile.hj-drag-src { opacity: .3; }
+.seat-tile.hj-drop { outline: 3px dashed var(--gold, #f5c451); outline-offset: 3px; transform: scale(1.06); }
+.hj-ghost.seat-tile { box-shadow: 0 14px 30px #0008; opacity: .96; }
+/* Taking a card: the pick row keeps its space until the card has landed, then folds away. */
+.take-spacer { overflow: hidden; transition: height .35s ease, margin-bottom .35s ease, opacity .25s ease; }
+.take-panel.taken .pcard { opacity: .35; transition: opacity .2s; pointer-events: none; }
+.take-panel.taken .pcard[style*="hidden"] { opacity: 1; }

@@ -62,6 +62,13 @@ function rulesTests() {
       assert.equal((await post(lobby[1], 'moveSeat', { id: lobby[1].meId, to: 1 })).s, 200, 'a player moves their own seat');
       assert.deepEqual((await names()).slice(0, 2), ['P0', 'P1']);
       assert.equal((await post(lobby[0], 'moveSeat', { id: lobby[1].meId, to: 9 })).s, 400, 'the seat has to exist');
+      // drag and drop swaps two seats: the host any two, a player only when one of them is their own seat
+      const before = await names();
+      assert.equal((await post(lobby[0], 'swapSeats', { a: lobby[1].meId, b: lobby[2].meId })).s, 200, 'the host swaps any two players');
+      assert.deepEqual(await names(), [before[0], before[2], before[1]]);
+      assert.equal((await post(lobby[1], 'swapSeats', { a: lobby[0].meId, b: lobby[2].meId })).s, 403, 'a player cannot swap two other people');
+      assert.equal((await post(lobby[2], 'swapSeats', { a: lobby[2].meId, b: lobby[0].meId })).s, 200, 'a player can swap their own seat');
+      assert.equal((await post(lobby[0], 'swapSeats', { a: lobby[0].meId, b: lobby[0].meId })).s, 400);
     }
     assert.equal((await post(lobby[0], 'take', { index: 0, turn: 0 })).s, 409);
     assert.equal((await get(lobby[0])).j.minPlayers,3);

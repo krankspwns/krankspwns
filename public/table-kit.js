@@ -209,7 +209,7 @@
       const host = state.meId === state.hostId, n = state.players.filter((p) => !p.departed).length, reason = cfg.startBlock(state, n);
       return roomBar({count:n+' of '+cfg.max+' players have joined',body:[
         cfg.waiting ? cfg.waiting(ctx()) : null,
-        Platform.roomSeats({players:state.order?state.order.map(id=>state.players.find(p=>p.id===id)).filter(Boolean):state.players,max:cfg.max,meId:state.meId,hostId:state.hostId,avatar,status:p=>cfg.rosterTag?.(p,state),controls:(p,i)=>cfg.seatControls?.(p,i,ctx())}),
+        cfg.hideSeatGrid ? null : Platform.roomSeats({players:state.order?state.order.map(id=>state.players.find(p=>p.id===id)).filter(Boolean):state.players,max:cfg.max,meId:state.meId,hostId:state.hostId,avatar,status:p=>cfg.rosterTag?.(p,state)}),
         botControls(),host ? button('START GAME', () => send('start'), 'host-button start-ticket', !!reason, undefined, 'play:ink') : text('p', 'waiting', 'Waiting for the host to start…'),
         reason ? text('p','muted small',reason) : null]});
     }
