@@ -1515,3 +1515,6 @@ h3 {
 .heist-compass { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: rgba(8, 24, 32, .6); border: 2px solid #ffe08a; z-index: 2; pointer-events: none; }
 .heist-compass i { font-style: normal; color: #ffe08a; font-size: 22px; line-height: 1; }
 .museum-map[data-view="first"]::after { content: ""; }
+
+/* a soft vignette in first person */
+.map-frame:has(canvas[data-view="first"])::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; border-radius: inherit; background: radial-gradient(ellipse at center, transparent 55%, rgba(2, 8, 12, .55) 100%); }
