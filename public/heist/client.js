@@ -386,7 +386,7 @@
           ],
           [
             "Report",
-            "Report a knocked-out player or use your one emergency meeting at the Lobby. Tell everyone what you saw.",
+            "Report a knocked-out player or use your one emergency meeting at the red button in the Lobby. Tell everyone what you saw.",
           ],
           [
             "Vote",
@@ -1039,7 +1039,7 @@
           );
         },
       });
-    if (me.alive && me.emergency > 0 && closeEnough({ x: 160, y: 150 }, 75))
+    if (me.alive && me.emergency > 0 && closeEnough(W.EMERGENCY, 52))
       choices.push({
         label: "Emergency Meeting",
         kind: "",

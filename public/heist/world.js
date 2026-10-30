@@ -82,6 +82,8 @@
     y: r.y + 156,
     name: r.id === "service" ? "Service Exit" : "Exhibit Crate",
   }));
+  // the red button for calling a meeting: stand in front of it in the Lobby
+  const EMERGENCY = { id: "emergency", room: "lobby", x: 232, y: 214, name: "Emergency Button" };
   const OBSTACLES = ROOMS.flatMap((r) => [
     { x: r.x + 144, y: r.y + 32, w: 56, h: 44 },
     { x: r.x + 98, y: r.y + 186, w: 70, h: 20 },
@@ -91,6 +93,7 @@
       STATIONS.map((s) => ({ x: s.x - 10, y: s.y - 23, w: 20, h: 14 })),
       JOINTS.map((j) => ({ x: j.x - 13, y: j.y - 31, w: 26, h: 26 })),
       TRANSPORT.map((t) => ({ x: t.x - 11, y: t.y - 23, w: 22, h: 18 })),
+      [{ x: EMERGENCY.x - 9, y: EMERGENCY.y - 22, w: 18, h: 14 }],
     );
   const inRect = (p, r) =>
     p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
@@ -259,6 +262,7 @@
     JOINTS,
     TRANSPORT,
     OBSTACLES,
+    EMERGENCY,
     inRect,
     roomAt,
     distance,

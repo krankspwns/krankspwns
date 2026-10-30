@@ -257,6 +257,8 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
       p = r.players.find((p) => p.team === "staff");
     clock += 16000;
     at(p, { x: 160, y: 150 });
+    rejects(() => R.emergency(r, p, body(r)), 409);
+    at(p, W.EMERGENCY);
     R.emergency(r, p, body(r));
     R.beginVote(r);
     r.electorate.forEach((id) =>

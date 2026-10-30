@@ -296,6 +296,12 @@
           const sign = this.label("SERVICE EXIT", "#9cf0c3", 22); sign.position.set(t.x * S, 3.4, (t.y - 14) * S); scene.add(sign);
         }
       });
+      const eb = new T.Group(); eb.position.set(W.EMERGENCY.x * S, 0, (W.EMERGENCY.y - 15) * S);
+      this.box(1.7, 1.1, 1.3, this.mat(0x2a3a40), 0, 0, 0, eb);
+      this.emergencyCap = new T.Mesh(new T.CylinderGeometry(0.5, 0.58, 0.35, 20), new T.MeshBasicMaterial({ color: 0xff3b54 }));
+      this.emergencyCap.position.y = 1.3; eb.add(this.emergencyCap);
+      const ebl = this.label("EMERGENCY", "#ff8c9c", 20); ebl.position.y = 3; eb.add(ebl);
+      scene.add(eb);
       this.markers();
     }
     lotTexture(index) {
@@ -540,6 +546,7 @@
         c.screenMat.color.setHex(on ? 0xffffff : 0x7f958e);
         c.group.children[1].scale.setScalar(on ? 1 + Math.sin(t / 260) * 0.04 : 1);
       }
+      if (this.emergencyCap) this.emergencyCap.scale.y = 1 + Math.sin(t / 300) * 0.25;
       // job beacons
       const live = new Set();
       for (const j of [...s.me.jobs, ...s.recovery, ...s.joints]) {

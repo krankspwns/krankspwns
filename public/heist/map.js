@@ -142,6 +142,18 @@
         c.fillText("SERVICE EXIT", r.x + 195, r.y + 19);
       }
     }
+    const e = W.EMERGENCY;
+    c.fillStyle = "#2a3a40";
+    c.fillRect(e.x - 9, e.y - 22, 18, 14);
+    c.fillStyle = "#ff3b54";
+    c.beginPath();
+    c.arc(e.x, e.y - 15, 5, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "#ff8c9c";
+    c.font = "700 6px Inter";
+    c.textAlign = "center";
+    c.fillText("EMERGENCY", e.x, e.y - 26);
+    c.textAlign = "start";
     return n;
   }
   window.MuseumMap = class {
