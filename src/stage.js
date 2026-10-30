@@ -620,7 +620,7 @@ setInterval(() => {
 let predFixed = '';
 let predAwait = 0;
 // the four calls you made before row 1, ticked off as each row is revealed
-let callsOpen = false;
+let callsOpen = true;
 function myCallsStrip(cur) {
   const mine = st.myPreds, all = st.allCalls || {}, hasMine = !!(mine && mine.some((x) => x && x !== '-'));
   const others = st.players.filter((p) => p.id !== st.meId && all[p.id] && all[p.id].some((x) => x && x !== '-'));
