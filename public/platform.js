@@ -4,8 +4,8 @@
 (() => {
   'use strict';
   const API = '/api/platform';
-  const GAME_API = /^\/api\/(bridge|hot-joker|grand-con)$/;
-  const PAGE = { '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con', '/last-train.html': 'last-train', '/reckoning.html':'reckoning' }[location.pathname] || 'arcade';
+  const GAME_API = /^\/api\/(bridge|hot-joker|grand-con|grand-heist)$/;
+  const PAGE = { '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con', '/grand-heist.html':'grand-heist', '/last-train.html': 'last-train', '/reckoning.html':'reckoning' }[location.pathname] || 'arcade';
   const OWN_TABLE_UI = PAGE === 'reckoning' || PAGE === 'last-train';   // these two already draw their own reactions, shop and gifts
 
   const EMO = { laugh: '😂', wow: '😮', cry: '😢', cool: '😎', fire: '🔥', rip: '🪦', angry: '😠', think: '🤔', heart: '❤️', trophy: '🏆' };
@@ -38,7 +38,8 @@
     'last-train': ['Last Train', 'lt-seat', 5, 12],
     bridge: ['Hidden Alliance', 'br-seat', 4, 4],
     'hot-joker': ['Last Laugh', 'hj-seat', 3, 10],
-    'grand-con': ['The Grand Con', 'gc-seat', 4, 12],
+    'grand-con': ['Grand Con: Gallery', 'gc-seat', 4, 12],
+    'grand-heist': ['The Grand Con', 'gh-seat', 5, 12],
   };
   let switchSeat = null, switchState = null, switching = false, moving = false;
   function followSwitch(data, owner) {
@@ -476,7 +477,7 @@
     const toggle=(label,on,change)=>el('label',{class:'pf-switch'},el('b',{text:label}),el('input',{type:'checkbox',checked:on || undefined,onchange:e=>change(e.target.checked)}));
     const content=[];
     if(a) content.push(el('section',{class:'pf-card'},el('h3',{text:'Sound'}),toggle('Sound effects',prefs.sfx,v=>a.setSfx(v)),toggle('Background music',prefs.music,v=>a.setMusic(v))));
-    const rules={bridge:[['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[6,'6 deals'],[8,'8 deals']]],['Turn Timer','turnSeconds',[[0,'No limit'],[30,'30 sec'],[60,'60 sec'],[90,'90 sec']],60]],'hot-joker':[['Turn Timer','turnSeconds',[[20,'20 sec'],[40,'40 sec'],[60,'60 sec']]]],'grand-con':[['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]]}[PAGE];
+    const rules={bridge:[['Number of Deals','deals',[[2,'2 deals'],[4,'4 deals'],[6,'6 deals'],[8,'8 deals']]],['Turn Timer','turnSeconds',[[0,'No limit'],[30,'30 sec'],[60,'60 sec'],[90,'90 sec']],60]],'hot-joker':[['Turn Timer','turnSeconds',[[20,'20 sec'],[40,'40 sec'],[60,'60 sec']]]],'grand-heist':[['Discussion','discussionSeconds',[[45,'45 sec'],[60,'60 sec'],[90,'90 sec']],60]],'grand-con':[['Time to talk','discussionSeconds',[[0,'Auto'],[60,'60 sec'],[90,'90 sec'],[120,'120 sec']]]]}[PAGE];
     if(st && seat && rules) for(const [label,key,choices,fallback=0] of rules) {
       const editable=st.hostId===st.meId && ['lobby','finished'].includes(st.phase);
       const current=key==='deals'?st.deals:st.settings?.[key] ?? fallback;
@@ -600,7 +601,7 @@
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
   window.Platform = { openLogin, openShop, shopButton, settingsButton, botControls, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
-  const NAME_BOXES = '#lt-name, #gc-name, #player-name, #tk-name';
+  const NAME_BOXES = '#gh-name, #lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {
     const nick = account?.nick; if (!nick) return;
     document.querySelectorAll(NAME_BOXES).forEach((i) => {

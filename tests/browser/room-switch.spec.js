@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const crypto = require('node:crypto');
-const SEATS = { bridge: 'br-seat', 'hot-joker': 'hj-seat', reckoning: 'sct', 'grand-con': 'gc-seat', 'last-train': 'lt-seat' };
+const SEATS = { bridge: 'br-seat', 'hot-joker': 'hj-seat', reckoning: 'sct', 'grand-con': 'gc-seat', 'last-train': 'lt-seat', 'grand-heist':'gh-seat' };
 async function post(request, game, body) {
   const r = await request.post('/api/' + (game === 'reckoning' ? 'game' : game), { data: { requestId: crypto.randomUUID(), ...body } });
   const j = await r.json(); expect(r.ok(), JSON.stringify(j)).toBeTruthy(); return j;
@@ -20,8 +20,8 @@ for (const width of [320, 390, 1100]) test('whole party switches games without r
     await Promise.all(pages.map(p => p.goto('/bridge.html')));
     await expect(pages[0].getByRole('button', { name: 'Switch game', exact: true })).toBeVisible();
     await expect(pages[1].getByRole('button', { name: 'Switch game', exact: true })).toHaveCount(0);
-    const titles = { 'hot-joker': 'Last Laugh', reckoning: 'Crown Clash', 'grand-con': 'The Grand Con', 'last-train': 'Last Train', bridge: 'Hidden Alliance' };
-    for (const game of ['hot-joker', 'reckoning', 'grand-con', 'last-train', 'bridge']) {
+    const titles = { 'hot-joker': 'Last Laugh', reckoning: 'Crown Clash', 'grand-con': 'Grand Con: Gallery', 'last-train': 'Last Train', 'grand-heist':'The Grand Con', bridge: 'Hidden Alliance' };
+    for (const game of ['hot-joker', 'reckoning', 'grand-con', 'grand-heist', 'last-train', 'bridge']) {
       if (width === 390 && game === 'hot-joker') await contexts[1].setOffline(true);
       const tools = await pages[0].locator('#pf-dock button').evaluateAll(nodes => nodes.map(n => ({ left: n.getBoundingClientRect().left, right: n.getBoundingClientRect().right })));
       for (const box of tools) { expect(box.left).toBeGreaterThanOrEqual(0); expect(box.right).toBeLessThanOrEqual(width); }

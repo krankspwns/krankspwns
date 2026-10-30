@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
-const loadHandlers = () => Object.fromEntries(['reckoning', 'last-train', 'bridge', 'hot-joker', 'grand-con'].map(g => [g, require('../api/' + (g === 'reckoning' ? 'game' : g))]));
+const loadHandlers = () => Object.fromEntries(['reckoning', 'last-train', 'bridge', 'hot-joker', 'grand-con', 'grand-heist'].map(g => [g, require('../api/' + (g === 'reckoning' ? 'game' : g))]));
 let handlers, backend;
 async function call(game, body, method = 'POST', headers = {}) {
   let result, status, outHeaders = {};
@@ -144,7 +144,7 @@ async function main() {
     backend.fault.unavailable = false;
     assert.equal(ok(await call('grand-con', outage.seats[0], 'GET')).phase, 'lobby');
   }
-  console.log('Room switch: all 20 game pairs, permissions, capacity, confirmation, retries, stale actions and races passed.');
+  console.log('Room switch: all 30 game pairs, permissions, capacity, confirmation, retries, stale actions and races passed.');
 }
 (async () => {
   process.env.GOOGLE_CLIENT_ID = 'test-switch'; process.env.ACCOUNT_PEPPER = 'test-switch';

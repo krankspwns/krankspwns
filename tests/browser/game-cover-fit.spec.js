@@ -7,7 +7,7 @@ for(const width of [320,390,620,621,820,1000,1440])test('complete game covers fi
     const scale=Math.min(image.width/img.naturalWidth,image.height/img.naturalHeight);
     return {ratio:r.width/r.height,fit:css.objectFit,renderedWidth:img.naturalWidth*scale,renderedHeight:img.naturalHeight*scale,width:r.width,height:r.height,imageWidth:image.width,imageHeight:image.height,transform:css.transform};
   }));
-  expect(covers).toHaveLength(5);
+  expect(covers).toHaveLength(6);
   for(const cover of covers){
     expect(cover.ratio).toBeCloseTo(1.5,2);expect(cover.fit).toBe('contain');
     expect(cover.imageWidth).toBeCloseTo(cover.width,1);expect(cover.imageHeight).toBeCloseTo(cover.height,1);

@@ -3,7 +3,7 @@ for(const width of [320,390,1100])test('Midnight game list with individual jewel
   await page.setViewportSize({width,height:900});await page.goto('/?games=1');
   await expect(page.locator('body')).toHaveCSS('background-color','rgb(23, 27, 36)');
   await expect(page.locator('html')).toHaveCSS('color-scheme','dark');
-  await expect(page.locator('.game-card')).toHaveCount(5);
+  await expect(page.locator('.game-card')).toHaveCount(6);
   const colors=await page.locator('.game-card').evaluateAll(cards=>cards.map(card=>{
     const css=getComputedStyle(card),rgb=value=>value.match(/[\d.]+/g).slice(0,3).map(Number),luminance=value=>rgb(value).map(n=>{const v=n/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
     const backgrounds=css.backgroundImage.match(/rgb\([^)]+\)/g);

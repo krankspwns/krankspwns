@@ -11,7 +11,7 @@
     'grand-con': { name: 'Grand Con', wave: 'sawtooth', lead: 'triangle', root: 164.81, scale: [0, 2, 3, 5, 7, 8, 10], bpm: 72, bass: [0, 0, -4, -2],
       tune: [[0, 2], [2, 1], [3, 1], [4, 2], [2, 1], [0, 1], [-2, 2], [0, 1], [2, 1], [3, 3]] },
   };
-  const game = ({ '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con' })[location.pathname] || null;
+  const game = ({ '/bridge.html': 'bridge', '/hot-joker.html': 'hot-joker', '/grand-con.html': 'grand-con', '/grand-heist.html':'grand-con' })[location.pathname] || null;
   let prefs = { sfx: true, music: true }; try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch {} };
   let ctx = null, master = null, musicGain = null, timer = null, step = 0, nextAt = 0, playing = false;

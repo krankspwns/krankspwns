@@ -56,7 +56,9 @@ Server-authoritative decisions, authenticated private views, sealed votes, bound
 
 ## Applying this to The Grand Con
 
-Keep its distinct promise: nobody is eliminated, each player holds a clue, one clue is changed, and the table votes REAL or FAKE. Improve the parts that prevent that promise from working: generic extra clues, too little time for larger groups, no durable record of claims, no limited decision beyond the final vote, and a flat presentation. Use a luxury private-gallery setting, a new human cast, actual illustrated lots, a hideable private card, a public claims board, one private original-clue check per player per match, and a reveal that compares claims with the true evidence. Keep the score as first team to three; introduce no bidding economy or extra win condition.
+The owner subsequently approved a separate live museum heist remake, inspired by Among Us, with movement, short mini-games, Staff and Thieves, reports and voting. Preserve the clue game at `/grand-con.html` as **Grand Con: Gallery (Review)**; the remake uses `/grand-heist.html` and separate seats. Keep the remake marked **Playtest** until real group tests confirm pacing and balance. See [the museum playtest rules](grand-heist.md).
+
+For the classic Gallery game, keep its distinct promise: nobody is eliminated, each player holds a clue, one clue is changed, and the table votes REAL or FAKE. Improve the parts that prevent that promise from working: generic extra clues, too little time for larger groups, no durable record of claims, no limited decision beyond the final vote, and a flat presentation. Use a luxury private-gallery setting, a new human cast, actual illustrated lots, a hideable private card, a public claims board, one private original-clue check per player per match, and a reveal that compares claims with the true evidence. Keep the score as first team to three; introduce no bidding economy or extra win condition.
 
 ## Production and cost preferences
 

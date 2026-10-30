@@ -7,7 +7,7 @@ test('game hub selects both games and keeps legacy invitations working',async({p
   await page.goto('/?room=ABCD');
   await expect(page).toHaveURL(/reckoning\.html/);
   await expect(page.getByRole('button',{name:'Join room ABCD'})).toBeVisible();
-  await page.goto('/?games=1');await page.getByRole('link',{name:/The Grand Con/}).click();
+  await page.goto('/?games=1');await page.getByRole('link',{name:/Grand Con: Gallery/}).click();
   await expect(page.getByRole('heading',{name:'Ready to play?'})).toBeVisible();
 });
 test('six phones forge evidence, vote through a full match, and reveal teams',async({browser},testInfo)=>{
@@ -83,7 +83,7 @@ test('six phones forge evidence, vote through a full match, and reveal teams',as
     await pages[2].goto('/');await expect(pages[2]).toHaveURL(/grand-con\.html/);await expect(pages[2].locator('.team-player')).toHaveCount(6);
     await host.screenshot({path:testInfo.outputPath('grand-con-finale.png'),fullPage:true});
     await host.getByRole('button',{name:'PLAY AGAIN'}).click();await expect(host.getByRole('heading',{name:'One clue is being changed.'})).toBeVisible();
-    await host.goto('/?games=1');await expect(host.getByRole('link',{name:/The Grand Con/})).toBeVisible();
+    await host.goto('/?games=1');await expect(host.getByRole('link',{name:/Grand Con: Gallery/})).toBeVisible();
     expect(errors).toEqual([]);
   }finally{await Promise.all(contexts.map(c=>c.close()));}
 });
