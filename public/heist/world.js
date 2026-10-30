@@ -78,14 +78,20 @@
   const TRANSPORT = ROOMS.map((r) => ({
     id: "crate-" + r.id,
     room: r.id,
-    x: r.x + 180,
-    y: r.y + 155,
+    x: r.x + 44,
+    y: r.y + 156,
     name: r.id === "service" ? "Service Exit" : "Exhibit Crate",
   }));
   const OBSTACLES = ROOMS.flatMap((r) => [
     { x: r.x + 144, y: r.y + 32, w: 56, h: 44 },
     { x: r.x + 98, y: r.y + 186, w: 70, h: 20 },
-  ]);
+  ])
+    // job consoles, statues and crates stand just behind the spot where you use them
+    .concat(
+      STATIONS.map((s) => ({ x: s.x - 10, y: s.y - 23, w: 20, h: 14 })),
+      JOINTS.map((j) => ({ x: j.x - 13, y: j.y - 31, w: 26, h: 26 })),
+      TRANSPORT.map((t) => ({ x: t.x - 11, y: t.y - 23, w: 22, h: 18 })),
+    );
   const inRect = (p, r) =>
     p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
   const roomAt = (p) => ROOMS.find((r) => inRect(p, r));
@@ -172,7 +178,22 @@
     const cells = [];
     for (let k = b; k !== null; k = prev.get(k))
       cells.push(center(k % 48, Math.floor(k / 48)));
-    return [from, ...cells.reverse()];
+    cells.reverse();
+    // walk straight wherever the way is clear, ending exactly where you pointed
+    const pts = [from, ...cells];
+    if (walkable(to, closed)) pts.push(to);
+    const clear = (a, b) =>
+      [[0, 0], [5, 0], [-5, 0], [0, 5], [0, -5]].every(([dx, dy]) =>
+        line({ x: a.x + dx, y: a.y + dy }, { x: b.x + dx, y: b.y + dy }, closed),
+      );
+    const out = [from];
+    for (let i = 0; i < pts.length - 1; ) {
+      let j = pts.length - 1;
+      while (j > i + 1 && !clear(pts[i], pts[j])) j--;
+      out.push(pts[j]);
+      i = j;
+    }
+    return out;
   }
   function position(player, now) {
     const path = player.path || [player.pos || { x: 160, y: 150 }];

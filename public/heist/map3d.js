@@ -7,7 +7,7 @@
   const W = HeistWorld,
     S = 0.1, // three.js units per world unit
     THREE_URL = "/vendor/three-0.170.0.module.min.js",
-    RADIUS = 6, // how close to a wall your character may get
+    RADIUS = 7, // how close to a wall your character may get
     SYNC_MS = 260,
     LOOKAHEAD = 90;
   const COLORS = [
@@ -273,7 +273,7 @@
       });
       // job consoles
       this.consoles = W.STATIONS.map((s) => {
-        const g = new T.Group(); g.position.set(s.x * S, 0, s.y * S);
+        const g = new T.Group(); g.position.set(s.x * S, 0, (s.y - 16) * S);
         this.box(1.9, 1.1, 1.3, this.mat(0x213038), 0, 0, 0, g);
         const screenMat = new T.MeshBasicMaterial({ map: this.screenTexture(s.kind), color: 0x9fb8b0 });
         const screen = new T.Mesh(new T.PlaneGeometry(1.6, 1.0), screenMat);
@@ -284,7 +284,7 @@
       });
       // two statues that take two players
       this.statues = W.JOINTS.map((j) => {
-        const g = new T.Group(); g.position.set(j.x * S, 0, j.y * S);
+        const g = new T.Group(); g.position.set(j.x * S, 0, (j.y - 18) * S);
         const marble = this.mat(0xcfc8bd);
         this.box(2.6, 1, 2.6, marble, 0, 0, 0, g);
         const body = new T.Mesh(new T.CapsuleGeometry(0.75, 2.1, 6, 12), marble); body.position.y = 3; g.add(body);
@@ -294,10 +294,10 @@
       });
       // crates for the exhibits; the one in the Service Hall is the exit
       W.TRANSPORT.forEach((t) => {
-        this.box(2.2, 1.6, 1.8, wood, t.x * S, 0, t.y * S);
-        this.box(2.3, 0.2, 1.9, trim, t.x * S, 1.6, t.y * S);
+        this.box(2.2, 1.6, 1.8, wood, t.x * S, 0, (t.y - 14) * S);
+        this.box(2.3, 0.2, 1.9, trim, t.x * S, 1.6, (t.y - 14) * S);
         if (t.room === "service") {
-          const sign = this.label("SERVICE EXIT", "#9cf0c3", 22); sign.position.set(t.x * S, 3.4, t.y * S); scene.add(sign);
+          const sign = this.label("SERVICE EXIT", "#9cf0c3", 22); sign.position.set(t.x * S, 3.4, (t.y - 14) * S); scene.add(sign);
         }
       });
       this.markers();
@@ -502,7 +502,7 @@
         if (this.wasMoving) { this.wasMoving = false; this.syncAt = t; this.hooks.move(point(this.me.x, this.me.y)); }
         // the server is the last word: once its walk has finished, settle where it put you
         const end = s.me.path.at(-1), gap = W.distance(serverPos, this.me);
-        if (W.distance(serverPos, end) < 1 && gap > 24) { this.me.x += (serverPos.x - this.me.x) * Math.min(1, dt * 5); this.me.y += (serverPos.y - this.me.y) * Math.min(1, dt * 5); }
+        if (t - this.syncAt > 900 && W.distance(serverPos, end) < 1 && gap > 45) { this.me.x += (serverPos.x - this.me.x) * Math.min(1, dt * 4); this.me.y += (serverPos.y - this.me.y) * Math.min(1, dt * 4); }
       }
       if (W.distance(serverPos, this.me) > 150) { this.me.x = serverPos.x; this.me.y = serverPos.y; this.walk = null; } // moved by the game (a meeting, a rescue)
       const moved = W.distance(before, this.me) / Math.max(dt, 0.001);

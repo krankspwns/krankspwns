@@ -173,6 +173,15 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
     assert.equal(r.phase, "live");
   }
   {
+    for (const [from, to] of [
+      [{ x: 70, y: 150 }, { x: 170, y: 130 }],
+      [{ x: 100, y: 120 }, { x: 420, y: 150 }],
+      [{ x: 120, y: 80 }, { x: 470, y: 430 }],
+    ]) {
+      const path = W.route(from, to);
+      assert.deepEqual(path.at(-1), to, "a walk ends exactly where you pointed");
+      assert.ok(path.slice(1).every((q, i) => W.line(path[i], q)), "straight legs never cross walls or props");
+    }
     const r = room(),
       p = r.players.find((p) => p.team === "thief");
     at(p, { x: 270, y: 160 });
