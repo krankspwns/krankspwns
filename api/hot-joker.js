@@ -89,9 +89,11 @@ function view(room, me) {
   const hands = room.hands || {}, playing = room.phase === 'playing';
   const source = playing ? R.sourceFor(order, hands, room.taker) : null, hand = hands[me.id] || [];
   return {
-    order, taker: playing ? room.taker : null, source, sourceCount: source ? hands[source].length : 0, turn: room.turn || 0,
+    order, seatOrder: present(room).map((p) => p.id), taker: playing ? room.taker : null, source, sourceCount: source ? hands[source].length : 0, turn: room.turn || 0,
     counts: Object.fromEntries(order.map((id) => [id, (hands[id] || []).length])),
     sets: (room.sets || []).map((s) => ({ ...s, cards: s.cards || [] })), placed: room.placed || [], loser: room.loser || null, losses: room.losses || {}, log: room.log || [],
+    // A player who is already safe has nothing left to protect, so they may watch everyone else's cards face up.
+    reveal: playing && hand.length === 0 && !me.departed ? Object.fromEntries(order.filter((id) => hands[id]?.length).map((id) => [id, hands[id]])) : null,
     me: { hand, last: room.last?.[me.id] || null, out: room.phase !== 'lobby' && hand.length === 0, place: (room.placed || []).indexOf(me.id) + 1 },
   };
 }
@@ -114,6 +116,16 @@ const api = createRoomApi({
     shuffleSeats(room, me, body, { host }) {
       host(); need(['lobby', 'finished'].includes(room.phase), 409, 'Change seats before the next game.');
       room.players = shuffle(present(room));
+    },
+    // Arrange the table: the host can seat anyone, and each player can move their own seat, before a game starts.
+    moveSeat(room, me, body, { host }) {
+      need(['lobby', 'finished'].includes(room.phase), 409, 'Change seats before the next game.');
+      const list = present(room), from = list.findIndex((p) => p.id === body.id);
+      need(from >= 0, 400, 'Choose a player at the table.');
+      if (body.id !== me.id) host();
+      need(Number.isInteger(body.to) && body.to >= 0 && body.to < list.length, 400, 'Choose a seat.');
+      list.splice(body.to, 0, list.splice(from, 1)[0]);
+      room.players = [...list, ...room.players.filter((p) => p.departed)];
     },
     take(room, me, body) {
       need(room.phase === 'playing', 409, 'No card can be taken now.');

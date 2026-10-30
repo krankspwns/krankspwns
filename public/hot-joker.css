@@ -22,9 +22,9 @@ body { background: radial-gradient(ellipse at 85% -10%, #ff4f8b33, transparent 5
 .turn-banner.mine { background: linear-gradient(150deg, var(--accent), var(--accent-dark)); color: var(--accent-ink); animation: pulse 1.6s ease-in-out infinite; } .turn-banner.mine .countdown { color: var(--accent-ink); }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px #ffb34730; } }
 .take-panel.active { border-color: var(--accent); box-shadow: 0 0 0 2px #ffb34766, 0 18px 50px #0004; }
-.pick-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 4px 8px; } .pick-row .pcard { margin-right: -6px; }
+
 .pick-row .pcard.playable:hover:not(:disabled) { background: repeating-linear-gradient(45deg, #8a3fe0 0 5px, #5c1fa6 5px 10px); border-color: #f6f0df; }
-.hand-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0 6px; } .hand-row .pcard { margin-right: -4px; }
+
 .hand-panel.being-taken { border-color: var(--hot); box-shadow: 0 0 0 2px #ff4f8b55, 0 18px 50px #0004; } .warn { color: #ffc4d8; font-weight: 700; }
 .arrange { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; } .arrange button { margin: 0; padding: 10px 6px; }
 .hcp { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--accent); border: 1px solid #ffb34755; border-radius: 99px; padding: 3px 10px; white-space: nowrap; }
@@ -100,3 +100,27 @@ body { background: radial-gradient(ellipse at 95% 0,#812d5540,transparent 55%),r
 .hj-flip-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
 .hj-flip-in > * { position: absolute !important; inset: 0; margin: 0 !important; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 10px 24px rgba(0,0,0,.45); }
 .hj-flip-in > .hj-flip-face { transform: rotateY(180deg); }
+
+/* The cards you pick from, your own hand and the observer view all lay cards out the same way: up to 6 in a row, left to
+   right then top to bottom, in the owner's order. So the row you pick from matches the hand its owner is looking at. */
+.pick-row, .hand-row, .reveal-hand { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 58px)); gap: 10px 6px; justify-content: start; padding: 12px 0 6px; }
+.pick-row .pcard, .hand-row .pcard, .reveal-hand .pcard { width: 100%; height: auto; aspect-ratio: 56 / 80; min-width: 0; margin: 0; }
+.pick-row .pcard .pcard-rank, .hand-row .pcard .pcard-rank, .reveal-hand .pcard .pcard-rank { font-size: clamp(12px, 3.6vw, 17px); }
+/* One container: pick a card (on your turn) above your own cards. */
+.hand-panel .take-panel { margin: 0 0 14px; padding: 12px 12px 6px; border-radius: 14px; border: 1px solid #e3be78a6; background: #ffffff08; box-shadow: none; }
+.hand-panel .take-panel h2 { margin: 2px 0 4px; font-size: 20px; }
+.hand-panel.my-turn { border-color: var(--accent, #e3be78); box-shadow: 0 0 0 2px #ffb34744, 0 18px 50px #0004; }
+.hand-panel.my-turn .panel-heading { padding-top: 2px; border-top: 1px dashed #ffffff22; margin-top: 4px; padding-top: 12px; }
+/* Observer view for players who are safe. */
+.reveal-list { display: grid; gap: 12px; margin-top: 6px; }
+.reveal-seat { padding: 10px 12px 4px; border-radius: 14px; background: #ffffff08; border: 1px solid #ffffff14; }
+.reveal-seat.taker { border-color: var(--accent, #e3be78); } .reveal-seat.source { border-color: var(--hot, #ff4f8b); }
+.reveal-who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .reveal-who b { min-width: 0; overflow-wrap: anywhere; } .reveal-who .badge { margin-left: auto; }
+.reveal-hand { padding-top: 8px; }
+/* Seat arrangement. */
+.seat-moves { margin-left: auto; display: inline-flex; gap: 6px; }
+.seat-move { width: 34px; height: 34px; padding: 0; margin: 0; border-radius: 10px; border: 1px solid #ffffff2a; background: #ffffff0d; color: inherit; font-size: 13px; line-height: 1; cursor: pointer; }
+.seat-move:disabled { opacity: .3; cursor: default; }
+.order-list li { display: flex; align-items: center; gap: 8px; }
+
+.pf-room-seat .seat-moves { margin: 6px 0 0; justify-content: center; width: 100%; }

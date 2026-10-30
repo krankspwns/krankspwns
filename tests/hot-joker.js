@@ -52,6 +52,17 @@ function rulesTests() {
     const third = await enter('join', { code: lobby[0].code, name: 'P2' }); lobby.push(third.j);
     assert.equal((await post(lobby[1], 'start')).s, 403, 'only the host starts');
     assert.equal((await post(lobby[1], 'shuffleSeats')).s, 403);
+    // Seats can be arranged: the host seats anyone, a player moves only their own seat.
+    {
+      const seatsOf = async () => (await get(lobby[0])).j.seatOrder, names = async () => { const v = (await get(lobby[0])).j; return v.seatOrder.map((id) => v.players.find((p) => p.id === id).name); };
+      assert.deepEqual(await names(), ['P0', 'P1', 'P2'] .slice(0, lobby.length));
+      assert.equal((await post(lobby[0], 'moveSeat', { id: lobby[1].meId, to: 0 })).s, 200, 'the host seats anyone');
+      assert.deepEqual((await names()).slice(0, 2), ['P1', 'P0']);
+      assert.equal((await post(lobby[1], 'moveSeat', { id: lobby[0].meId, to: 1 })).s, 403, 'a player cannot move someone else');
+      assert.equal((await post(lobby[1], 'moveSeat', { id: lobby[1].meId, to: 1 })).s, 200, 'a player moves their own seat');
+      assert.deepEqual((await names()).slice(0, 2), ['P0', 'P1']);
+      assert.equal((await post(lobby[0], 'moveSeat', { id: lobby[1].meId, to: 9 })).s, 400, 'the seat has to exist');
+    }
     assert.equal((await post(lobby[0], 'take', { index: 0, turn: 0 })).s, 409);
     assert.equal((await get(lobby[0])).j.minPlayers,3);
     assert.equal((await post(lobby[0], 'start')).s,200,'exactly three players can start');
@@ -74,9 +85,13 @@ function rulesTests() {
           const v = await ownerView(p), json = JSON.stringify(v);
           assert.deepEqual(v.me.hand.slice().sort(), r.hands[p.meId].slice().sort());
           assert.ok(!json.includes('tokenHash') && !('hands' in v) && !('priv' in v));
+          // Only a player who is already safe (no cards left) may watch everyone else's cards.
+          const safe = r.phase === 'playing' && r.hands[p.meId].length === 0;
+          assert.equal(!!v.reveal, safe, 'the observer view is for safe players only');
+          if (safe) { for (const [id, cards] of Object.entries(v.reveal)) assert.deepEqual(cards, r.hands[id]); assert.ok(!(p.meId in v.reveal)); }
           for (const other of players) {
             assert.equal(v.counts[other.meId], r.hands[other.meId].length);
-            if (other === p) continue;
+            if (other === p || safe) continue;
             for (const card of r.hands[other.meId]) if (!v.me.hand.includes(card) && v.me.last?.card !== card) assert.ok(!json.includes('"' + card + '"'), 'leaked a hidden card');
           }
         }

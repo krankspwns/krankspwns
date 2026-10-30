@@ -437,14 +437,14 @@
       ...(phase==='lobby'?[label,roomCode,el('div',{class:'pf-room-actions'},wrap,players),count?el('div',{class:'pf-room-count',text:count}):null,...body,el('div',{class:'pf-room-footer'},leave)]
         :[el('div',{class:'pf-room-identity'},label,roomCode),el('div',{class:'pf-room-actions'},players,wrap,leave)]));
   }
-  function roomSeats({players,max,meId,hostId,avatar,status}) {
+  function roomSeats({players,max,meId,hostId,avatar,status,controls}) {
     return el('div',{class:'pf-room-seats'},...Array.from({length:Math.max(max,players.length)},(_,i)=>{
       const p=players[i];
       if(!p)return el('div',{class:'pf-room-seat empty'},el('span',{class:'pf-seat-avatar pf-empty-avatar','aria-hidden':'true',text:'+'}),el('div',{class:'pf-seat-name',text:'Waiting…'}));
       const face=avatar(p.id);face.classList.add('pf-seat-avatar');
       return el('div',{class:'pf-room-seat seat'+(p.id===meId?' me mine':'')+(p.bot?' seat-bot':'')+(p.departed?' seat-away':'')},face,
         el('div',{class:'pf-seat-name seat-name',title:p.name,'data-no-tr':''},el('b',{text:p.name+(p.id===meId?' · You':'')})),
-        el('small',{class:'pf-seat-tag',text:p.departed?'AWAY':p.bot?['BOT',status?.(p)].filter(Boolean).join(' · '):status?.(p)||(p.id===hostId?'HOST':'JOINED')}));
+        el('small',{class:'pf-seat-tag',text:p.departed?'AWAY':p.bot?['BOT',status?.(p)].filter(Boolean).join(' · '):status?.(p)||(p.id===hostId?'HOST':'JOINED')}),controls?.(p,i)||null);
     }));
   }
 

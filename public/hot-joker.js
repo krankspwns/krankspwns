@@ -132,6 +132,7 @@
     },
     waitingChips: ['3–10 players', 'Pairs go down', 'Last Joker loses'],
     startBlock: (s, n) => (n < 3 ? `Waiting for ${3 - n} more player${3 - n === 1 ? '' : 's'}. You need at least 3.` : ''),
+    seatControls: (p, i, c) => (c.state.phase === 'lobby' ? seatArrows(c, p.id, i) : null),
     rosterTag: (p, s) => { const n = s.losses?.[p.id]; return p.id === s.hostId ? 'HOST' + (n ? ' · JOKER ×' + n : '') : n ? 'JOKER ×' + n : null; },
     waiting: (c) => seating(c),
     guide: (B) => [
@@ -161,13 +162,21 @@
     screen: (c) => screen(c),
   });
 
+  // Seats: the host can seat anyone, and every player can move their own seat. The list is the clockwise order of the next game.
+  function seatArrows(c, id, i) {
+    const { state } = c, host = state.hostId === state.meId, order = state.seatOrder || state.order;
+    if (!host && id !== state.meId) return null;
+    const arrow = (to, label, glyph) => el('button', { type: 'button', class: 'seat-move', 'aria-label': label, disabled: c.busy || to < 0 || to >= order.length, onclick: () => c.send('moveSeat', { id, to }) }, glyph);
+    return el('span', { class: 'seat-moves' }, arrow(i - 1, 'Move ' + c.who(id) + ' earlier', '◀'), arrow(i + 1, 'Move ' + c.who(id) + ' later', '▶'));
+  }
   function seating(c) {
-    const { state } = c, host = state.hostId === state.meId;
+    const { state } = c, host = state.hostId === state.meId, order = state.seatOrder || state.order;
     return el('div', { class: 'seat-order' }, text('span', 'eyebrow', 'CLOCKWISE ORDER'),
-      el('ol', { class: 'order-list' }, state.order.map((id) => el('li', {}, c.avatar(id), el('b', {}, c.who(id) + (id === state.meId ? ' · You' : ''))))),
-      text('p', 'muted small', 'Each player takes cards from the one before them in this list. Sit in this order around the table.'),
+      el('ol', { class: 'order-list' }, order.map((id, i) => el('li', {}, c.avatar(id), el('b', {}, c.who(id) + (id === state.meId ? ' · You' : '')),
+        seatArrows(c, id, i)))),
+      text('p', 'muted small', (host ? 'Use the arrows to seat anyone. ' : 'Use the arrows to choose your own seat. ') + 'Each player takes cards from the one before them in this list. Sit in this order around the table.'),
       text('p','pairs-rule','Pairs Only · Match two cards with the same number or face.'),
-      host ? c.button('Shuffle seats', () => c.send('shuffleSeats'), 'secondary', state.order.length < 2, undefined, 'shuffle:blue') : null);
+      host ? c.button('Shuffle seats', () => c.send('shuffleSeats'), 'secondary', order.length < 2, undefined, 'shuffle:blue') : null);
   }
   function logLine(c, e) {
     return c.who(e.taker) + ' laid down ' + e.sets.map(r=>setName(r)).join(' and ') + '.';
@@ -212,12 +221,13 @@
     const msg = mine ? 'Your turn. Take a card from ' + c.who(state.source) + '.' : state.source === state.meId ? c.who(state.taker) + ' is taking a card from you.' : c.who(state.taker) + ' is taking a card from ' + c.who(state.source) + '…';
     return el('div', { class: 'turn-banner' + (mine ? ' mine' : ''), role: 'status' }, out ? c.icon('check') : mine ? c.icon('hand') : null, el('span', {}, msg), state.deadline ? el('span', { class: 'banner-timer' }, c.countdown()) : null);
   }
-  function takePanel(c) {
-    const { state, send } = c, mine = state.taker === state.meId; if (state.phase !== 'playing' || !mine) return null;
-    return c.panel('take-panel active', text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
-      el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + (state.sourceCount === 1 ? ' card.' : ' cards.')),
-      text('p', 'muted small', 'Tap a card to take it immediately.'),
-      el('div', { class: 'pick-row', 'data-scroll': 'pick' }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable', 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, disabled: c.busy, onclick: async () => {
+  // On my turn the pick-a-card row sits at the top of my cards container, so everything happens in one place.
+  const cols = (n) => '--cols:' + Math.max(1, Math.min(n, 6));
+  function takeSection(c) {
+    const { state, send } = c;
+    return el('section', { class: 'take-panel active' }, text('span', 'eyebrow', 'YOUR TURN'), el('h2', {}, 'Pick a card from ' + c.who(state.source)),
+      el('p', { class: 'muted small' }, 'They are holding ' + state.sourceCount + (state.sourceCount === 1 ? ' card' : ' cards') + ', in this order. Tap one to take it.'),
+      el('div', { class: 'pick-row', 'data-scroll': 'pick', style: cols(state.sourceCount) }, ...Array.from({ length: state.sourceCount }, (_, i) => el('button', { type: 'button', class: 'pcard back playable', 'data-focus': 'pick-' + i, 'aria-label': 'Card ' + (i + 1) + ' of ' + state.sourceCount, disabled: c.busy, onclick: async () => {
         if (c.busy) return;
         const pr = document.querySelectorAll('.pick-row .pcard')[i]?.getBoundingClientRect();
         if (pr) { pickRect = { left: pr.left, top: pr.top, width: pr.width, height: pr.height, at: Date.now() }; leaveGhost(i); }
@@ -229,14 +239,27 @@
     if (sel >= hand.length) sel = -1;
     const arrange = playing && hand.length > 1 && state.source !== state.meId;
     if (!arrange) sel = -1;
-    return c.panel('hand-panel' + (state.source === state.meId ? ' being-taken' : ''), el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'KEEP THIS PRIVATE'), el('h3', {}, hand.length ? 'Your cards' : state.phase === 'finished' ? 'Your last cards' : 'You are safe!')), text('span', 'hcp', hand.length + (hand.length === 1 ? ' card' : ' cards'))),
+    const turn = playing && state.taker === state.meId;
+    return c.panel('hand-panel' + (state.source === state.meId ? ' being-taken' : '') + (turn ? ' my-turn' : ''), turn ? takeSection(c) : null, el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'KEEP THIS PRIVATE'), el('h3', {}, hand.length ? 'Your cards' : state.phase === 'finished' ? 'Your last cards' : 'You are safe!')), text('span', 'hcp', hand.length + (hand.length === 1 ? ' card' : ' cards'))),
       state.source === state.meId && playing ? el('p', { class: 'warn small' }, 'Your cards are locked while someone is drawing from you.') : null,
-      hand.length ? el('div', { class: 'hand-row', 'data-scroll': 'hand' }, hand.map((code, i) => c.card(code, { selected: sel === i, onclick: arrange ? () => { sel = sel === i ? -1 : i; c.render(); } : undefined, label: undefined }))) : text('p', 'muted', state.me.place ? 'You finished #' + state.me.place + '. Watch the others sweat.' : 'No cards left.'),
+      hand.length ? el('div', { class: 'hand-row', 'data-scroll': 'hand', style: cols(hand.length) }, hand.map((code, i) => c.card(code, { selected: sel === i, onclick: arrange ? () => { sel = sel === i ? -1 : i; c.render(); } : undefined, label: undefined }))) : text('p', 'muted', state.me.place ? 'You finished #' + state.me.place + '. Watch the others sweat.' : 'No cards left.'),
       arrange ? el('div', { class: 'arrange' },
         c.button('Left', async () => { const from = sel; if (from > 0 && await send('move', { from, to: from - 1 })) sel = from - 1; }, 'secondary', sel <= 0, 'move-left', 'arrowL:blue'),
         c.button('Shuffle', async () => { await send('shuffle'); sel = -1; }, 'secondary', false, 'shuffle', 'shuffle:purple'),
         c.button('Right', async () => { const from = sel; if (from >= 0 && from < hand.length - 1 && await send('move', { from, to: from + 1 })) sel = from + 1; }, 'secondary', sel < 0 || sel >= hand.length - 1, 'move-right', 'arrowR:blue')) : null,
       arrange ? text('p', 'muted small', 'Drag a card to a new spot, or tap it and use the arrows. Shuffle mixes them all.') : null);
+  }
+  // Once I am safe I can watch the others: every card still in play, face up, in the same order its owner sees.
+  function observerPanel(c) {
+    const { state } = c, ids = state.order.filter((id) => state.reveal[id]);
+    return c.panel('hand-panel observer-panel', el('div', { class: 'panel-heading' }, el('div', {}, text('span', 'eyebrow', 'SAFE PLAYERS ONLY'), el('h3', {}, 'You are safe!' + (state.me.place ? ' #' + state.me.place : ''))), text('span', 'hcp', ids.length + (ids.length === 1 ? ' player left' : ' players left'))),
+      text('p', 'muted small', 'You can watch everyone who is still playing. Please do not tell them what you see.'),
+      el('div', { class: 'reveal-list' }, ids.map((id) => {
+        const hand = state.reveal[id], taker = state.taker === id, source = state.source === id;
+        return el('div', { class: 'reveal-seat' + (taker ? ' taker' : '') + (source ? ' source' : ''), 'data-id': id },
+          el('div', { class: 'reveal-who' }, c.avatar(id), el('b', {}, c.who(id)), text('small', 'muted', hand.length + (hand.length === 1 ? ' card' : ' cards')), taker ? text('span', 'badge taking', 'TAKING') : source ? text('span', 'badge holding', 'TAKEN FROM') : null),
+          el('div', { class: 'reveal-hand', style: cols(hand.length) }, hand.map((code) => c.card(code))));
+      })));
   }
   // Every set that has been laid down, grouped by who laid it.
   function setsPanel(c) {
@@ -259,13 +282,13 @@
       el('p', { class: 'muted' }, me ? 'The last Joker is yours. Better luck next round.' : 'Everyone else got out safely. Phew.'),
       el('div', { class: 'tally' }, text('span', 'eyebrow', 'JOKERS HELD'), ...state.players.map((p) => el('div', { class: 'tally-row' }, c.avatar(p.id), el('b', {}, p.name), text('span', 'tally-n', '×' + (state.losses[p.id] || 0))))),
       state.placed.length ? el('p', { class: 'muted small' }, 'Finish order: ' + state.placed.map((id, i) => (i + 1) + '. ' + c.who(id)).join('  ·  ')) : null,
-      host ? [c.botControls(), c.button('PLAY AGAIN', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 3, undefined, 'refresh:ink'), c.button('Shuffle seats', () => send('shuffleSeats'), 'secondary', false, undefined, 'shuffle:blue')] : text('p', 'waiting', 'Waiting for the host to start another game.'));
+      seating(c), host ? [c.botControls(), c.button('PLAY AGAIN', () => send('start'), 'host-button start-ticket', state.players.filter((p) => !p.departed).length < 3, undefined, 'refresh:ink')] : text('p', 'waiting', 'Waiting for the host to start another game.'));
   }
   function screen(c) {
     const { state } = c; cur = c; requestAnimationFrame(() => after(c));
     return el('div', { class: 'tk-scene' }, state.phase === 'finished' ? finale(c) : null,
       c.panel('table-panel', circle(c), turnBanner(c)),
-      el('div', { class: 'joker-grid' }, el('div', { class: 'main-col' }, privateNote(c), takePanel(c), handPanel(c)), el('div', { class: 'side-col' }, setsPanel(c), logPanel(c), c.roster((p, s) => s.losses[p.id] ? 'JOKER ×' + s.losses[p.id] : null))));
+      el('div', { class: 'joker-grid' }, el('div', { class: 'main-col' }, privateNote(c), state.reveal ? observerPanel(c) : handPanel(c)), el('div', { class: 'side-col' }, setsPanel(c), logPanel(c), c.roster((p, s) => s.losses[p.id] ? 'JOKER ×' + s.losses[p.id] : null))));
   }
 })();
 
