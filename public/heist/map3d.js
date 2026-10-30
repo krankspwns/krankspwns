@@ -46,6 +46,7 @@
       this.destroyed = false;
       this.stick = { x: 0, y: 0 };
       canvas.dataset.map = "3d";
+      canvas.__map = this;
       this.loading = document.createElement("div");
       this.loading.className = "map3d-loading";
       this.loading.textContent = "Opening the museum…";
@@ -97,8 +98,8 @@
       const THREE = (this.T = await loadThree());
       if (this.destroyed) return;
       const canvas = this.canvas;
-      const renderer = (this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" }));
-      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+      const renderer = (this.renderer = new THREE.WebGLRenderer({ canvas, antialias: matchMedia('(pointer: fine)').matches, powerPreference: "high-performance" }));
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
       renderer.setClearColor(0x050d14);
       this.textures = [];
       const scene = (this.scene = new THREE.Scene());
@@ -137,17 +138,12 @@
     }
     lights() {
       const T = this.T, scene = this.scene;
-      this.ambient = new T.AmbientLight(0xbfd0ff, 0.9);
+      this.ambient = new T.AmbientLight(0xbfd0ff, 1.6);
       this.sun = new T.DirectionalLight(0xffefd0, 1.1);
       this.sun.position.set(-20, 40, 30);
       this.hero = new T.PointLight(0xfff1cf, 90, 0, 1.4); // moves with you; how far you can see
       scene.add(this.ambient, this.sun, this.hero);
-      this.roomLights = W.ROOMS.map((r) => {
-        const l = new T.PointLight(0xffd9a0, 28, 34, 1.6);
-        l.position.set((r.x + r.w / 2) * S, 16, (r.y + r.h / 2) * S);
-        scene.add(l);
-        return l;
-      });
+      this.roomLights = [];
     }
 
     /* ---------- the building ---------- */
@@ -400,8 +396,8 @@
         if (document.querySelector("dialog[open]") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
         const k = keysOf(e);
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(k)) { e.preventDefault(); this.keys.add(k); }
-        if (k === "e") this.hooks.action();
-        if (k === "r") this.hooks.report();
+        if (k === "e" && !e.repeat) this.hooks.action();
+        if (k === "r" && !e.repeat) this.hooks.report();
       };
       this.keyup = (e) => { this.keys.delete(keysOf(e)); };
       this.blur = () => this.keys.clear();
@@ -524,7 +520,7 @@
     }
     light(s, now) {
       const lights = s.sabotage?.kind === "lights" && s.sabotage.until > now, vision = (s.me.vision || 185) * S;
-      this.ambient.intensity += ((lights ? 0.18 : 0.85) - this.ambient.intensity) * 0.1;
+      this.ambient.intensity += ((lights ? 0.2 : 1.6) - this.ambient.intensity) * 0.1;
       this.sun.intensity += ((lights ? 0.1 : 1.0) - this.sun.intensity) * 0.1;
       for (const l of this.roomLights) l.intensity += ((lights ? 2 : 28) - l.intensity) * 0.1;
       this.hero.distance = vision * 1.25;
@@ -591,8 +587,20 @@
       for (const q of everyone) {
         const p = this.person(q.id, q.person); seen.add(q.id);
         if (!q.own && p.target) { /* smoothed below */ }
-        const prev = p.pos || point(q.x, q.y), k = q.own ? 1 : 1 - Math.pow(0.0015, dt);
-        const pos = point(prev.x + (q.x - prev.x) * k, prev.y + (q.y - prev.y) * k);
+        const prev = p.pos || point(q.x, q.y);
+        let pos;
+        if (q.own) pos = point(q.x, q.y);
+        else {
+          // others arrive a few times a second: work out how they are moving and keep them gliding between updates
+          const sm = p.sample;
+          if (!sm || sm.x !== q.x || sm.y !== q.y) {
+            if (sm) { const el = Math.max(0.05, (t - sm.at) / 1000), v = point((q.x - sm.x) / el, (q.y - sm.y) / el), sp = Math.hypot(v.x, v.y); p.vel = sp > W.SPEED * 1.3 ? point(0, 0) : v; if (sp > 300) p.pos = point(q.x, q.y); }
+            p.sample = { x: q.x, y: q.y, at: t };
+          }
+          const el = Math.min(0.45, (t - p.sample.at) / 1000), vel = p.vel || point(0, 0);
+          const goal = point(q.x + vel.x * el, q.y + vel.y * el), here = p.pos || goal, gap = W.distance(here, goal), step = Math.min(gap, Math.max(W.SPEED * 1.25, gap * 4) * dt);
+          pos = gap < 0.01 ? goal : point(here.x + ((goal.x - here.x) / gap) * step, here.y + ((goal.y - here.y) / gap) * step);
+        }
         const speed = W.distance(prev, pos) / Math.max(dt, 0.001);
         p.pos = pos;
         p.g.position.set(pos.x * S, 0, pos.y * S);
