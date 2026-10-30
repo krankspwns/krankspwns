@@ -369,6 +369,21 @@ function evaluateRow(row, players) {
 
 // Players who joined while a round was under way only watch until the next deal.
 const activeOf = (room) => room.players.filter((p) => !p.spectator);
+// Who got ready last is decided by when each player pressed Ready on their own phone (a slow connection must not make
+// someone "last"), and it survives people leaving: the last of everyone still here to have pressed it.
+const pressedAt = (b) => { const t = Number(b && b.at), now = Date.now(); return Number.isFinite(t) ? Math.min(now, Math.max(now - 30000, t)) : now; };
+function lastToReady(room) {
+  const a = activeOf(room);
+  return a.reduce((last, p) => (!last || (p.readyAt || 0) >= (last.readyAt || 0) ? p : last), null);
+}
+function settleAllReady(room) {   // after someone leaves or is removed: keep the verdict if it still stands, make one if the rest are now all ready
+  const a = activeOf(room);
+  if (room.phase !== 'dealt' || a.length < 2 || !a.every((p) => p.ready)) return null;
+  const cur = room.allReady;
+  if (cur && (cur.timer || room.players.some((p) => p.id === cur.id))) return cur;
+  const last = lastToReady(room);
+  return { id: last.id, name: last.name, at: Date.now() };
+}
 
 // A row is scored once everyone's cards in it are face up (and the game is under way).
 function rowResults(room) {
@@ -537,7 +552,7 @@ function enforceTimer(room) {
   for (const p of active) {
     if (p.ready) continue;
     for (let i = 0; i < p.board.length && p.hand.length; i++) if (!p.board[i]) p.board[i] = { c: p.hand.shift(), up: false };
-    if (p.board.every(Boolean)) { for (const c of p.board) c.up = false; p.ready = true; last = p; late.push(p.name); lateIds.push(p.id); }
+    if (p.board.every(Boolean)) { for (const c of p.board) c.up = false; p.ready = true; p.readyAt = Date.now(); last = p; late.push(p.name); lateIds.push(p.id); }
   }
   if (last && active.length > 1 && active.every((p) => p.ready)) room.allReady = { id: last.id, name: last.name, names: late, ids: lateIds, at: Date.now(), timer: true };
   return true;
@@ -697,9 +712,9 @@ function tickBots(room) {
     if(!bot.ready){
       const cards=botStrategy.arrange([...bot.hand,...bot.board.filter(Boolean).map(s=>s.c)]);
       if(cards.length!==7)continue;
-      bot.hand=[];bot.board=cards.map(c=>({c,up:false}));bot.ready=true;changed=true;
+      bot.hand=[];bot.board=cards.map(c=>({c,up:false}));bot.ready=true;bot.readyAt=Date.now();changed=true;
       const active=activeOf(room);
-      if(active.length>1&&active.every(p=>p.ready)){room.allReady={id:bot.id,name:bot.name,at:Date.now()};room.deadline=null;}
+      if(active.length>1&&active.every(p=>p.ready)){const l=lastToReady(room);room.allReady={id:l.id,name:l.name,at:Date.now()};room.deadline=null;}
       continue;
     }
     for(const drinkRow of ['late',0,1,2,3]){
@@ -753,7 +768,7 @@ async function handle(action, b, query, ctx = {}) {
     // a Ready pressed as the clock ran out (it may reach us a moment late): that player was on time, not arranged by the timer
     if (room && action === 'ready' && b.ready && Date.now() - room.deadline < READY_GRACE_MS) {
       const pl = room.players.find((q) => q.id === String(b.pid || query.pid || ''));
-      if (pl && tokenOk(pl, ctx.tok) && !pl.ready && !pl.spectator && pl.board.every(Boolean)) { pl.ready = true; for (const c of pl.board) c.up = false; }
+      if (pl && tokenOk(pl, ctx.tok) && !pl.ready && !pl.spectator && pl.board.every(Boolean)) { pl.ready = true; pl.readyAt = pressedAt(b); for (const c of pl.board) c.up = false; }
     }
     if (room && enforceTimer(room)) { storeResults(room); await saveRoom(room); }
     need(room, 404, 'Room not found');
@@ -886,7 +901,7 @@ async function handle(action, b, query, ctx = {}) {
         p.spectator = false;
         p.hand = deck.splice(0, HAND_SIZE);
         p.board = Array(SLOTS).fill(null);
-        p.ready = false;
+        p.ready = false; p.readyAt = 0;
       }
       room.deck = deck; // leftovers, for players who join mid-round
       room.results = {};
@@ -984,13 +999,14 @@ async function handle(action, b, query, ctx = {}) {
       need(b.ready || !active.every((p) => p.ready), 409, 'Game in progress');
       if (b.ready && room.allReady && room.allReady.timer) break;   // the clock has already settled who was late: a Ready now changes nothing
       me.ready = !!b.ready;
+      me.readyAt = me.ready ? pressedAt(b) : 0;
       if (me.ready) {
         need(me.board.every(Boolean), 409, 'Place all 7 cards in the rows first');
         for (const c of me.board) c.up = false;
       }
       // When the last player becomes ready, remember who it was so everyone can see.
       room.allReady = me.ready && active.length > 1 && active.every((p) => p.ready)
-        ? { id: me.id, name: me.name, at: Date.now() }
+        ? (({ id, name }) => ({ id, name, at: Date.now() }))(lastToReady(room))
         : null;
       if (room.allReady) room.deadline = null;
       break;
@@ -1169,7 +1185,8 @@ async function handle(action, b, query, ctx = {}) {
       room.players = room.players.filter((q) => q.id !== target.id);
       if (room.requests) delete room.requests[target.id];
       sysChat(room, { k: 'leave', fn: target.name });
-      room.allReady = null;
+      room.allReady = settleAllReady(room);
+      if (room.allReady) room.deadline = null;
       seenMem.get(code) && delete seenMem.get(code)[target.id];
       break;
     }
@@ -1186,7 +1203,8 @@ async function handle(action, b, query, ctx = {}) {
         return { left: true };
       }
       if (room.hostId === pid) room.hostId = (room.players.find((p) => !p.bot&&!p.spectator) || room.players.find(p=>!p.bot))?.id||null;
-      room.allReady = null;
+      room.allReady = settleAllReady(room);
+      if (room.allReady) room.deadline = null;
       storeResults(room);
       await saveRoom(room);
       return { left: true };

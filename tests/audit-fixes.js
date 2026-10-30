@@ -155,5 +155,44 @@ const consent = () => ({ accepted: true, age: true, version: P.CONSENT_VERSION }
     } finally { delete process.env.VERCEL; }
     assert.equal((await post(bridge, { action: 'create', name: 'Calm' })).headers['x-storage-warning'], undefined);
   }
+  // 13. "Last to be ready" is who pressed Ready last on their own phone, not whose request happened to arrive last, and it survives a leaver.
+  {
+    const game = require('../api/game.js'), toks = {};
+    const gcall = async (method, body, query) => {
+      let out; const res = { setHeader() {}, status(st) { this.s = st; return this; }, json(j) { out = { s: this.s, j }; } };
+      const pid = (body && body.pid) || (query && query.pid);
+      await game({ method, body, query: query || {}, headers: pid && toks[pid] ? { 'x-tok': toks[pid], 'x-forwarded-for': 'rdy-' + pid } : { 'x-forwarded-for': 'rdy-' + (++ip) } }, res);
+      if (out.j && out.j.tok && out.j.meId) toks[out.j.meId] = out.j.tok;
+      return out;
+    };
+    const gpost = (b) => gcall('POST', { requestId: rid(), ...b });
+    const host = (await gpost({ action: 'create', name: 'RdyHost' })).j, ids = [host.meId], code = host.code;
+    for (let i = 1; i < 4; i++) ids.push((await gpost({ action: 'join', code, name: 'Rdy' + i })).j.meId);
+    const dealt = async () => {
+      let v = (await gpost({ action: 'deal', code, pid: ids[0], round: (await gcall('GET', null, { code, pid: ids[0] })).j.round })).j;
+      for (const pid of ids) {
+        let me = (await gcall('GET', null, { code, pid })).j;
+        for (let slot = 0; slot < 7; slot++) await gpost({ action: 'place', code, pid, round: me.round, card: me.hand[0], slot }), me = (await gcall('GET', null, { code, pid })).j;
+      }
+      return v;
+    };
+    const rnd = async () => (await gcall('GET', null, { code, pid: ids[0] })).j.round;
+    await dealt();
+    const now = Date.now();
+    // player 1 pressed Ready last on their phone, but player 3's slower connection delivers the request after it
+    const pressed = { 0: now - 4000, 1: now - 1000, 2: now - 3000, 3: now - 2000 };
+    for (const i of [0, 2, 1]) await gpost({ action: 'ready', code, pid: ids[i], round: await rnd(), ready: true, at: pressed[i] });
+    const done = (await gpost({ action: 'ready', code, pid: ids[3], round: await rnd(), ready: true, at: pressed[3] })).j;
+    assert.equal(done.allReady.id, ids[1], 'player 1 pressed last on their phone, so they are last');
+    // a player who leaves while everyone else is ready: the verdict goes to whoever of the rest pressed last
+    await dealt();
+    const t = Date.now();
+    for (const [i, at] of [[0, t - 3000], [1, t - 1000], [2, t - 2000]]) await gpost({ action: 'ready', code, pid: ids[i], round: await rnd(), ready: true, at });
+    const left = await gpost({ action: 'leave', code, pid: ids[3], round: await rnd() });
+    assert.equal(left.s, 200);
+    const after = (await gcall('GET', null, { code, pid: ids[0] })).j;
+    assert.ok(after.allReady, 'the others are all ready once the straggler leaves');
+    assert.equal(after.allReady.id, ids[1], 'the last of the remaining players to press Ready');
+  }
   console.log('Audit fixes: sign-in recovery, Grand Con relink, Bridge scoreboard, departed Last Train players, long names, the Last Laugh first draw, joining between games, removing players, the Bridge turn clock and the unsaved-room warning passed');
 })().catch((e) => { console.error(e); process.exit(1); });

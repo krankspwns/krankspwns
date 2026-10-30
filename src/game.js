@@ -55,7 +55,7 @@ function renderGame() {
     ? el('span', { class: 'pill live' }, el('i', { class: 'livedot' }), t('inProgress'))
     : me.ready
     ? el('button', { class: 'unreadybtn', onclick: () => act('ready', { ready: false }) }, t('unready'))
-    : el('button', { class: 'readybtn', disabled: placed < total, style: `--p:${(placed / total) * 100}%`, onclick: () => act('ready', { ready: true }) },
+    : el('button', { class: 'readybtn', disabled: placed < total, style: `--p:${(placed / total) * 100}%`, onclick: () => act('ready', { ready: true, at: serverNow() }) },
         placed < total ? t('placeAll', { p: placed, t: total }) : t('imReady'));
 
   if (!me.ready && readyStripSeen === st.round) readyStripSeen = -1;   // unready: it may slide in again next time
