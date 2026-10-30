@@ -447,7 +447,7 @@
     loop() {
       if (this.destroyed || !this.renderer) return;
       this.raf = requestAnimationFrame(() => this.loop());
-      const t = performance.now(), dt = Math.min(0.05, (t - this.last) / 1000);
+      const t = performance.now(), dt = Math.min(0.25, (t - this.last) / 1000);
       this.last = t;
       try { this.frame(t, dt); } catch (e) { console.warn("3D museum frame", e); }
     }
@@ -479,8 +479,9 @@
       const before = point(this.me.x, this.me.y);
       if (moving) {
         this.walk = null;
-        const step = W.SPEED * dt;
-        this.slide(inp.x * step, inp.y * step, closed);
+        // a slow frame (a phone) still covers the same ground, a few units at a time so walls hold
+        const step = W.SPEED * dt, n = Math.max(1, Math.ceil(step / 3));
+        for (let i = 0; i < n; i++) this.slide((inp.x * step) / n, (inp.y * step) / n, closed);
         this.facing = Math.atan2(inp.x, inp.y);
         this.wasMoving = true;
         if (t - this.syncAt > SYNC_MS) { this.syncAt = t; this.hooks.move(this.ahead(inp, closed)); }
@@ -498,9 +499,9 @@
         if (this.wasMoving) { this.wasMoving = false; this.syncAt = t; this.hooks.move(point(this.me.x, this.me.y)); }
         // the server is the last word: once its walk has finished, settle where it put you
         const end = s.me.path.at(-1), gap = W.distance(serverPos, this.me);
-        if (t - this.syncAt > 900 && W.distance(serverPos, end) < 1 && gap > 45) { this.me.x += (serverPos.x - this.me.x) * Math.min(1, dt * 4); this.me.y += (serverPos.y - this.me.y) * Math.min(1, dt * 4); }
+        if (t - this.syncAt > 3000 && W.distance(serverPos, end) < 1 && gap > 60) { this.me.x += (serverPos.x - this.me.x) * Math.min(1, dt * 4); this.me.y += (serverPos.y - this.me.y) * Math.min(1, dt * 4); }
       }
-      if (W.distance(serverPos, this.me) > 150) { this.me.x = serverPos.x; this.me.y = serverPos.y; this.walk = null; } // moved by the game (a meeting, a rescue)
+      if (!moving && !this.walk && t - this.syncAt > 3000 && W.distance(serverPos, this.me) > 150) { this.me.x = serverPos.x; this.me.y = serverPos.y; this.walk = null; } // moved by the game (a meeting, a rescue)
       const moved = W.distance(before, this.me) / Math.max(dt, 0.001);
       // --- the scene ---
       this.light(s, now);
