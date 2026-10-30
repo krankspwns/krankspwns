@@ -1169,6 +1169,8 @@ window.GAME_I18N_REGISTER("zh",{
     "Steal Exhibit": "偷走展品",
     "Watch Camera": "查看监控",
     "Watch CCTV": "查看监控墙",
+    "First Person": "第一人称",
+    "Top View": "俯视图",
     "CCTV · Every Room": "监控墙 · 所有房间",
     "Stay at the wall. Walking away ends it.": "请留在监控墙前，走开就会结束。",
     "Medic Role": "医护员角色",

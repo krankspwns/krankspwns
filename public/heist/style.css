@@ -1509,3 +1509,9 @@ h3 {
 .cctv-grid figure { margin: 0; position: relative; }
 .cctv-grid canvas { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid #5fa69455; }
 .cctv-grid figcaption { position: absolute; left: 8px; top: 6px; font: 800 10px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #bfe8d6; text-shadow: 0 1px 3px #000; }
+
+/* first-person controls */
+.map-view { position: absolute; right: 12px; top: 12px; z-index: 3; padding: 7px 12px; border-radius: 999px; border: 1px solid #e9c78377; background: rgba(8, 24, 32, .7); color: #f3dfaa; font: 800 11px Inter, system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+.heist-compass { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: rgba(8, 24, 32, .6); border: 2px solid #ffe08a; z-index: 2; pointer-events: none; }
+.heist-compass i { font-style: normal; color: #ffe08a; font-size: 22px; line-height: 1; }
+.museum-map[data-view="first"]::after { content: ""; }
