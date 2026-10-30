@@ -1192,3 +1192,8 @@
 .games-back:hover { border-color:var(--gold-hi); }
 .games-back:active { transform:scale(.95); }
 .games-back:focus-visible { outline:2px solid var(--gold-hi); outline-offset:3px; }
+  .mycalls-wrap { display: grid; justify-items: center; gap: 8px; margin: 2px 0 12px; } .mycalls-wrap .mycalls { margin: 0; flex-wrap: wrap; }
+  .mc-more { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--gold-hi); font: 800 11px inherit; letter-spacing: .06em; text-transform: uppercase; } .mc-more.on { border-color: var(--gold); background: rgba(var(--gold-rgb),.14); }
+  .mc-others { display: grid; gap: 6px; width: min(100%, 460px); } .mc-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); } .mc-row b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .mc-list.sm .mc { min-width: 30px; padding: 3px 4px 4px; } .mc-skip.sm { width: 20px; height: 20px; display: grid; place-items: center; font-style: normal; color: #cfd6e6; opacity: .7; }
+  .mc-more .ic { transition: transform .2s; } .mc-more.on .ic { transform: rotate(180deg); }

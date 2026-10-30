@@ -620,8 +620,25 @@ setInterval(() => {
 let predFixed = '';
 let predAwait = 0;
 // the four calls you made before row 1, ticked off as each row is revealed
+let callsOpen = false;
 function myCallsStrip(cur) {
-  const mine = st.myPreds; if (!mine || !mine.some((x) => x && x !== '-')) return '';
+  const mine = st.myPreds, all = st.allCalls || {}, hasMine = !!(mine && mine.some((x) => x && x !== '-'));
+  const others = st.players.filter((p) => p.id !== st.meId && all[p.id] && all[p.id].some((x) => x && x !== '-'));
+  if (!hasMine && !others.length) return '';
+  const res = st.rowResults || [];
+  const chips = (list, size) => list.map((pk, r) => {
+    const rr = res.find((x) => x.row === r), who = pk && pk !== '-' ? st.players.find((q) => q.id === pk) : null;
+    const state = !who ? 'skip' : !rr ? (r === cur ? 'now' : 'wait') : rr.tie ? 'tie' : rr.losers.includes(pk) ? 'hit' : 'miss';
+    return el('span', { class: 'mc ' + state, title: t('rowN', { n: r + 1 }) + ' · ' + (who ? who.name : t('predSkip')) },
+      el('small', {}, String(r + 1)), who ? avatarEl(who.avatar, size, '', who.acc, who.bd) : el('i', { class: 'mc-skip sm' }, '–'),
+      state === 'hit' ? el('b', { class: 'mc-s' }, icon('check', 10)) : state === 'miss' ? el('b', { class: 'mc-s' }, icon('x', 10)) : '');
+  });
+  const more = others.length ? el('button', { type: 'button', class: 'mc-more' + (callsOpen ? ' on' : ''), 'aria-expanded': String(callsOpen), onclick: () => { callsOpen = !callsOpen; render(); } }, t('predAllCalls'), icon('caret', 12)) : '';
+  return el('div', { class: 'mycalls-wrap' }, hasMine ? myOwnCalls(cur) : '', more,
+    callsOpen && others.length ? el('div', { class: 'mc-others' }, ...others.map((p) => el('div', { class: 'mc-row' }, avatarEl(p.avatar, 24, '', p.acc, p.bd), el('b', {}, p.name), el('div', { class: 'mc-list sm' }, ...chips(all[p.id], 20))))) : '');
+}
+function myOwnCalls(cur) {
+  const mine = st.myPreds;
   const res = st.rowResults || [];
   return el('div', { class: 'mycalls' }, el('span', { class: 'mc-k' }, t('predCallsK')), el('div', { class: 'mc-list' }, ...mine.map((pk, r) => {
     const rr = res.find((x) => x.row === r), who = pk && pk !== '-' ? st.players.find((q) => q.id === pk) : null;

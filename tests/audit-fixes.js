@@ -184,6 +184,10 @@ const consent = () => ({ accepted: true, age: true, version: P.CONSENT_VERSION }
     for (const i of [0, 2, 1]) await gpost({ action: 'ready', code, pid: ids[i], round: await rnd(), ready: true, at: pressed[i] });
     const done = (await gpost({ action: 'ready', code, pid: ids[3], round: await rnd(), ready: true, at: pressed[3] })).j;
     assert.equal(done.allReady.id, ids[1], 'player 1 pressed last on their phone, so they are last');
+    // other players' calls stay hidden while the guessing is open and are shown once it is over
+    const open = (await gcall('GET', null, { code, pid: ids[0] })).j;
+    if (open.predWin && Date.now() < open.predWin.until) assert.equal(open.allCalls, null, 'calls are secret while people are still deciding');
+    else assert.equal(typeof open.allCalls, 'object');
     // a player who leaves while everyone else is ready: the verdict goes to whoever of the rest pressed last
     await dealt();
     const t = Date.now();

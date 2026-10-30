@@ -657,6 +657,8 @@ function view(room, pid, seen, cn) {
     predWin: predWindow(room),
     myPreds: [0, 1, 2, 3].map((r) => { const m = room.preds && room.preds[r]; return m && me.id in m ? (m[me.id] || '-') : null; }),   // a player id, '-' for a skipped row, null while undecided
     predPicks: (() => { const w = predWindow(room); if (w && Date.now() < w.until) return null; const m = (room.preds && room.preds[currentRowOf(room)]) || {}; return Object.fromEntries(Object.entries(m).filter(([, tgt]) => tgt)); })(),   // everybody's calls, only once the guessing is over
+    // every player's four calls, once the guessing is over (nothing is shown while people are still deciding)
+    allCalls: (() => { const w = predWindow(room); if (w && Date.now() < w.until) return null; return Object.fromEntries(activeOf(room).map((p) => [p.id, [0, 1, 2, 3].map((r) => { const m = room.preds && room.preds[r]; return m && p.id in m ? (m[p.id] || '-') : null; })])); })(),
     predN: activeOf(room).filter((p) => [0, 1, 2, 3].every((r) => room.preds && room.preds[r] && p.id in room.preds[r])).length,   // players who have decided every row
     predWp: predWpFor(activeOf(room).length),
     predPen: PRED_PENALTY,
