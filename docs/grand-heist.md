@@ -31,3 +31,7 @@ Out players have separate chat and cannot message living players. Practice bots 
 `node tests/heist.js` checks rules, privacy and the authenticated API. `tests/browser/heist.spec.js` exercises mobile/desktop entrances, actual puzzle controls, map navigation, reports, messages, voting, verdict and finale. Room-switch tests include all 30 directed pairs across six games. The regular server suite continues to cover existing games and account/recovery safeguards.
 
 This is a playable prototype. First human playtests should measure how often Staff finish tasks before a vote, whether a single Thief at six players needs help, whether joint statues cause long waits, and how much discussion the map evidence creates. Keep the Playtest badge until those questions have real group feedback. No paid service or account is required for core play.
+
+## 3D museum
+
+`public/heist/map3d.js` (three.js, loaded from `/vendor/`) draws the museum in 3D. Arrow keys / WASD (or the thumb stick on touch screens) move your character at once and slide along the same walls as the server; the server follows along the same path a moment later and stays authoritative for every interaction. Tapping the floor still walks to that spot. Opening a job moves the camera in on the console. Without WebGL, or with `?map=2d`, the flat map (`map.js`) is used.

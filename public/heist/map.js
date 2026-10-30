@@ -145,6 +145,7 @@
     return n;
   }
   window.MuseumMap = class {
+    static floor = floor;
     constructor(canvas, { state, now, move, action, report }) {
       this.canvas = canvas;
       this.ctx = canvas.getContext("2d");

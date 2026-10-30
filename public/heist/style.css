@@ -1494,3 +1494,11 @@ h3 {
   border-radius: 12px;
   background: #07121b;
 }
+
+/* 3D museum */
+.museum-map[data-map="3d"] { touch-action: none; outline: none; }
+.map3d-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #d9c58c; font-weight: 800; background: #050d14; border-radius: inherit; pointer-events: none; }
+.heist-stick { position: absolute; left: 16px; bottom: 16px; width: 112px; height: 112px; border-radius: 50%; background: rgba(8, 24, 32, .55); border: 2px solid rgba(235, 211, 150, .55); touch-action: none; z-index: 3; }
+.heist-stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(240, 214, 150, .85); box-shadow: 0 2px 8px #0008; }
+.heist-dialog[open] { transition: transform .2s ease; }
+@media (max-width: 700px) { .heist-dialog { margin-top: auto; } }

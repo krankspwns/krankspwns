@@ -1,0 +1,642 @@
+/* The museum in 3D (three.js). It uses the same hooks and the same server-timed world as the flat map; what changes is how
+   the museum is drawn and how smoothly you walk through it. Your own character moves at once from the keys (arrows or WASD)
+   or a thumb stick, and the server follows a moment later along the same speed and the same walls. Without WebGL it falls
+   back to the flat map. */
+(() => {
+  "use strict";
+  const W = HeistWorld,
+    S = 0.1, // three.js units per world unit
+    THREE_URL = "/vendor/three-0.170.0.module.min.js",
+    RADIUS = 6, // how close to a wall your character may get
+    SYNC_MS = 260,
+    LOOKAHEAD = 90;
+  const COLORS = [
+    "#ded1ac", "#9d3c51", "#344f9e", "#e8d9b4", "#bd8a34", "#3f7460",
+    "#ac4365", "#3c5977", "#796d92", "#ac533a", "#347a78", "#69636b",
+  ];
+  const LOT = { lobby: 4, gallery: 0, vault: 2, security: 3, workshop: 5, service: 7 };
+  let loading = null;
+  const loadThree = () => (loading ||= import(THREE_URL));
+  const img = (src) => { const i = new Image(); i.src = src; return i; };
+  const faces = img("/grand-con/guests.webp"), lots = img("/grand-con/lots.webp");
+  const point = (x, y) => ({ x, y });
+  const closedDoors = (s) => (s?.sabotage?.kind === "door" ? [s.sabotage.door] : []);
+  // a character fits where its four sides fit
+  const fits = (p, closed) =>
+    W.walkable(p, closed) &&
+    W.walkable({ x: p.x + RADIUS, y: p.y }, closed) && W.walkable({ x: p.x - RADIUS, y: p.y }, closed) &&
+    W.walkable({ x: p.x, y: p.y + RADIUS }, closed) && W.walkable({ x: p.x, y: p.y - RADIUS }, closed);
+
+  function webgl() {
+    try {
+      const c = document.createElement("canvas");
+      return !!(c.getContext("webgl2") || c.getContext("webgl"));
+    } catch { return false; }
+  }
+
+  window.MuseumMap3D = class {
+    static supported() {
+      return !/[?&]map=2d\b/.test(location.search) && !!window.MuseumMap && webgl();
+    }
+    constructor(canvas, hooks) {
+      this.canvas = canvas;
+      this.hooks = hooks;
+      this.keys = new Set();
+      this.wasMoving = false;
+      this.destroyed = false;
+      this.stick = { x: 0, y: 0 };
+      canvas.dataset.map = "3d";
+      this.loading = document.createElement("div");
+      this.loading.className = "map3d-loading";
+      this.loading.textContent = "Opening the museum…";
+      canvas.parentElement?.append(this.loading);
+      this.ready = this.boot().catch((e) => { console.warn("3D museum unavailable", e); this.fallback(); });
+    }
+    /* ---------- fallback to the flat map ---------- */
+    fallback() {
+      if (this.destroyed || this.inner) return;
+      this.stopLoop();
+      this.loading?.remove();
+      const flat = this.canvas.cloneNode(false);
+      flat.dataset.map = "2d";
+      this.canvas.replaceWith(flat);
+      this.releaseGl();
+      this.canvas = flat;
+      this.inner = new MuseumMap(flat, this.hooks);
+      this.keys = this.inner.keys;
+    }
+    drawCamera(canvas, room, players, people) {
+      if (this.inner) return this.inner.drawCamera(canvas, room, players, people);
+      const proxy = { floor: (this.flatFloor ||= MuseumMap.floor()), character: MuseumMap.prototype.character };
+      MuseumMap.prototype.drawCamera.call(proxy, canvas, room, players, people);
+    }
+    /* the player is looking at a console (a job is open): the camera moves in and up */
+    focus(p) { this.zoomTo = p ? point(p.x, p.y) : null; }
+    destroy() {
+      this.destroyed = true;
+      this.stopLoop();
+      this.loading?.remove();
+      this.inner?.destroy();
+      this.observer?.disconnect();
+      this.stickEl?.remove();
+      this.canvas.removeEventListener("pointerdown", this.pointer);
+      removeEventListener("keydown", this.keydown);
+      removeEventListener("keyup", this.keyup);
+      removeEventListener("blur", this.blur);
+      this.releaseGl();
+    }
+    stopLoop() { cancelAnimationFrame(this.raf); this.raf = 0; }
+    releaseGl() {
+      try { this.renderer?.dispose(); this.renderer?.forceContextLoss(); } catch {}
+      for (const t of this.textures || []) t.dispose();
+      this.renderer = null;
+    }
+
+    /* ---------- set up ---------- */
+    async boot() {
+      const THREE = (this.T = await loadThree());
+      if (this.destroyed) return;
+      const canvas = this.canvas;
+      const renderer = (this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" }));
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+      renderer.setClearColor(0x050d14);
+      this.textures = [];
+      const scene = (this.scene = new THREE.Scene());
+      scene.background = new THREE.Color(0x050d14);
+      this.camera = new THREE.PerspectiveCamera(40, 1, 0.5, 400);
+      this.camPos = new THREE.Vector3(8, 18, 24);
+      this.camLook = new THREE.Vector3(8, 0, 8);
+      this.lights();
+      this.build();
+      this.people = new Map();
+      this.footprints = [];
+      this.rings = [];
+      this.last = performance.now();
+      this.syncAt = 0;
+      this.observer = new ResizeObserver(() => this.resize());
+      this.observer.observe(canvas);
+      this.resize();
+      this.listen();
+      this.stickControl();
+      this.loading?.remove();
+      this.loop();
+    }
+    resize() {
+      const r = this.canvas.getBoundingClientRect();
+      if (!r.width || !r.height || !this.renderer) return;
+      this.renderer.setSize(r.width, r.height, false);
+      this.camera.aspect = r.width / r.height;
+      this.camera.updateProjectionMatrix();
+    }
+    tex(canvas) {
+      const t = new this.T.CanvasTexture(canvas);
+      t.colorSpace = this.T.SRGBColorSpace;
+      t.anisotropy = 4;
+      this.textures.push(t);
+      return t;
+    }
+    lights() {
+      const T = this.T, scene = this.scene;
+      this.ambient = new T.AmbientLight(0xbfd0ff, 0.9);
+      this.sun = new T.DirectionalLight(0xffefd0, 1.1);
+      this.sun.position.set(-20, 40, 30);
+      this.hero = new T.PointLight(0xfff1cf, 90, 0, 1.4); // moves with you; how far you can see
+      scene.add(this.ambient, this.sun, this.hero);
+      this.roomLights = W.ROOMS.map((r) => {
+        const l = new T.PointLight(0xffd9a0, 28, 34, 1.6);
+        l.position.set((r.x + r.w / 2) * S, 16, (r.y + r.h / 2) * S);
+        scene.add(l);
+        return l;
+      });
+    }
+
+    /* ---------- the building ---------- */
+    mat(color, o = {}) {
+      return new this.T.MeshLambertMaterial({ color, ...o });
+    }
+    box(w, h, d, material, x, y, z, parent = this.scene) {
+      const m = new this.T.Mesh(new this.T.BoxGeometry(w, h, d), material);
+      m.position.set(x, y + h / 2, z);
+      parent.add(m);
+      return m;
+    }
+    // world rectangle to a box standing on the floor
+    wall(x1, y1, x2, y2, height, material) {
+      if (x2 - x1 < 0.5 || y2 - y1 < 0.5) return;
+      this.box((x2 - x1) * S, height * S, (y2 - y1) * S, material, ((x1 + x2) / 2) * S, 0, ((y1 + y2) / 2) * S);
+    }
+    label(text, color = "#f4dc9c", size = 28) {
+      const c = document.createElement("canvas"), g = c.getContext("2d");
+      g.font = `800 ${size}px Inter, system-ui, sans-serif`;
+      const w = Math.ceil(g.measureText(text).width) + 28;
+      c.width = w; c.height = size + 20;
+      g.font = `800 ${size}px Inter, system-ui, sans-serif`;
+      g.fillStyle = "rgba(7,23,34,.78)";
+      g.beginPath(); g.roundRect(0, 0, c.width, c.height, 12); g.fill();
+      g.fillStyle = color; g.textBaseline = "middle"; g.fillText(text, 14, c.height / 2 + 1);
+      const sprite = new this.T.Sprite(new this.T.SpriteMaterial({ map: this.tex(c), transparent: true, depthWrite: false, depthTest: false }));
+      const hgt = size > 21 ? 1.1 : 0.85;
+      sprite.scale.set((c.width / c.height) * hgt, hgt, 1);
+      sprite.renderOrder = 10;
+      return sprite;
+    }
+    floorTexture(room) {
+      const c = document.createElement("canvas"), g = c.getContext("2d"), n = 2;
+      c.width = room.w * n; c.height = room.h * n;
+      const gr = g.createLinearGradient(0, 0, c.width, c.height);
+      gr.addColorStop(0, room.color); gr.addColorStop(1, "#17282e");
+      g.fillStyle = gr; g.fillRect(0, 0, c.width, c.height);
+      for (let x = 0; x < room.w; x += 30) for (let y = 0; y < room.h; y += 30) {
+        g.fillStyle = ((x + y) / 30) % 2 ? "rgba(228,209,164,.10)" : "rgba(0,0,0,.10)";
+        g.fillRect(x * n, y * n, 30 * n, 30 * n);
+        g.strokeStyle = "rgba(229,211,164,.10)"; g.strokeRect(x * n, y * n, 30 * n, 30 * n);
+      }
+      g.strokeStyle = "rgba(210,181,124,.55)"; g.lineWidth = 3 * n;
+      g.strokeRect(6 * n, 6 * n, (room.w - 12) * n, (room.h - 12) * n);
+      g.fillStyle = "rgba(236,213,154,.06)";
+      g.beginPath(); g.ellipse(120 * n, 116 * n, 70 * n, 53 * n, 0, 0, Math.PI * 2); g.fill();
+      return this.tex(c);
+    }
+    build() {
+      const T = this.T, scene = this.scene;
+      const stone = this.mat(0x6d6258), dark = this.mat(0x2a3a40), trim = this.mat(0xc9a96a), wood = this.mat(0x6e4d34);
+      // the ground around the building
+      const ground = new T.Mesh(new T.PlaneGeometry(400, 300), this.mat(0x07121a));
+      ground.rotation.x = -Math.PI / 2; ground.position.set(48, -0.05, 32); scene.add(ground);
+      this.floors = new Map();
+      for (const r of W.ROOMS) {
+        const plane = new T.Mesh(new T.PlaneGeometry(r.w * S, r.h * S), new T.MeshLambertMaterial({ map: this.floorTexture(r) }));
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.set((r.x + r.w / 2) * S, 0, (r.y + r.h / 2) * S);
+        scene.add(plane);
+      }
+      const doorMat = this.mat(0x233c3c);
+      this.doorBars = new Map();
+      for (const d of W.DOORS) {
+        const plane = new T.Mesh(new T.PlaneGeometry(d.w * S, d.h * S), doorMat);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.set((d.x + d.w / 2) * S, 0.01, (d.y + d.h / 2) * S);
+        scene.add(plane);
+        // a locked door is a red field across the doorway
+        const field = new T.Mesh(new T.BoxGeometry(d.w * S, 2.2, d.h * S), new T.MeshBasicMaterial({ color: 0xff5468, transparent: true, opacity: 0.38, depthWrite: false }));
+        field.position.set((d.x + d.w / 2) * S, 1.1, (d.y + d.h / 2) * S);
+        field.visible = false;
+        scene.add(field);
+        this.doorBars.set(d.id, field);
+      }
+      // walls: tall ones at the back and sides, low ones on the side facing the camera so they never hide anyone
+      const TALL = 26, LOW = 5, T4 = 8;
+      for (const r of W.ROOMS) {
+        const x1 = r.x, x2 = r.x + r.w, y1 = r.y, y2 = r.y + r.h;
+        const gaps = (side) => W.DOORS.filter((d) =>
+          side === "n" ? d.y + d.h === y1 && d.x >= x1 && d.x + d.w <= x2 :
+          side === "s" ? d.y === y2 && d.x >= x1 && d.x + d.w <= x2 :
+          side === "w" ? d.x + d.w === x1 && d.y >= y1 && d.y + d.h <= y2 :
+          d.x === x2 && d.y >= y1 && d.y + d.h <= y2).map((d) => (side === "n" || side === "s" ? [d.x, d.x + d.w] : [d.y, d.y + d.h])).sort((a, b) => a[0] - b[0]);
+        const spans = (a, b, g) => { const out = []; let at = a; for (const [s, e] of g) { out.push([at, s]); at = e; } out.push([at, b]); return out; };
+        for (const [a, b] of spans(x1, x2, gaps("n"))) this.wall(a - T4, y1 - T4, b + T4, y1, TALL, stone);
+        for (const [a, b] of spans(x1, x2, gaps("s"))) this.wall(a - T4, y2, b + T4, y2 + T4, LOW, stone);
+        for (const [a, b] of spans(y1, y2, gaps("w"))) this.wall(x1 - T4, a, x1, b, TALL, stone);
+        for (const [a, b] of spans(y1, y2, gaps("e"))) this.wall(x2, a, x2 + T4, b, TALL, stone);
+        // gold trim along the top of the back wall
+        this.wall(x1 - T4, y1 - T4, x2 + T4, y1 - T4 + 1.5, TALL + 2, trim);
+      }
+      for (const d of W.DOORS) {
+        if (d.w > d.h) { this.wall(d.x, d.y - T4, d.x + d.w, d.y, TALL, dark); this.wall(d.x, d.y + d.h, d.x + d.w, d.y + d.h + T4, LOW, dark); }
+        else { this.wall(d.x - T4, d.y, d.x, d.y + d.h, TALL, dark); this.wall(d.x + d.w, d.y, d.x + d.w + T4, d.y + d.h, TALL, dark); }
+      }
+      // furniture, exhibits, consoles
+      const glass = new T.MeshLambertMaterial({ color: 0x9ed7e6, transparent: true, opacity: 0.28 }), gold = this.mat(0xc9a96a), cushion = this.mat(0x705b45);
+      W.ROOMS.forEach((r) => {
+        const c = point(r.x + 172, r.y + 54); // the display case
+        this.box(56 * S, 9 * S, 44 * S, gold, c.x * S, 0, c.y * S);
+        this.box(50 * S, 12 * S, 38 * S, glass, c.x * S, 9 * S, c.y * S);
+        const bench = point(r.x + 133, r.y + 196); // the bench
+        this.box(70 * S, 5 * S, 20 * S, this.mat(0x18262d), bench.x * S, 0, bench.y * S);
+        this.box(64 * S, 3 * S, 13 * S, cushion, bench.x * S, 5 * S, bench.y * S);
+        // a painting on the back wall, using the museum's own artwork
+        const art = this.lotTexture(LOT[r.id]);
+        if (art) {
+          const p = new T.Mesh(new T.PlaneGeometry(3.4, 2.6), new T.MeshLambertMaterial({ map: art, emissive: 0x332a1a }));
+          p.position.set((r.x + 70) * S, 1.5, (r.y + 0.4) * S); scene.add(p);
+          const frame = this.box(3.8, 3, 0.3, gold, (r.x + 70) * S, 0.1, (r.y - 0.2) * S); frame.position.y = 1.5;
+          const exhibit = new T.Mesh(new T.PlaneGeometry(4.1, 3.2), new T.MeshLambertMaterial({ map: art, transparent: true }));
+          exhibit.rotation.x = -Math.PI / 2; exhibit.position.set(c.x * S, 2.17, c.y * S); scene.add(exhibit);
+        }
+        const name = this.label(((window.GameI18n?.t(r.name)) || r.name).toUpperCase(), "#b9c8bc", 22);
+        name.position.set((r.x + r.w / 2) * S, 4.4, (r.y + 4) * S); scene.add(name);
+        // lamps on the back wall
+        for (const dx of [16, 224]) {
+          const lamp = new T.Mesh(new T.SphereGeometry(0.32, 12, 8), new T.MeshBasicMaterial({ color: 0xf1d27f }));
+          lamp.position.set((r.x + dx) * S, 2.2, (r.y + 2) * S); scene.add(lamp);
+        }
+      });
+      // job consoles
+      this.consoles = W.STATIONS.map((s) => {
+        const g = new T.Group(); g.position.set(s.x * S, 0, s.y * S);
+        this.box(1.9, 1.1, 1.3, this.mat(0x213038), 0, 0, 0, g);
+        const screenMat = new T.MeshBasicMaterial({ map: this.screenTexture(s.kind), color: 0x9fb8b0 });
+        const screen = new T.Mesh(new T.PlaneGeometry(1.6, 1.0), screenMat);
+        screen.position.set(0, 1.55, 0.1); screen.rotation.x = -0.35; g.add(screen);
+        this.box(1.7, 0.7, 0.2, this.mat(0x2a3a40), 0, 1.1, -0.35, g);
+        this.scene.add(g);
+        return { s, group: g, screenMat };
+      });
+      // two statues that take two players
+      this.statues = W.JOINTS.map((j) => {
+        const g = new T.Group(); g.position.set(j.x * S, 0, j.y * S);
+        const marble = this.mat(0xcfc8bd);
+        this.box(2.6, 1, 2.6, marble, 0, 0, 0, g);
+        const body = new T.Mesh(new T.CapsuleGeometry(0.75, 2.1, 6, 12), marble); body.position.y = 3; g.add(body);
+        const head = new T.Mesh(new T.SphereGeometry(0.62, 16, 12), marble); head.position.y = 5; g.add(head);
+        this.scene.add(g);
+        return { j, group: g };
+      });
+      // crates for the exhibits; the one in the Service Hall is the exit
+      W.TRANSPORT.forEach((t) => {
+        this.box(2.2, 1.6, 1.8, wood, t.x * S, 0, t.y * S);
+        this.box(2.3, 0.2, 1.9, trim, t.x * S, 1.6, t.y * S);
+        if (t.room === "service") {
+          const sign = this.label("SERVICE EXIT", "#9cf0c3", 22); sign.position.set(t.x * S, 3.4, t.y * S); scene.add(sign);
+        }
+      });
+      this.markers();
+    }
+    lotTexture(index) {
+      if (!lots.complete || !lots.naturalWidth || index == null) return null;
+      this.lotTex ||= new Map();
+      if (!this.lotTex.has(index)) {
+        const sw = lots.naturalWidth / 4, sh = lots.naturalHeight / 2, c = document.createElement("canvas");
+        c.width = 256; c.height = 200;
+        c.getContext("2d").drawImage(lots, (index % 4) * sw, Math.floor(index / 4) * sh, sw, sh, 0, 0, 256, 200);
+        this.lotTex.set(index, this.tex(c));
+      }
+      return this.lotTex.get(index);
+    }
+    screenTexture(kind) {
+      const c = document.createElement("canvas"), g = c.getContext("2d");
+      c.width = 256; c.height = 160;
+      g.fillStyle = "#0c2a2c"; g.fillRect(0, 0, 256, 160);
+      g.strokeStyle = "#5fa694"; g.lineWidth = 4; g.strokeRect(6, 6, 244, 148);
+      g.fillStyle = "#a3ecc6"; g.font = "800 70px Inter, system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText({ wires: "≋", circuit: "⌬", scan: "◎", memory: "◈" }[kind] || "!", 128, 84);
+      return this.tex(c);
+    }
+    // the glowing job and delivery markers, drawn each frame from your private job list
+    markers() {
+      const T = this.T;
+      this.beacons = new Map();
+      this.deliver = new T.Group();
+      const ring = new T.Mesh(new T.TorusGeometry(1.6, 0.12, 8, 32), new T.MeshBasicMaterial({ color: 0x9cf0c3 }));
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.2; this.deliver.add(ring);
+      const text = this.label("DELIVER", "#a1efcf", 22); text.position.y = 3; this.deliver.add(text);
+      this.deliver.visible = false; this.scene.add(this.deliver);
+      this.ping = new T.Mesh(new T.RingGeometry(0.5, 0.7, 28), new T.MeshBasicMaterial({ color: 0xf2dfa3, transparent: true, side: T.DoubleSide }));
+      this.ping.rotation.x = -Math.PI / 2; this.ping.visible = false; this.scene.add(this.ping);
+    }
+    beacon(job, color) {
+      let b = this.beacons.get(job.id);
+      if (b) return b;
+      const T = this.T, g = new T.Group();
+      const ring = new T.Mesh(new T.TorusGeometry(1.1, 0.1, 8, 28), new T.MeshBasicMaterial({ color }));
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.15; g.add(ring);
+      const beam = new T.Mesh(new T.CylinderGeometry(0.5, 0.5, 6, 16, 1, true), new T.MeshBasicMaterial({ color, transparent: true, opacity: 0.22, depthWrite: false, side: T.DoubleSide }));
+      beam.position.y = 3; g.add(beam);
+      const name = this.label(job.name || "Job", "#f6e3a8", 20); name.position.y = 6.6; g.add(name);
+      g.position.set(job.x * S, 0, job.y * S);
+      this.scene.add(g);
+      b = { g, ring, beam, name, seen: true };
+      this.beacons.set(job.id, b);
+      return b;
+    }
+
+    /* ---------- people ---------- */
+    faceTexture(i) {
+      this.faceTex ||= new Map();
+      if (!this.faceTex.has(i)) {
+        if (!faces.complete || !faces.naturalWidth) return null;
+        const size = faces.naturalWidth / 4, c = document.createElement("canvas"), g = c.getContext("2d");
+        c.width = c.height = 128;
+        g.beginPath(); g.arc(64, 64, 62, 0, Math.PI * 2); g.clip();
+        g.drawImage(faces, (i % 4) * size + 45, Math.floor(i / 4) * size, 270, 270, 0, 0, 128, 128);
+        g.strokeStyle = "#f3d58e"; g.lineWidth = 6; g.beginPath(); g.arc(64, 64, 61, 0, Math.PI * 2); g.stroke();
+        this.faceTex.set(i, this.tex(c));
+      }
+      return this.faceTex.get(i);
+    }
+    character(person) {
+      const T = this.T, i = person?.avatarIndex || 0, g = new T.Group();
+      const color = new T.Color(COLORS[i % COLORS.length]);
+      const body = new T.Mesh(new T.CapsuleGeometry(0.62, 0.9, 6, 12), new T.MeshLambertMaterial({ color }));
+      body.position.y = 1.55; g.add(body);
+      const tie = new T.Mesh(new T.ConeGeometry(0.22, 0.55, 3), new T.MeshLambertMaterial({ color: 0xf5ead5 }));
+      tie.position.set(0, 1.85, 0.58); tie.rotation.x = Math.PI; g.add(tie);
+      const legs = [-1, 1].map((s) => { const l = new T.Mesh(new T.CylinderGeometry(0.17, 0.17, 0.85, 8), new T.MeshLambertMaterial({ color: color.clone().multiplyScalar(0.7) })); l.position.set(s * 0.32, 0.45, 0); l.geometry.translate(0, -0.2, 0); l.position.y = 0.85; g.add(l); return l; });
+      const arms = [-1, 1].map((s) => { const a = new T.Mesh(new T.CylinderGeometry(0.14, 0.14, 0.85, 8), new T.MeshLambertMaterial({ color })); a.geometry.translate(0, -0.35, 0); a.position.set(s * 0.82, 1.95, 0); g.add(a); return a; });
+      const head = new T.Sprite(new T.SpriteMaterial({ depthWrite: false, transparent: true }));
+      head.scale.set(1.75, 1.75, 1); head.position.y = 3.05; head.renderOrder = 5; g.add(head);
+      const shadow = new T.Mesh(new T.CircleGeometry(0.9, 20), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
+      shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.03; g.add(shadow);
+      const bag = new T.Mesh(new T.BoxGeometry(0.7, 0.8, 0.45), new T.MeshLambertMaterial({ color: 0xa18450 }));
+      bag.position.set(0.95, 1.2, 0.2); bag.visible = false; g.add(bag);
+      const name = this.label(person?.name || "", "#e6eeea", 20); name.position.y = 4.1; g.add(name);
+      const parts = { g, body, legs, arms, head, bag, name, shadow, face: -1, label: person?.name || "", facing: 0, phase: Math.random() * 6 };
+      this.scene.add(g);
+      return parts;
+    }
+    person(id, person) {
+      let p = this.people.get(id);
+      if (!p) { p = this.character(person); this.people.set(id, p); }
+      if (p.label !== (person?.name || "")) { p.name.material.map = this.label(person?.name || "").material.map; p.label = person?.name || ""; }
+      const tex = this.faceTexture(person?.avatarIndex || 0);
+      if (tex && p.face !== (person?.avatarIndex || 0)) { p.head.material.map = tex; p.head.material.needsUpdate = true; p.face = person?.avatarIndex || 0; }
+      return p;
+    }
+
+    /* ---------- input ---------- */
+    listen() {
+      const keysOf = (e) => e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      this.keydown = (e) => {
+        if (document.querySelector("dialog[open]") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+        const k = keysOf(e);
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(k)) { e.preventDefault(); this.keys.add(k); }
+        if (k === "e") this.hooks.action();
+        if (k === "r") this.hooks.report();
+      };
+      this.keyup = (e) => { this.keys.delete(keysOf(e)); };
+      this.blur = () => this.keys.clear();
+      this.pointer = (e) => this.tap(e);
+      addEventListener("keydown", this.keydown);
+      addEventListener("keyup", this.keyup);
+      addEventListener("blur", this.blur);
+      this.canvas.addEventListener("pointerdown", this.pointer);
+    }
+    // a round thumb stick for phones and tablets
+    stickControl() {
+      if (!matchMedia("(pointer: coarse)").matches) return;
+      const host = this.canvas.parentElement; if (!host) return;
+      const base = document.createElement("div"), knob = document.createElement("i");
+      base.className = "heist-stick"; base.append(knob); host.append(base); this.stickEl = base;
+      let id = null, o = null;
+      const set = (e) => {
+        const r = base.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, max = r.width / 2 - 8;
+        let dx = e.clientX - cx, dy = e.clientY - cy; const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / max);
+        dx = (dx / d) * k; dy = (dy / d) * k;
+        knob.style.transform = `translate(${dx * max}px,${dy * max}px)`;
+        this.stick = k < 0.18 ? { x: 0, y: 0 } : { x: dx, y: dy };
+      };
+      base.addEventListener("pointerdown", (e) => { id = e.pointerId; base.setPointerCapture(id); set(e); e.preventDefault(); });
+      base.addEventListener("pointermove", (e) => { if (e.pointerId === id) set(e); });
+      const end = (e) => { if (e.pointerId !== id) return; id = null; this.stick = { x: 0, y: 0 }; knob.style.transform = ""; };
+      base.addEventListener("pointerup", end); base.addEventListener("pointercancel", end); void o;
+    }
+    tap(e) {
+      const s = this.hooks.state();
+      if (!s || s.phase !== "live" || document.querySelector("dialog[open]")) return;
+      const r = this.canvas.getBoundingClientRect(), T = this.T;
+      const ndc = new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      const ray = new T.Raycaster(); ray.setFromCamera(ndc, this.camera);
+      const hit = new T.Vector3();
+      if (!ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), 0), hit)) return;
+      const p = point(hit.x / S, hit.z / S), closed = closedDoors(s);
+      if (!W.walkable(p, closed)) return;
+      const path = W.route(this.me || p, p, closed);
+      if (!path) return;
+      this.walk = path.slice(1);
+      this.pingAt = { ...p, at: performance.now() };
+      this.hooks.move(p);
+    }
+
+    /* ---------- the loop ---------- */
+    loop() {
+      if (this.destroyed || !this.renderer) return;
+      this.raf = requestAnimationFrame(() => this.loop());
+      const t = performance.now(), dt = Math.min(0.05, (t - this.last) / 1000);
+      this.last = t;
+      try { this.frame(t, dt); } catch (e) { console.warn("3D museum frame", e); }
+    }
+    serverPosition(s) {
+      return W.position({ path: s.me.path, walkAt: s.me.walkAt, pos: s.me.position }, this.hooks.now());
+    }
+    input() {
+      const k = this.keys;
+      let x = (k.has("ArrowRight") || k.has("d") ? 1 : 0) - (k.has("ArrowLeft") || k.has("a") ? 1 : 0),
+        y = (k.has("ArrowDown") || k.has("s") ? 1 : 0) - (k.has("ArrowUp") || k.has("w") ? 1 : 0);
+      if (!x && !y) return { x: this.stick.x, y: this.stick.y };
+      const d = Math.hypot(x, y); return { x: x / d, y: y / d };
+    }
+    // moves you by (dx, dy), sliding along walls
+    slide(dx, dy, closed) {
+      const me = this.me;
+      if (fits({ x: me.x + dx, y: me.y + dy }, closed)) { me.x += dx; me.y += dy; return; }
+      if (dx && fits({ x: me.x + dx, y: me.y }, closed)) me.x += dx;
+      else if (dy && fits({ x: me.x, y: me.y + dy }, closed)) me.y += dy;
+    }
+    frame(t, dt) {
+      const s = this.hooks.state(); if (!s || !this.renderer) return;
+      const T = this.T, now = this.hooks.now(), closed = closedDoors(s), serverPos = this.serverPosition(s);
+      if (!this.me) this.me = point(serverPos.x, serverPos.y);
+      // --- your own movement ---
+      const live = s.phase === "live" && !document.querySelector("dialog[open]");
+      const inp = live ? this.input() : { x: 0, y: 0 };
+      const moving = !!(inp.x || inp.y);
+      const before = point(this.me.x, this.me.y);
+      if (moving) {
+        this.walk = null;
+        const step = W.SPEED * dt;
+        this.slide(inp.x * step, inp.y * step, closed);
+        this.facing = Math.atan2(inp.x, inp.y);
+        this.wasMoving = true;
+        if (t - this.syncAt > SYNC_MS) { this.syncAt = t; this.hooks.move(this.ahead(inp, closed)); }
+      } else if (this.walk?.length) {
+        let left = W.SPEED * dt;
+        while (left > 0 && this.walk.length) {
+          const to = this.walk[0], d = W.distance(this.me, to);
+          if (d <= left) { this.me.x = to.x; this.me.y = to.y; left -= d; this.walk.shift(); }
+          else { this.me.x += ((to.x - this.me.x) / d) * left; this.me.y += ((to.y - this.me.y) / d) * left; left = 0; }
+        }
+        const dir = point(this.me.x - before.x, this.me.y - before.y);
+        if (dir.x || dir.y) this.facing = Math.atan2(dir.x, dir.y);
+        if (!this.walk.length) this.walk = null;
+      } else {
+        if (this.wasMoving) { this.wasMoving = false; this.syncAt = t; this.hooks.move(point(this.me.x, this.me.y)); }
+        // the server is the last word: once its walk has finished, settle where it put you
+        const end = s.me.path.at(-1), gap = W.distance(serverPos, this.me);
+        if (W.distance(serverPos, end) < 1 && gap > 24) { this.me.x += (serverPos.x - this.me.x) * Math.min(1, dt * 5); this.me.y += (serverPos.y - this.me.y) * Math.min(1, dt * 5); }
+      }
+      if (W.distance(serverPos, this.me) > 150) { this.me.x = serverPos.x; this.me.y = serverPos.y; this.walk = null; } // moved by the game (a meeting, a rescue)
+      const moved = W.distance(before, this.me) / Math.max(dt, 0.001);
+      // --- the scene ---
+      this.light(s, now);
+      this.show(s, now, t, dt, { moved });
+      this.follow(s, dt);
+      this.renderer.render(this.scene, this.camera);
+    }
+    // the point a little way ahead of you, for the server to walk to
+    ahead(inp, closed) {
+      let best = point(this.me.x, this.me.y);
+      for (let d = 8; d <= LOOKAHEAD; d += 6) {
+        const q = point(this.me.x + inp.x * d, this.me.y + inp.y * d);
+        if (!fits(q, closed)) break;
+        best = q;
+      }
+      return best;
+    }
+    light(s, now) {
+      const lights = s.sabotage?.kind === "lights" && s.sabotage.until > now, vision = (s.me.vision || 185) * S;
+      this.ambient.intensity += ((lights ? 0.18 : 0.85) - this.ambient.intensity) * 0.1;
+      this.sun.intensity += ((lights ? 0.1 : 1.0) - this.sun.intensity) * 0.1;
+      for (const l of this.roomLights) l.intensity += ((lights ? 2 : 28) - l.intensity) * 0.1;
+      this.hero.distance = vision * 1.25;
+      this.hero.intensity = lights ? 120 : 40;
+      this.scene.background.set(lights ? 0x02060a : 0x050d14);
+    }
+    show(s, now, t, dt, { moved }) {
+      const T = this.T, me = this.me, seen = new Set();
+      // doors
+      const bar = s.sabotage?.kind === "door" ? s.sabotage.door : null;
+      for (const [id, mesh] of this.doorBars) { mesh.visible = id === bar; if (id === bar) mesh.material.opacity = 0.3 + Math.sin(t / 220) * 0.1; }
+      // consoles: yours glow while the job is open
+      const mine = new Set([...s.me.jobs, ...s.recovery].filter((j) => !j.done).map((j) => j.x + "," + j.y));
+      for (const c of this.consoles) {
+        const on = mine.has(c.s.x + "," + c.s.y);
+        c.screenMat.color.setHex(on ? 0xffffff : 0x7f958e);
+        c.group.children[1].scale.setScalar(on ? 1 + Math.sin(t / 260) * 0.04 : 1);
+      }
+      // job beacons
+      const live = new Set();
+      for (const j of [...s.me.jobs, ...s.recovery, ...s.joints]) {
+        if (j.done) continue;
+        const statue = String(j.id).startsWith("statue-"), b = this.beacon(j, statue ? 0xb9b0e6 : j.kind === "carry" ? 0x9cf0c3 : 0xe7ca82);
+        live.add(j.id);
+        const near = W.distance(me, j) < 130, pulse = 1 + Math.sin(t / 420) * 0.12;
+        b.ring.scale.setScalar(pulse); b.beam.material.opacity = 0.16 + Math.sin(t / 500) * 0.05; b.name.visible = near;
+        b.g.visible = true;
+      }
+      for (const [id, b] of this.beacons) if (!live.has(id)) b.g.visible = false;
+      // delivery spot
+      if (s.me.bag) {
+        const dest = W.TRANSPORT.find((j) => j.id === s.me.bag.dest);
+        this.deliver.visible = !!dest;
+        if (dest) { this.deliver.position.set(dest.x * S, 0, dest.y * S); this.deliver.scale.setScalar(1 + Math.sin(t / 300) * 0.06); }
+      } else this.deliver.visible = false;
+      // footprints and knockout flashes
+      while (this.footprints.length < (s.trails?.length || 0) * 4) {
+        const m = new T.Mesh(new T.CircleGeometry(0.22, 8), new T.MeshBasicMaterial({ color: 0xe9c87c, transparent: true, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.scale.y = 1.8; this.scene.add(m); this.footprints.push(m);
+      }
+      let n = 0;
+      for (const tr of s.trails || []) for (let i = 0; i < 4; i++) {
+        const m = this.footprints[n++]; m.visible = true;
+        m.position.set((tr.x + tr.dx * i * 9 + (i % 2 ? 3 : -3)) * S, 0.04, (tr.y + tr.dy * i * 9) * S);
+        m.material.opacity = Math.max(0, 1 - (now - tr.at) / 18000) * 0.8;
+      }
+      for (; n < this.footprints.length; n++) this.footprints[n].visible = false;
+      this.events(s, now);
+      if (this.pingAt) {
+        const k = (t - this.pingAt.at) / 700;
+        this.ping.visible = k < 1;
+        if (k < 1) { this.ping.position.set(this.pingAt.x * S, 0.05, this.pingAt.y * S); this.ping.scale.setScalar(1 + k * 2.2); this.ping.material.opacity = 1 - k; }
+      }
+      // knocked-out bodies
+      for (const b of s.bodies) {
+        const id = "body:" + b.id, person = s.players.find((p) => p.id === b.playerId), p = this.person(id, person);
+        seen.add(id);
+        p.g.position.set(b.x * S, 0.5, b.y * S);
+        p.g.rotation.set(0, 0.4, -Math.PI / 2);
+        p.name.visible = false; p.head.material.opacity = 0.6; p.bag.visible = false;
+        for (const l of p.legs.concat(p.arms)) l.rotation.x = 0;
+      }
+      // everyone you can see, and you
+      const everyone = [...s.nearby.map((p) => ({ ...p, person: s.players.find((q) => q.id === p.id) })), { id: s.meId, x: me.x, y: me.y, own: true, person: s.players.find((q) => q.id === s.meId), bag: !!s.me.bag }];
+      for (const q of everyone) {
+        const p = this.person(q.id, q.person); seen.add(q.id);
+        if (!q.own && p.target) { /* smoothed below */ }
+        const prev = p.pos || point(q.x, q.y), k = q.own ? 1 : 1 - Math.pow(0.0015, dt);
+        const pos = point(prev.x + (q.x - prev.x) * k, prev.y + (q.y - prev.y) * k);
+        const speed = W.distance(prev, pos) / Math.max(dt, 0.001);
+        p.pos = pos;
+        p.g.position.set(pos.x * S, 0, pos.y * S);
+        p.g.rotation.set(0, p.facing, 0);
+        if (q.own) p.facing = this.facing ?? p.facing;
+        else if (speed > 4) { const target = Math.atan2(pos.x - prev.x, pos.y - prev.y); let d = target - p.facing; d = Math.atan2(Math.sin(d), Math.cos(d)); p.facing += d * Math.min(1, dt * 12); }
+        else p.facing += 0;
+        if (q.own) { let d = (this.facing ?? 0) - p.facing; d = Math.atan2(Math.sin(d), Math.cos(d)); p.facing += d * Math.min(1, dt * 14); }
+        const walking = q.own ? moved > 8 : speed > 8;
+        p.phase += dt * (walking ? 11 : 0);
+        const sw = walking ? Math.sin(p.phase) * 0.7 : 0;
+        p.legs[0].rotation.x = sw; p.legs[1].rotation.x = -sw; p.arms[0].rotation.x = -sw * 0.8; p.arms[1].rotation.x = sw * 0.8;
+        p.body.position.y = 1.55 + (walking ? Math.abs(Math.sin(p.phase)) * 0.12 : 0);
+        p.bag.visible = !!q.bag;
+        const ghost = q.own && !s.me.alive;
+        p.body.material.transparent = ghost; p.body.material.opacity = ghost ? 0.4 : 1; p.head.material.opacity = ghost ? 0.4 : 1;
+        p.name.visible = true; p.name.material.opacity = 1;
+        p.g.rotation.z = 0;
+      }
+      for (const [id, p] of this.people) if (!seen.has(id)) { p.g.visible = false; } else p.g.visible = true;
+      this.hero.position.set(me.x * S, 6, me.y * S);
+    }
+    events(s, now) {
+      const T = this.T;
+      while (this.rings.length < (s.events?.length || 0)) {
+        const m = new T.Mesh(new T.RingGeometry(0.9, 1.15, 28), new T.MeshBasicMaterial({ color: 0xf38eac, transparent: true, side: T.DoubleSide, depthWrite: false })); m.rotation.x = -Math.PI / 2; this.scene.add(m); this.rings.push(m);
+      }
+      this.rings.forEach((m, i) => {
+        const e = s.events?.[i], k = e ? (now - e.at) / 1200 : 2;
+        m.visible = k >= 0 && k < 1;
+        if (m.visible) { m.position.set(e.x * S, 0.08, e.y * S); m.scale.setScalar(1 + k * 3); m.material.opacity = 1 - k; }
+      });
+    }
+    // the camera follows you from behind and above; at a console it comes in closer
+    follow(s, dt) {
+      const me = this.me, cam = this.camera, aspect = cam.aspect;
+      const zoom = this.zoomTo, k = 1 - Math.pow(0.002, dt);
+      const spread = aspect < 0.8 ? 1.3 : aspect < 1.2 ? 1.08 : 0.95;
+      const focus = zoom ? point((me.x + zoom.x) / 2, (me.y + zoom.y) / 2) : me;
+      const h = (zoom ? 12 : 24) * spread, back = (zoom ? 10 : 20) * spread;
+      const aim = new this.T.Vector3(focus.x * S, 0.8, focus.y * S + (zoom ? 3.2 : 0));
+      const want = new this.T.Vector3(aim.x, h, aim.z + back);
+      this.camPos.lerp(want, k); this.camLook.lerp(aim, k);
+      cam.position.copy(this.camPos); cam.lookAt(this.camLook);
+    }
+  };
+})();

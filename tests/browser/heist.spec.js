@@ -418,3 +418,29 @@ test("Chinese controls and role instructions preserve player names", async ({
     await f.context.close();
   }
 });
+
+test("3D museum renders, walks with the arrow keys and falls back to the flat map", async ({ browser }, info) => {
+  const f = await fixture(browser, 1100);
+  await openMuseum(f);
+  const canvas = f.page.locator("#museum-map");
+  await expect(canvas).toHaveAttribute("data-map", /^(3d|2d)$/);
+  if ((await canvas.getAttribute("data-map")) === "3d") {
+    await expect(f.page.locator(".map3d-loading")).toHaveCount(0);
+    const before = mem(f.h.code).players.find((p) => p.id === f.h.meId);
+    const start = { ...(before.pos || {}) };
+    await f.page.keyboard.down("ArrowRight");
+    await f.page.waitForTimeout(1200);
+    await f.page.keyboard.up("ArrowRight");
+    await expect
+      .poll(() => {
+        const p = mem(f.h.code).players.find((q) => q.id === f.h.meId);
+        const end = p.path?.at(-1) || p.pos;
+        return end.x - start.x;
+      })
+      .toBeGreaterThan(40);
+    await f.page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + "/heist-3d.png" : info.outputPath("heist-3d.png") });
+  }
+  expect(f.errors).toEqual([]);
+  await f.page.goto("/grand-heist.html?map=2d");
+  await f.context.close();
+});

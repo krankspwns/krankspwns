@@ -94,6 +94,7 @@
       dialog = null;
     }
     dialogKey = "";
+    museum?.focus?.(null);
   }
   function modal(title, ...children) {
     pendingMove = null;
@@ -102,6 +103,7 @@
       museum.wasMoving = false;
     }
     closeDialog();
+    if (title && state?.me?.challenge) museum?.focus?.(taskSpot());
     const d = el(
       "dialog",
       { class: "heist-dialog", "aria-label": title },
@@ -886,6 +888,11 @@
         ),
       ),
     );
+  }
+  function taskSpot() {
+    const c = state?.me?.challenge,
+      spot = [...state.me.jobs, ...state.recovery, ...state.joints].find((j) => j.id === c?.id || j.id === c?.jobId);
+    return spot || currentPos();
   }
   function currentPos() {
     return state
@@ -2040,7 +2047,7 @@
                   : live(),
     );
     if (state?.phase === "live" || state?.phase === "briefing") {
-      museum = new MuseumMap(document.getElementById("museum-map"), {
+      museum = new (MuseumMap3D.supported() ? MuseumMap3D : MuseumMap)(document.getElementById("museum-map"), {
         state: () => state,
         now,
         move,
