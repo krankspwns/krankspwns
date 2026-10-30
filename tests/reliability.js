@@ -4,7 +4,7 @@ const handler = require('../api/game');
 (async () => {
   const host = (await call(handler, { action: 'create', name: 'Host' })).j;
   const guest = (await call(handler, { action: 'join', code: host.code, name: 'Guest' })).j;
-  const post = (seat, action, data = {}) => call(handler, { action, code: host.code, pid: seat.meId, tok: seat.tok, ...data });
+  const post = async (seat, action, data = {}) => call(handler, { round:(await get(seat)).j.round, action, code: host.code, pid: seat.meId, tok: seat.tok, ...data });
   const get = (seat) => call(handler, null, { code: host.code, pid: seat.meId, f: '1' }, { 'x-tok': seat.tok });
   assert.equal(host.recoveryCode.length, 24);
   assert.ok(!JSON.stringify(host.players).includes(host.recoveryCode), 'recovery code is private');

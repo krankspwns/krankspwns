@@ -450,7 +450,7 @@
 
   function botControls({state,max=12,onSend,available=['lobby','finished'].includes(state.phase),hint='',labels={}}) {
     if(!available||state.hostId!==state.meId)return null;
-    const count=state.players.filter(p=>!p.departed&&!p.kicked).length,bots=state.players.filter(p=>p.bot).length;
+    const count=state.players.filter(p=>!p.departed&&!p.kicked).length,bots=state.players.filter(p=>p.bot&&!p.departed).length;
     return el('section',{class:'pf-bot-controls','aria-label':labels.title||'Practice players'},
       el('div',{class:'pf-bot-row'},
         el('button',{type:'button',class:'pf-bot-add',disabled:count>=max,onclick:()=>onSend('addBot')},avatar('robot','','',24),el('span',{text:labels.add||'Add a bot'})),
@@ -505,6 +505,7 @@
     if(!seat && !st)return;
     seat=null;st=null;accountSeat=false;seenFeed=null;seenAward=null;closeTray();renderChip();
   }
+  const dockSize = new ResizeObserver(entries => { for (const entry of entries) document.documentElement.style.setProperty('--pf-dock-height', entry.target.getBoundingClientRect().height + 'px'); });
   function renderDock() {
     const inRoom = !!(st?.social && seat), w = wallet();
     const hasOtherPlayers = inRoom && st.players.some(p=>!p.bot && !p.departed && p.id!==st.meId);
@@ -526,7 +527,7 @@
       btn('Profile',profileArt,openProfile,{title:account?.nick || 'Your Profile'}));
     document.body.classList.toggle('pf-native-tools',OWN_TABLE_UI);
     document.body.classList.add('pf-floating-tools');
-    dock ? dock.replaceWith(next) : document.body.append(next); dock=next;
+    dock ? dock.replaceWith(next) : document.body.append(next); dock=next; dockSize.disconnect(); dockSize.observe(next);
   }
   // my own emote / gift is shown the moment I tap it; when the server's copy comes back in the feed it is skipped once
   const pending = [];

@@ -16,7 +16,7 @@ test('capture the Grand Con flow with cartoon guests, private clues and a realis
   const errors=[];
   const shot=async(page,name,focus)=>{if(focus)await page.locator(focus).scrollIntoViewIfNeeded();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:info.outputPath(name+'.png')});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);};
   try{
-    const hostPage=await open(host);await shot(hostPage,'01-lobby','.table-roster');
+    const hostPage=await open(host);await shot(hostPage,'01-lobby','.room-code');
     await post(host,'start');let room=await store.load(host.code);
     room.players.forEach((p,i)=>p.team=i===2||i===3?'ring':'house');room.lots[0]={caseId:'crown',genuine:false};rules.beginLot(room);
     const first=room.documents[0],meis=room.documents.find(d=>d.ownerId===seats[1].meId),oldOwner=first.ownerId;meis.ownerId=oldOwner;first.ownerId=seats[1].meId;await store.save(room);

@@ -11,7 +11,7 @@ const { call, startRedis } = require('./helpers');
     const results = await Promise.all(Array.from({ length: 11 }, (_, i) => call(handler, { action: 'join', code: host.code, name: 'P' + i })));
     assert.ok(results.every((r) => r.s === 200), 'concurrent joins succeed after CAS retries');
     const get = (seat) => call(handler, null, { code: host.code, pid: seat.meId, f: '1' }, { 'x-tok': seat.tok });
-    const post = (seat, action, data = {}) => call(handler, { action, code: host.code, pid: seat.meId, tok: seat.tok, ...data });
+    const post = async (seat, action, data = {}) => call(handler, { round:(await get(seat)).j.round, action, code: host.code, pid: seat.meId, tok: seat.tok, ...data });
     assert.equal((await get(host)).j.players.length, 12, 'no player lost to concurrent writes');
     assert.equal((await call(handler, { action: 'join', code: host.code, name: 'Full' })).s, 409);
     const ttl = await redis.client.ttl('room:' + host.code);

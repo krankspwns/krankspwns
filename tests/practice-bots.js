@@ -7,7 +7,7 @@ async function call(game,body,method='POST'){
 }
 const ok=result=>{assert.equal(result.status,200,JSON.stringify(result.data));return result.data;};
 const creds=s=>({code:s.code,pid:s.meId,tok:s.tok});
-async function send(game,seat,action,body={}){const state=ok(await call(game,seat,'GET'));return ok(await call(game,{...seat,action,match:state.match||0,round:state.round||0,step:state.step||0,lotNumber:state.lotNumber,...body}));}
+async function send(game,seat,action,body={}){const state=ok(await call(game,seat,'GET'));return ok(await call(game,{...seat,action,match:state.match||0,round:state.round||0,step:state.step||0,board:state.board,dealStep:state.dealStep,lotNumber:state.lotNumber,...body}));}
 async function setup(game,count){let state=ok(await call(game,{action:'create',name:'Host'}));const seat=creds(state);for(let i=1;i<count;i++)state=await send(game,seat,'addBot');return {seat,state};}
 async function controls(){
   for(const game of Object.keys(handlers)){

@@ -107,7 +107,7 @@ test('saved seats resume the last selected game while All games remains reachabl
     localStorage.setItem('arcade-last-game','grand-con');return {row:row.code,con:con.code};
   });
   await page.goto('/');await expect(page).toHaveURL(/grand-con\.html/);await expect(page.locator('.room-code')).toHaveText(codes.con);
-  await page.getByRole('link',{name:'← All games'}).click();await page.getByRole('link',{name:/Crown Clash/}).click();
+  await page.getByRole('link',{name:'All games',exact:true}).click();await page.getByRole('link',{name:/Crown Clash/}).click();
   await expect(page.locator('.bigcode')).toHaveText(codes.row);
   await page.goto('/');await expect(page).toHaveURL(/reckoning\.html/);await expect(page.locator('.bigcode')).toHaveText(codes.row);
 });

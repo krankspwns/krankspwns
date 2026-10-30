@@ -11,6 +11,11 @@ const startTurn = (d, at = Date.now()) => { d.turnAt = at; };
 const humanTurn = (room) => { const d = room.d, actor = room.players.find((p) => p.id === room.seats?.[d.turn]); return !!actor && !actor.bot && !actor.departed; };
 const deadlineOf = (room) => { const secs = turnSeconds(room); return secs && room.d?.turnAt && ['bidding', 'calling', 'playing'].includes(room.phase) && humanTurn(room) ? room.d.turnAt + secs * 1000 : null; };
 const COLLECT_MS = 1600;
+const dealStep = room => [room.phase, room.d?.calls.length || 0, room.d?.tricks || 0, room.d?.trick.length || 0].join(':');
+const checkDeal = (room, body) => {
+  need(body.board !== undefined && body.dealStep !== undefined, 409, 'Please refresh and try again.');
+  need(body.board === room.board && body.dealStep === dealStep(room), 409, 'The deal moved on. Check the current screen.');
+};
 const trumpOf = (contract) => (contract.denom === 'N' ? null : contract.denom);
 const sideTricks = (d) => d.tricksBy[d.declarer] + (Number.isInteger(d.partner) && d.partner !== d.declarer ? d.tricksBy[d.partner] : 0);
 const decided = d => !!d.contract && (sideTricks(d) >= R.target(d.contract) || d.tricks - sideTricks(d) >= 14 - R.target(d.contract));
@@ -23,6 +28,7 @@ function startDeal(room) {
 function start(room) {
   need(room.players.length === 4, 409, 'Bridge needs exactly 4 players.');
   room.seats = room.players.map((p) => p.id);
+  room.resultPlayers = room.players.map((p, avatarIndex) => ({ id:p.id, name:p.name, bot:!!p.bot, avatarIndex }));
   room.match = (room.match || 0) + 1; room.board = 1; room.scores = [0, 0, 0, 0]; room.history = [];
   startDeal(room);
 }
@@ -117,8 +123,10 @@ function view(room, me) {
   // Scores, history and the deal are indexed by the seats of the game that was played, so they keep those seats until the
   // next game starts, even if someone leaves or the seats are shuffled on the final screen.
   const seats = room.phase === 'lobby' || !room.seats ? present(room).slice(0, 4).map((p) => p.id) : room.seats;
-  const mySeat = seats.indexOf(me.id), d = room.d, out = { seats, mySeat, deadline: room.d ? deadlineOf(room) : null, deals: room.settings.deals || 4, board: room.board || 0, scores: room.scores || [0, 0, 0, 0], history: room.history || [], deal: null };
+  const mySeat = seats.indexOf(me.id), d = room.d, out = { seats, mySeat, deadline: room.d ? deadlineOf(room) : null, deals: room.settings.deals || 4, board: room.board || 0, scores: room.scores || [0, 0, 0, 0], history: room.history || [], dealStep:dealStep(room), deal: null };
   if (!d || room.phase === 'lobby') return out;
+  const identities = room.resultPlayers || room.players;
+  out.players = [...identities, ...room.players.filter(p => !identities.some(q => q.id === p.id))].map((p,i) => { const current = room.players.find(q => q.id === p.id); return { id:p.id,name:current?.name || p.name,bot:!!p.bot,avatarIndex:p.avatarIndex ?? i,departed:current ? !!current.departed : true }; });
   const bidding = room.phase === 'bidding', calling = room.phase === 'calling', play = room.phase === 'playing';
   const deal = {
     board: d.board, dealer: d.dealer, calls: d.calls, contract: d.contract && { ...d.contract, name: R.contractName(d.contract), target: R.target(d.contract) },
@@ -149,6 +157,11 @@ function view(room, me) {
 const api = createRoomApi({
   ns: 'bridge', min: 4, max: 4,
   init(room) { room.settings = { deals: 4 }; },
+  prepare(room) {
+    if (room.phase === 'lobby' || room.resultPlayers || !room.seats) return false;
+    room.resultPlayers = room.players.map((p,avatarIndex) => ({ id:p.id, name:p.name, bot:!!p.bot, avatarIndex }));
+    return true;
+  },
   settings(room, body) {
     need(body.deals !== undefined || body.turnSeconds !== undefined, 400, 'Choose a setting.');
     const next = { ...room.settings };
@@ -167,9 +180,11 @@ const api = createRoomApi({
   actions: {
     shuffleSeats(room, me, body, { host }) {
       host(); need(['lobby', 'finished'].includes(room.phase), 409, 'Change seats before the next game.');
+      room.resultPlayers ||= room.players.map((p,avatarIndex) => ({id:p.id,name:p.name,bot:!!p.bot,avatarIndex}));
       room.players = shuffle(present(room));
     },
     call(room, me, body) {
+      checkDeal(room, body);
       need(room.phase === 'bidding', 409, 'The bidding is over.');
       const d = room.d, seat = room.seats.indexOf(me.id);
       need(seat === d.turn, 409, 'It is not your turn to bid.');
@@ -177,6 +192,7 @@ const api = createRoomApi({
       doCall(room, body.call);
     },
     callCard(room, me, body) {
+      checkDeal(room, body);
       need(room.phase === 'calling', 409, 'No partner card is being called now.');
       const d = room.d, seat = room.seats.indexOf(me.id);
       need(seat === d.declarer, 409, 'Only the declarer calls a partner card.');
@@ -184,6 +200,7 @@ const api = createRoomApi({
       doCallCard(room, body.card);
     },
     play(room, me, body) {
+      checkDeal(room, body);
       need(room.phase === 'playing', 409, 'No card can be played now.');
       const d = room.d, seat = room.seats.indexOf(me.id);
       need(!(d.collectUntil > Date.now()), 409, 'The winner is collecting this trick.');
@@ -193,6 +210,7 @@ const api = createRoomApi({
       doPlay(room, body.card);
     },
     next(room, me, body, { host }) {
+      checkDeal(room, body);
       host(); need(room.phase === 'reveal', 409, 'This deal has not ended yet.');
       need(!(room.d.collectUntil > Date.now()), 409, 'The winner is collecting this trick.');
       if (room.board >= (room.settings.deals || 4)) room.phase = 'finished'; else { room.board++; startDeal(room); }

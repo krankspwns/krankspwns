@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "npm run build && vercel dev",
-    "test": "npm run build && node test.js && node test_rules.js && node tests/reliability.js && node tests/grand-con.js && node tests/last-train.js && node tests/last-train-voice.js && node tests/last-train-test-strategy.js && node tests/bridge.js && node tests/hot-joker.js && node tests/platform.js && node tests/account-rejoin.js && node tests/room-switch.js && node tests/practice-bots.js && node tests/game-languages.js && node tests/audit-fixes.js",
+    "test": "npm run build && node test.js && node test_rules.js && node tests/reliability.js && node tests/grand-con.js && node tests/last-train.js && node tests/last-train-voice.js && node tests/last-train-test-strategy.js && node tests/bridge.js && node tests/hot-joker.js && node tests/platform.js && node tests/account-rejoin.js && node tests/room-switch.js && node tests/practice-bots.js && node tests/game-languages.js && node tests/audit-fixes.js && node tests/edge-cases.js",
     "build": "node tools/build.js",
     "test:redis": "node tests/redis.js && node tests/room-switch.js --redis && node tests/practice-bots.js --redis && node tests/grand-con.js --redis && node tests/last-train.js --redis && node tests/last-train-voice.js --redis && node tests/bridge.js --redis && node tests/hot-joker.js --redis",
     "test:browser": "npm run build && playwright test",

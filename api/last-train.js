@@ -1,3 +1,4 @@
+const admission = require('../lib/room-admission');
 const crypto = require('node:crypto');
 const store = require('../lib/last-train-store');
 const rules = require('../lib/last-train-rules');
@@ -21,13 +22,19 @@ async function hydrate(room, p) {
   (room.snap ||= {})[p.id] = user.pts;
   const w = rules.wallet(room, p.id); for (const f of user.owned.bd) if (!w.frames.includes(f)) w.frames.push(f);
 }
-async function link(room, p, uid) { if (uid && await P.getUser(uid)) { (room.acct ||= {})[p.id] = uid; await hydrate(room, p); } }
+async function link(room, p, uid) {
+  const user = uid && await P.getUser(uid);
+  if (!user) return;
+  (room.acct ||= {})[p.id] = uid;
+  (room.accountEpoch ||= {})[p.id] = user.roomEpoch || 0;
+  await hydrate(room, p);
+}
 async function commit(room) {
   for (const [pid, uid] of Object.entries(room.acct || {})) {
     const net = rules.netOf(room, pid), done = room.sync?.[pid] || 0; if (net === done) continue;
     const n = ((room.syncN ||= {})[pid] || 0) + 1, key = 'last-train:' + room.code + ':' + pid + ':' + n;
-    try { const user = net > done ? await P.earn(uid, net - done, key) : await P.credit(uid, net - done, key); (room.snap ||= {})[pid] = user.pts; (room.sync ||= {})[pid] = net; room.syncN[pid] = n; }
-    catch (e) { if (e.status !== 404) throw e; delete room.acct[pid]; }
+    try { const user = net > done ? await P.earn(uid, net - done, key) : await P.credit(uid, net - done, key, room.accountEpoch?.[pid] || 0); (room.snap ||= {})[pid] = user.pts; (room.sync ||= {})[pid] = net; room.syncN[pid] = n; }
+    catch (e) { if (![401,404].includes(e.status)) throw e; delete room.acct[pid]; }
   }
 }
 const save = async (room) => { await commit(room); await store.save(room); };
@@ -54,6 +61,9 @@ async function execute(req, body) {
   need(room, 404, 'Room not found.');
   const switched = await require('../lib/room-switch').handle('last-train', room, req, body, commit); if (switched) return switched;
   let upgraded = false;
+  // Repair older abandoned rooms too, even when no new traveller joins.
+  const eligible = [...present(room).filter(p => !p.bot), ...(room.observers || []).filter(p => !p.departed)];
+  if (!eligible.some(p => p.id === room.hostId) && eligible.length) { room.hostId = eligible[0].id; upgraded = true; }
   if (room.rulesVersion !== 2) {
     Object.assign(room, { rulesVersion: 2, phase: 'lobby', round: 0, step: (room.step || 0) + 1, deadline: null, duration: null, night: null, votes: {}, history: [], speeches: [], seatOrder: null, paused: false, winner: null, receipts: [], notice: 'Last Train has a new journey and night order. The host can start the new game.' });
     room.settings = { ...room.settings, discussion: 'in-person' };
@@ -63,6 +73,7 @@ async function execute(req, body) {
   if (action === 'join') {
     const name = cleanName(body.name); need(name, 400, 'Enter your name.');
     room.observers ||= [];
+    const retry=admission.replay('last-train',room,body,name,[...room.players,...room.observers]);if(retry)return {...view(room,retry.p),tok:retry.tok};
     const uid=await P.identify(req), owned=uid && [...room.players,...room.observers].find(p=>!p.bot && room.acct?.[p.id]===uid);
     // A name carried over from a game with longer names (up to 12 characters) is matched by its first 10.
     const same = p => !p.bot && (p.name.toLowerCase() === name.toLowerCase() || Array.from(p.name).slice(0, NAME_MAX).join('').toLowerCase() === name.toLowerCase());
@@ -78,7 +89,7 @@ async function execute(req, body) {
       const watching = room.phase !== 'lobby';
       if (watching) { need(room.settings.observers !== false, 409, 'This journey has started. The host has turned off observers.'); need(room.observers.length < 12, 409, 'This room has enough observers.'); }
       else need(room.players.length < 12, 409, 'This room already has 12 players.');
-      const created = player(name); me = created.p; tok = created.tok;
+      const created = player(name); me = created.p; tok = admission.remember('last-train',me,body,name)||created.tok; me.tokenHash=hash(tok);
       const taken = [...room.players.map((p, index) => p.avatarIndex ?? index), ...room.observers.map(o => o.avatarIndex)];
       const available = Array.from({ length: 12 }, (_, i) => i).filter(i => !taken.includes(i));
       me.avatarIndex = available.length ? available[crypto.randomInt(available.length)] : crypto.randomInt(12);
@@ -97,7 +108,7 @@ async function execute(req, body) {
   need(!me.kicked, 410, 'The host removed you from this room.');
   await hydrate(room, me);
   need(!me.departed || ['state', 'voice', 'dismissLetters', 'wear', 'buy'].includes(action), 403, 'Use your rejoin code to come back.');
-  need(!me.observer || ['state', 'voice', 'emote', 'leave', 'bet'].includes(action), 403, 'Observers watch this journey. You take a seat when the next journey starts.');
+  need(!me.observer || ['state', 'voice', 'emote', 'leave', 'bet'].includes(action) || action === 'restart' && body.to === 'lobby' && room.hostId === me.id && !present(room).some(p => !p.bot), 403, 'Observers watch this journey. You take a seat when the next journey starts.');
   let changed = rules.timed(room);
   changed=bots.tick(room)||changed;
   if (action === 'voice') {
@@ -114,7 +125,7 @@ async function execute(req, body) {
   // Reactions, the shop and pins are not tied to a turn, so a phase change never rejects them.
   else if (!['leave', 'kick', 'ghostWhisper', 'bet', 'emote', 'buy', 'wear', 'throw', 'suspect', 'ghostGuess', 'restart', 'listen', 'earnFlip', 'sharpen', 'ghostClimb', 'ghostReveal'].includes(action)) need(body.match === (room.match || 0) && body.round === (room.round || 0) && body.step === (room.step || 0), 409, 'The game moved on. Check the current screen.');
   const host = () => need(room.hostId === me.id, 403, 'Only the host can do that.');
-  need(!room.paused || ['resume', 'leave', 'kick', 'dismissLetters', 'speakVoice', 'emote', 'buy', 'wear', 'throw'].includes(action), 409, 'The game is paused.');
+  need(!room.paused || ['resume', 'leave', 'kick', 'dismissLetters', 'speakVoice', 'emote', 'buy', 'wear', 'throw'].includes(action) || action === 'restart' && body.to === 'lobby' && room.hostId === me.id, 409, 'The game is paused.');
   if (['addBot','removeBot'].includes(action)) {
     host(); need(['lobby','finished'].includes(room.phase),409,'Change bots before the game starts.');
     if(action==='addBot'){need(present(room).length<12,409,'This room already has 12 players.');B.add(room,12);}
@@ -148,6 +159,7 @@ async function execute(req, body) {
   if (action === 'dismissLetters') rules.dismissLetters(room, me, body.letterIds);
   if (action === 'finishSpeech') rules.finishSpeech(room, me);
   if (action === 'emote' && !rules.emote(room, me, String(body.e))) return view(room, me);
+  if (room.acct?.[me.id] && ['buy','bet','wear','throw'].includes(action)) await P.assertRoomGrant(room.acct[me.id],room.accountEpoch?.[me.id] || 0);
   if (action === 'buy') rules.buy(room, me, String(body.kind), String(body.key));
   if (action === 'wear') rules.wear(room, me, String(body.frame ?? ''));
   if (action === 'throw' && !rules.throwGift(room, me, String(body.item), String(body.targetId || ''))) return view(room, me);
@@ -192,7 +204,10 @@ async function execute(req, body) {
     if (room.hostId === me.id) room.hostId = present(room).find(p => !p.bot && p.alive !== false)?.id || present(room).find(p=>!p.bot)?.id || null;
     // Departure never changes alive/group counts or committed actions. Timed phases handle missing input.
   }
-  if (['kick', 'leave'].includes(action)) rules.afterDeparture(room);
+  if (['kick', 'leave'].includes(action)) {
+    if (!present(room).some(p => p.id === room.hostId && !p.bot)) room.hostId = present(room).find(p => !p.bot)?.id || (room.observers || []).find(p => !p.departed)?.id || null;
+    rules.afterDeparture(room);
+  }
   bots.tick(room);
   room.receipts = [...(room.receipts || []), { pid: me.id, id: body.requestId, fingerprint }].slice(-200);
   await save(room); return view(room, me);

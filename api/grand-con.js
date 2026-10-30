@@ -1,3 +1,4 @@
+const admission = require('../lib/room-admission');
 const crypto = require('node:crypto');
 const store = require('../lib/grand-con-store');
 const CASES = require('../lib/grand-con-cases');
@@ -31,7 +32,7 @@ function beginLot(room){
   if(!room.forgerId)sealForgery(room);
 }
 function start(room){
-  room.players=present(room);need(room.players.length>=4,409,'You need at least 4 players to start.');
+  room.players=present(room);need(room.players.length<=12,409,'This room has room for 12 players.');need(room.players.length>=4,409,'You need at least 4 players to start.');
   const ringCount=Math.floor(room.players.length/3),teams=shuffle(room.players.map((_,i)=>i<ringCount?'ring':'house'));
   room.players.forEach((p,i)=>{p.team=teams[i];p.auditUsed=false;p.auditReport=null;});room.lots=shuffle(CASES.map(c=>({caseId:c.id,genuine:!!crypto.randomInt(2)})));
   room.match=(room.match||0)+1;room.lot=0;room.score={house:0,ring:0};room.history=[];room.notice=null;beginLot(room);
@@ -89,6 +90,7 @@ async function execute(req,body) {
   const migrated=migrate(room);
   if(action==='join'){
     const name=cleanName(body.name);need(name,400,'Enter your name.');
+    const retry=admission.replay('grand-con',room,body,name);if(retry)return respond(room,retry.p,{tok:retry.tok});
     const uid=await P.identify(req),owned=uid&&room.players.find(p=>!p.bot&&social.accountOf(room,p.id)===uid);
     let p=owned||room.players.find(p=>!p.bot&&p.name.toLowerCase()===name.toLowerCase());let tok;
     if(p){
@@ -96,11 +98,12 @@ async function execute(req,body) {
       const replay=owned?P.seatToken(uid,'gc:'+code,p.id,body.requestId):body.requestId&&body.recoveryCode?crypto.createHmac('sha256',String(body.recoveryCode).trim()).update('gc:'+code+':'+p.id+':'+body.requestId).digest('base64url'):null;
       if(p.recoveryReceipt===body.requestId&&replay&&equal(p.tokenHash,hash(replay)))return respond(room,p,{tok:replay});
       need(owned||body.recoveryCode&&equal(recovery(room,p),String(body.recoveryCode).trim()),409,'That name is already in this room. Enter its rejoin code.');
+      need(!p.departed||present(room).length<12,409,'This room is full. Wait for a free seat.');
       tok=replay||secret();p.tokenHash=hash(tok);p.departed=false;p.recoveryReceipt=body.requestId||null;
       if(!room.players.some(q=>q.id===room.hostId&&!q.departed))room.hostId=p.id;
     }else{
       need(['lobby','finished'].includes(room.phase),409,'The game has started. You can only rejoin an existing player.');need(present(room).length<12,409,'This room has 12 players.');
-      const created=player(name);p=created.p;tok=created.tok;room.players.push(p);
+      const created=player(name);p=created.p;tok=admission.remember('grand-con',p,body,name)||created.tok;p.tokenHash=hash(tok);room.players.push(p);
     }
     if(!room.hostId)room.hostId=p.id;
     await social.link(room,p,uid);

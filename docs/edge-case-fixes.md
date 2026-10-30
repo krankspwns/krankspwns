@@ -1,0 +1,13 @@
+# Room reliability guardrails
+
+These rules are enforced by the follow-up audit regressions in `tests/edge-cases.js` and `tests/browser/admission-retry.spec.js`. They do not add instructions to normal prompts.
+
+- **Initial admission is a capability, not a name lookup.** Browsers retain one unpredictable join request ID per game/name/code in session storage until a successful response. Rooms keep its digest and derive the same seat token on replay. Parallel retries share a seat. Recovery rotates the token and invalidates the initial admission. A changed name, removed player, or departed seat cannot reuse it.
+- **Recovery consumes capacity when restoring a departed seat.** A live seat can always rotate its credentials. Restoring a seat after a replacement joined must respect the game's limit. Start validates the roster too.
+- **Authenticate the originating round.** Crown Clash mutations carry the round captured when the action entered the queue. Hidden Alliance actions carry both the board and `dealStep` (phase, bid count, completed tricks, cards in the current trick). Verify these after committed-receipt handling and before applying a new action. Social updates do not invalidate them.
+- **Room access and account spending are separate grants.** An account's `roomEpoch` increments on sign-out-everywhere. Link/recovery records it; switching games copies it rather than refreshing it. Purchases, equipment and consumable use validate it inside account CAS mutations. Room checks give early feedback; the account mutation is the final authority. Gameplay and server-side reward settlement do not require signing in on every move.
+- **A host must have a recovery path.** Crown Clash elects a new human when one joins a bot-only room. If an abandoned Last Train has an observer host, that observer can return the room to the platform; this grants no voting or night powers.
+- **Results keep their original identities.** Hidden Alliance snapshots public participant names, IDs, bot flags and avatar positions until the next match. Shuffling or removing seats changes the next roster without erasing old winners. Existing active rooms acquire this snapshot before roster changes.
+- **Fixed controls reserve real space.** The shared toolbar reports its measured height, including wrapped rows. Grand Con positions its private card above that height. Empty toolbar space passes pointer events through; actual buttons remain interactive.
+
+Run `npm test` for server regressions and `npm run test:browser` for browser flows. `npm run test:redis` additionally requires a local Redis executable. The browser suite's existing normal timeout is intentional: a full Crown Clash round can take longer than one minute.

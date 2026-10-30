@@ -1,3 +1,4 @@
+const admission = require('../lib/room-admission');
 // Single serverless endpoint for the whole game.
 // State lives in Redis (Upstash, via Vercel Marketplace) so every serverless
 // instance sees the same room. Without Redis env vars it falls back to
@@ -145,6 +146,7 @@ async function linkAccount(room, p, uid) {   // a player took a seat while signe
   const user = uid && await P.getUser(uid);
   if (!user) return;
   (room.acct ||= {})[p.id] = uid;
+  (room.accountEpoch ||= {})[p.id] = user.roomEpoch || 0;
   p.avatar = P.eqOf(user).av;
   p.bd = user.eq.bd || ''; p.acc = user.eq.acc || '';
   await hydrate(room, p.id);
@@ -155,9 +157,9 @@ async function commitAccounts(room) {   // bank what a signed-in player earned (
     if (net === done) continue;
     const n = ((room.syncN ||= {})[pid] || 0) + 1, key = `reckoning:${room.code}:${pid}:${n}`;
     try {
-      const user = net > done ? await P.earn(uid, net - done, key) : await P.credit(uid, net - done, key);
+      const user = net > done ? await P.earn(uid, net - done, key) : await P.credit(uid, net - done, key, room.accountEpoch?.[pid] || 0);
       (room.snap ||= {})[pid] = user.pts; (room.sync ||= {})[pid] = net; room.syncN[pid] = n;
-    } catch (e) { if (e.status !== 404) throw e; delete room.acct[pid]; }
+    } catch (e) { if (![401,404].includes(e.status)) throw e; delete room.acct[pid]; }
   }
 }
 
@@ -760,6 +762,8 @@ async function handle(action, b, query, ctx = {}) {
   if (action === 'join') {
     const name = cleanName(b.name);
     need(name, 400, 'Enter a name');
+    const retry = admission.replay('reckoning', room, { ...b, code }, name);
+    if (retry) return { ...(await viewFor(room, retry.p.id)), tok: retry.tok };
     // Account ownership restores its seat; guests prove ownership with a private code.
     const owned = ctx.uid && room.players.find(p=>!p.bot&&acctOf(room,p.id)===ctx.uid);
     const same = owned || room.players.find((p) => !p.bot && p.name.toLowerCase() === name.toLowerCase());
@@ -794,8 +798,9 @@ async function handle(action, b, query, ctx = {}) {
         room.allReady = null;
       }
     }
-    const tok = issueToken(p);
+    const tok = admission.remember('reckoning', p, { ...b, code }, name) || issueToken(p); p.tkh = hashToken(tok);
     room.players.push(p);
+    if (!room.players.some(q => q.id === room.hostId && !q.bot && !q.released)) room.hostId = p.id;
     if (ctx.uid) await linkAccount(room, p, ctx.uid);
     sysChat(room, { k: 'join', fn: name });
     await saveRoom(room);
@@ -824,9 +829,15 @@ async function handle(action, b, query, ctx = {}) {
       return viewFor(room, pid, cnOf);
     }
   }
+  if (acctOf(room, pid) && ['buy', 'throw', 'avatar', 'predict'].includes(action)) await P.assertRoomGrant(acctOf(room, pid), room.accountEpoch?.[pid] || 0);
   await touchPresence(code, pid);
   const botsChanged=tickBots(room);
   if(action==='state'&&botsChanged){storeResults(room);await saveRoom(room);}
+  if (action === 'deal') need(room.hostId === pid, 403, 'Only the host can do that');
+  if (['deal','nextReady','place','move','unplace','flip','flipRow','flipRowUp','flipRowAll','ready','predict','drank'].includes(action)) {
+    need(b.round !== undefined, 409, 'Please refresh and try again.');
+    need(b.round === room.round, 409, 'The round changed. Check the current screen.');
+  }
   const PLAYER_ACTIONS = ['predict', 'place', 'move', 'unplace', 'flip', 'flipRow', 'flipRowUp', 'flipRowAll', 'ready'];
   need(!(me.spectator && PLAYER_ACTIONS.includes(action)), 409, 'Wait for the next round');
   const active = activeOf(room);
@@ -1061,7 +1072,7 @@ async function handle(action, b, query, ctx = {}) {
         need(b.acc === '' || inventoryOf(me).owned.acc.includes(b.acc), 403, 'Buy that in the shop first');
         me.acc = b.acc;
       }
-      if (acctOf(room, pid)) for (const [k, v] of [['av', b.avatar], ['bd', b.bd], ['acc', b.acc]]) if (v !== undefined) await P.equip(acctOf(room, pid), k, v, b.requestId && b.requestId + ':' + k);   // the look follows the account to other games
+      if (acctOf(room, pid)) for (const [k, v] of [['av', b.avatar], ['bd', b.bd], ['acc', b.acc]]) if (v !== undefined) await P.equip(acctOf(room, pid), k, v, b.requestId && b.requestId + ':' + k, room.accountEpoch?.[pid] || 0);   // the look follows the account to other games
       break;
 
     case 'buy': {
@@ -1077,7 +1088,7 @@ async function handle(action, b, query, ctx = {}) {
       if (kind === 'gift') need((me.gifts[key] || 0) + GIFT_USES <= 99, 409, 'That is plenty already');
       need(balanceOf(room, pid) >= price, 402, 'Not enough win points');
       if (buyer) {   // the account is the wallet: it checks the price again and never charges one request twice
-        const user = await P.buy(buyer, kind, key, b.requestId);
+        const user = await P.buy(buyer, kind, key, b.requestId, room.accountEpoch?.[pid] || 0);
         me.owned = { acc: [...user.owned.acc], av: [...user.owned.av], bd: [...user.owned.bd] }; me.gifts = { ...user.gifts }; (room.snap ||= {})[pid] = user.pts;
         break;
       }
@@ -1103,7 +1114,7 @@ async function handle(action, b, query, ctx = {}) {
       room.giftAt = room.giftAt || {};
       if (now - (room.giftAt[pid] || 0) < 1500) return viewFor(room, pid, cnOf);   // one throw at a time
       room.giftAt[pid] = now;
-      if (acctOf(room, pid)) for (let i = 0; i < (all ? GIFT_USES : 1); i++) await P.useGift(acctOf(room, pid), key, b.requestId && b.requestId + ':' + i);
+      if (acctOf(room, pid)) for (let i = 0; i < (all ? GIFT_USES : 1); i++) await P.useGift(acctOf(room, pid), key, b.requestId && b.requestId + ':' + i, room.accountEpoch?.[pid] || 0);
       me.gifts[key] -= all ? GIFT_USES : 1;
       room.giftN = (room.giftN || 0) + 1;
       room.gifts = [...(room.gifts || []).filter((x) => now - x.at < 10000), { n: room.giftN, from: pid, to: all ? 'all' : target.id, item: key, at: now }].slice(-10);

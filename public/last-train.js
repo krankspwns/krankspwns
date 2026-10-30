@@ -123,13 +123,14 @@
   const announce = text => document.getElementById('lt-announcer').textContent = text;
   async function request(action, extra = {}, owner = seat, context = state, { timeout: limit = 8000 } = {}) {
     const payload = { action, ...owner, ...extra, requestId: extra.requestId || crypto.randomUUID(), match: context?.match || 0, round: context?.round || 0, step: context?.step || 0 };
+    payload.requestId = window.RoomIntent?.id('last-train', payload, payload.requestId) || payload.requestId;
     for (let attempt = 0; ; attempt++) {
       const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), limit);
       try {
         const response = await fetch('/api/last-train', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: controller.signal });
         const data = await response.json();
         if (!response.ok) throw Object.assign(Error(data.error || 'Please try again.'), { status: response.status });
-        return data;
+        window.RoomIntent?.done('last-train', action); return data;
       } catch (e) { if (attempt >= 1 || ['create', 'join', 'leave'].includes(action) || (e.status && e.status !== 503)) throw e; }
       finally { clearTimeout(timeout); }
     }

@@ -52,6 +52,7 @@ const ACT_SOUND = { predict: '', place: 'place', move: 'place', unplace: 'return
 function act(action, extra = {}) {
   if (!session) return;
   const mine = session;
+  extra = { round: st?.round || 0, ...extra };
   if (['place', 'move', 'unplace', 'ready', 'deal'].includes(action)) keyboardPick = null;
   err = '';
   if (action === 'ready') SND.play(extra.ready ? 'ready' : 'unready'); else if (ACT_SOUND[action]) SND.play(ACT_SOUND[action]);

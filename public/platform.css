@@ -360,3 +360,7 @@ html.pf-transferring:has(.pf-transfer-done) body{visibility:visible}
 .pf-premove{margin-left:auto;flex:none;padding:6px 12px;border-radius:10px;border:1px solid #ff9aa866;background:#ff6b8118;color:#ffb3bf;font:700 12px/1.2 inherit;cursor:pointer}
 .pf-premove.armed{background:#ff6b81;color:#2a0c16;border-color:#ff6b81}
 .pf-premove:disabled{opacity:.5}
+
+/* Empty space between wrapped tools must not intercept the game beneath. */
+#pf-dock{pointer-events:none}
+#pf-dock>button{pointer-events:auto}

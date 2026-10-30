@@ -6,7 +6,7 @@ async function checkDock(page) {
   const dock=page.locator('#pf-dock');
   await expect(dock).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   for(const label of ['Profile']) await expect(dock.getByRole('button',{name:label,exact:true})).toHaveCount(1);
-  const geometry=await dock.locator('button').evaluateAll(buttons=>buttons.map(b=>{
+  const geometry=await dock.locator('.pf-tool').evaluateAll(buttons=>buttons.map(b=>{
     const r=b.getBoundingClientRect(),a=b.firstElementChild.getBoundingClientRect(),s=getComputedStyle(b);
     return {x:r.x,right:r.right,width:r.width,height:r.height,dx:Math.abs(a.x+a.width/2-r.x-r.width/2),dy:Math.abs(a.y+a.height/2-r.y-r.height/2),bg:s.backgroundColor};
   }));
@@ -22,7 +22,7 @@ for(const width of [320,390,1100]) {
     await page.fill('#tk-name','Host');
     await page.getByRole('button',{name:'Create a Room'}).click();
     await expect(page.locator('.large-code')).toBeVisible();
-    await expect(page.locator('#pf-dock button')).toHaveCount(2);
+    await expect(page.locator('#pf-dock .pf-tool')).toHaveCount(2);
     await expect(page.locator('#pf-dock').getByRole('button',{name:'Players',exact:true})).toHaveCount(0);
     await checkDock(page);
     await page.locator('#pf-dock').getByRole('button',{name:'Reactions',exact:true}).click();
@@ -45,9 +45,10 @@ for(const width of [320,390,1100]) {
     const code=(await page.locator('.large-code').textContent()).trim();
     const joined=await page.request.post('/api/hot-joker',{data:{action:'join',requestId:crypto.randomUUID(),code,name:'Friend'}});
     expect(joined.ok()).toBe(true);
-    await expect(page.locator('#pf-dock button')).toHaveCount(4);
+    await expect(page.locator('#pf-dock .pf-tool')).toHaveCount(4);
     await expect(page.locator('#pf-dock').getByRole('button',{name:'Throw a Gift'})).toBeVisible();
     await checkDock(page);
+    await expect(page.getByRole('button',{name:'Switch game',exact:true})).toBeVisible();
     await page.locator('#pf-dock').getByRole('button',{name:'Players',exact:true}).click();
     await expect(page.locator('.pf-tray[data-kind=players]')).toBeVisible();
     const friend=await joined.json();
@@ -55,7 +56,7 @@ for(const width of [320,390,1100]) {
     expect(left.ok()).toBe(true);
     await expect(page.locator('#pf-dock').getByRole('button',{name:'Players',exact:true})).toHaveCount(0);
     await expect(page.locator('.pf-tray[data-kind=players]')).toHaveCount(0);
-    await expect(page.locator('#pf-dock button')).toHaveCount(2);
+    await expect(page.locator('#pf-dock .pf-tool')).toHaveCount(2);
     await page.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await page.screenshot({path:testInfo.outputPath('tools-'+width+'.png'),fullPage:true});
     expect(errors).toEqual([]);
@@ -71,7 +72,7 @@ for(const width of [320,390]) {
       return route.fulfill({json:body?{account}:{config:{enabled:false},catalog,dailyCap:400,account}});
     });
     await page.goto('/hot-joker.html');
-    await expect(page.locator('#pf-dock button')).toHaveCount(1);
+    await expect(page.locator('#pf-dock .pf-tool')).toHaveCount(1);
     await checkDock(page);
     await page.locator('#pf-dock').getByRole('button',{name:'Profile',exact:true}).click();
     const dialog=page.getByRole('dialog',{name:'Your account'});

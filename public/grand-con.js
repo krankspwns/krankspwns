@@ -35,11 +35,12 @@
   function fan(){return el('div',{class:'gallery-invitation','aria-hidden':'true'},el('div',{class:'gallery-window'}),artwork('crown'),el('div',{class:'invitation-seal'},icon('mask'),text('span','','A PRIVATE VIEWING')),el('div',{class:'invitation-teams'},text('span','','FIND THE TRUTH'),text('span','','SELL THE LIE')));}
   async function request(action,extra={},owner=seat){
     const payload={action,...owner,...extra,requestId:crypto.randomUUID(),match:state?.match,lotNumber:state?.lotNumber};
+    payload.requestId = window.RoomIntent?.id('grand-con', payload, payload.requestId) || payload.requestId;
     for(let attempt=0;;attempt++){
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
       try{
         const response=await fetch('/api/grand-con',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});
-        const data=await response.json();if(!response.ok)throw Object.assign(Error(data.error||'Please retry.'),{status:response.status});return data;
+        const data=await response.json();if(!response.ok)throw Object.assign(Error(data.error||'Please retry.'),{status:response.status});window.RoomIntent?.done('grand-con', action); return data;
       }catch(e){if(attempt>=1||['create','join'].includes(action)||(e.status&&e.status!==503))throw e;}
       finally{clearTimeout(timeout);}
     }

@@ -3,6 +3,7 @@ process.env.TESTER_NAME = 'benny';   // the shop tester is only switched on when
 const h = require('./api/game.js');
 const toks = {};   // every player's secret token, picked up from the create / join replies and sent along automatically
 async function call(method, body, query) {
+  if (body && body.round === undefined && body.code) body.round = globalThis.__rooms?.get(body.code)?.round || 0;
   let out;
   const res = { setHeader() {}, status(s) { this.s = s; return this; }, json(j) { out = { s: this.s, j }; } };
   const pid = (body && body.pid) || (query && query.pid);

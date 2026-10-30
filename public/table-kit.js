@@ -95,13 +95,14 @@
     const fresh = (key) => { if (seen.has(key)) return false; seen.add(key); return true; };
 
     async function request(action, extra = {}, owner = seat) {
-      const payload = { action, ...owner, ...extra, requestId: crypto.randomUUID(), match: state?.match };
+      const payload = { action, ...owner, ...extra, requestId: crypto.randomUUID(), match: state?.match, board:state?.board, dealStep:state?.dealStep };
+      payload.requestId = window.RoomIntent?.id(cfg.game, payload, payload.requestId) || payload.requestId;
       for (let attempt = 0; ; attempt++) {
         const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 8000);
         try {
           const response = await fetch(cfg.api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: controller.signal });
           const data = await response.json(); if (!response.ok) throw Object.assign(Error(data.error || 'Please retry.'), { status: response.status });
-          return data;
+          window.RoomIntent?.done(cfg.game, action); return data;
         } catch (e) { if (attempt >= 1 || ['create', 'join'].includes(action) || (e.status && e.status !== 503)) throw e; }
         finally { clearTimeout(timeout); }
       }
@@ -197,7 +198,7 @@
     // Host-only buttons: each press adds one computer player, or removes the most recent one.
     function botControls() {
       if (state.meId !== state.hostId || !['lobby', 'finished'].includes(state.phase)) return null;
-      const seated = state.players.filter((p) => !p.departed).length, bots = state.players.filter((p) => p.bot).length;
+      const seated = state.players.filter((p) => !p.departed).length, bots = state.players.filter((p) => p.bot && !p.departed).length;
       return el('div', { class: 'bot-controls' },
         el('div', { class: 'bot-row' },
           button('Add a bot', () => send('addBot'), 'bot-btn add', seated >= cfg.max, 'add-bot', 'bot:green'),

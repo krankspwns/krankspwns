@@ -20,10 +20,11 @@ function newRequestId() {
 }
 async function api(action, extra = {}) {
   const t0 = Date.now(), owner = session;
-  const body = { action, ...(session || {}), cn: chatHave, ...extra };
+  const body = { action, round: st?.round || 0, ...(session || {}), cn: chatHave, ...extra };
   // These requests either do not mutate the room, or have no seat yet to deduplicate against.
   const retryable = action === 'join' && !!body.recoveryCode || !['create', 'join', 'leave', 'emote', 'rt', 'predStart'].includes(action);
-  if (retryable) body.requestId = newRequestId();
+  if (retryable || action === 'join') body.requestId = newRequestId();
+  body.requestId = window.RoomIntent?.id('reckoning', body, body.requestId) || body.requestId;
   const payload = JSON.stringify(body);
   for (let attempt = 0; ; attempt++) {
     try {
@@ -32,6 +33,7 @@ async function api(action, extra = {}) {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload,
       });
       if (owner && session !== owner) throw Object.assign(new Error('Session changed'), { status: 409 });
+      window.RoomIntent?.done('reckoning', action);
       noteClock(data.now, t0, Date.now());
       return data;
     } catch (error) {

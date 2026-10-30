@@ -61,7 +61,7 @@ function rulesTests() {
     const handler = require('../api/bridge'), id = () => crypto.randomUUID();
     const enter = (action, data) => call(handler, { action, requestId: id(), ...data });
     const get = (seat) => call(handler, null, { code: seat.code, pid: seat.meId }, { 'x-tok': seat.tok });
-    const post = async (seat, action, extra = {}) => { const cur = (await get(seat)).j; return call(handler, { action, requestId: id(), code: seat.code, pid: seat.meId, tok: seat.tok, match: cur.match, ...extra }); };
+    const post = async (seat, action, extra = {}) => { const cur = (await get(seat)).j; return call(handler, { action, requestId: id(), code: seat.code, pid: seat.meId, tok: seat.tok, match: cur.match, board:cur.board, dealStep:cur.dealStep, ...extra }); };
     const raw = async (code) => redis ? JSON.parse(await redis.client.get('bridge:room:' + code)) : structuredClone(globalThis.__roomStoreRooms.bridge.get(code));
 
     const host = (await enter('create', { name: 'Ann' })).j;
@@ -114,7 +114,7 @@ function rulesTests() {
     assert.equal((await post(actor, 'play', { card: 'SA' })).s, 409);
     const stale = await call(handler, { action: 'call', requestId: id(), code: actor.code, pid: actor.meId, tok: actor.tok, match: 99, call: 'P' });
     assert.equal(stale.s, 409);
-    const rid = id(), fixed = { action: 'call', requestId: rid, code: actor.code, pid: actor.meId, tok: actor.tok, match: v.match, call: '1N' };
+    const rid = id(), fixed = { action: 'call', requestId: rid, code: actor.code, pid: actor.meId, tok: actor.tok, match: v.match, board:v.board, dealStep:v.dealStep, call: '1N' };
     const first = await call(handler, fixed), replay = await call(handler, fixed);
     assert.equal(first.s, 200); assert.equal(replay.s, 200); assert.equal(replay.j.deal.calls.length, 1, 'a retried call applies once');
     assert.equal((await call(handler, { ...fixed, call: 'P' })).s, 409);
@@ -218,7 +218,7 @@ function rulesTests() {
       const save = async room => redis ? redis.client.set('bridge:room:'+room.code,JSON.stringify(room)) : globalThis.__roomStoreRooms.bridge.set(room.code,structuredClone(room));
       await save(f);
       const finisher = players.find(p=>p.meId===f.seats[3]);
-      const request = {action:'play',requestId:id(),code:f.code,pid:finisher.meId,tok:finisher.tok,match:f.match,card:'H4'};
+      const request = {action:'play',requestId:id(),code:f.code,pid:finisher.meId,tok:finisher.tok,match:f.match,board:f.board,dealStep:'playing:0:6:3',card:'H4'};
       assert.equal((await call(handler,request)).j.phase,'reveal');
       assert.equal((await call(handler,request)).j.history.length,1,'winning replay scores only once');
       assert.equal((await post(finisher,'play',{card:'C2'})).s,409,'no extra play after the target');
