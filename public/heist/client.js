@@ -64,6 +64,64 @@
       { type: "button", class: kind, disabled, onclick: action, ...extra },
       label,
     );
+  let frameObserver = null,
+    dockObserver = null;
+  function layoutControls() {
+    const frame = document.querySelector(".map-frame"),
+      dock = document.getElementById("pf-dock");
+    if (!frame) return;
+    const r = frame.getBoundingClientRect(),
+      d = dock?.getBoundingClientRect();
+    const overlap =
+      d?.height &&
+      d.bottom > r.top &&
+      d.top < r.bottom &&
+      d.right > r.left &&
+      d.left < r.right;
+    frame.style.setProperty(
+      "--heist-control-bottom",
+      Math.max(18, overlap ? r.bottom - d.top + 12 : 18) + "px",
+    );
+  }
+  function watchControlLayout() {
+    frameObserver?.disconnect();
+    dockObserver?.disconnect();
+    const frame = document.querySelector(".map-frame"),
+      dock = document.getElementById("pf-dock");
+    if (frame) {
+      frameObserver = new ResizeObserver(layoutControls);
+      frameObserver.observe(frame);
+    }
+    if (dock) {
+      dockObserver = new ResizeObserver(layoutControls);
+      dockObserver.observe(dock);
+    }
+    layoutControls();
+  }
+  new MutationObserver((records) => {
+    if (
+      records.some((r) =>
+        [...r.addedNodes, ...r.removedNodes].some((n) => n.id === "pf-dock"),
+      )
+    )
+      watchControlLayout();
+  }).observe(document.body, { childList: true });
+  addEventListener("scroll", layoutControls, { passive: true });
+  addEventListener("resize", layoutControls, { passive: true });
+  function hudIcon(kind) {
+    const paths = {
+      jobs: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v4H9zM9 12l1 1 2-2m2 1h2m-7 5h7"/>',
+      map: '<path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zM9 3v16m6-14v16"/>',
+      tools:
+        '<path d="m14 6 4 4m-7-6a6 6 0 0 0-6 8L2 20l2 2 8-8a6 6 0 0 0 8-6l-4 3-3-3 3-4z"/>',
+    };
+    const n = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    n.setAttribute("viewBox", "0 0 24 24");
+    n.setAttribute("aria-hidden", "true");
+    n.classList.add("heist-hud-icon");
+    n.innerHTML = paths[kind];
+    return n;
+  }
   function face(id, cls = "") {
     const p = state?.players.find((p) => p.id === id),
       i = p?.avatarIndex || 0;
@@ -896,7 +954,9 @@
   }
   function taskSpot() {
     const c = state?.me?.challenge,
-      spot = [...state.me.jobs, ...state.recovery, ...state.joints].find((j) => j.id === c?.id || j.id === c?.jobId);
+      spot = [...state.me.jobs, ...state.recovery, ...state.joints].find(
+        (j) => j.id === c?.id || j.id === c?.jobId,
+      );
     return spot || currentPos();
   }
   function currentPos() {
@@ -1025,9 +1085,32 @@
       });
     return choices;
   }
+  let interacting = false;
+  async function interact(choice = null) {
+    if (interacting) return;
+    interacting = true;
+    const phase = scene;
+    pendingMove = null;
+    if (museum) {
+      museum.keys.clear();
+      museum.wasMoving = false;
+      museum.walk = null;
+    }
+    try {
+      const until = Date.now() + 8500;
+      while (busy && Date.now() < until && scene === phase)
+        await new Promise((resolve) => setTimeout(resolve, 35));
+      if (busy || scene !== phase) return;
+      const current = choice
+        ? actionChoices().find((c) => c.label === choice.label)
+        : actionChoices().find((c) => !c.disabled);
+      if (current && !current.disabled) await current.run();
+    } finally {
+      interacting = false;
+    }
+  }
   async function primary() {
-    const c = actionChoices().find((c) => !c.disabled);
-    if (c) await c.run();
+    await interact();
   }
   async function reportNearby() {
     const c = actionChoices().find((c) => c.kind === "report-action");
@@ -2004,13 +2087,16 @@
     );
     if (state?.phase !== "live") guide = null;
     if (state?.phase === "live" || state?.phase === "briefing") {
-      museum = new (MuseumMap3D.supported() ? MuseumMap3D : MuseumMap)(document.getElementById("museum-map"), {
-        state: () => state,
-        now,
-        move,
-        action: primary,
-        report: reportNearby,
-      });
+      museum = new (MuseumMap3D.supported() ? MuseumMap3D : MuseumMap)(
+        document.getElementById("museum-map"),
+        {
+          state: () => state,
+          now,
+          move,
+          action: primary,
+          report: reportNearby,
+        },
+      );
       if (guide) museum.guide?.(guide);
       if (state.phase === "briefing") {
         const overlay = el(
@@ -2029,6 +2115,7 @@
         document.querySelector(".map-frame").append(overlay);
       }
     }
+    watchControlLayout();
     sync();
     showError();
   }
@@ -2082,12 +2169,12 @@
         bar.replaceChildren(
           ...choices
             .slice(0, 3)
-            .map((c) => button(c.label, c.run, c.kind, c.disabled)),
+            .map((c) => button(c.label, () => interact(c), c.kind, c.disabled)),
           el("span", { class: "bar-spacer" }),
-          button("Your Jobs", showJobs),
-          button("Map", showMap),
+          button([hudIcon("jobs"), el("span", {}, "Your Jobs")], showJobs),
+          button([hudIcon("map"), el("span", {}, "Map")], showMap),
           state.me.alive
-            ? button("Tools", tools)
+            ? button([hudIcon("tools"), el("span", {}, "Tools")], tools)
             : button("Out Chat", () => modal("Out Players Only", chatBox())),
         );
       }
@@ -2109,13 +2196,13 @@
           : guide
             ? "Follow the glowing line on the floor."
             : state.me.team === "thief"
-            ? "Your teammates: " +
-              state.me.allies
-                .filter((id) => id !== state.meId)
-                .map(who)
-                .join(", ") +
-              (state.me.allies.length === 1 ? "You are working alone." : "")
-            : "Choose a glowing job marker, or open Your Jobs for directions.";
+              ? "Your teammates: " +
+                state.me.allies
+                  .filter((id) => id !== state.meId)
+                  .map(who)
+                  .join(", ") +
+                (state.me.allies.length === 1 ? "You are working alone." : "")
+              : "Choose a glowing job marker, or open Your Jobs for directions.";
       if (event && event.id !== seenEvent) {
         seenEvent = event.id;
         sound("bad");
@@ -2133,7 +2220,11 @@
             n.replaceChildren(
               el("h3", {}, "CCTV · Every Room"),
               txt("p", "muted small", ""),
-              txt("p", "muted small", "Stay at the wall. Walking away ends it."),
+              txt(
+                "p",
+                "muted small",
+                "Stay at the wall. Walking away ends it.",
+              ),
               el(
                 "div",
                 { class: "cctv-grid" },

@@ -1536,3 +1536,49 @@ h3 {
 .heist-compass b { color: #fff2c4; font: 800 12px Inter, system-ui, sans-serif; }
 .heist-compass span { color: #b9cfc8; font: 600 10px Inter, system-ui, sans-serif; }
 .heist-compass i { display: none; }
+
+/* Champagne brass, midnight ink and restrained glass surfaces throughout the heist. */
+body { background: radial-gradient(ellipse at 6% 0, #33475680, transparent 48%), radial-gradient(ellipse at 100% 30%, #6a4b2824, transparent 50%), #0c151f; }
+.heist-header.game-header { display:grid; grid-template-columns:minmax(0,1fr); align-items:center; gap:12px; padding:0 0 18px; margin-bottom:18px; border-bottom:1px solid #dac9a221; }
+.heist-header .header-controls { display:flex; }
+@media(min-width:760px){
+  .heist-header.game-header { grid-template-columns:auto auto minmax(0,1fr) auto; gap:22px; }
+  .heist-header.game-header .header-controls { display:contents; }
+}
+.heist-panel { background:linear-gradient(145deg,#21323d,#14232d); border-color:#cdbf9830; box-shadow:0 16px 48px #0002,inset 0 1px #fff06; }
+.heist-lobby-copy h1,.museum-top h2,.meeting-hero h1 { letter-spacing:-.045em; }
+.museum-top .eyebrow { color:#d1b67c; letter-spacing:.22em; }
+.progress-track { height:5px; background:#ffffff0d; }
+.progress-track i { background:linear-gradient(90deg,#599e97,#d9c084); box-shadow:0 0 16px #8bddbd33; }
+.map-frame { border-color:#d9c49750; box-shadow:0 24px 75px #0005,inset 0 1px #fff2; }
+.map-chip { background:#101d29db; border-color:#e4cd9c2a; backdrop-filter:blur(12px); color:#e4d8b9; }
+.map-frame .action-bar { bottom:var(--heist-control-bottom,18px); gap:7px; }
+.map-frame .action-bar button { display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(145deg,#253645ee,#132531e8); border-color:#d9c39350; box-shadow:0 4px 16px #0003,inset 0 1px #ffffff0c; border-radius:12px; min-height:44px; }
+.map-frame .action-bar .primary-action { background:linear-gradient(140deg,#387e77f5,#205950f5); border-color:#a6d9c1a8; color:#f4ffe9; }
+.map-frame .action-bar .report-action { background:linear-gradient(140deg,#9c6545f5,#754333f5); }
+.map-frame .action-bar .danger-action { background:linear-gradient(140deg,#9c475bf5,#692e45f5); }
+.heist-hud-icon { width:19px; height:19px; flex:none; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.heist-stick { bottom:var(--heist-control-bottom,18px); width:100px; height:100px; background:radial-gradient(circle,#a8b9b01a 35%,#0c1a27b0 36%); border:1px solid #e0c79588; box-shadow:inset 0 0 24px #0005,0 5px 24px #0004; backdrop-filter:blur(8px); }
+.heist-stick::before,.heist-stick::after { content:'';position:absolute;background:#e7d5a92a;pointer-events:none; }
+.heist-stick::before { left:50%;top:12px;bottom:12px;width:1px; }
+.heist-stick::after { top:50%;left:12px;right:12px;height:1px; }
+.heist-stick i { width:42px;height:42px;margin:-21px 0 0 -21px;background:radial-gradient(circle at 35% 25%,#f6e1ae,#b99a5d);border:1px solid #f5e4bf;box-shadow:0 3px 9px #0006,inset 0 1px #fff7;z-index:1; }
+.heist-compass { border-color:#dac39160; background:linear-gradient(130deg,#182c3bea,#15232eea); box-shadow:0 8px 30px #0004; }
+.heist-dialog { background:radial-gradient(ellipse at 0 0,#354753,#14232d 65%); border-color:#dac08a6b; box-shadow:0 30px 100px #0009,inset 0 1px #ffffff16; }
+.heist-dialog::backdrop { background:#030b13a8;backdrop-filter:blur(6px); }
+.role-summary { background:linear-gradient(120deg,#243a44,#172732);border-color:#ccba8d42; }
+.meeting-hero { position:relative;isolation:isolate;overflow:hidden;border-color:#cfb47e55;box-shadow:0 16px 45px #0003; }
+.meeting-hero::before { content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(95deg,#122431 32%,#13232cc7 70%,#17233291),url('/grand-con/gallery.webp') center/cover; }
+.meeting-person { background:linear-gradient(145deg,#273c47,#172932);border-color:#cbba8c30;box-shadow:inset 0 1px #ffffff0a; }
+.meeting-person.mine { border-color:#d0b97d8a;background:linear-gradient(145deg,#39484b,#1d323b); }
+.meeting-person.out { filter:grayscale(1);opacity:.48; }
+.winner-line { padding:22px 0;background:radial-gradient(ellipse,#c7a45613,transparent 70%); }
+.finale .trophy { filter:drop-shadow(0 0 38px #e9c06b40) drop-shadow(0 14px 18px #0006); }
+.finale h1 { background:linear-gradient(120deg,#f8e6b7,#c5a46a);background-clip:text;-webkit-background-clip:text;color:transparent; }
+@media(max-width:520px){
+  .heist-header.game-header { padding-bottom:13px;margin-bottom:13px;gap:10px; }
+  .map-frame .action-bar { right:12px;max-width:49%; }
+  .map-frame .action-bar button { padding:10px 12px;font-size:11px; }
+  .map-chip { font-size:9px;max-width:calc(100% - 28px);padding:8px 10px; }
+  .heist-compass { max-width:calc(100% - 34px); }
+}

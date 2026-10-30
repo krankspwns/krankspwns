@@ -170,6 +170,8 @@
     static floor = floor;
     constructor(canvas, { state, now, move, action, report }) {
       this.canvas = canvas;
+      canvas.dataset.map="2d";
+      canvas.__map=this;
       this.ctx = canvas.getContext("2d");
       this.getState = state;
       this.now = now;

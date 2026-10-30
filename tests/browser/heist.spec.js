@@ -18,7 +18,7 @@ const at = (p, point) => {
   p.path = [p.pos];
   p.walkAt = Date.now();
 };
-async function fixture(browser, width = 390) {
+async function fixture(browser, width = 390, mode="2d") {
   const h = (await post({ action: "create", name: "Benny" })).j,
     seats = [h];
   for (let i = 1; i < 5; i++)
@@ -60,7 +60,7 @@ async function fixture(browser, width = 390) {
   const page = await context.newPage(),
     errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/grand-heist.html");
+  await page.goto("/grand-heist.html?map="+mode);
   await expect(
     page.getByRole("button", { name: "Start The Heist", exact: true }),
   ).toBeVisible();
@@ -132,12 +132,12 @@ test("live map, mini-games, report, sealed vote and animated finale", async ({
       path: info.outputPath("museum-mobile.png"),
       fullPage: true,
     });
-    // Walk through the map using the same navigation the player uses.
+    // Navigation now shows directions; it does not move a player automatically.
+    const originalPath=JSON.stringify(mem(f.h.code).players.find(q=>q.id===p.id).path);
     await f.page.getByRole("button", { name: "Map", exact: true }).click();
     await f.page.getByRole("button", { name: "Gallery", exact: true }).click();
-    await expect
-      .poll(() => R.pos(mem(f.h.code).players.find((q) => q.id === p.id)).x)
-      .toBeGreaterThan(180);
+    await expect(f.page.locator('.status-hint')).toContainText('glowing line');
+    expect(JSON.stringify(mem(f.h.code).players.find(q=>q.id===p.id).path)).toBe(originalPath);
     for (const kind of ["wires", "circuit", "scan", "memory"]) {
       r = mem(f.h.code);
       p = r.players.find((q) => q.id === p.id);
@@ -418,7 +418,7 @@ test("Chinese controls and role instructions preserve player names", async ({
 });
 
 test("3D first-person museum renders, walks with the arrow keys and falls back to the flat map", async ({ browser }, info) => {
-  const f = await fixture(browser, 1100);
+  const f = await fixture(browser, 1100,"3d");
   await openMuseum(f);
   const canvas = f.page.locator("#museum-map");
   await expect(canvas).toHaveAttribute("data-map", /^(3d|2d)$/);

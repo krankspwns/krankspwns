@@ -1,8 +1,6 @@
-/* The museum in 3D (three.js), by default through your own eyes: you see your hands, walk the rooms and look around.
-   An overview camera is one tap away.  It uses the same hooks and the same server-timed world as the flat map; what changes is how
-   the museum is drawn and how smoothly you walk through it. Your own character moves at once from the keys (arrows or WASD)
-   or a thumb stick, and the server follows a moment later along the same speed and the same walls. Without WebGL it falls
-   back to the flat map. */
+/* First-person museum, rendered locally with self-hosted three.js and artwork.
+   Server-timed movement, walls and private visibility remain authoritative.
+   Touch and keyboard movement are predicted locally; WebGL failures use map.js. */
 (() => {
   "use strict";
   const W = HeistWorld,
@@ -13,13 +11,14 @@
     LOOKAHEAD = 90;
   const COLORS = [
     "#ded1ac", "#9d3c51", "#344f9e", "#e8d9b4", "#bd8a34", "#3f7460",
-    "#ac4365", "#3c5977", "#796d92", "#ac533a", "#347a78", "#69636b",
+    "#ac4365", "#3c5977", "#26323a", "#ac533a", "#347a78", "#69636b",
   ];
+  const SKINS=[0xd4a07b,0xc98e65,0xd9aa86,0xd8b18e,0xc79372,0xcc9874,0xd9a582,0xc69878,0xd4a687,0xc98f6a,0xdbaa85,0xbd855e];
   const LOT = { lobby: 4, gallery: 0, vault: 2, security: 3, workshop: 5, service: 7 };
   let loading = null;
   const loadThree = () => (loading ||= import(THREE_URL));
   const img = (src) => { const i = new Image(); i.src = src; return i; };
-  const faces = img("/grand-con/guests.webp"), lots = img("/grand-con/lots.webp");
+  const lots = img("/grand-con/lots.webp"), galleryArt=img("/heist/gallery-art.webp");
   const point = (x, y) => ({ x, y });
   const closedDoors = (s) => (s?.sabotage?.kind === "door" ? [s.sabotage.door] : []);
   // a character fits where its four sides fit
@@ -123,6 +122,7 @@
       this.loading?.remove();
       this.inner?.destroy();
       this.observer?.disconnect();
+
       this.stickEl?.remove();
       this.compassEl?.remove();
       this.canvas.removeEventListener("pointerdown", this.pointer);
@@ -136,8 +136,10 @@
     }
     stopLoop() { cancelAnimationFrame(this.raf); this.raf = 0; }
     releaseGl() {
+      this.scene?.traverse(o=>{o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])m.dispose();});
       try { this.renderer?.dispose(); this.renderer?.forceContextLoss(); } catch {}
       for (const t of this.textures || []) t.dispose();
+      this.environmentTarget?.dispose();
       this.renderer = null;
     }
 
@@ -148,7 +150,12 @@
       const canvas = this.canvas;
       const renderer = (this.renderer = new THREE.WebGLRenderer({ canvas, antialias: matchMedia('(pointer: fine)').matches, powerPreference: "high-performance" }));
       renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
-      renderer.setClearColor(0x050d14);
+      renderer.setClearColor(0x080f18);
+      renderer.outputColorSpace=THREE.SRGBColorSpace;
+      renderer.toneMapping=THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure=1.12;
+      renderer.shadowMap.enabled=true;
+      renderer.shadowMap.type=THREE.PCFSoftShadowMap;
       this.textures = [];
       const scene = (this.scene = new THREE.Scene());
       scene.background = new THREE.Color(0x050d14);
@@ -156,9 +163,13 @@
       this.camPos = new THREE.Vector3(8, 18, 24);
       this.camLook = new THREE.Vector3(8, 0, 8);
       scene.add(this.camera);
+      this.environment();
       this.lights();
       this.build();
+      const refreshArt=()=>{if(this.destroyed||this.inner)return;for(const p of this.paintings||[]){p.mesh.material.map=this.paintingTexture(p.index);p.mesh.material.needsUpdate=true;}};
+      galleryArt.decode().then(refreshArt).catch(()=>{});
       this.makeHands();
+      this.scene.traverse(o=>{if(o.isMesh&&!o.material?.transparent&&!o.material?.isMeshBasicMaterial){o.castShadow=true;o.receiveShadow=true;}});
       this.people = new Map();
       this.footprints = [];
       this.rings = [];
@@ -188,14 +199,38 @@
       this.textures.push(t);
       return t;
     }
+    environment(){
+      const T=this.T,c=document.createElement('canvas');c.width=512;c.height=256;
+      const g=c.getContext('2d'),sky=g.createLinearGradient(0,0,0,256);sky.addColorStop(0,'#b6c5cf');sky.addColorStop(.48,'#667475');sky.addColorStop(.55,'#44494a');sky.addColorStop(1,'#30251e');g.fillStyle=sky;g.fillRect(0,0,512,256);
+      for(const [x,y,r,color]of [[90,80,100,'255,231,190'],[380,80,80,'203,230,250'],[260,35,65,'255,249,228']]){const glow=g.createRadialGradient(x,y,0,x,y,r);glow.addColorStop(0,'rgba('+color+',1)');glow.addColorStop(.5,'rgba('+color+',.6)');glow.addColorStop(1,'rgba('+color+',0)');g.fillStyle=glow;g.fillRect(x-r,y-r,r*2,r*2);}
+      const source=new T.CanvasTexture(c);source.colorSpace=T.SRGBColorSpace;source.mapping=T.EquirectangularReflectionMapping;
+      const pmrem=new T.PMREMGenerator(this.renderer);this.environmentTarget=pmrem.fromEquirectangular(source);this.scene.environment=this.environmentTarget.texture;this.scene.environmentIntensity=.85;source.dispose();pmrem.dispose();
+    }
+    architecture(r){
+      const T=this.T,x=r.x*S,z=r.y*S,w=r.w*S,d=r.h*S,gold=this.mat(0xc8ab70,{metalness:.65,roughness:.32}),stone=this.mat(0xaaa68e,{roughness:.7});
+      // Corner pilasters leave the actual door openings and walking space clear.
+      for(const dx of [.28,w-.28])for(const dz of [.28,d-.28]){this.box(.48,7.3,.48,stone,x+dx,.15,z+dz,this.tallG);this.box(.72,.2,.72,gold,x+dx,7.4,z+dz,this.tallG);this.box(.65,.2,.65,gold,x+dx,.05,z+dz,this.tallG);}
+      for(const dx of [w*.16,w*.84]){
+        const light=new T.Mesh(new T.SphereGeometry(.12,10,8),new T.MeshBasicMaterial({color:0xffe6af}));light.position.set(x+dx,4.6,z+.18);this.tallG.add(light);
+        this.box(.12,.6,.18,gold,x+dx,3.95,z+.12,this.tallG);
+        const glow=new T.Mesh(new T.PlaneGeometry(2.3,3.6),new T.MeshBasicMaterial({map:this.warmGlow(),transparent:true,opacity:.42,depthWrite:false}));glow.position.set(x+dx,4.6,z+.08);this.tallG.add(glow);
+      }
+      const pool=new T.Mesh(new T.PlaneGeometry(15,15),new T.MeshBasicMaterial({map:this.warmGlow(),transparent:true,opacity:.12,depthWrite:false}));pool.rotation.x=-Math.PI/2;pool.position.set(x+w/2,.018,z+d/2);this.scene.add(pool);
+    }
+    warmGlow(){return this.warmTex||=this.canvasTex(64,64,(g,w,h)=>{const a=g.createRadialGradient(32,32,0,32,32,32);a.addColorStop(0,'#ffe2ad99');a.addColorStop(.3,'#ffcb6755');a.addColorStop(1,'#ffcf7000');g.fillStyle=a;g.fillRect(0,0,w,h);});}
+
     lights() {
-      const T = this.T, scene = this.scene;
-      this.ambient = new T.AmbientLight(0xbfd0ff, 1.6);
-      this.sun = new T.DirectionalLight(0xffefd0, 1.1);
-      this.sun.position.set(-20, 40, 30);
-      this.hero = new T.PointLight(0xfff1cf, 90, 0, 1.4); // moves with you; how far you can see
-      scene.add(this.ambient, this.sun, this.hero);
-      this.roomLights = [];
+      const T=this.T,scene=this.scene;
+      this.ambient=new T.AmbientLight(0xb7c9e2,.6);
+      this.sky=new T.HemisphereLight(0xc9e1e8,0x3d241e,.8);
+      this.sun=new T.DirectionalLight(0xffdfaf,2.1);
+      this.sun.position.set(4,28,28);this.sun.castShadow=true;
+      this.sun.shadow.mapSize.setScalar(matchMedia('(pointer: fine)').matches?1024:512);
+      Object.assign(this.sun.shadow.camera,{left:-19,right:19,top:19,bottom:-19,near:1,far:65});
+      this.sun.shadow.bias=-.0005;this.sun.shadow.normalBias=.035;
+      this.hero=new T.PointLight(0xffe5c4,20,23,2);
+      scene.add(this.ambient,this.sky,this.sun,this.sun.target,this.hero);
+      this.roomLights=[];
     }
 
     label(text, color = "#f4dc9c", size = 28, seen = true) {
@@ -269,29 +304,17 @@
         }
       }, true);
     }
-    floorTexture(room) {
-      const c = document.createElement("canvas"), g = c.getContext("2d"), n = 2, rnd = this.rng(room.x * 7 + room.y);
-      c.width = room.w * n; c.height = room.h * n;
-      const light = new this.T.Color(room.color).multiplyScalar(2.1).getStyle(), dark = new this.T.Color(room.color).multiplyScalar(1.1).getStyle();
-      // polished marble in a chequer
-      for (let x = 0; x < room.w; x += 30) for (let y = 0; y < room.h; y += 30) {
-        g.fillStyle = ((x + y) / 30) % 2 ? light : dark; g.fillRect(x * n, y * n, 30 * n, 30 * n);
-        g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1;
-        for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(x * n + rnd() * 60, y * n); g.bezierCurveTo(x * n + rnd() * 60, y * n + 20, x * n + rnd() * 60, y * n + 40, x * n + rnd() * 60, y * n + 60); g.stroke(); }
-        g.strokeStyle = "rgba(0,0,0,.28)"; g.strokeRect(x * n, y * n, 30 * n, 30 * n);
-      }
-      const gl = g.createRadialGradient(room.w * n * 0.5, room.h * n * 0.5, 10, room.w * n * 0.5, room.h * n * 0.5, room.w * n * 0.75);
-      gl.addColorStop(0, "rgba(255,240,200,.16)"); gl.addColorStop(1, "rgba(0,0,0,.30)");
-      g.fillStyle = gl; g.fillRect(0, 0, c.width, c.height);
-      // a patterned runner rug through the middle
-      const rx = 52 * n, ry = 72 * n, rw = (room.w - 104) * n, rh = 84 * n;
-      g.fillStyle = "#6f1f2e"; g.fillRect(rx, ry, rw, rh);
-      g.strokeStyle = "#d8b76a"; g.lineWidth = 3 * n; g.strokeRect(rx + 4 * n, ry + 4 * n, rw - 8 * n, rh - 8 * n);
-      g.strokeStyle = "rgba(216,183,106,.55)"; g.lineWidth = 1.5 * n; g.strokeRect(rx + 10 * n, ry + 10 * n, rw - 20 * n, rh - 20 * n);
-      g.fillStyle = "rgba(216,183,106,.35)";
-      for (let x = rx + 24 * n; x < rx + rw - 20 * n; x += 26 * n) { g.beginPath(); g.moveTo(x, ry + rh / 2 - 12 * n); g.lineTo(x + 12 * n, ry + rh / 2); g.lineTo(x, ry + rh / 2 + 12 * n); g.lineTo(x - 12 * n, ry + rh / 2); g.closePath(); g.fill(); }
-      g.strokeStyle = "rgba(210,181,124,.55)"; g.lineWidth = 2 * n; g.strokeRect(6 * n, 6 * n, (room.w - 12) * n, (room.h - 12) * n);
-      return this.tex(c);
+    floorTexture(room){
+      return this.canvasTex(512,512,(g,w,h)=>{
+        const service=['security','workshop','service'].includes(room.id),rnd=this.rng(room.x*7+room.y),light=service?'#89958d':'#cec6b3',dark=service?'#71817c':'#b9b3a2';
+        for(let x=0;x<w;x+=128)for(let y=0;y<h;y+=128){g.fillStyle=(x+y)%256?light:dark;g.fillRect(x,y,128,128);g.strokeStyle='rgba(49,55,48,.2)';g.lineWidth=1;g.strokeRect(x,y,128,128);g.strokeStyle='rgba(246,240,220,.25)';for(let k=0;k<4;k++){g.beginPath();g.moveTo(x+rnd()*128,y);g.bezierCurveTo(x+rnd()*128,y+40,x+rnd()*128,y+90,x+rnd()*128,y+128);g.stroke();}}
+        const carpets={lobby:'#20464b',gallery:'#583244',vault:'#243b42',security:'#213c47',workshop:'#50362c',service:'#31493f'};
+        g.fillStyle=carpets[room.id]||'#203c40';g.fillRect(108,150,296,212);
+        for(const inset of [8,16]){g.strokeStyle=inset===8?'#c1a66c':'#bca16d70';g.lineWidth=inset===8?3:1;g.strokeRect(108+inset,150+inset,296-inset*2,212-inset*2);}
+        g.strokeStyle='#cbb87955';g.lineWidth=2;g.beginPath();g.ellipse(256,256,48,59,0,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(256,220);g.lineTo(278,256);g.lineTo(256,292);g.lineTo(234,256);g.closePath();g.stroke();
+        for(let i=0;i<1200;i++){g.fillStyle=rnd()>.5?'#f8e5bb08':'#00000008';g.fillRect(108+rnd()*296,150+rnd()*212,2,2);}
+        g.strokeStyle='#a28c5d';g.lineWidth=3;g.strokeRect(14,14,484,484);g.strokeStyle='#e9dcbd';g.lineWidth=1;g.strokeRect(20,20,472,472);
+      });
     }
     hazardTexture() {
       return this.canvasTex(64, 64, (g, w, h) => {
@@ -324,7 +347,7 @@
 
     /* ---------- the building ---------- */
     mat(color, o = {}) {
-      return new this.T.MeshLambertMaterial({ color, ...o });
+      return new this.T.MeshStandardMaterial({ color, roughness: .72, metalness:0, ...o });
     }
     box(w, h, d, material, x, y, z, parent = this.scene) {
       const m = new this.T.Mesh(new this.T.BoxGeometry(w, h, d), material);
@@ -343,12 +366,13 @@
     }
     // a framed painting on a wall; (x, z) in museum coordinates, facing the room
     hang(index, x, z, rotY, w = 5, h = 3.8, y = 4.6) {
-      const T = this.T, art = this.lotTexture(index), g = new T.Group(), gold = this.mat(0xc9a96a, { emissive: 0x2a2008 });
+      const T = this.T, art = this.paintingTexture(index), g = new T.Group(), gold = this.mat(0xc9a96a, { emissive: 0x2a2008 });
       g.position.set(x, y, z); g.rotation.y = rotY;
       const frame = new T.Mesh(new T.BoxGeometry(w + 0.5, h + 0.5, 0.22), gold); g.add(frame);
       const mount = new T.Mesh(new T.BoxGeometry(w + 0.18, h + 0.18, 0.24), this.mat(0x15100c)); g.add(mount);
-      const pic = new T.Mesh(new T.PlaneGeometry(w, h), art ? new T.MeshLambertMaterial({ map: art, emissive: 0x3a2f20 }) : this.mat(0x2a2a2a));
+      const pic = new T.Mesh(new T.PlaneGeometry(w, h), art ? new T.MeshStandardMaterial({ map: art, emissive: 0x3a2f20 }) : this.mat(0x2a2a2a));
       pic.position.z = 0.13; g.add(pic);
+      (this.paintings||=[]).push({mesh:pic,index});
       const lamp = new T.Mesh(new T.BoxGeometry(w * 0.5, 0.12, 0.34), new T.MeshBasicMaterial({ color: 0xffe9b0 }));
       lamp.position.set(0, h / 2 + 0.55, 0.22); g.add(lamp);
       const arm = new T.Mesh(new T.BoxGeometry(0.08, 0.08, 0.3), gold); arm.position.set(0, h / 2 + 0.4, 0.12); g.add(arm);
@@ -356,15 +380,15 @@
       return g;
     }
     exhibitModel(id) {
-      const T = this.T, g = new T.Group(), gold = new T.MeshLambertMaterial({ color: 0xe3bd5f, emissive: 0x4a3510 });
+      const T = this.T, g = new T.Group(), gold = new T.MeshStandardMaterial({ color: 0xe3bd5f, metalness:.75,roughness:.25 });
       const lathe = (pts, mat) => new T.Mesh(new T.LatheGeometry(pts.map(([x, y]) => new T.Vector2(x, y)), 18), mat);
-      if (id === "lobby") g.add(lathe([[0.05, 0], [0.32, 0.05], [0.28, 0.35], [0.5, 0.65], [0.38, 0.95], [0.18, 1.05], [0.28, 1.3], [0.2, 1.3]], new T.MeshLambertMaterial({ color: 0x3f7ea8, emissive: 0x0b2236 })));
+      if (id === "lobby") g.add(lathe([[0.05, 0], [0.32, 0.05], [0.28, 0.35], [0.5, 0.65], [0.38, 0.95], [0.18, 1.05], [0.28, 1.3], [0.2, 1.3]], new T.MeshStandardMaterial({ color: 0x3f7ea8, emissive: 0x0b2236 })));
       else if (id === "gallery") {
         g.add(lathe([[0.55, 0], [0.55, 0.28], [0.5, 0.3]], gold));
         for (let i = 0; i < 6; i++) { const c = new T.Mesh(new T.ConeGeometry(0.12, 0.55, 5), gold); const a = (i / 6) * Math.PI * 2; c.position.set(Math.cos(a) * 0.5, 0.55, Math.sin(a) * 0.5); g.add(c); const gem = new T.Mesh(new T.SphereGeometry(0.07, 8, 6), new T.MeshBasicMaterial({ color: [0xff4a6a, 0x4ac8ff, 0x7dff9a][i % 3] })); gem.position.set(Math.cos(a) * 0.5, 0.88, Math.sin(a) * 0.5); g.add(gem); }
-      } else if (id === "vault") { const d = new T.Mesh(new T.OctahedronGeometry(0.55), new T.MeshLambertMaterial({ color: 0x9de8ff, emissive: 0x2a8fb0 })); d.position.y = 0.8; d.scale.y = 1.35; g.add(d); }
+      } else if (id === "vault") { const d = new T.Mesh(new T.OctahedronGeometry(0.55), new T.MeshStandardMaterial({ color: 0x9de8ff, emissive: 0x2a8fb0 })); d.position.y = 0.8; d.scale.y = 1.35; g.add(d); }
       else if (id === "security") g.add(lathe([[0.01, 0], [0.34, 0], [0.3, 0.1], [0.08, 0.2], [0.08, 0.55], [0.5, 0.95], [0.5, 1.25], [0.44, 1.25], [0.42, 0.98], [0.02, 0.62]], gold));
-      else if (id === "workshop") { const ring = new T.Mesh(new T.TorusGeometry(0.42, 0.14, 8, 18), new T.MeshLambertMaterial({ color: 0xb9bec4 })); ring.position.y = 0.75; g.add(ring); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, tooth = new T.Mesh(new T.BoxGeometry(0.16, 0.2, 0.28), new T.MeshLambertMaterial({ color: 0xb9bec4 })); tooth.position.set(Math.cos(a) * 0.56, 0.75 + Math.sin(a) * 0.56, 0); tooth.rotation.z = a; g.add(tooth); } }
+      else if (id === "workshop") { const ring = new T.Mesh(new T.TorusGeometry(0.42, 0.14, 8, 18), new T.MeshStandardMaterial({ color: 0xb9bec4 })); ring.position.y = 0.75; g.add(ring); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, tooth = new T.Mesh(new T.BoxGeometry(0.16, 0.2, 0.28), new T.MeshStandardMaterial({ color: 0xb9bec4 })); tooth.position.set(Math.cos(a) * 0.56, 0.75 + Math.sin(a) * 0.56, 0); tooth.rotation.z = a; g.add(tooth); } }
       else { const b = new T.Mesh(new T.BoxGeometry(0.95, 0.5, 0.6), this.mat(0x6a4a2f)); b.position.y = 0.25; g.add(b); const lid = new T.Mesh(new T.CylinderGeometry(0.3, 0.3, 0.95, 12, 1, false, 0, Math.PI), this.mat(0x6a4a2f)); lid.rotation.z = Math.PI / 2; lid.rotation.y = Math.PI / 2; lid.position.y = 0.5; g.add(lid); const band = new T.Mesh(new T.BoxGeometry(1, 0.08, 0.64), gold); band.position.y = 0.5; g.add(band); }
       return g;
     }
@@ -373,18 +397,18 @@
       // walls and wall decorations are full height for first person; the overview squashes them so they never hide anyone
       this.tallG = new T.Group(); this.frontG = new T.Group(); this.ceilG = new T.Group();
       scene.add(this.tallG, this.frontG, this.ceilG);
-      const gold = this.mat(0xc9a96a, { emissive: 0x2a2008 }), marble = this.mat(0xd9d3c8), woodTex = this.woodTexture(), wood = new T.MeshLambertMaterial({ map: woodTex });
-      const hall = { id: "hall", color: "#3a4650" }, hallMat = new T.MeshLambertMaterial({ map: this.wallTexture(hall) });
-      this.wallMats = Object.fromEntries(W.ROOMS.map((r) => [r.id, new T.MeshLambertMaterial({ map: this.wallTexture(r) })]));
+      const gold = this.mat(0xc9a96a, { metalness:.72,roughness:.28 }), marble = this.mat(0xd9d3c8,{roughness:.32}), woodTex = this.woodTexture(), wood = new T.MeshStandardMaterial({ map: woodTex });
+      const hall = { id: "hall", color: "#3a4650" }, hallMat = new T.MeshStandardMaterial({ map: this.wallTexture(hall) });
+      this.wallMats = Object.fromEntries(W.ROOMS.map((r) => [r.id, new T.MeshStandardMaterial({ map: this.wallTexture(r) })]));
       const ground = new T.Mesh(new T.PlaneGeometry(400, 300), this.mat(0x07121a));
       ground.rotation.x = -Math.PI / 2; ground.position.set(48, -0.05, 32); scene.add(ground);
       for (const r of W.ROOMS) {
-        const plane = new T.Mesh(new T.PlaneGeometry(r.w * S, r.h * S), new T.MeshLambertMaterial({ map: this.floorTexture(r) }));
+        const plane = new T.Mesh(new T.PlaneGeometry(r.w * S, r.h * S), new T.MeshStandardMaterial({ map: this.floorTexture(r),roughness:.32,metalness:.12 }));
         plane.rotation.x = -Math.PI / 2;
         plane.position.set((r.x + r.w / 2) * S, 0, (r.y + r.h / 2) * S);
         scene.add(plane);
       }
-      const hallFloor = new T.MeshLambertMaterial({ color: 0x35454b });
+      const hallFloor = new T.MeshStandardMaterial({ color: 0x35454b });
       this.doorBars = new Map();
       for (const d of W.DOORS) {
         const plane = new T.Mesh(new T.PlaneGeometry(d.w * S, d.h * S), hallFloor);
@@ -392,7 +416,7 @@
         plane.position.set((d.x + d.w / 2) * S, 0.01, (d.y + d.h / 2) * S);
         scene.add(plane);
         // a locked door is a red field across the doorway
-        const field = new T.Mesh(new T.BoxGeometry(d.w * S, 6, d.h * S), new T.MeshBasicMaterial({ color: 0xff5468, transparent: true, opacity: 0.38, depthWrite: false }));
+        const field = new T.Mesh(new T.BoxGeometry(d.w>d.h?.18:d.w*S, 6, d.w>d.h?d.h*S:.18), new T.MeshBasicMaterial({ color: 0xff5468, transparent: true, opacity: 0.38, depthWrite: false }));
         field.position.set((d.x + d.w / 2) * S, 3, (d.y + d.h / 2) * S);
         field.visible = false;
         scene.add(field);
@@ -412,7 +436,7 @@
         for (const [a, b] of spans(y1, y2, gaps("w"))) this.wall(x1 - T4, a, x1, b, TALL, wm);
         for (const [a, b] of spans(y1, y2, gaps("e"))) this.wall(x2, a, x2 + T4, b, TALL, wm);
         // ceiling with a glowing cove all around and light panels
-        const ceil = new T.Mesh(new T.PlaneGeometry(r.w * S, r.h * S), this.mat(0x23323a));
+        const ceil = new T.Mesh(new T.PlaneGeometry(r.w * S, r.h * S), this.mat(0xbab7a4));
         ceil.rotation.x = Math.PI / 2; ceil.position.set((r.x + r.w / 2) * S, TALL * S, (r.y + r.h / 2) * S); this.ceilG.add(ceil);
         const cove = new T.MeshBasicMaterial({ color: 0xffdfa0 }), cy = TALL * S - 0.25;
         this.box(r.w * S, 0.14, 0.3, cove, (r.x + r.w / 2) * S, cy, (y1 + 1.8) * S, this.ceilG);
@@ -426,13 +450,14 @@
         this.hang(L, (r.x + 70) * S, (r.y + 0.6) * S, 0);
         this.hang((L + 3) % 8, (r.x + 188) * S, (r.y + 0.6) * S, 0, 4.2, 3.2, 5.0);
         this.sideDecor(r);
+        this.architecture(r);
         const name = this.label(((window.GameI18n?.t(r.name)) || r.name).toUpperCase(), "#e4d29a", 22, false);
         name.position.set((r.x + r.w / 2) * S, 7.1, (r.y + 4) * S); this.tallG.add(name);
         // the display case: marble plinth, brass-edged glass, and the exhibit on a cushion
         const c = point(r.x + 188, r.y + 54);
         this.box(56 * S, 7 * S, 44 * S, marble, c.x * S, 0, c.y * S);
         this.box(58 * S, 1.2 * S, 46 * S, gold, c.x * S, 7 * S, c.y * S);
-        const glassGeo = new T.BoxGeometry(50 * S, 20 * S, 38 * S), glass = new T.Mesh(glassGeo, new T.MeshLambertMaterial({ color: 0xbfe6f2, transparent: true, opacity: 0.18, depthWrite: false }));
+        const glassGeo = new T.BoxGeometry(50 * S, 20 * S, 38 * S), glass = new T.Mesh(glassGeo, new T.MeshPhysicalMaterial({ color:0xbfe6f2,roughness:.08,metalness:.05,transparent:true,opacity:.09,depthWrite:false,side:T.DoubleSide }));
         glass.position.set(c.x * S, 8.2 * S + 1, c.y * S); scene.add(glass);
         const edges = new T.LineSegments(new T.EdgesGeometry(glassGeo), new T.LineBasicMaterial({ color: 0xe6c77a }));
         edges.position.copy(glass.position); scene.add(edges);
@@ -457,7 +482,7 @@
           this.wall(d.x - T4, d.y, d.x, d.y + d.h, TALL, hallMat);
           this.wall(d.x + d.w, d.y, d.x + d.w + T4, d.y + d.h, TALL, hallMat);
         }
-        const cc = new T.Mesh(new T.PlaneGeometry(d.w * S, d.h * S), this.mat(0x23323a)); cc.rotation.x = Math.PI / 2; cc.position.set((d.x + d.w / 2) * S, TALL * S, (d.y + d.h / 2) * S); this.ceilG.add(cc);
+        const cc = new T.Mesh(new T.PlaneGeometry(d.w * S, d.h * S), this.mat(0xbab7a4)); cc.rotation.x = Math.PI / 2; cc.position.set((d.x + d.w / 2) * S, TALL * S, (d.y + d.h / 2) * S); this.ceilG.add(cc);
         const strip = new T.Mesh(new T.PlaneGeometry(Math.min(d.w, 40) * S * 0.6, 0.5), new T.MeshBasicMaterial({ color: 0xcfe7ff })); strip.rotation.x = Math.PI / 2; strip.position.set((d.x + d.w / 2) * S, TALL * S - 0.02, (d.y + d.h / 2) * S); this.ceilG.add(strip);
       }
       // job consoles: desk, keyboard, angled screen with a bezel and status lights
@@ -477,7 +502,7 @@
       // statues: stepped plinth with a brass plate, robed figure, raised arm and a laurel
       this.statues = W.JOINTS.map((j) => {
         const g = new T.Group(); g.position.set(j.x * S, 0, (j.y - 18) * S);
-        const stone = new T.MeshLambertMaterial({ color: 0xd9d2c6, emissive: 0x1c1a16 });
+        const stone = new T.MeshStandardMaterial({ color: 0xd9d2c6, emissive: 0x1c1a16 });
         this.box(2.8, 0.5, 2.8, stone, 0, 0, 0, g); this.box(2.3, 0.6, 2.3, stone, 0, 0.5, 0, g);
         const plate = this.box(1.0, 0.3, 0.06, gold, 0, 0.55, 1.18, g); void plate;
         const robe = new T.Mesh(new T.LatheGeometry([[0.9, 0], [0.8, 1.2], [0.55, 2.4], [0.45, 3.1], [0.3, 3.3]].map(([x, y]) => new T.Vector2(x, y)), 16), stone); robe.position.y = 1.1; g.add(robe);
@@ -489,7 +514,7 @@
         return { j, group: g };
       });
       // crates: slatted wood with metal straps; the one in the Service Hall is the exit
-      const crateTex = this.crateTexture(), crate = new T.MeshLambertMaterial({ map: crateTex });
+      const crateTex = this.crateTexture(), crate = new T.MeshStandardMaterial({ map: crateTex });
       W.TRANSPORT.forEach((t) => {
         const m = this.box(2.2, 1.7, 1.8, crate, t.x * S, 0, (t.y - 14) * S);
         void m;
@@ -515,10 +540,10 @@
       const eb = new T.Group(); eb.position.set(W.EMERGENCY.x * S, 0, (W.EMERGENCY.y - 15) * S);
       this.box(1.7, 1.0, 1.3, this.mat(0x2a3a40), 0, 0, 0, eb);
       const hz = this.hazardTexture(); hz.repeat.set(2, 1);
-      const ring = new T.Mesh(new T.CylinderGeometry(0.72, 0.8, 0.22, 24), new T.MeshLambertMaterial({ map: hz })); ring.position.y = 1.12; eb.add(ring);
+      const ring = new T.Mesh(new T.CylinderGeometry(0.72, 0.8, 0.22, 24), new T.MeshStandardMaterial({ map: hz })); ring.position.y = 1.12; eb.add(ring);
       this.emergencyCap = new T.Mesh(new T.CylinderGeometry(0.42, 0.5, 0.35, 20), new T.MeshBasicMaterial({ color: 0xff3b54 }));
       this.emergencyCap.position.y = 1.4; eb.add(this.emergencyCap);
-      const dome = new T.Mesh(new T.SphereGeometry(0.62, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), new T.MeshLambertMaterial({ color: 0xcfe9ff, transparent: true, opacity: 0.22, depthWrite: false }));
+      const dome = new T.Mesh(new T.SphereGeometry(0.62, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), new T.MeshStandardMaterial({ color: 0xcfe9ff, transparent: true, opacity: 0.22, depthWrite: false }));
       dome.position.y = 1.22; eb.add(dome);
       const ebl = this.label("EMERGENCY", "#ff8c9c", 20, false); ebl.position.y = 3.2; eb.add(ebl);
       scene.add(eb);
@@ -526,7 +551,7 @@
       this.atmosphere();
     }
     chandelier(x, z) {
-      const T = this.T, g = new T.Group(), gold = this.mat(0xe3bd5f, { emissive: 0x4a3510 });
+      const T = this.T, g = new T.Group(), gold = this.mat(0xe3bd5f, { metalness:.75,roughness:.25 });
       g.position.set(x, 8, z);
       const chain = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 1.2, 6), gold); chain.position.y = -0.6; g.add(chain);
       for (const [r, y] of [[1.5, -1.3], [0.9, -1.0]]) {
@@ -558,7 +583,7 @@
         void board;
       } else if (r.id === "service") {
         const hz = this.hazardTexture(); hz.repeat.set(8, 1);
-        const band = new T.Mesh(new T.PlaneGeometry(6, 0.5), new T.MeshLambertMaterial({ map: hz })); band.position.set(x2 - 0.2, 0.6, z); band.rotation.y = -Math.PI / 2; this.tallG.add(band);
+        const band = new T.Mesh(new T.PlaneGeometry(6, 0.5), new T.MeshStandardMaterial({ map: hz })); band.position.set(x2 - 0.2, 0.6, z); band.rotation.y = -Math.PI / 2; this.tallG.add(band);
         const sign = this.label("STAFF ONLY", "#ffd36a", 22, false); sign.position.set(x2 - 0.4, 4.2, z); this.tallG.add(sign);
       } else if (r.id === "lobby") {
         const face = new T.Mesh(new T.CircleGeometry(1.5, 32), new T.MeshBasicMaterial({ color: 0xf3ead2 })); face.position.set(x1 + 0.2, 5.2, z); face.rotation.y = Math.PI / 2; this.tallG.add(face);
@@ -575,6 +600,12 @@
       this.dust.frustumCulled = false;
       this.scene.add(this.dust);
       this.fog = new T.Fog(0x060f15, 26, 80); this.scene.fog = this.fp ? this.fog : null;
+    }
+    paintingTexture(index){
+      if(!galleryArt.complete||!galleryArt.naturalWidth)return this.lotTexture(index);
+      this.paintTex||=new Map();const key=index%4;
+      if(!this.paintTex.has(key)){const c=document.createElement('canvas');c.width=c.height=384;const sw=galleryArt.naturalWidth/2,sh=galleryArt.naturalHeight/2;c.getContext('2d').drawImage(galleryArt,(key%2)*sw,Math.floor(key/2)*sh,sw,sh,0,0,384,384);this.paintTex.set(key,this.tex(c));}
+      return this.paintTex.get(key);
     }
     lotTexture(index) {
       if (!lots.complete || !lots.naturalWidth || index == null) return null;
@@ -616,7 +647,7 @@
       ring.rotation.x = Math.PI / 2; ring.position.y = 0.15; g.add(ring);
       const beam = new T.Mesh(new T.CylinderGeometry(0.22, 0.22, 7, 12, 1, true), new T.MeshBasicMaterial({ color, transparent: true, opacity: 0.18, depthWrite: false, side: T.DoubleSide }));
       beam.position.y = 3; g.add(beam);
-      const name = this.label(job.name || "Job", "#f6e3a8", 20); name.position.y = 6.6; g.add(name);
+      const name = this.label(job.name || "Job", "#f6e3a8", 20, false); name.scale.multiplyScalar(.7);name.position.y = 3.4; g.add(name);
       g.position.set(job.x * S, 0, job.y * S);
       this.scene.add(g);
       b = { g, ring, beam, name, seen: true };
@@ -625,57 +656,57 @@
     }
 
     /* ---------- people ---------- */
-    faceTexture(i) {
-      this.faceTex ||= new Map();
-      if (!this.faceTex.has(i)) {
-        if (!faces.complete || !faces.naturalWidth) return null;
-        const size = faces.naturalWidth / 4, c = document.createElement("canvas"), g = c.getContext("2d");
-        c.width = c.height = 128;
-        g.beginPath(); g.arc(64, 64, 62, 0, Math.PI * 2); g.clip();
-        g.drawImage(faces, (i % 4) * size + 45, Math.floor(i / 4) * size, 270, 270, 0, 0, 128, 128);
-        g.strokeStyle = "#f3d58e"; g.lineWidth = 6; g.beginPath(); g.arc(64, 64, 61, 0, Math.PI * 2); g.stroke();
-        this.faceTex.set(i, this.tex(c));
-      }
-      return this.faceTex.get(i);
-    }
     character(person) {
-      const T = this.T, i = person?.avatarIndex || 0, g = new T.Group(), mats = [];
-      const lam = (c) => { const m = new T.MeshLambertMaterial({ color: c }); mats.push(m); return m; };
-      const jacket = new T.Color(COLORS[i % COLORS.length]), skin = 0xd9a984;
-      const add = (mesh, parent = g) => { parent.add(mesh); return mesh; };
-      const body = add(new T.Mesh(new T.CapsuleGeometry(0.56, 0.75, 6, 14), lam(jacket)));
-      body.position.y = 1.85;
-      // shoulders, collar, shirt front, tie and belt
-      const shoulders = add(new T.Mesh(new T.CapsuleGeometry(0.24, 0.95, 4, 10), lam(jacket))); shoulders.rotation.z = Math.PI / 2; shoulders.position.y = 2.38;
-      const shirt = add(new T.Mesh(new T.BoxGeometry(0.34, 0.78, 0.06), lam(0xf4efe4))); shirt.position.set(0, 2.0, 0.54);
-      const tie = add(new T.Mesh(new T.ConeGeometry(0.12, 0.62, 3), lam(i % 2 ? 0x9d2a3c : 0x23478f))); tie.position.set(0, 1.98, 0.58); tie.rotation.x = Math.PI;
-      const belt = add(new T.Mesh(new T.CylinderGeometry(0.575, 0.575, 0.1, 14), lam(0x14181c))); belt.position.y = 1.32;
-      const neck = add(new T.Mesh(new T.CylinderGeometry(0.15, 0.18, 0.3, 10), lam(skin))); neck.position.y = 2.66;
-      const legs = [-1, 1].map((sd) => {
-        const hip = new T.Group(); hip.position.set(sd * 0.3, 1.3, 0);
-        const leg = new T.Mesh(new T.CylinderGeometry(0.19, 0.16, 1.05, 10), lam(0x1d2733)); leg.position.y = -0.52; hip.add(leg);
-        const shoe = new T.Mesh(new T.BoxGeometry(0.34, 0.18, 0.56), lam(0x0f1114)); shoe.position.set(0, -1.1, 0.1); hip.add(shoe);
-        g.add(hip); return hip;
-      });
-      const arms = [-1, 1].map((sd) => {
-        const sh = new T.Group(); sh.position.set(sd * 0.86, 2.34, 0);
-        const sleeve = new T.Mesh(new T.CylinderGeometry(0.15, 0.13, 0.9, 10), lam(jacket)); sleeve.position.y = -0.45; sh.add(sleeve);
-        const cuff = new T.Mesh(new T.CylinderGeometry(0.14, 0.14, 0.08, 10), lam(0xf4efe4)); cuff.position.y = -0.9; sh.add(cuff);
-        const hand = new T.Mesh(new T.SphereGeometry(0.14, 10, 8), lam(skin)); hand.position.y = -1.02; sh.add(hand);
-        g.add(sh); return sh;
-      });
-      const head = new T.Sprite(new T.SpriteMaterial({ depthWrite: false, transparent: true }));
-      head.scale.set(1.75, 1.75, 1); head.position.y = 3.35; head.renderOrder = 5; g.add(head);
-      const shadow = new T.Mesh(new T.CircleGeometry(0.95, 20), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
-      shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.03; g.add(shadow);
-      // the exhibit bag in their right hand
-      const bag = new T.Group(); bag.position.set(0.98, 0.95, 0.12); bag.visible = false; g.add(bag);
-      const bagBody = new T.Mesh(new T.BoxGeometry(0.75, 0.55, 0.28), lam(0xa18450)); bag.add(bagBody);
-      const handle = new T.Mesh(new T.TorusGeometry(0.2, 0.03, 6, 12, Math.PI), lam(0x3a2c18)); handle.position.y = 0.3; bag.add(handle);
-      const name = this.label(person?.name || "", "#e6eeea", 20); name.position.y = 4.55; g.add(name);
+      const T=this.T,i=person?.avatarIndex||0,g=new T.Group(),mats=[];
+      const female=i%2===0,dress=female&&i!==0,skin=SKINS[i],grey=[3,4,7,8].includes(i),hairColor=grey?0xb9b6ac:0x1b1415;
+      const material=(color,roughness=.65,metalness=0)=>{const m=new T.MeshStandardMaterial({color,roughness,metalness});mats.push(m);return m;};
+      const jacket=material(COLORS[i]),skinMat=material(skin,.8),hair=material(hairColor,.9),dark=material(0x18212a),ivory=material(0xf2eadb),gold=material(0xdab778,.28,.7);
+      const mesh=(geo,mat,x,y,z,parent=g)=>{const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=false;m.receiveShadow=true;parent.add(m);return m;};
+      const sphere=(mat,x,y,z,sx,sy,sz,parent=g)=>{const m=mesh(new T.SphereGeometry(1,16,12),mat,x,y,z,parent);m.scale.set(sx,sy,sz);return m;};
+      const body=mesh(new T.CapsuleGeometry(.49,.72,6,16),jacket,0,1.85,0);body.scale.z=.7;
+      sphere(jacket,0,2.32,0,.72,.24,.37);
+      if(dress){mesh(new T.CylinderGeometry(.40,.63,1.0,16),jacket,0,1.1,0);mesh(new T.SphereGeometry(.09,10,8),gold,0,2.31,.37);}
+      else {
+        mesh(new T.BoxGeometry(.35,.79,.04),ivory,0,2.0,.37);
+        for(const side of [-1,1]){const lapel=mesh(new T.BoxGeometry(.21,.65,.055),jacket,side*.25,2.13,.4);lapel.rotation.z=side*-.33;}
+        const bow=mesh(new T.SphereGeometry(.14,8,6),dark,0,2.36,.43);bow.scale.set(1.5,.6,.5);
+        for(const y of [1.9,1.65])mesh(new T.SphereGeometry(.035,8,6),gold,.13,y,.37);
+      }
+      mesh(new T.CylinderGeometry(.15,.17,.3,12),skinMat,0,2.65,0);
+      const legs=[-1,1].map(side=>{const hip=new T.Group();hip.position.set(side*.26,1.25,0);g.add(hip);mesh(new T.CapsuleGeometry(.16,.73,4,10),dark,0,-.5,0,hip);const shoe=mesh(new T.SphereGeometry(1,12,8),dark,0,-1.13,.1,hip);shoe.scale.set(.21,.12,.35);return hip;});
+      const arms=[-1,1].map(side=>{const arm=new T.Group();arm.position.set(side*.68,2.3,0);arm.rotation.z=side*.06;g.add(arm);mesh(new T.CapsuleGeometry(.16,.61,5,12),jacket,0,-.41,0,arm);mesh(new T.CylinderGeometry(.14,.14,.09,10),ivory,0,-.84,0,arm);sphere(skinMat,0,-1.0,.015,.14,.2,.13,arm);return arm;});
+      const head=mesh(new T.SphereGeometry(1,24,18),skinMat,0,3.23,.02);head.scale.set(.5,.63,.45);head.castShadow=body.castShadow=true;
+      sphere(skinMat,-.5,3.22,0,.1,.16,.09);sphere(skinMat,.5,3.22,0,.1,.16,.09);
+      // Sculpted hair, eyes and expressions turn with the character; no flat portrait pasted on top.
+      if(i!==11){const cap=mesh(new T.SphereGeometry(.53,20,14,0,Math.PI*2,0,Math.PI*.56),hair,0,3.39,-.01);cap.scale.set(1,1.06,.94);
+        for(let k=0;k<5;k++){const lock=sphere(hair,-.35+k*.16,3.65+Math.sin(k)*.025,.29,.16,.14,.14);lock.rotation.z=(k-2)*.15;}
+        if(female){sphere(hair,0,3.25,-.25,.55,.6,.32);if([6,10].includes(i))sphere(hair,0,3.7,-.45,.29,.28,.26);else for(const side of [-1,1])sphere(hair,side*.48,3.17,-.03,.13,i===2?.65:.4,.23);}
+      }
+      const eyes=new T.Group();g.add(eyes);
+      for(const side of [-1,1]){
+        sphere(ivory,side*.19,3.3,.425,.115,.074,.04,eyes);
+        sphere(dark,side*.19,3.3,.46,.048,.057,.024,eyes);
+        sphere(ivory,side*.18-.012,3.32,.481,.014,.017,.009,eyes);
+        const brow=mesh(new T.CapsuleGeometry(.025,.17,3,8),hair,side*.19,3.45,.435);brow.rotation.z=Math.PI/2+side*.10;
+        if(female)sphere(gold,side*.54,3.02,.02,.044,.07,.04);
+      }
+      sphere(skinMat,0,3.17,.46,.07,.105,.08);
+      const smilePoints=[new T.Vector3(-.13,3.04,.423),new T.Vector3(0,3.01,.453),new T.Vector3(.13,3.04,.423)];
+      const mouth=mesh(new T.TubeGeometry(new T.CatmullRomCurve3(smilePoints),12,.016,5,false),material(female?0x9e4145:0x7a4940),0,0,0);
+      if(i===3)for(const side of [-1,1]){const rim=mesh(new T.TorusGeometry(.14,.014,6,18),gold,side*.19,3.3,.49);rim.scale.y=.85;}
+      if([1,7,11].includes(i))sphere(hair,0,2.83,.20,.26,.12,.23);
+      const closedEyes=new T.Group();closedEyes.visible=false;g.add(closedEyes);for(const side of [-1,1]){const line=mesh(new T.CapsuleGeometry(.014,.15,3,6),dark,side*.19,3.3,.47,closedEyes);line.rotation.z=Math.PI/2;}
+      const shadow=new T.Mesh(new T.PlaneGeometry(2.3,2.3),new T.MeshBasicMaterial({map:this.contactTexture(),transparent:true,opacity:.6,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.025;g.add(shadow);
+      const bag=new T.Group();bag.position.set(.88,.91,.15);bag.visible=false;g.add(bag);mesh(new T.BoxGeometry(.65,.49,.3),material(0x6f4931,.5),0,0,0,bag);const handle=mesh(new T.TorusGeometry(.17,.035,6,14,Math.PI),gold,0,.25,0,bag);
+      const name=this.label(person?.name||'', '#f5ead2',20,false);name.position.y=4.22;name.scale.multiplyScalar(.62);g.add(name);
       this.scene.add(g);
-      return { g, body, legs, arms, head, bag, name, shadow, mats, face: -1, label: person?.name || "", facing: 0, phase: Math.random() * 6 };
+      return {g,body,legs,arms,head,eyes,closedEyes,mouth,bag,name,shadow,mats,face:i,label:person?.name||'',facing:0,phase:Math.random()*6};
     }
+    contactTexture(){
+      if(this.contactTex)return this.contactTex;
+      return this.contactTex=this.canvasTex(64,64,(g,w,h)=>{const a=g.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);a.addColorStop(0,'#000b');a.addColorStop(.5,'#0005');a.addColorStop(1,'#0000');g.fillStyle=a;g.fillRect(0,0,w,h);});
+    }
+
     fade(p, o) {
       for (const m of p.mats) { m.transparent = o < 1; m.opacity = o; }
       p.head.material.opacity = o;
@@ -684,8 +715,6 @@
       let p = this.people.get(id);
       if (!p) { p = this.character(person); this.people.set(id, p); }
       if (p.label !== (person?.name || "")) { p.name.material.map = this.label(person?.name || "").material.map; p.label = person?.name || ""; }
-      const tex = this.faceTexture(person?.avatarIndex || 0);
-      if (tex && p.face !== (person?.avatarIndex || 0)) { p.head.material.map = tex; p.head.material.needsUpdate = true; p.face = person?.avatarIndex || 0; }
       return p;
     }
 
@@ -695,17 +724,17 @@
       this.hands = new T.Group();
       this.handMeshes = [-1, 1].map((side) => {
         const arm = new T.Group();
-        const sleeve = new T.Mesh(new T.CapsuleGeometry(0.075, 0.9, 6, 12), new T.MeshBasicMaterial({ color: 0x344f9e }));
-        sleeve.rotation.x = Math.PI / 2; sleeve.position.z = -0.5;
-        const hand = new T.Mesh(new T.SphereGeometry(0.095, 14, 10), new T.MeshBasicMaterial({ color: 0xd1a27c }));
-        hand.position.z = -1.0; hand.scale.set(1, 0.8, 1.2);
+        const sleeve = new T.Mesh(new T.CapsuleGeometry(0.065, 0.32, 5, 12), new T.MeshBasicMaterial({ color: 0x344f9e }));
+        sleeve.rotation.x = Math.PI / 2; sleeve.position.z = -0.05;
+        const hand = new T.Mesh(new T.SphereGeometry(0.075, 14, 10), new T.MeshBasicMaterial({ color: 0xd1a27c }));
+        hand.position.z = -0.30; hand.scale.set(1, 0.8, 1.2);
         arm.add(sleeve, hand);
         arm.position.set(side * 0.42, -0.5, -0.75); arm.rotation.set(0.2, -side * 0.12, side * 0.06);
-        arm.userData = { side, sleeve };
+        arm.userData = { side, sleeve, hand };
         this.hands.add(arm);
         return arm;
       });
-      this.heldBag = new T.Mesh(new T.BoxGeometry(0.55, 0.35, 0.4), new T.MeshLambertMaterial({ color: 0xa18450 }));
+      this.heldBag = new T.Mesh(new T.BoxGeometry(0.55, 0.35, 0.4), new T.MeshStandardMaterial({ color: 0xa18450 }));
       this.heldBag.position.set(0, -0.42, -1.0); this.heldBag.visible = false; this.hands.add(this.heldBag);
       this.camera.add(this.hands);
     }
@@ -747,8 +776,9 @@
       this.heldBag.visible = carry;
       this.handMeshes.forEach((arm) => {
         const side = arm.userData.side;
-        arm.position.set(side * (carry ? 0.3 : 0.42), -0.5 + (moved > 8 ? Math.abs(Math.sin(this.bob)) * -0.04 : 0) + (carry ? 0.08 : 0), -0.75 - (carry ? 0.1 : 0));
-        arm.rotation.x = 0.15 + sw * 0.18 * -side + (carry ? 0.2 : 0);
+        arm.position.set(side * (carry ? 0.24 : 0.36), -0.65 + (moved > 8 ? Math.abs(Math.sin(this.bob)) * -0.04 : 0) + (carry ? 0.08 : 0), -0.7 - (carry ? 0.1 : 0));
+        arm.rotation.x = 0.05 + sw * 0.07 * -side + (carry ? 0.2 : 0);
+        arm.userData.hand.material.color.setHex(SKINS[s.players.find(q=>q.id===s.meId)?.avatarIndex||0]);
         arm.userData.sleeve.material.color.set(COLORS[(s.players.find((q) => q.id === s.meId)?.avatarIndex || 0) % COLORS.length]);
       });
       // an arrow on screen toward the place you chose
@@ -913,7 +943,7 @@
       if (!moving && !this.walk && t - this.syncAt > 3000 && W.distance(serverPos, this.me) > 150) { this.me.x = serverPos.x; this.me.y = serverPos.y; this.walk = null; } // moved by the game (a meeting, a rescue)
       const moved = W.distance(before, this.me) / Math.max(dt, 0.001);
       // --- the scene ---
-      this.light(s, now);
+      this.light(s, now,dt);
       this.show(s, now, t, dt, { moved });
       this.follow(s, dt);
       if (this.fp) this.pointOfView(s, t, dt, moved);
@@ -929,13 +959,17 @@
       }
       return best;
     }
-    light(s, now) {
+    light(s, now,dt=1/60) {
+      const blend=1-Math.exp(-dt*7);
       const lights = s.sabotage?.kind === "lights" && s.sabotage.until > now, vision = (s.me.vision || 185) * S;
-      this.ambient.intensity += ((lights ? 0.2 : 1.6) - this.ambient.intensity) * 0.1;
-      this.sun.intensity += ((lights ? 0.1 : 1.0) - this.sun.intensity) * 0.1;
-      for (const l of this.roomLights) l.intensity += ((lights ? 2 : 28) - l.intensity) * 0.1;
+      this.ambient.intensity += ((lights ? 0.07 : .6) - this.ambient.intensity) * blend;
+      this.sun.intensity += ((lights ? 0.05 : 2.1) - this.sun.intensity) * blend;
+      for (const l of this.roomLights) l.intensity += ((lights ? 2 : 28) - l.intensity) * blend;
       this.hero.distance = vision * 1.25;
-      this.hero.intensity = lights ? 120 : 40;
+      this.hero.intensity = lights ? 14 : 22;
+      this.scene.environmentIntensity+=((lights?.025:.85)-this.scene.environmentIntensity )*blend;
+      this.sky.intensity+=( (lights?.08:.8)-this.sky.intensity )*blend;
+      this.sun.position.set(this.me.x*S-12,28,this.me.y*S+16);this.sun.target.position.set(this.me.x*S,0,this.me.y*S);
       this.scene.background.set(lights ? 0x02060a : 0x050d14);
     }
     show(s, now, t, dt, { moved }) {
@@ -992,7 +1026,7 @@
         seen.add(id);
         p.g.position.set(b.x * S, 0.5, b.y * S);
         p.g.rotation.set(0, 0.4, -Math.PI / 2);
-        p.name.visible = false; p.head.material.opacity = 0.6; p.bag.visible = false;
+        p.name.visible = false; p.eyes.visible=false;p.closedEyes.visible=true;p.mouth.visible=false; p.bag.visible = false;
         for (const l of p.legs.concat(p.arms)) l.rotation.x = 0;
       }
       // everyone you can see, and you

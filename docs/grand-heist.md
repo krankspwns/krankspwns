@@ -39,3 +39,11 @@ This is a playable prototype. First human playtests should measure how often Sta
 Choosing a job (or a room on the map) no longer walks you there: it lights a dotted guide line on the floor along the walkable route and you walk it yourself. Consoles, statues, crates, the emergency button and the CCTV wall are solid.
 
 The 3D map is first person by default: you see your own hands (carrying the exhibit when you hold one), walk the rooms with full-height walls and ceilings, and look around by dragging (or turning with Left/Right). W/Up and S/Down walk, A/D sidestep; on phones a thumb stick walks and dragging looks. A navigation card at the top shows an arrow, the job's name and the distance, and chevrons on the floor lead the way. There is no overhead view. The game screen fills most of the page, with the action buttons floating at the right.
+
+### Visual treatment
+
+The museum uses midnight walls, pale marble, velvet runners, brass fittings and original framed gallery paintings (`/heist/gallery-art.webp`). Environment lighting and soft shadows give the materials depth; blackout transitions dim that lighting by elapsed time. Public characters have sculpted heads, hair and outfits rather than portrait discs, with matching skin tones on the first-person hands. Knocked-out models have closed eyes and a neutral expression. These appearances remain independent of secret roles.
+
+The floating game controls leave space for the shared toolbar, including when it wraps on narrow phones. The same layout applies to the WebGL view and flat fallback. Job interactions wait for an in-flight movement request rather than dropping an action when E or a job button is pressed while walking.
+
+`tests/browser/heist-graphics.spec.js` exercises the actual WebGL renderer at 320px, 390px and 1100px, art loading, toolbar clearance, blackout lighting and the flat fallback. The puzzle/report/vote test uses the flat view for deterministic position staging; separate tests cover first-person rendering and movement. All artwork and rendering code are self-hosted.
