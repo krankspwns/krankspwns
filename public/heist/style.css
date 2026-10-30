@@ -1511,10 +1511,28 @@ h3 {
 .cctv-grid figcaption { position: absolute; left: 8px; top: 6px; font: 800 10px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #bfe8d6; text-shadow: 0 1px 3px #000; }
 
 /* first-person controls */
-.map-view { position: absolute; right: 12px; top: 12px; z-index: 3; padding: 7px 12px; border-radius: 999px; border: 1px solid #e9c78377; background: rgba(8, 24, 32, .7); color: #f3dfaa; font: 800 11px Inter, system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+.map-view-unused { position: absolute; right: 12px; top: 12px; z-index: 3; padding: 7px 12px; border-radius: 999px; border: 1px solid #e9c78377; background: rgba(8, 24, 32, .7); color: #f3dfaa; font: 800 11px Inter, system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
 .heist-compass { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: rgba(8, 24, 32, .6); border: 2px solid #ffe08a; z-index: 2; pointer-events: none; }
 .heist-compass i { font-style: normal; color: #ffe08a; font-size: 22px; line-height: 1; }
 .museum-map[data-view="first"]::after { content: ""; }
 
 /* a soft vignette in first person */
 .map-frame:has(canvas[data-view="first"])::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; border-radius: inherit; background: radial-gradient(ellipse at center, transparent 55%, rgba(2, 8, 12, .55) 100%); }
+
+/* a big first-person screen with the controls floating on top */
+.museum-map { height: clamp(460px, calc(100dvh - 150px), 960px) !important; }
+.map-frame .action-bar { position: absolute; right: 10px; bottom: 12px; z-index: 3; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 8px; padding: 0; width: auto; max-width: 46%; pointer-events: none; }
+.map-frame .action-bar > * { pointer-events: auto; }
+.map-frame .action-bar .bar-spacer { display: none; }
+.map-frame .action-bar button { background: rgba(8, 24, 32, .72); border: 1px solid #e9c78366; color: #f3e3b6; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 9px 14px; min-height: 40px; font-size: 12px; border-radius: 14px; box-shadow: 0 6px 18px #0006; }
+.map-frame .action-bar .primary-action { background: linear-gradient(135deg, rgba(45, 119, 105, .92), rgba(24, 74, 73, .92)); border-color: #86d7ba; min-width: 0; font-size: 14px; min-height: 52px; padding: 12px 18px; }
+.map-frame .action-bar .report-action { background: rgba(139, 73, 49, .92); }
+.map-frame .action-bar .danger-action { background: rgba(129, 54, 78, .92); }
+.map-hint span:last-child { display: none; }
+@media (pointer: coarse) { .map-hint { display: none; } }
+.heist-compass { top: 54px; left: 50%; transform: translateX(-50%); width: auto; height: auto; border-radius: 16px; border: 1px solid #ffe08a88; background: rgba(8, 24, 32, .78); display: flex; align-items: center; gap: 10px; padding: 7px 14px 7px 9px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.heist-compass svg { width: 34px; height: 34px; flex: none; fill: #ffe08a; filter: drop-shadow(0 0 5px #ffd66b99); transition: transform .12s linear; }
+.heist-compass div { display: flex; flex-direction: column; line-height: 1.2; text-align: left; }
+.heist-compass b { color: #fff2c4; font: 800 12px Inter, system-ui, sans-serif; }
+.heist-compass span { color: #b9cfc8; font: 600 10px Inter, system-ui, sans-serif; }
+.heist-compass i { display: none; }

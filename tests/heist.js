@@ -175,6 +175,13 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
     assert.equal(r.phase, "live");
   }
   {
+    // nothing stands in front of a doorway: a 14-unit wide body can walk straight through every one
+    for (const d of W.DOORS)
+      for (const [x, y] of d.w > d.h ? [[d.x - 30, d.y + d.h / 2], [d.x + d.w + 30, d.y + d.h / 2]] : [[d.x + d.w / 2, d.y - 30], [d.x + d.w / 2, d.y + d.h + 30]])
+        for (let t = 0; t <= 60; t += 5) {
+          const q = d.w > d.h ? { x: x + (x < d.x ? t : -t), y } : { x, y: y + (y < d.y ? t : -t) };
+          for (const [dx, dy] of [[0, 0], [7, 0], [-7, 0], [0, 7], [0, -7]]) assert.ok(W.walkable({ x: q.x + dx, y: q.y + dy }), "doorway " + d.id + " is clear at " + q.x + "," + q.y);
+        }
     for (const [from, to] of [
       [{ x: 70, y: 150 }, { x: 170, y: 130 }],
       [{ x: 100, y: 120 }, { x: 420, y: 150 }],

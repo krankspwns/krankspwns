@@ -49,7 +49,7 @@
       this.yaw = 0; // 0 looks at the Lobby's far wall
       this.pitch = 0;
       this.bob = 0;
-      try { this.fp = localStorage.getItem("gh-view") !== "top"; } catch { this.fp = true; }
+      this.fp = true; // the museum is only ever seen through your own eyes
       canvas.dataset.map = "3d";
       canvas.__map = this;
       this.loading = document.createElement("div");
@@ -78,7 +78,7 @@
     }
     /* the player is looking at a console (a job is open): the camera moves in and up */
     // a trail of lights on the floor leading to the job you chose
-    guide(p) { this.guideTo = p ? point(p.x, p.y) : null; this.guidePath = null; }
+    guide(p) { this.guideTo = p ? { ...point(p.x, p.y), label: p.label } : null; this.guidePath = null; }
     guideDots(s, t, now) {
       const T = this.T, g = this.guideTo;
       this.dots ||= [];
@@ -88,7 +88,7 @@
         const path = this.guidePath;
         this.guideHeading = path?.[1] || g;
         if (path) {
-          const gap = 11, off = ((t / 1000) * 24) % gap;
+          const gap = 13, off = ((t / 1000) * 24) % gap;
           let carry = off;
           const here = this.me;
           let a = here;
@@ -97,11 +97,16 @@
             for (let d = carry; d < len; d += gap) {
               if (n >= 90) break;
               let m = this.dots[n];
-              if (!m) { m = this.dots[n] = new T.Mesh(new T.CircleGeometry(0.34, 10), new T.MeshBasicMaterial({ color: 0xffe08a, transparent: true, depthWrite: false })); m.rotation.x = -Math.PI / 2; this.scene.add(m); }
+              if (!m) {
+                if (!this.chevron) { const sh = new T.Shape(); sh.moveTo(0, 0.55); sh.lineTo(0.6, -0.15); sh.lineTo(0.6, -0.55); sh.lineTo(0, -0.05); sh.lineTo(-0.6, -0.55); sh.lineTo(-0.6, -0.15); sh.closePath(); this.chevron = new T.ShapeGeometry(sh); }
+                m = this.dots[n] = new T.Mesh(this.chevron, new T.MeshBasicMaterial({ color: 0xffe08a, transparent: true, depthWrite: false, side: T.DoubleSide }));
+                m.rotation.order = "YXZ"; this.scene.add(m);
+              }
               const k = len ? d / len : 0;
               m.visible = true;
               m.position.set((a.x + (b.x - a.x) * k) * S, 0.07, (a.y + (b.y - a.y) * k) * S);
-              m.material.opacity = 0.55 + 0.45 * Math.sin(t / 220 - n * 0.6);
+              m.rotation.set(-Math.PI / 2, Math.atan2(-(b.x - a.x), -(b.y - a.y)), 0);
+              m.material.opacity = 0.35 + 0.65 * Math.max(0, Math.sin(t / 260 - n * 0.7));
               n++;
             }
             carry = ((carry - len) % gap + gap) % gap;
@@ -119,7 +124,6 @@
       this.inner?.destroy();
       this.observer?.disconnect();
       this.stickEl?.remove();
-      this.viewEl?.remove();
       this.compassEl?.remove();
       this.canvas.removeEventListener("pointerdown", this.pointer);
       this.canvas.removeEventListener("pointermove", this.drag);
@@ -420,12 +424,12 @@
         // paintings: two on the back wall, one on a side wall
         const L = LOT[r.id];
         this.hang(L, (r.x + 70) * S, (r.y + 0.6) * S, 0);
-        this.hang((L + 3) % 8, (r.x + 178) * S, (r.y + 0.6) * S, 0, 4.2, 3.2, 5.0);
+        this.hang((L + 3) % 8, (r.x + 188) * S, (r.y + 0.6) * S, 0, 4.2, 3.2, 5.0);
         this.sideDecor(r);
         const name = this.label(((window.GameI18n?.t(r.name)) || r.name).toUpperCase(), "#e4d29a", 22, false);
         name.position.set((r.x + r.w / 2) * S, 7.1, (r.y + 4) * S); this.tallG.add(name);
         // the display case: marble plinth, brass-edged glass, and the exhibit on a cushion
-        const c = point(r.x + 172, r.y + 54);
+        const c = point(r.x + 188, r.y + 54);
         this.box(56 * S, 7 * S, 44 * S, marble, c.x * S, 0, c.y * S);
         this.box(58 * S, 1.2 * S, 46 * S, gold, c.x * S, 7 * S, c.y * S);
         const glassGeo = new T.BoxGeometry(50 * S, 20 * S, 38 * S), glass = new T.Mesh(glassGeo, new T.MeshLambertMaterial({ color: 0xbfe6f2, transparent: true, opacity: 0.18, depthWrite: false }));
@@ -436,7 +440,7 @@
         const ex = this.exhibitModel(r.id); ex.position.set(c.x * S, 8.2 * S + 0.15, c.y * S); ex.scale.setScalar(0.9); scene.add(ex);
         (this.exhibits ||= []).push(ex); void pad;
         // the bench: padded leather seat on gold feet
-        const bench = point(r.x + 133, r.y + 196);
+        const bench = point(r.x + 190, r.y + 196);
         this.box(70 * S, 2.5 * S, 20 * S, this.mat(0x4a1f24), bench.x * S, 4 * S, bench.y * S);
         this.box(68 * S, 1.2 * S, 18 * S, gold, bench.x * S, 3 * S, bench.y * S);
         for (const dx of [-30, 30]) for (const dz of [-7, 7]) this.box(2.4 * S, 3 * S, 2.4 * S, gold, (bench.x + dx) * S, 0, (bench.y + dz) * S);
@@ -707,12 +711,11 @@
     }
     viewControl() {
       const host = this.canvas.parentElement; if (!host) return;
-      this.viewEl = document.createElement("button");
-      this.viewEl.type = "button"; this.viewEl.className = "map-view";
-      this.viewEl.addEventListener("click", () => { this.fp = !this.fp; try { localStorage.setItem("gh-view", this.fp ? "first" : "top"); } catch {} this.applyView(); });
-      host.append(this.viewEl);
+      // a navigation card: a proper arrow, where it leads, and how far
       this.compassEl = document.createElement("div");
-      this.compassEl.className = "heist-compass"; this.compassEl.innerHTML = "<i>▲</i>";
+      this.compassEl.className = "heist-compass";
+      this.compassEl.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 3 40 25H29.5V45h-11V25H8Z"/></svg><div><b></b><span></span></div>';
+      this.compassEl.style.display = "none";
       host.append(this.compassEl);
     }
     applyView() {
@@ -726,7 +729,6 @@
       this.camera.rotation.order = "YXZ";
       this.camera.updateProjectionMatrix();
       this.canvas.dataset.view = fp ? "first" : "top";
-      if (this.viewEl) this.viewEl.textContent = fp ? "Top View" : "First Person";
       const hint = this.canvas.parentElement?.querySelector(".map-hint span");
       if (hint) hint.textContent = fp ? "ARROWS / WASD · DRAG TO LOOK" : "TAP TO WALK · ARROWS / WASD";
       if (this.compassEl && !fp) this.compassEl.style.display = "none";
@@ -758,6 +760,10 @@
           const d = point(g.x - me.x, g.y - me.y), right = point(Math.cos(this.yaw), -Math.sin(this.yaw)),
             ang = Math.atan2(d.x * right.x + d.y * right.y, d.x * f.x + d.y * f.y);
           this.compassEl.firstChild.style.transform = `rotate(${ang}rad)`;
+          const path = this.guidePath, len = path ? path.slice(1).reduce((a, q, i) => a + W.distance(path[i], q), 0) : W.distance(me, this.guideTo);
+          const [label, dist] = this.compassEl.querySelectorAll("b, span");
+          label.textContent = this.guideTo.label || "Your job";
+          dist.textContent = Math.max(1, Math.round(len / 10)) + " m" + (Math.abs(ang) > 2.2 ? " · behind you" : Math.abs(ang) < 0.35 ? " · straight ahead" : ang > 0 ? " · to your right" : " · to your left");
         }
       }
     }

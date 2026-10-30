@@ -79,7 +79,7 @@
     id: "crate-" + r.id,
     room: r.id,
     x: r.x + 44,
-    y: r.y + 156,
+    y: r.y + 196,
     name: r.id === "service" ? "Service Exit" : "Exhibit Crate",
   }));
   // the red button for calling a meeting: stand in front of it in the Lobby
@@ -87,8 +87,8 @@
   // the CCTV wall in Security: stand in front of it to watch every room
   const CCTV = { id: "cctv", room: "security", x: 236, y: 548, name: "CCTV Wall" };
   const OBSTACLES = ROOMS.flatMap((r) => [
-    { x: r.x + 144, y: r.y + 32, w: 56, h: 44 },
-    { x: r.x + 98, y: r.y + 186, w: 70, h: 20 },
+    { x: r.x + 160, y: r.y + 32, w: 56, h: 44 },
+    { x: r.x + 155, y: r.y + 186, w: 70, h: 20 },
   ])
     // job consoles, statues and crates stand just behind the spot where you use them
     .concat(

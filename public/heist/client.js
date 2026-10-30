@@ -1129,8 +1129,8 @@
           el("span", {}, "TAP TO WALK · ARROWS / WASD"),
           el("span", {}, "E · USE     R · REPORT"),
         ),
+        el("div", { class: "action-bar", id: "museum-actions" }),
       ),
-      el("div", { class: "action-bar", id: "museum-actions" }),
       txt("p", "status-hint", ""),
       state.me.camera ? el("div", { id: "camera-feed" }) : null,
       roleToggle(),
@@ -2125,7 +2125,7 @@
       if (state.me.camera) {
         if (!feed) {
           const n = el("div", { id: "camera-feed", class: "heist-panel" });
-          document.querySelector(".action-bar")?.after(n);
+          document.querySelector(".map-frame")?.after(n);
         }
         const n = document.getElementById("camera-feed");
         if (n) {

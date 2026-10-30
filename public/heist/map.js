@@ -92,19 +92,19 @@
         c.fillRect(r.x + dx - 35, r.y - 14, 70, 70);
       }
       c.fillStyle = "#071820";
-      rounded(c, r.x + 144, r.y + 32, 56, 44, 5);
+      rounded(c, r.x + 160, r.y + 32, 56, 44, 5);
       c.fill();
       c.strokeStyle = "#d4ba7f";
       c.stroke();
       c.fillStyle = "#dbc28c44";
-      c.fillRect(r.x + 149, r.y + 37, 46, 34);
+      c.fillRect(r.x + 165, r.y + 37, 46, 34);
       c.fillStyle = "#c8b57988";
-      c.fillRect(r.x + 155, r.y + 58, 34, 5);
+      c.fillRect(r.x + 171, r.y + 58, 34, 5);
       c.fillStyle = "#18262d";
-      rounded(c, r.x + 98, r.y + 186, 70, 20, 5);
+      rounded(c, r.x + 155, r.y + 186, 70, 20, 5);
       c.fill();
       c.fillStyle = "#705b45";
-      rounded(c, r.x + 101, r.y + 188, 64, 13, 3);
+      rounded(c, r.x + 158, r.y + 188, 64, 13, 3);
       c.fill();
       c.fillStyle = "#b9c8bc";
       c.font = "700 10px Inter, sans-serif";
