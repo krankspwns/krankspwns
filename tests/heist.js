@@ -39,7 +39,7 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
     );
     assert.equal(new Set(r.players.map((p) => p.avatarIndex)).size, n);
     assert.equal(r.players.filter((p) => p.role === "medic").length, 1);
-    assert.equal(r.players.filter((p) => p.role === "camera").length, 1);
+    assert.equal(r.players.filter((p) => p.role === "camera").length, 0);
   }
   {
     const r = room(),
@@ -115,13 +115,15 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
       thief = r.players.find((p) => p.team === "thief"),
       victim = r.players.find((p) => p.role === "staff"),
       medic = r.players.find((p) => p.role === "medic"),
-      camera = r.players.find((p) => p.role === "camera");
+      camera = r.players.find((p) => p.role === "staff" && p !== victim);
     at(thief, { x: 430, y: 140 });
     at(victim, { x: 450, y: 140 });
     at(medic, { x: 430, y: 150 });
-    at(camera, W.STATIONS[3]);
+    at(camera, { x: 160, y: 150 });
     clock += 20000;
-    R.camera(r, camera, { ...body(r), room: "gallery" });
+    rejects(() => R.camera(r, camera, body(r)), 409);
+    at(camera, W.CCTV);
+    R.camera(r, camera, body(r));
     assert.ok(
       R.view(r, camera).me.camera.players.some((p) => p.id === thief.id),
     );

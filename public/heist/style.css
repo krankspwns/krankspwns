@@ -1502,3 +1502,10 @@ h3 {
 .heist-stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(240, 214, 150, .85); box-shadow: 0 2px 8px #0008; }
 .heist-dialog[open] { transition: transform .2s ease; }
 @media (max-width: 700px) { .heist-dialog { margin-top: auto; } }
+
+/* CCTV wall */
+.cctv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (min-width: 760px) { .cctv-grid { grid-template-columns: repeat(3, 1fr); } }
+.cctv-grid figure { margin: 0; position: relative; }
+.cctv-grid canvas { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid #5fa69455; }
+.cctv-grid figcaption { position: absolute; left: 8px; top: 6px; font: 800 10px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #bfe8d6; text-shadow: 0 1px 3px #000; }

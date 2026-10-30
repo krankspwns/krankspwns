@@ -4,7 +4,7 @@ The new game lives at `/grand-heist.html` (`grand-heist` rooms, `gh-seat` local 
 
 ## One simple goal
 
-Staff finish every job or vote out every Thief. Thieves win when they equal or outnumber living Staff. A room needs 5–12 players: one Thief at 5–6, two at 7–12. Roles and public appearances shuffle independently each game. Optional Staff roles are Medic (one rescue of a fresh, unreported knockout within 20 seconds) and Camera Operator (a six-second remote room view from Security, 30-second cooldown).
+Staff finish every job or vote out every Thief. Thieves win when they equal or outnumber living Staff. A room needs 5–12 players: one Thief at 5–6, two at 7–12. Roles and public appearances shuffle independently each game. The optional Staff role is the Medic (one rescue of a fresh, unreported knockout within 20 seconds). Anyone alive can stand at the CCTV wall in Security to watch every room live for 25 seconds (33-second cooldown); walking away ends it, and a Thief can knock out the watcher.
 
 ## Explore, work, watch
 
@@ -20,7 +20,7 @@ Thieves have a 30-second individual knockout cooldown, a shared 10-second attack
 
 ## Report, discuss, vote
 
-Reporting a nearby body or using the one emergency meeting at the Lobby freezes movement and tasks. All existing bodies become public. Public job progress updates here rather than giving away who completed a particular job.
+Reporting a nearby body or using the one emergency meeting at the red button in the Lobby freezes movement and tasks. All existing bodies become public. Public job progress updates here rather than giving away who completed a particular job.
 
 Discussion lasts 45, 60 or 90 seconds, set by the host. After ten seconds the host can start voting early. Living players privately seal one player or Skip. Voting lasts 25 seconds; missing votes count as Skip. A unique highest player is escorted out, while a tie or winning Skip removes nobody. The reveal groups voters under their choices and shows only Staff/Thief, keeping special roles secret until the finale. A short verdict transition precedes returning to the museum or the winning lineup.
 
@@ -35,3 +35,5 @@ This is a playable prototype. First human playtests should measure how often Sta
 ## 3D museum
 
 `public/heist/map3d.js` (three.js, loaded from `/vendor/`) draws the museum in 3D. Arrow keys / WASD (or the thumb stick on touch screens) move your character at once and slide along the same walls as the server; the server follows along the same path a moment later and stays authoritative for every interaction. Tapping the floor still walks to that spot. Opening a job moves the camera in on the console. Without WebGL, or with `?map=2d`, the flat map (`map.js`) is used.
+
+Choosing a job (or a room on the map) no longer walks you there: it lights a dotted guide line on the floor along the walkable route and you walk it yourself. Consoles, statues, crates, the emergency button and the CCTV wall are solid.

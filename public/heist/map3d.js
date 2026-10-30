@@ -72,6 +72,39 @@
       MuseumMap.prototype.drawCamera.call(proxy, canvas, room, players, people);
     }
     /* the player is looking at a console (a job is open): the camera moves in and up */
+    // a trail of lights on the floor leading to the job you chose
+    guide(p) { this.guideTo = p ? point(p.x, p.y) : null; this.guidePath = null; }
+    guideDots(s, t, now) {
+      const T = this.T, g = this.guideTo;
+      this.dots ||= [];
+      let n = 0;
+      if (g && this.me && W.distance(this.me, g) >= 26) {
+        if (!this.guidePath || t - this.guideAt > 250) { this.guideAt = t; this.guidePath = W.route(this.me, g, closedDoors(s)); }
+        const path = this.guidePath;
+        if (path) {
+          const gap = 11, off = ((t / 1000) * 24) % gap;
+          let carry = off;
+          const here = this.me;
+          let a = here;
+          for (let i = 1; i < path.length; i++) {
+            const b = path[i], len = W.distance(a, b);
+            for (let d = carry; d < len; d += gap) {
+              if (n >= 90) break;
+              let m = this.dots[n];
+              if (!m) { m = this.dots[n] = new T.Mesh(new T.CircleGeometry(0.34, 10), new T.MeshBasicMaterial({ color: 0xffe08a, transparent: true, depthWrite: false })); m.rotation.x = -Math.PI / 2; this.scene.add(m); }
+              const k = len ? d / len : 0;
+              m.visible = true;
+              m.position.set((a.x + (b.x - a.x) * k) * S, 0.07, (a.y + (b.y - a.y) * k) * S);
+              m.material.opacity = 0.55 + 0.45 * Math.sin(t / 220 - n * 0.6);
+              n++;
+            }
+            carry = ((carry - len) % gap + gap) % gap;
+            a = b;
+          }
+        }
+      }
+      for (; n < this.dots.length; n++) this.dots[n].visible = false;
+    }
     focus(p) { this.zoomTo = p ? point(p.x, p.y) : null; }
     destroy() {
       this.destroyed = true;
@@ -296,6 +329,16 @@
           const sign = this.label("SERVICE EXIT", "#9cf0c3", 22); sign.position.set(t.x * S, 3.4, (t.y - 14) * S); scene.add(sign);
         }
       });
+      const cv = new T.Group(); cv.position.set(W.CCTV.x * S, 0, (W.CCTV.y - 15) * S);
+      this.box(3.6, 1.1, 1.3, this.mat(0x213038), 0, 0, 0, cv);
+      this.cctvScreens = [-1.1, 0, 1.1].map((dx) => {
+        const m = new T.MeshBasicMaterial({ color: 0x6fd0c0 });
+        const sc = new T.Mesh(new T.PlaneGeometry(1.0, 0.8), m); sc.position.set(dx, 1.7, 0.1); sc.rotation.x = -0.3; cv.add(sc);
+        return m;
+      });
+      this.box(3.4, 0.7, 0.2, this.mat(0x2a3a40), 0, 1.1, -0.35, cv);
+      const cvl = this.label("CCTV", "#bfe8d6", 20); cvl.position.y = 3.2; cv.add(cvl);
+      scene.add(cv);
       const eb = new T.Group(); eb.position.set(W.EMERGENCY.x * S, 0, (W.EMERGENCY.y - 15) * S);
       this.box(1.7, 1.1, 1.3, this.mat(0x2a3a40), 0, 0, 0, eb);
       this.emergencyCap = new T.Mesh(new T.CylinderGeometry(0.5, 0.58, 0.35, 20), new T.MeshBasicMaterial({ color: 0xff3b54 }));
@@ -576,6 +619,7 @@
       }
       for (; n < this.footprints.length; n++) this.footprints[n].visible = false;
       this.events(s, now);
+      this.guideDots(s, t, now);
       if (this.pingAt) {
         const k = (t - this.pingAt.at) / 700;
         this.ping.visible = k < 1;

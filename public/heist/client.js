@@ -28,6 +28,7 @@
     offset = 0,
     scene = "",
     museum = null,
+    guide = null,
     dialog = null,
     dialogKey = "",
     pendingMove = null,
@@ -48,10 +49,6 @@
     medic: [
       "Medic",
       "You are Staff. Once per game, rescue a freshly knocked-out player before anyone reports them.",
-    ],
-    camera: [
-      "Camera Operator",
-      "You are Staff. Visit Security to watch one room for six seconds.",
     ],
     thief: [
       "Thief",
@@ -626,7 +623,7 @@
           disabled: !host,
           onchange: (e) => send("settings", { specials: e.target.checked }),
         }),
-        "Medic & Camera Operator",
+        "Medic Role",
       ),
     );
   }
@@ -836,7 +833,7 @@
       txt(
         "p",
         "muted small",
-        "Choose a room to walk there. You still have to travel through its corridors.",
+        "Choose a room to light up the way there. Then walk it yourself.",
       ),
       el(
         "div",
@@ -846,7 +843,7 @@
             r.name,
             () => {
               closeDialog();
-              move({ x: r.x + 120, y: r.y + 135 });
+              setGuide({ x: r.x + 120, y: r.y + 135 }, r.name);
             },
             "",
             false,
@@ -856,6 +853,14 @@
       ),
     );
   }
+  // a glowing line on the floor to somewhere you want to go; you still walk it yourself
+  function setGuide(spot, label) {
+    guide = { x: spot.x, y: spot.y, label };
+    museum?.guide?.(guide);
+    const hint = document.querySelector(".status-hint");
+    if (hint) hint.textContent = "Follow the glowing line on the floor.";
+    announce("Follow the glowing line on the floor. Destination: " + label);
+  }
   function showJobs() {
     const d = modal(
       "Your Jobs",
@@ -864,7 +869,7 @@
         "muted small",
         state.me.team === "thief"
           ? "Use these jobs as a cover. They will not secure the museum."
-          : "Choose a job to walk toward it. Shared jobs and recoveries also help secure the museum.",
+          : "Choose a job to light up the way to it. Then walk there yourself. Shared jobs and recoveries also help secure the museum.",
       ),
     );
     d.append(
@@ -876,11 +881,11 @@
             [
               el("small", {}, W.ROOMS.find((r) => r.id === j.room)?.name || ""),
               el("b", {}, j.name),
-              txt("small", "", j.done ? "Complete" : "Go To Job"),
+              txt("small", "", j.done ? "Complete" : "Show The Way"),
             ],
             () => {
               closeDialog();
-              move(j);
+              setGuide(j, j.name);
             },
             "job-tile" + (j.done ? " done" : ""),
             j.done,
@@ -1011,61 +1016,12 @@
           run: () => send("steal", { station: exhibit.id }),
         });
     }
-    if (me.alive && me.role === "camera" && closeEnough(W.STATIONS[3]))
+    if (me.alive && !me.camera && closeEnough(W.CCTV, 55))
       choices.push({
-        label: "Watch Camera",
+        label: "Watch CCTV",
         kind: "",
         disabled: now() < me.cameraAt,
-        run: () => {
-          modal(
-            "Security Cameras",
-            txt(
-              "p",
-              "muted small",
-              "Six seconds of live footage. You stay at the console.",
-            ),
-            el(
-              "div",
-              { class: "room-choices" },
-              ...W.ROOMS.filter((r) =>
-                ["lobby", "gallery", "vault"].includes(r.id),
-              ).map((r) =>
-                button(r.name, async () => {
-                  closeDialog();
-                  await send("camera", { room: r.id });
-                }),
-              ),
-            ),
-          );
-        },
-      });
-    if (me.alive && me.emergency > 0 && closeEnough(W.EMERGENCY, 52))
-      choices.push({
-        label: "Emergency Meeting",
-        kind: "",
-        run: () => {
-          modal(
-            "Call A Meeting?",
-            txt(
-              "p",
-              "muted",
-              "You can use this once per game. Bring everyone together to discuss what you saw.",
-            ),
-            el(
-              "div",
-              { class: "dialog-actions" },
-              button("Cancel", closeDialog),
-              button(
-                "Call Meeting",
-                async () => {
-                  closeDialog();
-                  await send("emergency");
-                },
-                "report-action",
-              ),
-            ),
-          );
-        },
+        run: () => send("camera"),
       });
     return choices;
   }
@@ -2046,6 +2002,7 @@
                   ? verdict()
                   : live(),
     );
+    if (state?.phase !== "live") guide = null;
     if (state?.phase === "live" || state?.phase === "briefing") {
       museum = new (MuseumMap3D.supported() ? MuseumMap3D : MuseumMap)(document.getElementById("museum-map"), {
         state: () => state,
@@ -2054,6 +2011,7 @@
         action: primary,
         report: reportNearby,
       });
+      if (guide) museum.guide?.(guide);
       if (state.phase === "briefing") {
         const overlay = el(
           "div",
@@ -2133,6 +2091,10 @@
             : button("Out Chat", () => modal("Out Players Only", chatBox())),
         );
       }
+      if (guide && W.distance(currentPos(), guide) < 30) {
+        guide = null;
+        museum?.guide?.(null);
+      }
       const event = state.events.find(
         (e) => e.actor !== state.meId && e.target !== state.meId,
       );
@@ -2144,7 +2106,9 @@
             " knock out " +
             who(event.target) +
             "."
-          : state.me.team === "thief"
+          : guide
+            ? "Follow the glowing line on the floor."
+            : state.me.team === "thief"
             ? "Your teammates: " +
               state.me.allies
                 .filter((id) => id !== state.meId)
@@ -2164,34 +2128,45 @@
           document.querySelector(".action-bar")?.after(n);
         }
         const n = document.getElementById("camera-feed");
-        if (n)
-          n.replaceChildren(
-            el(
-              "h3",
-              {},
-              "Camera · " +
-                W.ROOMS.find((r) => r.id === state.me.camera.room)?.name,
-            ),
-            txt(
-              "p",
-              "muted small",
-              "Live for " +
-                Math.max(0, Math.ceil((state.me.camera.until - now()) / 1000)) +
-                "s",
-            ),
-            el("canvas", {
-              class: "camera-screen",
-              width: 528,
-              height: 488,
-              "aria-label": "Live security camera view",
-            }),
-          );
-        museum?.drawCamera(
-          n.querySelector("canvas"),
-          state.me.camera.room,
-          state.me.camera.players,
-          state.players,
-        );
+        if (n) {
+          if (!n.querySelector(".cctv-grid"))
+            n.replaceChildren(
+              el("h3", {}, "CCTV · Every Room"),
+              txt("p", "muted small", ""),
+              txt("p", "muted small", "Stay at the wall. Walking away ends it."),
+              el(
+                "div",
+                { class: "cctv-grid" },
+                ...W.ROOMS.map((r) =>
+                  el(
+                    "figure",
+                    {},
+                    el("canvas", {
+                      class: "camera-screen",
+                      "data-room": r.id,
+                      width: 264,
+                      height: 244,
+                      "aria-label": "Live camera: " + r.name,
+                    }),
+                    el("figcaption", {}, r.name),
+                  ),
+                ),
+              ),
+            );
+          n.querySelector("p").textContent =
+            "Live for " +
+            Math.max(0, Math.ceil((state.me.camera.until - now()) / 1000)) +
+            "s";
+          for (const cv of n.querySelectorAll("canvas"))
+            museum?.drawCamera(
+              cv,
+              cv.dataset.room,
+              state.me.camera.players.filter(
+                (p) => W.roomAt(p)?.id === cv.dataset.room,
+              ),
+              state.players,
+            );
+        }
       } else feed?.remove();
     }
     if (state.phase === "voting") renderVote();

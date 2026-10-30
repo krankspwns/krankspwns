@@ -142,6 +142,16 @@
         c.fillText("SERVICE EXIT", r.x + 195, r.y + 19);
       }
     }
+    const cc = W.CCTV;
+    c.fillStyle = "#1c2c33";
+    c.fillRect(cc.x - 18, cc.y - 22, 36, 14);
+    c.fillStyle = "#6fd0c0";
+    for (let i = 0; i < 3; i++) c.fillRect(cc.x - 15 + i * 11, cc.y - 20, 9, 9);
+    c.fillStyle = "#bfe8d6";
+    c.font = "700 6px Inter";
+    c.textAlign = "center";
+    c.fillText("CCTV", cc.x, cc.y - 26);
+    c.textAlign = "start";
     const e = W.EMERGENCY;
     c.fillStyle = "#2a3a40";
     c.fillRect(e.x - 9, e.y - 22, 18, 14);
@@ -335,6 +345,34 @@
       }
       c.restore();
     }
+    // a glowing dashed line along the walkable route to the job you chose
+    guide(p) {
+      this.guideTo = p ? { x: p.x, y: p.y } : null;
+      this.guidePath = null;
+    }
+    drawGuide(c, own, s, now) {
+      const g = this.guideTo;
+      if (!g || W.distance(own, g) < 26) return;
+      if (!this.guidePath || now - this.guideAt > 300) {
+        this.guideAt = now;
+        this.guidePath = W.route(own, g, s.sabotage?.kind === "door" ? [s.sabotage.door] : []);
+      }
+      const path = this.guidePath;
+      if (!path) return;
+      c.save();
+      c.strokeStyle = "#ffe08a";
+      c.lineWidth = 3;
+      c.lineCap = "round";
+      c.setLineDash([2, 9]);
+      c.lineDashOffset = -(now / 40) % 22;
+      c.shadowColor = "#ffd66b";
+      c.shadowBlur = 8;
+      c.beginPath();
+      c.moveTo(own.x, own.y);
+      for (const p of path.slice(1)) c.lineTo(p.x, p.y);
+      c.stroke();
+      c.restore();
+    }
     frame() {
       if (this.destroyed) return;
       this.raf = requestAnimationFrame(() => this.frame());
@@ -393,6 +431,7 @@
       c.scale(this.scale, this.scale);
       c.translate(-this.pan.x, -this.pan.y);
       c.drawImage(this.floor, 0, 0);
+      this.drawGuide(c, own, s, now);
       for (const r of W.ROOMS)
         if (lots.complete && lots.naturalWidth) {
           const sw = lots.naturalWidth / 4,

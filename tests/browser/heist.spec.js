@@ -335,16 +335,14 @@ test("camera footage and two players holding a statue handle", async ({
       swap.role = "thief";
       p.team = "staff";
     }
-    p.role = "camera";
-    at(p, R.W.STATIONS[3]);
+    at(p, R.W.CCTV);
     await expect(
-      f.page.getByRole("button", { name: "Watch Camera", exact: true }),
+      f.page.getByRole("button", { name: "Watch CCTV", exact: true }),
     ).toBeVisible();
     await f.page
-      .getByRole("button", { name: "Watch Camera", exact: true })
+      .getByRole("button", { name: "Watch CCTV", exact: true })
       .click();
-    await f.page.getByRole("button", { name: "Gallery", exact: true }).click();
-    await expect(f.page.locator(".camera-screen")).toBeVisible();
+    await expect(f.page.locator(".camera-screen")).toHaveCount(6);
     await f.page.screenshot({
       path: info.outputPath("camera-mobile.png"),
       fullPage: true,
@@ -442,5 +440,17 @@ test("3D museum renders, walks with the arrow keys and falls back to the flat ma
   }
   expect(f.errors).toEqual([]);
   await f.page.goto("/grand-heist.html?map=2d");
+  await f.context.close();
+});
+
+test("choosing a job lights a route on the floor and does not walk you there", async ({ browser }) => {
+  const f = await fixture(browser, 390);
+  await openMuseum(f);
+  const before = JSON.stringify(mem(f.h.code).players.find((p) => p.id === f.h.meId).path);
+  await f.page.getByRole("button", { name: "Your Jobs", exact: true }).click();
+  await f.page.locator(".job-tile").first().click();
+  await expect(f.page.locator(".status-hint")).toContainText("glowing line");
+  await f.page.waitForTimeout(800);
+  expect(JSON.stringify(mem(f.h.code).players.find((p) => p.id === f.h.meId).path)).toBe(before);
   await f.context.close();
 });
