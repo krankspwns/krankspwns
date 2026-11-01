@@ -1582,3 +1582,30 @@ body { background: radial-gradient(ellipse at 6% 0, #33475680, transparent 48%),
   .map-chip { font-size:9px;max-width:calc(100% - 28px);padding:8px 10px; }
   .heist-compass { max-width:calc(100% - 34px); }
 }
+
+/* ---------- claymorphism: soft, puffy, pastel ---------- */
+:root { --clay-ink: #4a3a68; --clay-out: 7px 9px 18px rgba(48, 22, 86, .38); --clay-in: inset -5px -6px 11px rgba(110, 70, 160, .3), inset 5px 5px 10px rgba(255, 255, 255, .9); }
+.map-frame { border: 3px solid rgba(255, 255, 255, .35); border-radius: 32px; background: #cdb8e8; box-shadow: 0 24px 56px rgba(40, 18, 76, .5), inset 0 0 0 5px rgba(255, 255, 255, .22), inset 0 -14px 30px rgba(90, 50, 140, .22); }
+.map-frame:has(canvas[data-view="first"])::after { background: radial-gradient(ellipse at center, transparent 62%, rgba(120, 80, 170, .22) 100%); }
+.map-frame .action-bar button, .map-frame .action-bar .report-action, .map-frame .action-bar .danger-action, .map-frame .action-bar .primary-action {
+  border: 0; border-radius: 24px; color: var(--clay-ink); font-weight: 800; text-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+  background: linear-gradient(145deg, #fff6fb, #e9d8f7); box-shadow: var(--clay-out), var(--clay-in);
+}
+.map-frame .action-bar button:active { transform: translateY(2px) scale(.98); box-shadow: 3px 4px 9px rgba(48, 22, 86, .35), var(--clay-in); }
+.map-frame .action-bar .primary-action { background: linear-gradient(145deg, #dcfbee, #8fdcc0); color: #14503f; }
+.map-frame .action-bar .report-action { background: linear-gradient(145deg, #ffe6d6, #ffb08a); color: #6b2d12; }
+.map-frame .action-bar .danger-action { background: linear-gradient(145deg, #ffd6e4, #ff8fb3); color: #6b1239; }
+.map-frame .action-bar button:disabled { opacity: .6; filter: saturate(.7); }
+.map-chip { background: linear-gradient(145deg, #fff6fb, #eddcf8); border: 0; color: var(--clay-ink); font-weight: 800; box-shadow: 5px 6px 12px rgba(48, 22, 86, .3), var(--clay-in); backdrop-filter: none; border-radius: 999px; }
+.map-chip i { background: #43c795; box-shadow: 0 0 0 3px #fff, 0 0 10px #43c795; }
+.heist-compass { border: 0; border-radius: 26px; background: linear-gradient(145deg, #fff6fb, #eddcf8); box-shadow: var(--clay-out), var(--clay-in); backdrop-filter: none; }
+.heist-compass svg { fill: #ff8fb3; filter: drop-shadow(2px 3px 0 rgba(120, 60, 140, .25)); }
+.heist-compass b { color: var(--clay-ink); } .heist-compass span { color: #7c6aa0; }
+.heist-stick { background: linear-gradient(145deg, #eddcf8, #cfb8ec); border: 0; box-shadow: var(--clay-out), inset 5px 6px 12px rgba(90, 50, 140, .3), inset -5px -5px 10px rgba(255, 255, 255, .7); backdrop-filter: none; }
+.heist-stick::before, .heist-stick::after { display: none; }
+.heist-stick i { background: linear-gradient(145deg, #ffe3ef, #ff9fc0); border: 0; box-shadow: 4px 6px 10px rgba(80, 30, 100, .4), inset -3px -4px 8px rgba(190, 60, 110, .35), inset 3px 3px 7px rgba(255, 255, 255, .85); }
+.heist-dialog { border: 0; border-radius: 34px; background: linear-gradient(150deg, #5a4a92, #3b2f6b 85%); box-shadow: 0 30px 80px rgba(20, 8, 50, .65), inset 6px 6px 14px rgba(255, 255, 255, .22), inset -8px -10px 18px rgba(20, 8, 50, .35); }
+.heist-dialog::backdrop { background: rgba(60, 36, 110, .55); backdrop-filter: blur(6px); }
+.heist-dialog button { border-radius: 20px; }
+.heist-dialog .dialog-actions button, .heist-dialog .job-tile { border: 0; background: linear-gradient(145deg, #fff6fb, #e9d8f7); color: var(--clay-ink); font-weight: 800; box-shadow: 5px 7px 14px rgba(20, 8, 50, .4), var(--clay-in); }
+.heist-dialog .job-tile small, .heist-dialog .job-tile b { color: var(--clay-ink); }

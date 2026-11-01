@@ -47,3 +47,5 @@ The museum uses midnight walls, pale marble, velvet runners, brass fittings and 
 The floating game controls leave space for the shared toolbar, including when it wraps on narrow phones. The same layout applies to the WebGL view and flat fallback. Job interactions wait for an in-flight movement request rather than dropping an action when E or a job button is pressed while walking.
 
 `tests/browser/heist-graphics.spec.js` exercises the actual WebGL renderer at 320px, 390px and 1100px, art loading, toolbar clearance, blackout lighting and the flat fallback. The puzzle/report/vote test uses the flat view for deterministic position staging; separate tests cover first-person rendering and movement. All artwork and rendering code are self-hosted.
+
+The look is claymorphism: soft pastel painted rooms, puffy rounded edges on every box, matte materials, soft shadows, and chunky clay-style buttons, cards and dialogs. `roundedBox`/`clayMaterial` in `map3d.js` apply it to the 3D scene; the final block of `style.css` styles the interface.
