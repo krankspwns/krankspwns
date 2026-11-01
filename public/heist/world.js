@@ -4,102 +4,83 @@
   if (typeof module === "object" && module.exports) module.exports = world;
   else root.HeistWorld = world;
 })(typeof window === "object" ? window : globalThis, () => {
-  const WIDTH = 960,
-    HEIGHT = 640,
+  // Rooms are 480 x 440: four times the floor of the first version, with room for pillars, two display cases and two job consoles.
+  const ROOM_W = 480,
+    ROOM_H = 440,
+    GAP_X = 80,
+    GAP_Y = 120,
+    WIDTH = 40 * 2 + ROOM_W * 3 + GAP_X * 2,
+    HEIGHT = 40 * 2 + ROOM_H * 2 + GAP_Y,
     CELL = 20,
-    SPEED = 105;
+    SPEED = 105,
+    COLS = Math.ceil(WIDTH / CELL),
+    ROWS = Math.ceil(HEIGHT / CELL);
+  const colX = (i) => 40 + i * (ROOM_W + GAP_X), rowY = (j) => 40 + j * (ROOM_H + GAP_Y);
   const ROOMS = [
-    { id: "lobby", name: "Lobby", x: 40, y: 40, color: "#314555" },
-    { id: "gallery", name: "Gallery", x: 360, y: 40, color: "#4b354d" },
-    { id: "vault", name: "Vault", x: 680, y: 40, color: "#4b4430" },
-    { id: "security", name: "Security", x: 40, y: 380, color: "#274d50" },
-    { id: "workshop", name: "Workshop", x: 360, y: 380, color: "#4b3933" },
-    { id: "service", name: "Service Hall", x: 680, y: 380, color: "#33453a" },
-  ].map((r) => ({ ...r, w: 240, h: 220 }));
+    { id: "lobby", name: "Lobby", x: colX(0), y: rowY(0), color: "#314555" },
+    { id: "gallery", name: "Gallery", x: colX(1), y: rowY(0), color: "#4b354d" },
+    { id: "vault", name: "Vault", x: colX(2), y: rowY(0), color: "#4b4430" },
+    { id: "security", name: "Security", x: colX(0), y: rowY(1), color: "#274d50" },
+    { id: "workshop", name: "Workshop", x: colX(1), y: rowY(1), color: "#4b3933" },
+    { id: "service", name: "Service Hall", x: colX(2), y: rowY(1), color: "#33453a" },
+  ].map((r) => ({ ...r, w: ROOM_W, h: ROOM_H }));
   const DOORS = [
-    { id: "north-west", name: "Lobby / Gallery", x: 280, y: 140, w: 80, h: 40 },
-    { id: "north-east", name: "Gallery / Vault", x: 600, y: 140, w: 80, h: 40 },
-    {
-      id: "south-west",
-      name: "Security / Workshop",
-      x: 280,
-      y: 460,
-      w: 80,
-      h: 40,
-    },
-    {
-      id: "south-east",
-      name: "Workshop / Service",
-      x: 600,
-      y: 460,
-      w: 80,
-      h: 40,
-    },
+    { id: "north-west", name: "Lobby / Gallery", x: colX(0) + ROOM_W, y: rowY(0) + ROOM_H / 2 - 20, w: GAP_X, h: 40 },
+    { id: "north-east", name: "Gallery / Vault", x: colX(1) + ROOM_W, y: rowY(0) + ROOM_H / 2 - 20, w: GAP_X, h: 40 },
+    { id: "south-west", name: "Security / Workshop", x: colX(0) + ROOM_W, y: rowY(1) + ROOM_H / 2 - 20, w: GAP_X, h: 40 },
+    { id: "south-east", name: "Workshop / Service", x: colX(1) + ROOM_W, y: rowY(1) + ROOM_H / 2 - 20, w: GAP_X, h: 40 },
     ...["west", "middle", "east"].map((n, i) => ({
       id: n,
       name: ["Lobby / Security", "Gallery / Workshop", "Vault / Service"][i],
-      x: 140 + i * 320,
-      y: 260,
+      x: colX(i) + ROOM_W / 2 - 20,
+      y: rowY(0) + ROOM_H,
       w: 40,
-      h: 120,
+      h: GAP_Y,
     })),
   ];
-  const STATIONS = ROOMS.map((r, i) => ({
-    id: "station-" + r.id,
-    room: r.id,
-    x: r.x + 70,
-    y: r.y + 70,
-    kind: ["memory", "scan", "wires", "circuit", "wires", "memory"][i],
-    name: [
-      "Unlock Display",
-      "Scan Treasure",
-      "Fix Alarm",
-      "Restore Camera",
-      "Fix Alarm",
-      "Unlock Display",
-    ][i],
-  }));
+  const at = (r, x, y) => ({ x: r.x + x, y: r.y + y });
+  // first and second job console in every room
+  const KIND_A = ["memory", "scan", "wires", "circuit", "wires", "memory"], KIND_B = ["wires", "memory", "scan", "wires", "scan", "circuit"];
+  const JOB_NAME = { memory: "Unlock Display", scan: "Scan Treasure", wires: "Fix Alarm", circuit: "Restore Camera" };
+  const STATIONS = [
+    ...ROOMS.map((r, i) => ({ id: "station-" + r.id, room: r.id, ...at(r, 100, 110), kind: KIND_A[i], name: JOB_NAME[KIND_A[i]] })),
+    ...ROOMS.map((r, i) => ({ id: "station2-" + r.id, room: r.id, ...at(r, 380, 330), kind: KIND_B[i], name: JOB_NAME[KIND_B[i]] })),
+  ];
   const JOINTS = [
-    {
-      id: "statue-gallery",
-      room: "gallery",
-      name: "Move Statue",
-      x: 550,
-      y: 210,
-    },
-    {
-      id: "statue-workshop",
-      room: "workshop",
-      name: "Move Statue",
-      x: 550,
-      y: 550,
-    },
+    { id: "statue-gallery", room: "gallery", name: "Move Statue", ...at(ROOMS[1], 330, 230) },
+    { id: "statue-workshop", room: "workshop", name: "Move Statue", ...at(ROOMS[4], 330, 230) },
   ];
   const TRANSPORT = ROOMS.map((r) => ({
     id: "crate-" + r.id,
     room: r.id,
-    x: r.x + 44,
-    y: r.y + 196,
+    ...at(r, 50, 330),
     name: r.id === "service" ? "Service Exit" : "Exhibit Crate",
   }));
   // the red button for calling a meeting: stand in front of it in the Lobby
-  const EMERGENCY = { id: "emergency", room: "lobby", x: 232, y: 214, name: "Emergency Button" };
+  const EMERGENCY = { id: "emergency", room: "lobby", ...at(ROOMS[0], 420, 380), name: "Emergency Button" };
   // the CCTV wall in Security: stand in front of it to watch every room
-  const CCTV = { id: "cctv", room: "security", x: 236, y: 548, name: "CCTV Wall" };
-  const OBSTACLES = ROOMS.flatMap((r) => [
-    { x: r.x + 160, y: r.y + 32, w: 56, h: 44 },
-    { x: r.x + 155, y: r.y + 186, w: 70, h: 20 },
-  ])
-    // job consoles, statues and crates stand just behind the spot where you use them
-    .concat(
-      STATIONS.map((s) => ({ x: s.x - 10, y: s.y - 23, w: 20, h: 14 })),
-      JOINTS.map((j) => ({ x: j.x - 13, y: j.y - 31, w: 26, h: 26 })),
-      TRANSPORT.map((t) => ({ x: t.x - 11, y: t.y - 23, w: 22, h: 18 })),
-      [
-        { x: EMERGENCY.x - 9, y: EMERGENCY.y - 22, w: 18, h: 14 },
-        { x: CCTV.x - 18, y: CCTV.y - 22, w: 36, h: 14 },
-      ],
-    );
+  const CCTV = { id: "cctv", room: "security", ...at(ROOMS[3], 240, 410), name: "CCTV Wall" };
+  // furniture that every room shares; the 3D museum builds exactly these
+  const FURNITURE = ROOMS.map((r) => ({
+    room: r.id,
+    cases: [at(r, 380, 60), at(r, 100, 380)], // centres of the 56 x 44 display cases
+    benches: [at(r, 360, 400), at(r, 130, 40)], // centres of the 70 x 20 benches
+    pillars: [at(r, 150, 150), at(r, 330, 150), at(r, 150, 290), at(r, 330, 290)],
+  }));
+  const OBSTACLES = FURNITURE.flatMap((f) => [
+    ...f.cases.map((c) => ({ x: c.x - 28, y: c.y - 22, w: 56, h: 44 })),
+    ...f.benches.map((c) => ({ x: c.x - 35, y: c.y - 10, w: 70, h: 20 })),
+    ...f.pillars.map((c) => ({ x: c.x - 10, y: c.y - 10, w: 20, h: 20 })),
+  ]).concat(
+    // job consoles, statues, crates, the emergency button and the CCTV wall stand just behind the spot where you use them
+    STATIONS.map((s) => ({ x: s.x - 10, y: s.y - 23, w: 20, h: 14 })),
+    JOINTS.map((j) => ({ x: j.x - 13, y: j.y - 31, w: 26, h: 26 })),
+    TRANSPORT.map((t) => ({ x: t.x - 11, y: t.y - 23, w: 22, h: 18 })),
+    [
+      { x: EMERGENCY.x - 9, y: EMERGENCY.y - 22, w: 18, h: 14 },
+      { x: CCTV.x - 18, y: CCTV.y - 22, w: 36, h: 14 },
+    ],
+  );
   const inRect = (p, r) =>
     p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
   const roomAt = (p) => ROOMS.find((r) => inRect(p, r));
@@ -130,12 +111,12 @@
       d = Infinity;
     for (
       let y = Math.max(0, Math.floor(p.y / CELL) - 2);
-      y <= Math.min(31, Math.floor(p.y / CELL) + 2);
+      y <= Math.min(ROWS - 1, Math.floor(p.y / CELL) + 2);
       y++
     )
       for (
         let x = Math.max(0, Math.floor(p.x / CELL) - 2);
-        x <= Math.min(47, Math.floor(p.x / CELL) + 2);
+        x <= Math.min(COLS - 1, Math.floor(p.x / CELL) + 2);
         x++
       ) {
         const q = center(x, y),
@@ -151,15 +132,15 @@
     const start = snap(from, closed),
       end = snap(to, closed);
     if (!start || !end || distance(end, to) > 35) return null;
-    const key = (p) => Math.floor(p.y / CELL) * 48 + Math.floor(p.x / CELL),
+    const key = (p) => Math.floor(p.y / CELL) * COLS + Math.floor(p.x / CELL),
       a = key(start),
       b = key(end),
       queue = [a],
       prev = new Map([[a, null]]);
     for (let i = 0; i < queue.length && !prev.has(b); i++) {
       const k = queue[i],
-        x = k % 48,
-        y = Math.floor(k / 48);
+        x = k % COLS,
+        y = Math.floor(k / COLS);
       for (const [dx, dy] of [
         [1, 0],
         [-1, 0],
@@ -168,12 +149,12 @@
       ]) {
         const nx = x + dx,
           ny = y + dy,
-          n = ny * 48 + nx;
+          n = ny * COLS + nx;
         if (
           nx < 0 ||
-          nx >= 48 ||
+          nx >= COLS ||
           ny < 0 ||
-          ny >= 32 ||
+          ny >= ROWS ||
           prev.has(n) ||
           !walkable(center(nx, ny), closed)
         )
@@ -185,7 +166,7 @@
     if (!prev.has(b)) return null;
     const cells = [];
     for (let k = b; k !== null; k = prev.get(k))
-      cells.push(center(k % 48, Math.floor(k / 48)));
+      cells.push(center(k % COLS, Math.floor(k / COLS)));
     cells.reverse();
     // walk straight wherever the way is clear, ending exactly where you pointed
     const pts = [from, ...cells];
@@ -204,7 +185,7 @@
     return out;
   }
   function position(player, now) {
-    const path = player.path || [player.pos || { x: 160, y: 150 }];
+    const path = player.path || [player.pos || { x: 300, y: 260 }];
     let left = (Math.max(0, now - (player.walkAt || now)) / 1000) * SPEED;
     for (let i = 1; i < path.length; i++) {
       const a = path[i - 1],
@@ -267,6 +248,7 @@
     JOINTS,
     TRANSPORT,
     OBSTACLES,
+    FURNITURE,
     EMERGENCY,
     CCTV,
     inRect,

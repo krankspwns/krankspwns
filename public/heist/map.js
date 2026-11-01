@@ -73,7 +73,7 @@
       c.lineWidth = 1;
       c.strokeRect(r.x + 10, r.y + 10, r.w - 20, r.h - 20);
       // Wall lights, paintings and benches are placed off the walking routes.
-      for (const dx of [16, 220]) {
+      for (const dx of [16, r.w - 20]) {
         c.fillStyle = "#e7c978";
         c.beginPath();
         c.arc(r.x + dx, r.y + 21, 3, 0, Math.PI * 2);
@@ -91,21 +91,30 @@
         c.fillStyle = light;
         c.fillRect(r.x + dx - 35, r.y - 14, 70, 70);
       }
-      c.fillStyle = "#071820";
-      rounded(c, r.x + 160, r.y + 32, 56, 44, 5);
-      c.fill();
-      c.strokeStyle = "#d4ba7f";
-      c.stroke();
-      c.fillStyle = "#dbc28c44";
-      c.fillRect(r.x + 165, r.y + 37, 46, 34);
-      c.fillStyle = "#c8b57988";
-      c.fillRect(r.x + 171, r.y + 58, 34, 5);
-      c.fillStyle = "#18262d";
-      rounded(c, r.x + 155, r.y + 186, 70, 20, 5);
-      c.fill();
-      c.fillStyle = "#705b45";
-      rounded(c, r.x + 158, r.y + 188, 64, 13, 3);
-      c.fill();
+      const furniture = W.FURNITURE.find((f) => f.room === r.id);
+      for (const k of furniture.cases) {
+        c.fillStyle = "#071820";
+        rounded(c, k.x - 28, k.y - 22, 56, 44, 5);
+        c.fill();
+        c.strokeStyle = "#d4ba7f";
+        c.stroke();
+        c.fillStyle = "#dbc28c44";
+        c.fillRect(k.x - 23, k.y - 17, 46, 34);
+      }
+      for (const k of furniture.benches) {
+        c.fillStyle = "#18262d";
+        rounded(c, k.x - 35, k.y - 10, 70, 20, 5);
+        c.fill();
+        c.fillStyle = "#705b45";
+        rounded(c, k.x - 32, k.y - 8, 64, 13, 3);
+        c.fill();
+      }
+      for (const k of furniture.pillars) {
+        c.fillStyle = "#c9b98c";
+        c.beginPath();
+        c.arc(k.x, k.y, 10, 0, Math.PI * 2);
+        c.fill();
+      }
       c.fillStyle = "#b9c8bc";
       c.font = "700 10px Inter, sans-serif";
       c.textAlign = "center";
@@ -119,28 +128,10 @@
       // Individual room accents keep the six spaces easy to identify.
       c.fillStyle = "#ecd59a0b";
       c.beginPath();
-      c.ellipse(r.x + 120, r.y + 116, 70, 53, 0, 0, Math.PI * 2);
+      c.ellipse(r.x + r.w / 2, r.y + r.h / 2, 120, 90, 0, 0, Math.PI * 2);
       c.fill();
       c.strokeStyle = "#d6bd7a25";
       c.stroke();
-      if (i === 3) {
-        c.fillStyle = "#091d23";
-        rounded(c, r.x + 80, r.y + 120, 88, 35, 6);
-        c.fill();
-        for (let j = 0; j < 3; j++) {
-          c.fillStyle = "#5fa694";
-          c.fillRect(r.x + 86 + j * 27, r.y + 126, 21, 15);
-          c.fillStyle = "#a3ecc642";
-          c.fillRect(r.x + 88 + j * 27, r.y + 128, 17, 3);
-        }
-      }
-      if (i === 5) {
-        c.fillStyle = "#142b28";
-        c.fillRect(r.x + 170, r.y + 10, 50, 12);
-        c.fillStyle = "#81c49e";
-        c.font = "700 7px Inter";
-        c.fillText("SERVICE EXIT", r.x + 195, r.y + 19);
-      }
     }
     const cc = W.CCTV;
     c.fillStyle = "#1c2c33";
@@ -243,7 +234,7 @@
             { path: s.me.path, walkAt: s.me.walkAt, pos: s.me.position },
             this.now(),
           )
-        : { x: 160, y: 150 };
+        : { x: 300, y: 260 };
     }
     tap(e) {
       const s = this.getState();

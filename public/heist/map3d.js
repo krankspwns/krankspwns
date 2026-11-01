@@ -291,7 +291,7 @@
       }, true);
     }
     floorTexture(room){
-      return this.canvasTex(512,512,(g,w,h)=>{
+      return this.canvasTex(1024,1024,(g,w,h)=>{
         const rnd=this.rng(room.x*7+room.y),accent=CLAY_ROOMS[room.id]||'#cbbbe0',ac=new this.T.Color(accent);
         g.fillStyle='#d9cdbb';g.fillRect(0,0,w,h);
         for(let x=0;x<w;x+=128)for(let y=0;y<h;y+=128){
@@ -299,12 +299,14 @@
           const tg=g.createLinearGradient(x,y,x+128,y+128);tg.addColorStop(0,alt?'#fff7ea':'#fdeedd');tg.addColorStop(1,alt?'#efe0cb':'#e7d6c0');g.fillStyle=tg;g.beginPath();g.roundRect(x+6,y+6,116,116,22);g.fill();
           g.strokeStyle='rgba(255,255,255,.75)';g.lineWidth=3;g.beginPath();g.roundRect(x+10,y+10,108,108,18);g.stroke();
         }
+        g.save();g.scale(2,2);
         g.fillStyle='rgba(60,30,70,.18)';g.beginPath();g.roundRect(108,156,300,216,44);g.fill();
         const rg=g.createLinearGradient(100,140,400,360);rg.addColorStop(0,'#'+ac.clone().lerp(new this.T.Color(0xffffff),.2).getHexString());rg.addColorStop(1,'#'+ac.clone().multiplyScalar(.9).getHexString());
         g.fillStyle=rg;g.beginPath();g.roundRect(100,146,300,216,44);g.fill();
         g.strokeStyle='#fff6e6';g.lineWidth=7;g.beginPath();g.roundRect(114,160,272,188,32);g.stroke();
         g.fillStyle='rgba(255,255,255,.55)';for(let i=0;i<9;i++){g.beginPath();g.arc(150+i*26,254,7,0,7);g.fill();}
         for(let i=0;i<500;i++){g.fillStyle=rnd()>.5?'rgba(255,255,255,.10)':'rgba(70,40,80,.05)';g.beginPath();g.arc(rnd()*w,rnd()*h,1.5,0,7);g.fill();}
+        g.restore();
       });
     }
     hazardTexture() {
@@ -462,32 +464,40 @@
         this.box(r.w * S, 0.14, 0.3, cove, (r.x + r.w / 2) * S, cy, (y2 - 1.8) * S, this.ceilG);
         this.box(0.3, 0.14, r.h * S, cove, (x1 + 1.8) * S, cy, (r.y + r.h / 2) * S, this.ceilG);
         this.box(0.3, 0.14, r.h * S, cove, (x2 - 1.8) * S, cy, (r.y + r.h / 2) * S, this.ceilG);
-        if (r.id === "lobby" || r.id === "gallery" || r.id === "vault") this.chandelier((r.x + r.w / 2) * S, (r.y + r.h / 2 - 10) * S);
-        else for (const dx of [0.3, 0.7]) this.industrialLight((r.x + r.w * dx) * S, (r.y + r.h / 2) * S);
+        if (r.id === "lobby" || r.id === "gallery" || r.id === "vault") { this.chandelier((r.x + r.w / 2) * S, (r.y + r.h / 2) * S); for (const dx of [0.2, 0.8]) for (const dz of [0.25, 0.75]) this.chandelier((r.x + r.w * dx) * S, (r.y + r.h * dz) * S, 0.55); }
+        else for (const dx of [0.2, 0.5, 0.8]) for (const dz of [0.25, 0.75]) this.industrialLight((r.x + r.w * dx) * S, (r.y + r.h * dz) * S);
         // paintings: two on the back wall, one on a side wall
         const L = LOT[r.id];
-        this.hang(L, (r.x + 70) * S, (r.y + 0.6) * S, 0);
-        this.hang((L + 3) % 8, (r.x + 188) * S, (r.y + 0.6) * S, 0, 4.2, 3.2, 5.0);
+        [[0.12, L], [0.3, (L + 3) % 8], [0.7, (L + 6) % 8], [0.88, (L + 1) % 8]].forEach(([f, idx], k) => this.hang(idx, (r.x + r.w * f) * S, (r.y + 0.6) * S, 0, k % 2 ? 4.2 : 5, k % 2 ? 3.2 : 3.8, k % 2 ? 5.0 : 4.6));
+        this.hang((L + 2) % 8, (r.x + 0.2) * S, (r.y + r.h * 0.2) * S, Math.PI / 2, 4.2, 3.2, 4.8);
+        this.hang((L + 4) % 8, (r.x + r.w - 0.2) * S, (r.y + r.h * 0.2) * S, -Math.PI / 2, 4.2, 3.2, 4.8);
         this.sideDecor(r);
         this.architecture(r);
         const name = this.label(((window.GameI18n?.t(r.name)) || r.name).toUpperCase(), "#e4d29a", 22, false);
         name.position.set((r.x + r.w / 2) * S, 7.1, (r.y + 4) * S); this.tallG.add(name);
-        // the display case: marble plinth, brass-edged glass, and the exhibit on a cushion
-        const c = point(r.x + 188, r.y + 54);
-        this.box(56 * S, 7 * S, 44 * S, marble, c.x * S, 0, c.y * S);
-        this.box(58 * S, 1.2 * S, 46 * S, gold, c.x * S, 7 * S, c.y * S);
-        const glassGeo = new T.BoxGeometry(50 * S, 20 * S, 38 * S), glass = new T.Mesh(glassGeo, new T.MeshPhysicalMaterial({ color:0xbfe6f2,roughness:.08,metalness:.05,transparent:true,opacity:.09,depthWrite:false,side:T.DoubleSide }));
-        glass.position.set(c.x * S, 8.2 * S + 1, c.y * S); scene.add(glass);
-        const edges = new T.LineSegments(new T.EdgesGeometry(glassGeo), new T.LineBasicMaterial({ color: 0xe6c77a }));
-        edges.position.copy(glass.position); scene.add(edges);
-        const pad = this.box(34 * S, 1.5 * S, 26 * S, this.mat(0x7a1f33), c.x * S, 8.2 * S, c.y * S);
-        const ex = this.exhibitModel(r.id); ex.position.set(c.x * S, 8.2 * S + 0.15, c.y * S); ex.scale.setScalar(0.9); scene.add(ex);
-        (this.exhibits ||= []).push(ex); void pad;
-        // the bench: padded leather seat on gold feet
-        const bench = point(r.x + 190, r.y + 196);
-        this.box(70 * S, 2.5 * S, 20 * S, this.mat(0x4a1f24), bench.x * S, 4 * S, bench.y * S);
-        this.box(68 * S, 1.2 * S, 18 * S, gold, bench.x * S, 3 * S, bench.y * S);
-        for (const dx of [-30, 30]) for (const dz of [-7, 7]) this.box(2.4 * S, 3 * S, 2.4 * S, gold, (bench.x + dx) * S, 0, (bench.y + dz) * S);
+        // furniture shared with the walking rules: display cases, benches and pillars
+        const furniture = W.FURNITURE.find((f) => f.room === r.id);
+        for (const c of furniture.cases) {
+          this.box(56 * S, 7 * S, 44 * S, marble, c.x * S, 0, c.y * S);
+          this.box(58 * S, 1.2 * S, 46 * S, gold, c.x * S, 7 * S, c.y * S);
+          const glassGeo = new T.BoxGeometry(50 * S, 20 * S, 38 * S), glass = new T.Mesh(glassGeo, new T.MeshPhysicalMaterial({ color:0xbfe6f2,roughness:.08,metalness:.05,transparent:true,opacity:.09,depthWrite:false,side:T.DoubleSide }));
+          glass.position.set(c.x * S, 8.2 * S + 1, c.y * S); scene.add(glass);
+          const edges = new T.LineSegments(new T.EdgesGeometry(glassGeo), new T.LineBasicMaterial({ color: 0xe6c77a }));
+          edges.position.copy(glass.position); scene.add(edges);
+          this.box(34 * S, 1.5 * S, 26 * S, this.mat(0x7a1f33), c.x * S, 8.2 * S, c.y * S);
+          const ex = this.exhibitModel(r.id); ex.position.set(c.x * S, 8.2 * S + 0.15, c.y * S); ex.scale.setScalar(0.9); scene.add(ex);
+          (this.exhibits ||= []).push(ex);
+        }
+        for (const bench of furniture.benches) {
+          this.box(70 * S, 2.5 * S, 20 * S, this.mat(0x4a1f24), bench.x * S, 4 * S, bench.y * S);
+          this.box(68 * S, 1.2 * S, 18 * S, gold, bench.x * S, 3 * S, bench.y * S);
+          for (const dx of [-30, 30]) for (const dz of [-7, 7]) this.box(2.4 * S, 3 * S, 2.4 * S, gold, (bench.x + dx) * S, 0, (bench.y + dz) * S);
+        }
+        for (const q of furniture.pillars) {
+          const col = new T.Mesh(new T.CylinderGeometry(0.85, 0.95, 7.4, 24), marble); col.position.set(q.x * S, 3.7, q.y * S); scene.add(col);
+          const base = new T.Mesh(new T.CylinderGeometry(1.1, 1.15, 0.3, 24), gold); base.position.set(q.x * S, 0.15, q.y * S); scene.add(base);
+          const cap = new T.Mesh(new T.CylinderGeometry(1.15, 0.95, 0.5, 24), gold); cap.position.set(q.x * S, 7.65, q.y * S); scene.add(cap);
+        }
       }
       // lintels, frames and brass posts around every doorway
       for (const d of W.DOORS) {
@@ -569,7 +579,7 @@
       this.markers();
       this.atmosphere();
     }
-    chandelier(x, z) {
+    chandelier(x, z, scale = 1) {
       const T = this.T, g = new T.Group(), gold = this.mat(0xe3bd5f, { metalness:.75,roughness:.25 });
       g.position.set(x, 8, z);
       const chain = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 1.2, 6), gold); chain.position.y = -0.6; g.add(chain);
@@ -577,7 +587,7 @@
         const ring = new T.Mesh(new T.TorusGeometry(r, 0.07, 8, 28), gold); ring.rotation.x = Math.PI / 2; ring.position.y = y; g.add(ring);
         for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, b = new T.Mesh(new T.SphereGeometry(0.1, 8, 6), new T.MeshBasicMaterial({ color: 0xfff1c4 })); b.position.set(Math.cos(a) * r, y + 0.12, Math.sin(a) * r); g.add(b); }
       }
-      this.ceilG.add(g);
+      g.scale.setScalar(scale); this.ceilG.add(g);
     }
     industrialLight(x, z) {
       const T = this.T, g = new T.Group(); g.position.set(x, 8, z);
@@ -587,15 +597,15 @@
     }
     // each room's side-wall feature
     sideDecor(r) {
-      const T = this.T, x1 = r.x * S, x2 = (r.x + r.w) * S, z = (r.y + 180) * S, gold = this.mat(0xc9a96a, { emissive: 0x2a2008 });
+      const T = this.T, x1 = r.x * S, x2 = (r.x + r.w) * S, z = (r.y + r.h * 0.8) * S, gold = this.mat(0xc9a96a, { emissive: 0x2a2008 });
       if (r.id === "vault") {
-        const g = new T.Group(); g.position.set(x2 - 0.25, 3.6, (r.y + 110) * S); g.rotation.y = -Math.PI / 2;
+        const g = new T.Group(); g.position.set(x2 - 0.25, 3.6, (r.y + r.h * 0.5) * S); g.rotation.y = -Math.PI / 2;
         const disc = new T.Mesh(new T.CylinderGeometry(3, 3, 0.5, 32), this.mat(0x6c7479)); disc.rotation.x = Math.PI / 2; g.add(disc);
         for (const rad of [2.5, 1.7, 0.7]) { const ring = new T.Mesh(new T.TorusGeometry(rad, 0.08, 8, 32), gold); ring.position.z = 0.28; g.add(ring); }
         for (let i = 0; i < 6; i++) { const sp = new T.Mesh(new T.BoxGeometry(0.2, 3.4, 0.2), this.mat(0x9aa2a8)); sp.rotation.z = (i / 6) * Math.PI; sp.position.z = 0.3; g.add(sp); }
         this.tallG.add(g);
       } else if (r.id === "security") {
-        for (let i = 0; i < 3; i++) { const m = new T.Mesh(new T.PlaneGeometry(2.4, 1.5), new T.MeshBasicMaterial({ map: this.monitorTexture(i + 3) })); m.position.set(x1 + 0.2, 4.3, (r.y + 150 + i * 28) * S); m.rotation.y = Math.PI / 2; this.tallG.add(m); const bz = this.box(0.1, 1.7, 2.6, this.mat(0x0d151a), x1 + 0.1, 3.45, (r.y + 150 + i * 28) * S, this.tallG); void bz; }
+        for (let i = 0; i < 3; i++) { const m = new T.Mesh(new T.PlaneGeometry(2.4, 1.5), new T.MeshBasicMaterial({ map: this.monitorTexture(i + 3) })); m.position.set(x1 + 0.2, 4.3, (r.y + r.h * 0.66 + i * 28) * S); m.rotation.y = Math.PI / 2; this.tallG.add(m); const bz = this.box(0.1, 1.7, 2.6, this.mat(0x0d151a), x1 + 0.1, 3.45, (r.y + r.h * 0.66 + i * 28) * S, this.tallG); void bz; }
       } else if (r.id === "workshop") {
         const board = this.box(0.12, 3.2, 6, this.mat(0x6d5a43), x1 + 0.08, 3, z, this.tallG);
         for (let i = 0; i < 5; i++) { const tool = this.box(0.2, 1.5 - (i % 2) * 0.4, 0.2, this.mat(i % 2 ? 0xb9bec4 : 0xc7703a), x1 + 0.2, 3.4, z + (i - 2) * 1.1, this.tallG); void tool; }

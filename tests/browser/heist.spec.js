@@ -166,9 +166,9 @@ test("live map, mini-games, report, sealed vote and animated finale", async ({
       r = mem(f.h.code);
       p = r.players.find((q) => q.id === p.id);
       const c = p.challenge;
-      c.startedAt = Date.now() - 6000;
+      c.startedAt = Date.now() - 9000;
       if (kind === "wires") {
-        for (const shape of ["diamond", "circle", "triangle", "square"]) {
+        for (const shape of ["diamond", "circle", "triangle", "square", "star", "cross"]) {
           await d
             .getByRole("button", { name: "Left " + shape, exact: true })
             .click();
@@ -218,11 +218,11 @@ test("live map, mini-games, report, sealed vote and animated finale", async ({
     }
     r = mem(f.h.code);
     p = r.players.find((q) => q.id === p.id);
-    at(p, { x: 430, y: 140 });
+    at(p, { x: 800, y: 240 });
     const thief = r.players.find((q) => q.team === "thief"),
       victim = r.players.find((q) => q.team === "staff" && q.id !== p.id);
-    at(thief, { x: 450, y: 140 });
-    at(victim, { x: 455, y: 140 });
+    at(thief, { x: 820, y: 240 });
+    at(victim, { x: 825, y: 240 });
     thief.killAt = 0;
     r.attackAt = 0;
     R.knockout(r, thief, { step: r.step, targetId: victim.id });
@@ -452,5 +452,46 @@ test("choosing a job lights a route on the floor and does not walk you there", a
   await expect(f.page.locator(".status-hint")).toContainText("glowing line");
   await f.page.waitForTimeout(800);
   expect(JSON.stringify(mem(f.h.code).players.find((p) => p.id === f.h.meId).path)).toBe(before);
+  await f.context.close();
+});
+
+test("the glowing line leads to the nearest job by itself, moves on when it is done, and can be switched", async ({ browser }) => {
+  const f = await fixture(browser, 390, "3d");
+  await openMuseum(f);
+  const me = () => mem(f.h.code).players.find((p) => p.id === f.h.meId);
+  const guide = () => f.page.locator("#museum-map").evaluate((c) => c.__map.guideTo && c.__map.guideTo.label);
+  const r = mem(f.h.code), p = me();
+  const [a, b, c] = R.W.STATIONS.slice(0, 3);
+  p.jobs = [a, b, c].map((s) => ({ ...s, id: randomUUID(), station: s.id, done: false }));
+  at(p, { x: a.x + 120, y: a.y + 40 });
+  await f.page.evaluate(() => { document.getElementById("museum-map").__map.me = null; });
+  // nobody chose anything, yet the line already leads to the nearest unfinished job
+  await expect.poll(guide).toBe(a.name);
+  // finishing it sends the line to the next one
+  p.jobs[0].done = true;
+  await expect.poll(guide).not.toBe(null);
+  // choosing a different job takes over, "Guide Me" gives control back
+  await f.page.getByRole("button", { name: "Your Jobs", exact: true }).click();
+  await f.page.locator(".job-tile").nth(2).click();
+  await expect.poll(guide).toBe(p.jobs[2].name);
+  await f.page.getByRole("button", { name: "Your Jobs", exact: true }).click();
+  await f.page.getByRole("button", { name: "Guide Me Automatically", exact: true }).click();
+  await expect.poll(guide).not.toBe(null);
+  void r;
+  await f.context.close();
+});
+
+test("a job button appears the moment you reach the console", async ({ browser }) => {
+  const f = await fixture(browser, 390, "3d");
+  await openMuseum(f);
+  const p = mem(f.h.code).players.find((q) => q.id === f.h.meId), s = R.W.STATIONS[0];
+  p.jobs = [{ ...s, id: randomUUID(), station: s.id, done: false }];
+  at(p, { x: s.x + 90, y: s.y });
+  await f.page.evaluate(() => { document.getElementById("museum-map").__map.me = null; });
+  await f.page.waitForTimeout(600);
+  await expect(f.page.getByRole("button", { name: s.name, exact: true })).toHaveCount(0);
+  // the character is walked next to the console on screen; the server is told on the way
+  await f.page.evaluate((pt) => { const m = document.getElementById("museum-map").__map; m.me = { x: pt.x, y: pt.y }; }, { x: s.x + 44, y: s.y + 4 });
+  await expect(f.page.getByRole("button", { name: s.name, exact: true })).toBeVisible({ timeout: 1500 });
   await f.context.close();
 });

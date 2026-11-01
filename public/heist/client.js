@@ -901,7 +901,7 @@
             r.name,
             () => {
               closeDialog();
-              setGuide({ x: r.x + 120, y: r.y + 135 }, r.name);
+              setGuide({ x: r.x + r.w / 2, y: r.y + r.h / 2 }, r.name, "room:" + r.id);
             },
             "",
             false,
@@ -911,12 +911,47 @@
       ),
     );
   }
-  // a glowing line on the floor to somewhere you want to go; you still walk it yourself
-  function setGuide(spot, label) {
-    guide = { x: spot.x, y: spot.y, label };
-    museum?.guide?.(guide);
-    const hint = document.querySelector(".status-hint");
-    if (hint) hint.textContent = "Follow the glowing line on the floor.";
+  // The glowing line leads to your nearest unfinished job on its own, and on to the next one when it is done. Choosing a job
+  // or a room yourself overrides that until you get there, finish it, or pick "Guide Me".
+  let guideManual = null;
+  function autoTarget() {
+    const me = state.me;
+    if (me.bag) {
+      const dest = W.TRANSPORT.find((t) => t.id === me.bag.dest);
+      return dest ? { id: "deliver", x: dest.x, y: dest.y, label: "Deliver The Exhibit" } : null;
+    }
+    const here = currentPos(),
+      open = [...me.jobs, ...state.recovery].filter((j) => !j.done);
+    if (!open.length && me.team === "staff") open.push(...state.joints.filter((j) => !j.done));
+    open.sort((a, b) => W.distance(here, a) - W.distance(here, b));
+    const j = open[0];
+    return j ? { id: j.id, x: j.x, y: j.y, label: j.name } : null;
+  }
+  function updateGuide() {
+    if (!state || state.phase !== "live") {
+      guide = null;
+      return;
+    }
+    let want = null;
+    if (guideManual) {
+      const job = [...state.me.jobs, ...state.joints, ...state.recovery].find((j) => j.id === guideManual.id);
+      if ((job && job.done) || (!job && !guideManual.id.startsWith("room:")) || W.distance(currentPos(), guideManual) < 30) guideManual = null;
+      else want = guideManual;
+    }
+    want ||= autoTarget();
+    if (!want) {
+      if (guide) museum?.guide?.(null);
+      guide = null;
+      return;
+    }
+    if (!guide || guide.id !== want.id || guide.x !== want.x || guide.y !== want.y) {
+      guide = want;
+      museum?.guide?.(guide);
+    }
+  }
+  function setGuide(spot, label, id) {
+    guideManual = { id: id || spot.id, x: spot.x, y: spot.y, label };
+    updateGuide();
     announce("Follow the glowing line on the floor. Destination: " + label);
   }
   function showJobs() {
@@ -927,10 +962,20 @@
         "muted small",
         state.me.team === "thief"
           ? "Use these jobs as a cover. They will not secure the museum."
-          : "Choose a job to light up the way to it. Then walk there yourself. Shared jobs and recoveries also help secure the museum.",
+          : "The glowing line leads you to your nearest job automatically. Choose one here to be guided to it instead. Shared jobs and recoveries also help secure the museum.",
       ),
     );
     d.append(
+      button(
+        guideManual ? "Guide Me Automatically" : "Automatic Guide Is On",
+        () => {
+          closeDialog();
+          guideManual = null;
+          updateGuide();
+        },
+        "role-mini",
+        !guideManual,
+      ),
       el(
         "div",
         { class: "heist-job-tray" },
@@ -943,7 +988,7 @@
             ],
             () => {
               closeDialog();
-              setGuide(j, j.name);
+              setGuide(j, j.name, j.id);
             },
             "job-tile" + (j.done ? " done" : ""),
             j.done,
@@ -960,6 +1005,8 @@
     return spot || currentPos();
   }
   function currentPos() {
+    // what you see on screen is where you are for buttons; the server timeline is only the fallback
+    if (state && museum?.me) return { x: museum.me.x, y: museum.me.y };
     return state
       ? W.position(
           {
@@ -969,7 +1016,7 @@
           },
           now(),
         )
-      : { x: 160, y: 150 };
+      : { x: 300, y: 260 };
   }
   function closeEnough(p, d = 47) {
     return (
@@ -1353,9 +1400,10 @@
     if (c.kind === "wires") {
       hint.textContent =
         "Tap a plug on the left, then its matching colour and shape on the right.";
-      const colors = ["#ef98ab", "#87d7e6", "#efd283", "#99dfb2"],
-        symbols = ["◆", "●", "▲", "■"];
-      proof = restore() || [-1, -1, -1, -1];
+      const colors = ["#ef98ab", "#87d7e6", "#efd283", "#99dfb2", "#c3a6ee", "#f3b184"],
+        symbols = ["◆", "●", "▲", "■", "★", "✚"],
+        names = ["diamond", "circle", "triangle", "square", "star", "cross"];
+      proof = restore() || c.puzzle.left.map(() => -1);
       let selected = -1;
       grid.classList.add("wire-grid");
       const left = el("div", { class: "wire-column" }),
@@ -1384,7 +1432,7 @@
               {
                 style: "--wire:" + colors[v],
                 "aria-label":
-                  "Left " + ["diamond", "circle", "triangle", "square"][v],
+                  "Left " + names[v],
                 "aria-pressed": String(selected === i),
               },
             ),
@@ -1405,7 +1453,7 @@
                 selected = -1;
                 solved = proof.every((n) => n >= 0);
                 note.textContent = solved
-                  ? "All four wires connected."
+                  ? "All the wires are connected."
                   : "Wire connected.";
                 save();
                 draw();
@@ -1416,7 +1464,7 @@
               {
                 style: "--wire:" + colors[v],
                 "aria-label":
-                  "Right " + ["diamond", "circle", "triangle", "square"][v],
+                  "Right " + names[v],
               },
             ),
           ),
@@ -1487,7 +1535,7 @@
       solved = W.circuitValid(proof);
     } else if (c.kind === "scan") {
       hint.textContent =
-        "Drag the scanner over all three marks. Arrow keys move it too.";
+        "Drag the scanner over every mark. Arrow keys move it too.";
       proof = restore() || [];
       let p = { x: 0.5, y: 0.5 };
       const pad = el(
@@ -1576,7 +1624,7 @@
       });
       scan();
     } else {
-      hint.textContent = "Watch the four flashes, then repeat the same order.";
+      hint.textContent = "Watch the flashes, then repeat the same order.";
       proof = [];
       const colors = ["#e799b0", "#8edec4", "#f1d184", "#9cbceb"],
         symbols = ["◆", "●", "▲", "■"];
@@ -1601,8 +1649,8 @@
                 return;
               }
               display.textContent =
-                "●".repeat(proof.length) + "○".repeat(4 - proof.length);
-              solved = proof.length === 4;
+                "●".repeat(proof.length) + "○".repeat(c.puzzle.sequence.length - proof.length);
+              solved = proof.length === c.puzzle.sequence.length;
               save();
               submit();
             },
@@ -1630,21 +1678,21 @@
             return;
           }
           const t = performance.now() - start,
-            idx = Math.floor(t / 650);
+            idx = Math.floor(t / 600);
           keys
             .querySelectorAll("button")
             .forEach((n, i) =>
               n.classList.toggle(
                 "flash",
-                idx < 4 && t % 650 < 420 && c.puzzle.sequence[idx] === i,
+                idx < c.puzzle.sequence.length && t % 600 < 400 && c.puzzle.sequence[idx] === i,
               ),
             );
-          if (idx >= 4) {
+          if (idx >= c.puzzle.sequence.length) {
             watching = false;
             keys
               .querySelectorAll("button")
               .forEach((n) => (n.disabled = false));
-            display.textContent = "○○○○";
+            display.textContent = "○".repeat(c.puzzle.sequence.length);
             clearInterval(flash);
           }
         }, 80);
@@ -2123,6 +2171,28 @@
     messagesKey = "",
     seenEvent = "",
     voteKey = "";
+  // the buttons at the right: what you can do where you stand, kept up to date as you walk
+  function renderActions() {
+    if (!state || state.phase !== "live") return;
+    const choices = actionChoices(),
+      key = JSON.stringify([state.step, choices.map((c) => [c.label, c.disabled]), state.me.alive, state.me.team]);
+    const bar = document.getElementById("museum-actions");
+    if (bar && key !== actionsKey) {
+      actionsKey = key;
+      bar.replaceChildren(
+        ...choices.slice(0, 3).map((c) => button(c.label, () => interact(c), c.kind, c.disabled)),
+        el("span", { class: "bar-spacer" }),
+        button([hudIcon("jobs"), el("span", {}, "Your Jobs")], showJobs),
+        button([hudIcon("map"), el("span", {}, "Map")], showMap),
+        state.me.alive
+          ? button([hudIcon("tools"), el("span", {}, "Tools")], tools)
+          : button("Out Chat", () => modal("Out Players Only", chatBox())),
+      );
+    }
+  }
+  setInterval(() => {
+    if (state?.phase === "live" && museum && !document.hidden) renderActions();
+  }, 100);
   function sync() {
     if (!state) return;
     const advance = document.querySelector("[data-advance]");
@@ -2156,32 +2226,8 @@
                 : !state.me.alive
                   ? "Out · Help With Jobs · Keep Quiet"
                   : "Explore · Do Jobs · Stay Alert";
-      const choices = state.phase === "live" ? actionChoices() : [],
-        key = JSON.stringify([
-          state.step,
-          choices.map((c) => [c.label, c.disabled]),
-          state.me.alive,
-          state.me.team,
-        ]);
-      const bar = document.getElementById("museum-actions");
-      if (bar && key !== actionsKey) {
-        actionsKey = key;
-        bar.replaceChildren(
-          ...choices
-            .slice(0, 3)
-            .map((c) => button(c.label, () => interact(c), c.kind, c.disabled)),
-          el("span", { class: "bar-spacer" }),
-          button([hudIcon("jobs"), el("span", {}, "Your Jobs")], showJobs),
-          button([hudIcon("map"), el("span", {}, "Map")], showMap),
-          state.me.alive
-            ? button([hudIcon("tools"), el("span", {}, "Tools")], tools)
-            : button("Out Chat", () => modal("Out Players Only", chatBox())),
-        );
-      }
-      if (guide && W.distance(currentPos(), guide) < 30) {
-        guide = null;
-        museum?.guide?.(null);
-      }
+      renderActions();
+      updateGuide();
       const event = state.events.find(
         (e) => e.actor !== state.meId && e.target !== state.meId,
       );

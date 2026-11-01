@@ -60,12 +60,12 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
     );
     assert.equal(v.roles, undefined);
     assert.equal(R.view(r, bad[0]).me.allies.length, 2);
-    R.move(r, p, { ...body(r), x: 430, y: 110 });
+    R.move(r, p, { ...body(r), x: 400, y: 260 });
     const start = R.pos(p);
     clock += 1000;
     assert.ok(W.distance(start, R.pos(p)) <= 106);
     clock += 15000;
-    assert.ok(W.distance(R.pos(p), { x: 430, y: 110 }) < 20);
+    assert.ok(W.distance(R.pos(p), { x: 400, y: 260 }) < 20);
     rejects(() => R.move(r, p, { step: r.step - 1, x: 110, y: 110 }), 409);
     rejects(() => R.move(r, p, { ...body(r), x: NaN, y: 0 }), 400);
     for (const station of W.STATIONS) {
@@ -116,9 +116,9 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
       victim = r.players.find((p) => p.role === "staff"),
       medic = r.players.find((p) => p.role === "medic"),
       camera = r.players.find((p) => p.role === "staff" && p !== victim);
-    at(thief, { x: 430, y: 140 });
-    at(victim, { x: 450, y: 140 });
-    at(medic, { x: 430, y: 150 });
+    at(thief, { x: 800, y: 240 });
+    at(victim, { x: 820, y: 240 });
+    at(medic, { x: 800, y: 250 });
     at(camera, { x: 160, y: 150 });
     clock += 20000;
     rejects(() => R.camera(r, camera, body(r)), 409);
@@ -193,18 +193,18 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
     }
     const r = room(),
       p = r.players.find((p) => p.team === "thief");
-    at(p, { x: 270, y: 160 });
+    at(p, { x: 500, y: 260 });
     R.sabotage(r, p, { ...body(r), kind: "door", door: "north-west" });
     assert.equal(
-      W.route({ x: 270, y: 160 }, { x: 370, y: 160 }, R.closed(r))?.some(
-        (q) => q.x > 280 && q.x < 360 && q.y < 180,
+      W.route({ x: 500, y: 260 }, { x: 620, y: 260 }, R.closed(r))?.some(
+        (q) => q.x > 520 && q.x < 600 && q.y >= 240 && q.y < 280,
       ),
       false,
     );
     const repair = W.repairPoint(W.DOORS[0], R.pos(p));
     assert.ok(W.walkable(repair, R.closed(r)));
     R.beginTask(r, p, { ...body(r), repair: true });
-    clock += 4001;
+    clock += 8001;
     R.finishTask(r, p, {
       ...body(r),
       challengeId: p.challenge.id,
@@ -219,7 +219,7 @@ const rejects = (fn, status) => assert.throws(fn, (e) => e.status === status);
         r,
         r.players.find((q) => q.team === "staff"),
       ).me.vision,
-      80,
+      110,
     );
     clock += 20001;
     R.tick(r);
