@@ -71,7 +71,39 @@ const idleFor = () => { if (st && st.version !== seenVer) { seenVer = st.version
 // nothing has changed for a while (everyone is thinking): ease off so the radio can sleep; any change snaps back to full speed
 const pollDelay = () => { if (rtLive && !document.hidden && !connFails) return st && st.allReady ? 2500 : st && st.phase === 'dealt' ? 8000 : 15000; const base = document.hidden ? 15000 : connFails ? Math.min(30000, 2000 * 2 ** Math.min(connFails - 1, 4)) : document.querySelector('.chat-ov') ? 1000 : st && st.phase === 'lobby' ? 3000 : st && st.allReady ? 1000 : st && st.phase === 'dealt' ? 1800 : 1200; const idle = idleFor(); return document.hidden || connFails || st && st.allReady || document.querySelector('.chat-ov') ? base : idle > 60000 ? Math.max(base, 3500) : idle > 20000 ? Math.max(base, 2000) : base; };
 // low battery or Data Saver: quietly switch the decorative animations off
-try { const sv = () => document.body.classList.toggle('autocalm', !!(navigator.connection && navigator.connection.saveData)); sv(); if (navigator.getBattery) navigator.getBattery().then((b) => { const f = () => document.body.classList.toggle('autocalm', (!b.charging && b.level <= 0.2) || !!(navigator.connection && navigator.connection.saveData)); f(); b.addEventListener('levelchange', f); b.addEventListener('chargingchange', f); }); } catch (e) {}
+// ...and when nobody has touched the phone for a while (it is lying on the table while others think), the same:
+// no looping decoration means the screen stops redrawing, so the phone stays cool. The first touch brings it all back.
+const calmWhy = { power: false, idle: false };
+const applyAutoCalm = () => document.body.classList.toggle('autocalm', calmWhy.power || calmWhy.idle);
+try { const sv = () => { calmWhy.power = !!(navigator.connection && navigator.connection.saveData); applyAutoCalm(); }; sv(); if (navigator.getBattery) navigator.getBattery().then((b) => { const f = () => { calmWhy.power = (!b.charging && b.level <= 0.2) || !!(navigator.connection && navigator.connection.saveData); applyAutoCalm(); }; f(); b.addEventListener('levelchange', f); b.addEventListener('chargingchange', f); }); } catch (e) {}
+const IDLE_CALM_MS = 20000;
+let coolTouchAt = Date.now();
+const coolWake = () => { coolTouchAt = Date.now(); if (calmWhy.idle) { calmWhy.idle = false; applyAutoCalm(); } };
+for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) window.addEventListener(ev, coolWake, { passive: true, capture: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) coolWake(); });
+// Looping effects that repaint the page on every frame (glows made of box-shadow, shimmering gold text, sheens) are the
+// expensive kind: one of them keeps the whole screen redrawing 60-120 times a second. Each finishes the round it is on and then rests until the screen changes again.
+const COMPOSITED = new Set(['transform', 'opacity', 'translate', 'rotate', 'scale', 'offset', 'computedOffset', 'easing', 'composite']);
+const KEEP_LOOPING = new Set(['urgent']);   // the last seconds of the clock should keep pulsing
+const paintsEveryFrame = new Map();
+function coolLoops() {
+  if (document.hidden || !document.getAnimations) return;
+  for (const a of document.getAnimations()) {
+    if (a.playState !== 'running' || !a.animationName || KEEP_LOOPING.has(a.animationName)) continue;
+    const t = a.effect && a.effect.getTiming(); if (!t || t.iterations !== Infinity) continue;
+    let heavy = paintsEveryFrame.get(a.animationName);
+    if (heavy === undefined) { heavy = a.effect.getKeyframes().some((k) => Object.keys(k).some((p) => !COMPOSITED.has(p))); paintsEveryFrame.set(a.animationName, heavy); }
+    if (!heavy) continue;
+    const dur = typeof t.duration === 'number' && t.duration > 0 ? t.duration : 1000, done = Math.max(0, ((a.currentTime || 0) - (t.delay || 0)) / dur);
+    let n = Math.max(1, Math.ceil(done + 0.001)); if (/alternate/.test(t.direction) && n % 2) n++;   // an alternating glow ends where it started
+    try { a.effect.updateTiming({ iterations: n }); } catch {}
+  }
+}
+setInterval(() => {
+  coolLoops();
+  const idle = !document.hidden && Date.now() - coolTouchAt > IDLE_CALM_MS;
+  if (idle !== calmWhy.idle) { calmWhy.idle = idle; applyAutoCalm(); }
+}, 1000);
 // push channel: the server announces each new room version, so the polling below only has to be a slow safety net while it is connected
 let rtES = null, rtLive = false, rtFor = '', rtRetry = null, rtRenew = null, rtWant = 0, rtBusy = false;
 // fetch right now, skipping the server's short read cache, and ask again if what came back is older than what was announced
