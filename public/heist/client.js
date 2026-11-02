@@ -765,8 +765,10 @@
           settings(),
           Platform.botControls({
             state,
+            getState: () => state,
             max: 12,
             onSend: (action) => send(action),
+            render: () => render(),
             hint: "Bots walk, do jobs and report what they see. Thieves try to blend in.",
           }),
           host
@@ -2099,6 +2101,7 @@
         state,
         max: 12,
         onSend: (action) => send(action),
+            render: () => render(),
       }),
       reveal,
       history,

@@ -201,8 +201,8 @@
       const seated = state.players.filter((p) => !p.departed).length, bots = state.players.filter((p) => p.bot && !p.departed).length;
       return el('div', { class: 'bot-controls' },
         el('div', { class: 'bot-row' },
-          button('Add a bot', () => send('addBot'), 'bot-btn add', seated >= cfg.max, 'add-bot', 'bot:green'),
-          bots ? button('Remove a bot', () => send('removeBot'), 'bot-btn remove', false, 'remove-bot', 'minus:red') : null),
+          button('Add a bot', () => { if (!busy) window.Platform?.optimisticBot?.(state, 'addBot'); send('addBot'); }, 'bot-btn add', seated >= cfg.max, 'add-bot', 'bot:green'),
+          bots ? button('Remove a bot', () => { if (!busy) window.Platform?.optimisticBot?.(state, 'removeBot'); send('removeBot'); }, 'bot-btn remove', false, 'remove-bot', 'minus:red') : null),
         text('small', 'muted', bots ? bots + (bots === 1 ? ' bot' : ' bots') + ' at the table. Bots play like casual players.' : 'No friends nearby? A bot can take a seat.'));
     }
     function waitingRoom() {

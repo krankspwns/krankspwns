@@ -1,5 +1,5 @@
 function crownBotControls() {
-  return window.Platform?.botControls({state:st,max:st.maxPlayers,onSend:action=>act(action),available:st.phase==='lobby'||st.currentRow===4,
+  return window.Platform?.botControls({state:st,getState:()=>st,max:st.maxPlayers,onSend:action=>act(action),render:()=>render(),available:st.phase==='lobby'||st.currentRow===4,
     hint:t('botHint'),labels:{add:t('botAdd'),remove:t('botRemove'),title:t('botTitle')}})||'';
 }
 function copyText(text, btn) {

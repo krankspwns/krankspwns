@@ -103,7 +103,7 @@
   function roster(){return el('section',{class:'gc-panel table-roster'},el('div',{class:'panel-heading'},el('h3',{},'Players'),text('span','roster-count',state.phase==='voting'?state.players.filter(p=>p.voteLocked).length+'/'+state.players.length+' VOTED':state.players.filter(p=>!p.departed).length+'/12 PLAYERS')),
     el('div',{class:'roster'},...state.players.map((p,i)=>el('div',{class:'seat'+(p.id===state.meId?' mine':'')+(p.voteLocked&&state.phase==='voting'?' seat-sealed':'')+(p.departed?' seat-away':'')},el('span',{class:'seat-avatar tone-'+i%4,'aria-hidden':'true'},avatar(p.id)),el('div',{class:'seat-name'},el('b',{},p.name+(p.id===state.meId?' · You':'')),text('small','muted',p.departed?'AWAY':p.id===state.hostId?'HOST':state.phase==='voting'?(p.voteLocked?'VOTED':'CHOOSING…'):'READY')),p.voteLocked&&state.phase==='voting'?icon('lock','seat-status'):null))));
   }
-  function botControls(){return Platform.botControls({state,max:12,onSend:action=>send(action),hint:'Bots share clues, bluff and vote.'});}
+  function botControls(){return Platform.botControls({state,getState:()=>state,max:12,onSend:action=>send(action),hint:'Bots share clues, bluff and vote.'});}
   function waitingRoom(){const host=state.meId===state.hostId,n=state.players.filter(p=>!p.departed).length;return roomBar({count:n+' of 12 players have joined',body:[
     paceSettings(host),Platform.roomSeats({players:state.players,max:12,meId:state.meId,hostId:state.hostId,avatar}),
     botControls(),

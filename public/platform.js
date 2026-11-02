@@ -449,13 +449,21 @@
     }));
   }
 
-  function botControls({state,max=12,onSend,available=['lobby','finished'].includes(state.phase),hint='',labels={}}) {
+  // the seat changes the moment the host taps; the server's reply swaps the stand-in for the real bot
+  function optimisticBot(state,action){
+    const ps=state&&state.players;if(!Array.isArray(ps))return false;
+    if(ps.some(p=>p.pendingBot))return false;   // one at a time: wait for the last tap to land
+    if(action==='addBot'){const me=ps.find(p=>p.id===state.meId)||ps[0]||{};const id='pending-bot-'+Math.random().toString(36).slice(2);ps.push({...me,id,name:'Bot…',bot:true,departed:false,kicked:false,ready:false,avatarIndex:ps.length,pendingBot:true});for(const k of ['order','seatOrder'])if(Array.isArray(state[k]))state[k]=[...state[k],id];return true;}
+    for(let i=ps.length-1;i>=0;i--)if(ps[i].bot&&!ps[i].departed){const id=ps[i].id;ps.splice(i,1);for(const k of ['order','seatOrder'])if(Array.isArray(state[k]))state[k]=state[k].filter(x=>x!==id);return true;}
+    return false;
+  }
+  function botControls({state,getState,max=12,onSend,render,available=['lobby','finished'].includes(state.phase),hint='',labels={}}) {
     if(!available||state.hostId!==state.meId)return null;
     const count=state.players.filter(p=>!p.departed&&!p.kicked).length,bots=state.players.filter(p=>p.bot&&!p.departed).length;
     return el('section',{class:'pf-bot-controls','aria-label':labels.title||'Practice players'},
       el('div',{class:'pf-bot-row'},
-        el('button',{type:'button',class:'pf-bot-add',disabled:count>=max,onclick:()=>onSend('addBot')},avatar('robot','','',24),el('span',{text:labels.add||'Add a bot'})),
-        bots?el('button',{type:'button',class:'pf-bot-remove',onclick:()=>onSend('removeBot')},el('span',{'aria-hidden':'true',text:'−'}),el('span',{text:labels.remove||'Remove a bot'})):null),
+        el('button',{type:'button',class:'pf-bot-add',disabled:count>=max,onclick:()=>{const now=getState?.()||state;if(now.players.some(p=>p.pendingBot))return;optimisticBot(now,'addBot');render?.();onSend('addBot');}},avatar('robot','','',24),el('span',{text:labels.add||'Add a bot'})),
+        bots?el('button',{type:'button',class:'pf-bot-remove',onclick:()=>{const now=getState?.()||state;if(now.players.some(p=>p.pendingBot))return;optimisticBot(now,'removeBot');render?.();onSend('removeBot');}},el('span',{'aria-hidden':'true',text:'−'}),el('span',{text:labels.remove||'Remove a bot'})):null),
       hint?el('p',{text:hint}):null);
   }
   function headerNav({page,title,art}) {
@@ -599,7 +607,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, botControls, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, botControls, optimisticBot, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#gh-name, #lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

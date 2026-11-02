@@ -576,7 +576,7 @@
         state.settings.quick ? el('span', { class: 'rules-chip on' }, txt('i', '', '🚄'), txt('span', '', 'Quick Journey')) : null,
         ...ROOM_TOGGLES.map(([key, label]) => { const on = toggleOn(key); return el('span', { class: 'rules-chip' + (on ? ' on' : ' off'), title: on ? 'On' : 'Off' }, toggleIcon(key), txt('span', '', label), on ? null : txt('em', '', 'Off')); })));
   }
-  function botControls(){return Platform.botControls({state,max:12,onSend:action=>send(action),hint:'Bots use their roles, share findings and vote. Saboteurs may lie.'});}
+  function botControls(){return Platform.botControls({state,getState:()=>state,max:12,onSend:action=>send(action),hint:'Bots use their roles, share findings and vote. Saboteurs may lie.'});}
   function waitingRoom() {
     const n = state.players.filter(p => !p.departed).length, host = state.hostId === state.meId;
     return el('div', { class: 'lobby-grid' }, el('section', { class: 'panel waiting-panel' }, art('platform'), txt('span', 'eyebrow', 'PLATFORM 07 · LAST DEPARTURE'), el('h1', {}, 'Your train is waiting.'), txt('p', 'muted', 'Share your code. Gather at least 5 players. Each person needs their own phone.'), txt('div', 'large-code', state.code),
