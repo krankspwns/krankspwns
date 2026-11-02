@@ -369,6 +369,11 @@
     frame() {
       if (this.destroyed) return;
       this.raf = requestAnimationFrame(() => this.frame());
+      // phones redraw the map 30 times a second instead of 60: half the work, still smooth
+      const drawAt = performance.now();
+      if (this.phoneFrame === undefined) this.phoneFrame = matchMedia("(pointer: coarse)").matches ? 1000 / 30 - 2 : 0;
+      if (this.phoneFrame && drawAt - (this.drawnAt || 0) < this.phoneFrame) return;
+      this.drawnAt = drawAt;
       const s = this.getState();
       if (!s) return;
       if (this.language !== window.GameI18n?.lang) {

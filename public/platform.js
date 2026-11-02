@@ -628,6 +628,28 @@
   });
 })();
 
-
-
-
+// ---------- keep phones cool ----------
+// A looping glow or shimmer made of box-shadow, background-position, filter or an SVG stroke makes the browser repaint the
+// screen 60-120 times a second for as long as it runs, which is what heats a phone up. Each one finishes the round it is
+// on and then rests until that part of the screen is drawn again. Loops that only move or fade (transform / opacity)
+// are cheap and keep going, and a few that carry meaning (a clock in its last seconds, a live microphone) never stop.
+(() => {
+  if (!document.getAnimations) return;
+  const CHEAP = new Set(['transform', 'opacity', 'translate', 'rotate', 'scale', 'offset', 'computedOffset', 'easing', 'composite']);
+  const KEEP = new Set(['urgent', 'clock-urgent', 'rec-pulse', 'live-bar']);
+  const heavy = new Map();
+  const cool = () => {
+    if (document.hidden) return;
+    for (const a of document.getAnimations()) {
+      const name = a.animationName; if (!name || a.playState !== 'running' || KEEP.has(name)) continue;
+      const t = a.effect && a.effect.getTiming(); if (!t || t.iterations !== Infinity) continue;
+      let h = heavy.get(name);
+      if (h === undefined) { h = a.effect.getKeyframes().some((k) => Object.keys(k).some((x) => !CHEAP.has(x))); heavy.set(name, h); }
+      if (!h) continue;
+      const dur = typeof t.duration === 'number' && t.duration > 0 ? t.duration : 1000;
+      let n = Math.max(1, Math.ceil(((a.currentTime || 0) - (t.delay || 0)) / dur + 0.001)); if (/alternate/.test(t.direction) && n % 2) n++;
+      try { a.effect.updateTiming({ iterations: n }); } catch {}
+    }
+  };
+  setInterval(cool, 1000);
+})();

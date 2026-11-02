@@ -1,3 +1,4 @@
+const PHONE_FRAME_MS = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches ? 1000 / 30 - 2 : 0;
 /* First-person museum, rendered locally with self-hosted three.js and artwork.
    Server-timed movement, walls and private visibility remain authoritative.
    Touch and keyboard movement are predicted locally; WebGL failures use map.js. */
@@ -151,7 +152,7 @@
       const THREE = (this.T = await loadThree());
       if (this.destroyed) return;
       const canvas = this.canvas;
-      const renderer = (this.renderer = new THREE.WebGLRenderer({ canvas, antialias: matchMedia('(pointer: fine)').matches, powerPreference: "high-performance" }));
+      const renderer = (this.renderer = new THREE.WebGLRenderer({ canvas, antialias: matchMedia('(pointer: fine)').matches, powerPreference: matchMedia("(pointer: coarse)").matches ? "low-power" : "high-performance" }));
       renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
       renderer.setClearColor(0xcdb8e8);
       renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -899,7 +900,10 @@
     loop() {
       if (this.destroyed || !this.renderer) return;
       this.raf = requestAnimationFrame(() => this.loop());
-      const t = performance.now(), dt = Math.min(0.25, (t - this.last) / 1000);
+      const t = performance.now();
+      // phones draw at 30 frames a second: it still walks smoothly and the GPU does half the work (much cooler)
+      if (PHONE_FRAME_MS && t - this.last < PHONE_FRAME_MS) return;
+      const dt = Math.min(0.25, (t - this.last) / 1000);
       this.last = t;
       try { this.frame(t, dt); } catch (e) { console.warn("3D museum frame", e); }
     }
