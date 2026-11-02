@@ -88,6 +88,7 @@
   const isAlly = id => !!id && id !== state?.meId && !!state?.me?.allies?.some(a => a.id === id);
   const allyCls = id => isAlly(id) ? ' ally-name' : '';
   function avatar(id, cls = '') {
+    if (window.Platform?.isPendingBot?.(typeof id === 'object' ? id?.id : id)) return Platform.pendingAvatar('portrait portrait-passengers ' + cls);
     const p = typeof id === 'object' ? id : state?.players.find(p => p.id === id);
     const index = p?.avatarIndex ?? Math.max(0, (p?.seat || 1) - 1);
     const node = portrait(index, 'passengers', cls + (p?.frame ? ' has-frame bd-' + p.frame : '') + (isAlly(p?.id) ? ' is-ally' : ''));

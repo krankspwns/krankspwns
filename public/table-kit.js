@@ -88,6 +88,7 @@
     const button = (label, click, kind = '', disabled = false, focus, ico) => el('button', { type: 'button', class: kind, 'data-focus': focus || (typeof label === 'string' ? label : ''), onclick: click, disabled: busy || disabled }, ...(ico ? [icon(ico.split(':')[0], 'btn-ico ic-' + (ico.split(':')[1] || 'gold'))] : []), label);
     const panel = (cls, ...children) => el('section', { class: 'tk-panel ' + cls }, ...children);
     function avatar(id, cls = '') {
+      if (window.Platform?.isPendingBot?.(id)) return Platform.pendingAvatar('tk-avatar ' + cls);
       const i = Math.max(0, state?.players.findIndex((p) => p.id === id) ?? 0);
       return el('span', { class: 'tk-avatar portrait ' + cls, style: '--portrait-x:' + ((i % 4) * 100 / 3) + '%;--portrait-y:' + (Math.floor(i / 4) * 50) + '%', 'aria-hidden': 'true' });
     }

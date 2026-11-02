@@ -31,7 +31,7 @@
   function icon(name,cls=''){const n=el('span',{class:'gc-icon '+cls,'aria-hidden':'true'});n.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(iconPaths[name]||iconPaths.spark)+'</svg>';return n;}
   const LOT_ART={painting:0,record:1,crown:2,clock:3,mask:4,medal:5,comic:6,ball:7};
   function artwork(art){const i=LOT_ART[art]??2;return el('div',{class:'lot-art art-'+art,'aria-hidden':'true'},el('span',{class:'artifact-image',style:'--art-x:'+((i%4)*100/3)+'%;--art-y:'+(Math.floor(i/4)*100)+'%'}));}
-  function avatar(id,cls='') {const p=state?.players.find(p=>p.id===id),i=p?.avatarIndex??Math.max(0,state?.players.indexOf(p)||0);return el('span',{class:'guest-portrait '+cls,style:'--guest-x:'+((i%4)*100/3)+'%;--guest-y:'+(Math.floor(i/4)*50)+'%','aria-hidden':'true'});}
+  function avatar(id,cls='') {if(window.Platform?.isPendingBot?.(id))return Platform.pendingAvatar('guest-portrait '+cls);const p=state?.players.find(p=>p.id===id),i=p?.avatarIndex??Math.max(0,state?.players.indexOf(p)||0);return el('span',{class:'guest-portrait '+cls,style:'--guest-x:'+((i%4)*100/3)+'%;--guest-y:'+(Math.floor(i/4)*50)+'%','aria-hidden':'true'});}
   function fan(){return el('div',{class:'gallery-invitation','aria-hidden':'true'},el('div',{class:'gallery-window'}),artwork('crown'),el('div',{class:'invitation-seal'},icon('mask'),text('span','','A PRIVATE VIEWING')),el('div',{class:'invitation-teams'},text('span','','FIND THE TRUTH'),text('span','','SELL THE LIE')));}
   async function request(action,extra={},owner=seat){
     const payload={action,...owner,...extra,requestId:crypto.randomUUID(),match:state?.match,lotNumber:state?.lotNumber};

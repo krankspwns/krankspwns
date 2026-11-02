@@ -364,3 +364,9 @@ html.pf-transferring:has(.pf-transfer-done) body{visibility:visible}
 /* Empty space between wrapped tools must not intercept the game beneath. */
 #pf-dock{pointer-events:none}
 #pf-dock>button{pointer-events:auto}
+
+/* a bot that is on its way: a soft disc with a turning ring, sized like the avatar it stands in for */
+.pf-av-loading{display:inline-grid!important;place-items:center;flex:none;border-radius:50%;background:rgba(255,255,255,.08)!important;background-image:none!important;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14);overflow:hidden}
+.pf-av-loading>i{width:46%;height:46%;border-radius:50%;border:2.5px solid rgba(255,214,102,.25);border-top-color:#ffd666;animation:pf-av-spin .8s linear infinite}
+@keyframes pf-av-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pf-av-loading>i{animation-duration:2.4s}}

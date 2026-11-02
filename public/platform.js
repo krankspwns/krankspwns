@@ -449,11 +449,14 @@
     }));
   }
 
+  // the stand-in's face: a spinner in the shape of an avatar until the real bot arrives
+  const isPendingBot=(id)=>typeof id==='string'&&id.startsWith('pending-bot-');
+  function pendingAvatar(cls='',size){const n=el('span',{class:'pf-av-loading '+cls,role:'img','aria-label':'Adding a bot',style:size?'width:'+size+'px;height:'+size+'px':''},el('i',{'aria-hidden':'true'}));return n;}
   // the seat changes the moment the host taps; the server's reply swaps the stand-in for the real bot
   function optimisticBot(state,action){
     const ps=state&&state.players;if(!Array.isArray(ps))return false;
     if(ps.some(p=>p.pendingBot))return false;   // one at a time: wait for the last tap to land
-    if(action==='addBot'){const me=ps.find(p=>p.id===state.meId)||ps[0]||{};const id='pending-bot-'+Math.random().toString(36).slice(2);ps.push({...me,id,name:'Bot…',bot:true,departed:false,kicked:false,ready:false,avatarIndex:ps.length,pendingBot:true});for(const k of ['order','seatOrder'])if(Array.isArray(state[k]))state[k]=[...state[k],id];return true;}
+    if(action==='addBot'){const me=ps.find(p=>p.id===state.meId)||ps[0]||{};const id='pending-bot-'+Math.random().toString(36).slice(2);ps.push({...me,id,avatar:'pending-bot',name:'Bot…',bot:true,departed:false,kicked:false,ready:false,avatarIndex:ps.length,pendingBot:true});for(const k of ['order','seatOrder'])if(Array.isArray(state[k]))state[k]=[...state[k],id];return true;}
     for(let i=ps.length-1;i>=0;i--)if(ps[i].bot&&!ps[i].departed){const id=ps[i].id;ps.splice(i,1);for(const k of ['order','seatOrder'])if(Array.isArray(state[k]))state[k]=state[k].filter(x=>x!==id);return true;}
     return false;
   }
@@ -607,7 +610,7 @@
   function guestOnly(node, room = false) {node.dataset.guestOnly = room ? 'room' : 'landing';return node;}
   const needsRecovery = () => !account || !accountSeat;
   function renderChip() { updateRecoveryVisibility(); document.getElementById('pf-chip')?.remove(); renderDock(); }
-  window.Platform = { openLogin, openShop, shopButton, settingsButton, botControls, optimisticBot, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
+  window.Platform = { openLogin, openShop, shopButton, settingsButton, botControls, optimisticBot, isPendingBot, pendingAvatar, headerNav, dealOptions, roomBar, roomSeats, clearRoom, guestOnly, needsRecovery, account: () => account, avatar, toast };
   // Signed in: pre-fill each game's "Your name" box with the account nickname (only when empty, never over what the player typed).
   const NAME_BOXES = '#gh-name, #lt-name, #gc-name, #player-name, #tk-name';
   function fillNames() {

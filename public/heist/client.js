@@ -123,6 +123,7 @@
     return n;
   }
   function face(id, cls = "") {
+    if (window.Platform?.isPendingBot?.(id)) return Platform.pendingAvatar("heist-face " + cls);
     const p = state?.players.find((p) => p.id === id),
       i = p?.avatarIndex || 0;
     return el("span", {

@@ -163,6 +163,7 @@ function warmLegend(k) {   // the first time a portrait is needed: fetch it once
   }).catch(() => legendLoading.delete(k));
 }
 function avatarEl(key, size = 40, cls = '', acc = '', bd = '') {
+  if (key === 'pending-bot' && window.Platform?.pendingAvatar) return Platform.pendingAvatar('av ' + cls, size);   // a bot still on its way
   let [bg, body] = AVATARS[key] || AVATARS.cat;
   if (LEGEND_KEYS.includes(key)) { if (LEGEND_SRC[key]) body = body.replace('/avatars/' + key + '.webp', LEGEND_SRC[key]); else warmLegend(key); }
   const w = el('span', { class: 'av avatar ' + cls + (BORDERS.includes(bd) ? ' bd bd-' + bd : '') + (LEGEND_KEYS.includes(key) ? ' legend' + (size >= 36 ? ' live' : '') : '') });
